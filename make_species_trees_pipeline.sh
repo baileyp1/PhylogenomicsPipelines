@@ -77,6 +77,7 @@ A typical example:
 -c 8 \\
 <path_to_recovered_genes_from_samples>/*.fasta \\
 > make_species_trees_pipeline.log 2>&1 &
+
 EOF
 }
 

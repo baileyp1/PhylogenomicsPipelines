@@ -66,6 +66,7 @@ A typical example:
 -m 20000 \\
 -q main \\
 > recover_genes_from_all_samples.log 2>&1 &
+
 EOF
 }
 
@@ -141,6 +142,8 @@ fi
 if [ ! -s $sampleList ]; then usage; echo; echo "ERROR: the samples table file (option -s) does not exist or is empty: $sampleList"; exit; fi
 
 if [ ! -s $targetsFile ]; then usage; echo; echo "ERROR: the target genes file (option -t) does not exist or is empty: $targetsFile"; exit; fi
+### 12.5.2020 - Just realsied that I can determine the full path to fiel here then the user just needs to supply relative path - ditto for paftoldataasymlinkdir
+###             NB - I have no test for the fastq dir exisitng! NB - I think this harder than i realised - how do you get the full path from a partial path
 
 if [ ! -s $adapterFasta ]; then usage; echo; echo "ERROR: the adaptor file (option -a) does not exist or is empty: $adapterFasta"; exit; fi
 

@@ -5,15 +5,15 @@ This repository contains two pipelines to perform phylogenomics analysis. One pi
 For gene recovery use
 ```
 recover_genes_from_all_samples.sh
-recover_genes_from_all_samples.sh --help
 ```
 
 For phylogenetic analysis use
 ```
 make_species_trees_pipeline.sh
-make_species_trees_pipeline.sh --help
 ```
 
+On the command line type the name of the program for brief instructions on its use.
+ 
 ## Required software dependencies
 The following programs need to be installed and available from the command line by typing the native program name. Some but not all of them are easily available from software installers (e.g. bioconda, brew, apt, yum)
 
