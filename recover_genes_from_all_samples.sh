@@ -38,12 +38,12 @@ cat << EOF
 
 Program: recover_genes_from_all_samples.sh
 
-Program description: recovers genes from fastq files of multiple samples. Paftools or HybPiper are used to align the reads to a set of
+Program description: recovers genes from fastq files of multiple samples. Paftools or HybPiper caqn be used to align the reads to a set of
                      target genes, then assemble the reads for each target gene. If Slurm is available samples will be run in parallel
 
-Usage: recover_genes_from_samples.sh
+Usage: recover_genes_from_all_samples.sh
   [ -s   add sample name and fastq file names via a csv table file (must have a header line);
-         format: SampleName,R1_fastqName,R2fastqName (required option) ]
+         format: SampleName,R1FastqName,R2FastqName (required option) ]
   [ -f   FULL path to all samples(required); N.B. no filenames, just the full path to them, not a relative path and no wild cards! ]
   [ -t   file name of target genes in fasta format (required option) ]
   [ -a   file name of adaptors in fasta format (required option) ]
@@ -56,11 +56,16 @@ Usage: recover_genes_from_samples.sh
   [ -v   program version]
 
 A typical example:
-recover_genes_from_samples.sh \
--s <table_file.csv> \
--f <fastq_files_path> \
--t <angiosperms353TargetsFile.fasta> \
--a <illumina_adaptors.fasta>
+<path to>/recover_genes_from_all_samples.sh \\
+-s <table_file.csv> \\
+-t <angiosperms353TargetsFile.fasta> \\
+-f <fastq_files_path> \\
+-a <illumina_adaptors.fasta> \\
+-p Sample \\
+-c 4 \\
+-m 20000 \\
+-q main \\
+> recover_genes_from_all_samples.log 2>&1 &
 EOF
 }
 
@@ -105,6 +110,7 @@ if [ "$#" -lt 1 ]; then usage; exit 1; fi
 ######################################
 # Only two programs to check currently (Paftools and HybPiper; can use -h and --help, both give a zero exit code)
 ### 29.3.2020 - maybe do this after all other checks so the print out doesn't appear if there is an issue with input parameters
+### 12.5.2020 - also FastQC is required
 if [ $hybSeqProgram == 'hybpiper' ]; then
     echo 'Testing HybPiper is installed, will exit with a 127 error if not found.' 
     reads_first.py -h >/dev/null 2>&1    # Will exit here if not found!

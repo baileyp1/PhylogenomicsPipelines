@@ -40,7 +40,7 @@ function usage	{
 cat << EOF
 
 Program description: makes species trees from fasta files containing recovered genes from multiple samples, one fasta file per sample.
-                     By Default, the fasta header format MUST BE: >sampleId-geneId but two other options (-a and -t) are possible.
+                     By Default, the fasta header format MUST BE: >sampleId-geneId but one other option (-a) is available.
 
 Usage: make_species_trees_pipeline.sh [options] fastafile1 fastafile2 fastafile3 ...
 
@@ -69,14 +69,14 @@ OPTIONS:
 
 A typical example:
 <path to>/make_species_trees_pipeline.sh \\
--a \\
 -g <geneListFile> \\
+-t <sampleTreeTipInfoFile> \\
 -f 0.6 \\
--s 0.6 \\
--p <my_species_group> \\
+-s 0.3 \\
+-q fasttree \\
 -c 8 \\
-<path_to_recovered_genes_from_samples>/*.fasta
-
+<path_to_recovered_genes_from_samples>/*.fasta \\
+> make_species_trees_pipeline.log 2>&1 &
 EOF
 }
 
