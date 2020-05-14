@@ -1,6 +1,6 @@
 # PhylogenomicsPipelines
 
-This repository contains two pipelines to perform phylogenomics analysis. One pipeline recover genes from sample Illumina read data and the second pipeline performs phylogenetic analysis on the recovered genes to obtain a species tree. They will run on Linux (with Slurm job manager, if installed) and MacOS.
+This repository contains two pipelines to perform phylogenomics analysis. One pipeline recovers genes from sample Illumina read data and the second pipeline performs phylogenetic analysis on the recovered genes to obtain a species tree. They will run on Linux (with Slurm job manager, if installed) and MacOS.
 
 For gene recovery use
 ```

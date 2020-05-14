@@ -49,10 +49,9 @@ OPTIONS:
 	-v             program version  
 	-a             add sample name onto the fasta header from the input fasta file name.
 	               Expected gene identifier format in the fasta header: >geneId (no hyphen '-' characters)
-	-t <csv file>  add sample name and other info from a comma separated value (csv) table file onto the fasta header lines.
-	               Table MUST contain a header line; format of table row: sample_name/identifier, followed by any species information as required. 
+	-t <csv file>  add sample name and other info from a comma separated value (csv) table file into the tree leaf labels.
+	               Format of table row: sample_name/identifier, followed by any species information as required. 
 	               Sample_name/identifier must match the sample fasta file name (minus any [dot] ending suffix e.g. .fasta)
-	               Expected gene identifier format in the fasta header of the input fasta files: >geneId
 	-g <file>      file (including path to it) containing list of gene names (required option)
 	-i             make gene trees only
 	-j             make species trees only
@@ -131,7 +130,7 @@ pathToScripts=`dirname $fullPathToWrapperScript `
 # User input checks and setup
 #############################
 
-# Prints usage if no parameters are given:
+# Prints usage if no parameters are given:ß
 if [ "$#" -lt 1 ]; then usage; exit 1; fi
 
 
@@ -146,13 +145,15 @@ softwareList=(seqtk blastn fastatranslate fastalength $phyloProgramDNA $phyloPro
 ### NBNBNB - in recover_genes_from_all_samples.sh, running seqtk like this makes the script stop, but here it doesn't seem to!!!! It's because there a no set options in this script
 #echo ${softwareList[@]}
 for software in ${softwareList[@]}; do
-	echo Testing $software is installed... 
-	$software >/dev/null 2>&1
-	if [[ $? == 127 ]]; then
-		# Exit code 127 is for "command not found"
-		### 16.3.2020 - NB - this doesn't work as script exits in the above conditional if program is not found!
-		echo "ERROR: Not available: $software"
-		exit
+	echo Testing $software is installed...
+	if [ $software != 'no' ]; then			# The default state $phyloProgramPROT - so don't want to test that. 
+		$software >/dev/null 2>&1
+		if [[ $? == 127 ]]; then
+			# Exit code 127 is for "command not found"
+			### 16.3.2020 - NB - this doesn't work as script exits in the above conditional if program is not found!
+			echo "ERROR: Not available: $software"
+			exit
+		fi
 	fi
 done
 
