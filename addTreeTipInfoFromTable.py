@@ -15,7 +15,7 @@ treeTipInfoMapfile = sys.argv[2]
 csvDict = {}
 with open(sampleTableFile, 'r') as csvfile:
 	csvreader = csv.reader(csvfile, delimiter=',', quotechar='"') # NB - quotechar seems to be OK with e.g. ,WZVCST Broccoli""WN12-95A"",
-	for row in csvreader:
+	for row in csvreader:					### 17.5.2020 - just realied that row here is actually field of row 
 		treeTipInfo= '_'.join(row)
 		uniqId = row[0]
 
@@ -26,7 +26,7 @@ with open(sampleTableFile, 'r') as csvfile:
 			print 'ERROR: id in 1st column of csv file is not unique - it MUST be - offending id:', uniqId
 			sys.exit()
 		else:
-			csvDict[ uniqId ] = treeTipInfo
+			csvDict[ uniqId ] = treeTipInfo		# NB - don't need to remove the csv file header!
 
 
 # Prepare to get sample names from file names and test for uniqueness.
@@ -66,4 +66,6 @@ for filePathName in argvList:
 			fh.write(uniqueSampleId + " " + uniqueSampleId + "\n")
 		else:
 			fh.write(uniqueSampleId + " " + csvDict[uniqueSampleId] + "\n")
-fh.close()
+fh.close()		
+
+

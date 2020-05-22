@@ -13,12 +13,11 @@ listFile=$2
 fractnAlnCovrg=$3
 pathToScript=$4
 phyloProgramDNA=$5
-phyloProgramPROT=$6 \
+phyloProgramPROT=$6
 fractnMaxColOcc=$7
 cpuGeneTree=$8
 mafftAlgorithm="$9"
 exePrefix="${10}"
-$treeTipInfoMapFile=${11}
 echo Inside Slurm array script, listFile: $listFile
 echo Inside Slurm array script, fractnAlnCovrge: $fractnAlnCovrg
 

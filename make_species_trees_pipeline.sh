@@ -137,7 +137,7 @@ if [ "$#" -lt 1 ]; then usage; exit 1; fi
 ###################################### 
 # Check required software dependancies
 ######################################
-softwareList=(seqtk blastn fastatranslate fastalength $phyloProgramDNA $phyloProgramPROT nw_ed java astral.5.7.3.jar AMAS.py raxmlHPC-PTHREADS-SSE3 fasttree raxml-ng)	# fasttree raxml-ng now tested in $phyloProgramDNA and $phyloProgramPROT 
+softwareList=(seqtk blastn fastatranslate fastalength $phyloProgramDNA $phyloProgramPROT nw_ed java astral.5.7.3.jar AMAS.py raxmlHPC-PTHREADS-SSE3)	# fasttree raxml-ng now tested in $phyloProgramDNA and $phyloProgramPROT 
 				    ### NBNB - 6.4.2020 - WHERE AM i USING blastn?
 ### Difficult to test the following softwares in this way in an array - could try to test separately: 'bc --help' 'est2genome --help' 'mafft --help'
 ###		28.1.2020 - try to double quote the array to keep these cmds with spaces together!
@@ -145,8 +145,8 @@ softwareList=(seqtk blastn fastatranslate fastalength $phyloProgramDNA $phyloPro
 ### NBNBNB - in recover_genes_from_all_samples.sh, running seqtk like this makes the script stop, but here it doesn't seem to!!!! It's because there a no set options in this script
 #echo ${softwareList[@]}
 for software in ${softwareList[@]}; do
-	echo Testing $software is installed...
-	if [ $software != 'no' ]; then			# The default state $phyloProgramPROT - so don't want to test that. 
+	if [[ $software != 'no' ]]; then			# The default state $phyloProgramPROT and some other software - so don't want to test that!
+		echo Testing $software is installed...
 		$software >/dev/null 2>&1
 		if [[ $? == 127 ]]; then
 			# Exit code 127 is for "command not found"
@@ -343,12 +343,9 @@ fi
 ####################
 # Code for option -t
 ####################
-if [[ -n $sampleTableFile ]]; then
-	echo Will use sample table file: $sampleTableFile
-	if [[ ! -s $sampleTableFile ]]; then echo ""
-		echo Sample table file does not exist or is empty - exiting.
-		exit 1
-	else
+if [[ $sampleTableFile != 'no' ]]; then
+	if [[ -s $sampleTableFile ]]; then echo ""
+		echo Will use this file containing text for the tree leaves: $sampleTableFile
 		# First check that the table is a csv file (plus header - is possible?)
 		### I think I can check here the csv file - must start with the table header! - only check needed - maybe check that it has ',' chars (?)
 		
@@ -385,7 +382,10 @@ if [[ -n $sampleTableFile ]]; then
 		# ### Not required now - seqs coming out of python are already on a single line (I think)
 		# cat $fileList | seqtk seq -l 0 /dev/fd/0 > all_samples_concatenated.fasta
 		# geneFile=all_samples_concatenated.fasta
-    fi
+	else
+    	echo File containing text for the tree leaves does not exist or is empty: $sampleTableFile - exiting.
+		exit 1
+	fi
 fi
 
 
