@@ -3,7 +3,6 @@
 import sys
 import os
 import csv
-from Bio import SeqIO
 import re
 #import __future__ [as name]
 
@@ -15,7 +14,7 @@ treeTipInfoMapfile = sys.argv[2]
 csvDict = {}
 with open(sampleTableFile, 'r') as csvfile:
 	csvreader = csv.reader(csvfile, delimiter=',', quotechar='"') # NB - quotechar seems to be OK with e.g. ,WZVCST Broccoli""WN12-95A"",
-	for row in csvreader:					### 17.5.2020 - just realied that row here is actually field of row 
+	for row in csvreader:					### 17.5.2020 - just realied that row here is actually field of row - not sure now?
 		treeTipInfo= '_'.join(row)
 		uniqId = row[0]
 

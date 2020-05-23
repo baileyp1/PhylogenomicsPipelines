@@ -23,6 +23,8 @@ fractnSpecies=$3
 totalNumbrSamples=$4
 fileNamePrefix=$5
 geneFile=$6
+treeTipInfoMapFile=$7
+option_u=$8
 
 ### Potential additional (hidden) parameters to set:
 ###minColOccToTolerate
@@ -60,6 +62,16 @@ done | sort -k3n \
 >> ${fileNamePrefix}_summary_of_sample_quality.txt
 #exit
 
+if [[ -s $treeTipInfoMapFile && $option_u == 'yes' ]]; then
+	# Prepare the mapfile again to add in the sum length values onto the tree tips, if requested
+	addTreeTipInfoFromTable_PlusL.py \
+	tree_tip_info_mapfile.txt \
+	${fileNamePrefix}_summary_of_sample_quality.txt \
+	tree_tip_info_mapfile_plusL.txt
+	# Now move new file to original mapfile created to avoid changing any other code:
+	mv tree_tip_info_mapfile_plusL.txt  tree_tip_info_mapfile.txt
+
+fi
 
 maxSumOfContigLengths=`tail -n+2 ${fileNamePrefix}_summary_of_sample_quality.txt | sort -k3n | tail -n 1 | awk '{print $3 " (sample " $1 ")" }' `
 
@@ -167,12 +179,12 @@ done \
 # Create list of gene alns with > ${fractnAlnCovrg_pc} gene coverge AND containing more than the $fractnSpecies % of the samples
 # Used to concatenate gene alns for supermatrix methods AND to gather the stats below
 ################################################################################################################################
-for file in *_mafft_dna_aln_ovr${fractnAlnCovrg_pc}pc_aln_covrg.fasta; do
- 	gene=`echo $file | sed "s/_mafft_dna_aln_ovr${fractnAlnCovrg_pc}pc_aln_covrg.fasta//" `
+for file in *_mafft_dna_aln_ovr${fractnAlnCovrg_pc}pc_aln_covrg_trimCols0.003.fasta; do
+ 	gene=`echo $file | sed "s/_mafft_dna_aln_ovr${fractnAlnCovrg_pc}pc_aln_covrg_trimCols0.003.fasta//" `
  	numbrSamples=`cat $file | grep '>' | wc -l `;
     echo $gene " " $numbrSamples
 done \
-| awk -v numbrSamplesThreshold=$numbrSamplesThreshold -v fractnAlnCovrg_pc=${fractnAlnCovrg_pc}  '$2 >= numbrSamplesThreshold  {print $1 "_mafft_dna_aln_ovr" fractnAlnCovrg_pc "pc_aln_covrg.fasta"}' \
+| awk -v numbrSamplesThreshold=$numbrSamplesThreshold -v fractnAlnCovrg_pc=${fractnAlnCovrg_pc}  '$2 >= numbrSamplesThreshold  {print $1 "_mafft_dna_aln_ovr" fractnAlnCovrg_pc "pc_aln_covrg_trimCols0.003.fasta"}' \
 > mafft_dna_alns_fasta_file_list.txt
 
 # For protein file list:
