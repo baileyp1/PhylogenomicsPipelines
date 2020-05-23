@@ -167,20 +167,20 @@ if [ $maxColOcc -ge 150 ]; then
 		echo lenLongestGene: $lenLongestGene  >> ${geneId}_aln_summary.log
 
 
-		# Trim columns to remove rare inserts, say ones filled 1% with residues.
+		# Trim columns to remove rare inserts, say ones filled only 0.1% with residues.
 		# There are many rare inserts when looking at lots of samples across the Angiosperms!
 		# Removing these columns is meant to speed up the phylogeny programs, as stated in Fasttree documentation.
 		# 0.001 is equivalent to 1 residue in every 1000 seqs (0.1%). - 9.5.2020 - change to 0.003 
-		AMAS.py trim -t 0.001 \
+		AMAS.py trim -t 0.003 \
 		-f fasta \
 		-d dna \
 		-i ${gene}_mafft_dna_aln_ovr${fractnAlnCovrg_pc}pc_aln_covrg.fasta \
-		-o ${gene}_mafft_dna_aln_ovr${fractnAlnCovrg_pc}pc_aln_covrg_trimCols0.001.fasta
-		### Now use this file for below steps and also for preparing the Newick file for Astral and supermatrix method.
-		### Still to switch this file in...
+		-o ${gene}_mafft_dna_aln_ovr${fractnAlnCovrg_pc}pc_aln_covrg_trimCols0.003.fasta
+		### NB - 23.5.2020 - switched in this file now for steps below and also for preparing the Newick files for Astral and supermatrix method.
+		
 
 		# Stats on the number of bases removed (it will be considerable for large trees with diverse taxa)
-		lenLongestGeneAfterTrim=`fastalength ${gene}_mafft_dna_aln_ovr${fractnAlnCovrg_pc}pc_aln_covrg_trimCols0.001.fasta | sort -n | tail -n 1 | awk '{print $1}' `
+		lenLongestGeneAfterTrim=`fastalength ${gene}_mafft_dna_aln_ovr${fractnAlnCovrg_pc}pc_aln_covrg_trimCols0.003.fasta | sort -n | tail -n 1 | awk '{print $1}' `
 		echo lenLongestGeneAfterTrim: $lenLongestGeneAfterTrim  >> ${geneId}_aln_summary.log
 		
 
@@ -190,7 +190,7 @@ if [ $maxColOcc -ge 150 ]; then
 			echo Running fasttree on the DNA alignment...
 			$exePrefix fasttree -nt \
     		-gtr \
-    		${gene}_mafft_dna_aln_ovr${fractnAlnCovrg_pc}pc_aln_covrg.fasta \
+    		${gene}_mafft_dna_aln_ovr${fractnAlnCovrg_pc}pc_aln_covrg_trimCols0.003.fasta \
 			> ${gene}_dna_gene_tree_USE_THIS.nwk
 		elif [ "$phyloProgramDNA" == 'raxml-ng' ]; then
 
@@ -202,7 +202,7 @@ if [ $maxColOcc -ge 150 ]; then
 			$exePrefix raxml-ng --threads $cpuGeneTree \
 			--redo \
 			--all \
-			--msa ${gene}_mafft_dna_aln_ovr${fractnAlnCovrg_pc}pc_aln_covrg.fasta \
+			--msa ${gene}_mafft_dna_aln_ovr${fractnAlnCovrg_pc}pc_aln_covrg_trimCols0.003.fasta \
 			--model GTR+G \
 			--prefix ${gene}_mafft_dna_aln_ovr${fractnAlnCovrg_pc}pc_aln_covrg \
 			--seed 2 \
@@ -232,7 +232,11 @@ if [ $maxColOcc -ge 150 ]; then
 			### 2.THEN translate output and MAFFT aln on the filtered data set.
 			### 3.BUT in the long run it would be better to align DNA against the protein aln so this step would then come first
 			###   and filtering would be best done on the protein.
+
+			# NB - The protein fasta headers will contain  \[translate(1)\] - fastatranslate (v2.4.x) adds this string to the header.
+			# It makes raxml-ng crash so remove it here:
 			fastatranslate -F 1  ${gene}_dna.fasta \
+			| sed 's/ \[translate(1)\]//' \
 			> ${gene}_protein.fasta
 			### 27.1.2020 - should be removing seqs with > 1-3 STOP codons - there are some!!!!
 			echo Running mafft on the protein alignment...
@@ -252,21 +256,26 @@ if [ $maxColOcc -ge 150 ]; then
 			### This file also needs to be trimmed which will result in slightly different versions w.r.t. DNA so can't use pal2nal on this.
 
 
+			# Trim columns to remove rare inserts, say ones filled only 0.1% with residues.
+			# There are many rare inserts when looking at lots of samples across the Angiosperms!
+			# Removing these columns is meant to speed up the phylogeny programs, as stated in Fasttree documentation.
+			# 0.001 is equivalent to 1 residue in every 1000 seqs (0.1%). - 9.5.2020 - change to 0.003 
+			AMAS.py trim -t 0.003 \
+			-f fasta \
+			-d dna \
+			-i ${gene}_mafft_protein_aln_ovr${fractnAlnCovrg_pc}pc_aln_covrg.fasta \
+			-o ${gene}_mafft_protein_aln_ovr${fractnAlnCovrg_pc}pc_aln_covrg_trimCols0.003.fasta
+			### NB - 23.5.2020 - switched in this file now for steps below and also for preparing the Newick files for Astral and supermatrix method.
+
+
 			# Make a tree with protein seqs if requested:
 			if [ "$phyloProgramPROT" == 'fasttree' ]; then
 				###  Gives a segmentation fault with -wag flag but the protein is default (JTT?)
 				echo
 				echo Running fasttree on the protein alignment...
-				$exePrefix fasttree ${gene}_mafft_protein_aln_ovr${fractnAlnCovrg_pc}pc_aln_covrg.fasta \
+				$exePrefix fasttree ${gene}_mafft_protein_aln_ovr${fractnAlnCovrg_pc}pc_aln_covrg_trimCols0.003.fasta \
 				> ${gene}_protein_gene_tree_USE_THIS.nwk
 			elif [ "$phyloProgramPROT" == 'raxml-ng' ]; then
-
-
-				# The protein fasta headers contain  \[translate(1)\] - fastatranslate (v2.4.x) adds this string to the header.
-				# It makes raxml-ng crash so remove it:
-				cat ${gene}_mafft_protein_aln_ovr${fractnAlnCovrg_pc}pc_aln_covrg.fasta \
-				| sed 's/ \[translate(1)\]//' \
-				> ${gene}_mafft_protein_aln_ovr${fractnAlnCovrg_pc}pc_aln_covrg_v1.fasta
 
 				# RAxML-NG with protein (uses conventional bs support - how fast is it? it is slow!):
 				echo
@@ -274,7 +283,7 @@ if [ $maxColOcc -ge 150 ]; then
 				$exePrefix raxml-ng --threads $cpuGeneTree \
 				--redo \
 				--all \
-				--msa ${gene}_mafft_protein_aln_ovr${fractnAlnCovrg_pc}pc_aln_covrg_v1.fasta \
+				--msa ${gene}_mafft_protein_aln_ovr${fractnAlnCovrg_pc}pc_aln_covrg_trimCols0.003.fasta \
 				--model JTT+G \
 				--prefix ${gene}_mafft_protein_aln_ovr${fractnAlnCovrg_pc}pc_aln_covrg \
 				--seed 2 \

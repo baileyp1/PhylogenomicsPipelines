@@ -45,8 +45,8 @@ echo treeTipInfoMapFile: $treeTipInfoMapFile
 
 # Concatenate trees containing more than $fractnSpecies of samples for use with ASTRAL:
 # NB - have made filenames generic so they can be derived from different phylo programs.
-for file in *_mafft_dna_aln_ovr${fractnAlnCovrg_pc}pc_aln_covrg.fasta; do
- 	gene=`echo $file | sed "s/_mafft_dna_aln_ovr${fractnAlnCovrg_pc}pc_aln_covrg.fasta//" `
+for file in *_mafft_dna_aln_ovr${fractnAlnCovrg_pc}pc_aln_covrg_trimCols0.003.fasta; do
+ 	gene=`echo $file | sed "s/_mafft_dna_aln_ovr${fractnAlnCovrg_pc}pc_aln_covrg_trimCols0.003.fasta//" `
  	numbrSamples=`cat $file | grep '>' | wc -l `;
     echo $gene " " $numbrSamples
 done \
@@ -57,8 +57,8 @@ done \
 
 if [[ "$phyloProgramPROT" == 'fasttree' ||  "$phyloProgramPROT" == 'raxml-ng' ]]; then
     # Concatenate the protein gene trees as well (almost repeat of the above code):
-    for file in *_mafft_protein_aln_ovr${fractnAlnCovrg_pc}pc_aln_covrg.fasta; do
- 	  gene=`echo $file | sed "s/_mafft_protein_aln_ovr${fractnAlnCovrg_pc}pc_aln_covrg.fasta//" `
+    for file in *_mafft_protein_aln_ovr${fractnAlnCovrg_pc}pc_aln_covrg_trimCols0.003.fasta; do
+ 	  gene=`echo $file | sed "s/_mafft_protein_aln_ovr${fractnAlnCovrg_pc}pc_aln_covrg_trimCols0.003.fasta//" `
  	  numbrSamples=`cat $file | grep '>' | wc -l `;
         echo $gene " " $numbrSamples
     done \
@@ -113,7 +113,7 @@ if [[ "$phyloProgramPROT" == 'fasttree' ||  "$phyloProgramPROT" == 'raxml-ng' ]]
     -o ${fileNamePrefix}_astral_protein_species_tree.nwk
 
     # Add tree tip info:
-    if [[ -s $treeTipInfoMapFile ]]; then 
+    if [[ -s $treeTipInfoMapFile ]]; then
         nw_rename -l ${fileNamePrefix}_astral_protein_species_tree.nwk \
         tree_tip_info_mapfile.txt \
         > ${fileNamePrefix}_astral_protein_species_tree_USE_THIS.nwk

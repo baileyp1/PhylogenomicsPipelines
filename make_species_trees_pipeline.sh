@@ -15,6 +15,7 @@ shopt -s failglob
 # Variables for any command line flags needing a default value:
 addSampleName=no
 sampleTableFile=no			# 10.5.2020 - only just added in - check - ensures cmdline parameter is always accupied which is critical
+option_u=no
 geneTreesOnly=no
 speciesTreesOnly=no
 fractnAlnCovrg=0.6
@@ -32,7 +33,8 @@ slurmThrottle=1
 mafftAlgorithm='--retree 2'     #'--maxiterate 1000' #'--retree 1'   '--retree 2' - use maxiterate
 cpuGeneTree=1					# still keep this separate from the supermatrix tree; then I can specify loads more for the supermatrix.
 								# Maybe hava a comma separated list e.g. 4,30 for gene and species tree.
-speciesTreeMem=100000			# I think I need 500000 GB mem for the RAxML large tree (Slurm)     	
+speciesTreeMem=100000			# I think I need 500000 GB mem for the RAxML large tree (Slurm)
+####-D  upload details to PAFTOL database (internal use only)   	
 
 
 function usage	{
@@ -52,6 +54,7 @@ OPTIONS:
 	-t <csv file>  add sample name and other info from a comma separated value (csv) table file into the tree leaf labels.
 	               Format of table row: sample_name/identifier, followed by any species information as required. 
 	               Sample_name/identifier must match the sample fasta file name (minus any [dot] ending suffix e.g. .fasta)
+	-u             add contig length info onto species tree tips (requires option -t)
 	-g <file>      file (including path to it) containing list of gene names (required option)
 	-i             make gene trees only
 	-j             make species trees only
@@ -65,6 +68,7 @@ OPTIONS:
 	-r <string>    name of phylogeny program for gene trees from protein sequences.
                    	If required, options are, fastest to slowest: fasttree, raxml-ng (no default)
 	-c <integer>   number of cpu to use for RAxML in supermatrix method (default=8)
+
 
 A typical example:
 <path to>/make_species_trees_pipeline.sh \\
@@ -86,7 +90,7 @@ EOF
 
 
 #echo User inputs:    ### For testing only 
-while getopts "hvat:g:ijf:m:s:p:q:r:c:d:"  OPTION; do
+while getopts "hvat:ug:ijf:m:s:p:q:r:c:d:"  OPTION; do	# Remaining options - try capital letters!
 
 	#echo -$OPTION $OPTARG	### For testing only - could try to run through options again below 
 	 
@@ -96,6 +100,7 @@ while getopts "hvat:g:ijf:m:s:p:q:r:c:d:"  OPTION; do
 		v) echo "make_species_trees_pipeline.sh  version 0.0.1"; exit ;;
 		a) addSampleName=yes ;;
 		t) sampleTableFile=$OPTARG ;;
+		u) option_u=yes ;;
 		g) geneListFile=$OPTARG ;;
 		i) geneTreesOnly=yes ;;
 		j) speciesTreesOnly=yes ;;
@@ -357,7 +362,8 @@ if [[ $sampleTableFile != 'no' ]]; then
 		# would be an alternative (like gene recovery step), but it's also convenient not to have to prepare another file.)
 
 		# Prepare a mapfile for Newick Utils to switch in sample info onto the tree tips:
-		addTreeTipInfoFromTable.py  $sampleTableFile tree_tip_info_mapfile.txt  ${@:$OPTIND:$#}
+		addTreeTipInfoFromTable.py  $sampleTableFile  tree_tip_info_mapfile.txt  ${@:$OPTIND:$#}
+
 
 ### 8.5.2020 - DON"T NEED THIS CODE ANY MORE - DELETE
 		# for file in ${@:$OPTIND:$#}; do
@@ -494,7 +500,7 @@ if [[ $os == 'Darwin' && $speciesTreesOnly == 'no' ]]; then
 		"$mafftAlgorithm" \
 		"$exePrefix"
 	done > make_gene_tree.log 2>&1
-	$pathToScripts/assess_gene_alignments.sh $fractnAlnCovrg $fractnMaxColOcc $fractnSamples $numbrSamples $fileNamePrefix $geneFile
+	$pathToScripts/assess_gene_alignments.sh $fractnAlnCovrg $fractnMaxColOcc $fractnSamples $numbrSamples $fileNamePrefix $geneFile tree_tip_info_mapfile.txt $option_u
 elif [[ $os == 'Linux' && $speciesTreesOnly == 'no' ]]; then
 	###exePrefix="/usr/bin/time -v -o g${gene}_mafft_dna_aln_time_and_mem.log"		# NB - this will not work here - need to pick up gene id in Slurm script instead.
     slurm=`sbatch -V | grep ^slurm | wc -l `
@@ -534,7 +540,7 @@ elif [[ $os == 'Linux' && $speciesTreesOnly == 'no' ]]; then
 		echo jobInfo: $jobInfo
 		jobId=`echo $jobInfo | cut -d ' ' -f 4 `
 		echo \$jobId: $jobId - same id as \$SLURM_ARRAY_JOB_ID 
-		jobInfo1=`sbatch -J assess_gene_alns  --dependency=afterok:$jobId -p fast -c 1 -n 1 -o assess_gene_alns.log -o assess_gene_alns.err  $pathToScripts/assess_gene_alignments.sh $fractnAlnCovrg $fractnMaxColOcc $fractnSamples $numbrSamples $fileNamePrefix $geneFile `
+		jobInfo1=`sbatch -J assess_gene_alns  --dependency=afterok:$jobId -p fast -c 1 -n 1 -o assess_gene_alns.log -o assess_gene_alns.err  $pathToScripts/assess_gene_alignments.sh $fractnAlnCovrg $fractnMaxColOcc $fractnSamples $numbrSamples $fileNamePrefix $geneFile $option_u `
     	echo jobInfo1: $jobInfo1
 		jobId1=`echo $jobInfo1 | cut -d ' ' -f 4 `
 		echo \$jobId1: $jobId1 - from running assess_gene_alignments.sh
@@ -557,7 +563,7 @@ elif [[ $os == 'Linux' && $speciesTreesOnly == 'no' ]]; then
 			"$mafftAlgorithm" \
 			"$exePrefix"
 		done > make_gene_tree.log 2>&1
-		$pathToScripts/assess_gene_alignments.sh $fractnAlnCovrg $fractnMaxColOcc $fractnSamples $numbrSamples $fileNamePrefix $geneFile
+		$pathToScripts/assess_gene_alignments.sh $fractnAlnCovrg $fractnMaxColOcc $fractnSamples $numbrSamples $fileNamePrefix $geneFile tree_tip_info_mapfile.txt  $option_u
 	fi
 fi
 ### Could toggle off/on this step - if no aln, then make pipeline stop at this point
@@ -623,6 +629,8 @@ elif [ $os == 'Linux' ]; then
 		$numbrSamples \
 		$fileNamePrefix \
 		$geneFile \
+		tree_tip_info_mapfile.txt \
+		$option_u \
 		> assess_gene_alns.log 2>&1
 		$pathToScripts/make_species_trees.sh \
 		$fractnAlnCovrg \
