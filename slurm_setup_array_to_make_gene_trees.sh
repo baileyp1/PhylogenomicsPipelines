@@ -1,9 +1,9 @@
 #!/bin/bash
 #SBATCH -J make_gene_trees
-#SBATCH -p fast
+#SBATCH -p main
 #SBATCH -n 1
 #SBATCH --mem 10000						# Was set to 20GB for big tree, not sure if its enough
-#SBATCH -t 0-24:00						# Was set to 12h for big tree
+#SBATCH -t 0-36:00						# Was set to 12h for big tree - needs to be 19 - 24 h for raxml-ng
 #SBATCH -o make_gene_trees-%a.log		# If this line is not set, default output name is slurm-%A_%a.out: %A = $SLURM_ARRAY_JOB_ID; %a = $SLURM_ARRAY_TASK_ID		 
 #SBATCH -e make_gene_trees-%a.log 		# NB - if I just specify the %a, then I don't get an accumulation of ouput files for each run of the script
 

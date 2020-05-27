@@ -69,8 +69,8 @@ if [[ -s $treeTipInfoMapFile && $option_u == 'yes' ]]; then
 	${fileNamePrefix}_summary_of_sample_quality.txt \
 	tree_tip_info_mapfile_plusL.txt
 	# Now move new file to original mapfile created to avoid changing any other code:
-	mv tree_tip_info_mapfile_plusL.txt  tree_tip_info_mapfile.txt
-
+	cp -p tree_tip_info_mapfile_plusL.txt  tree_tip_info_mapfile.txt
+	### 27.5.2020 - copy not move for now to check outputs
 fi
 
 maxSumOfContigLengths=`tail -n+2 ${fileNamePrefix}_summary_of_sample_quality.txt | sort -k3n | tail -n 1 | awk '{print $3 " (sample " $1 ")" }' `
@@ -142,7 +142,7 @@ for file in *_mafft_dna_aln_ovr${fractnAlnCovrg_pc}pc_aln_covrg.fasta; do
 	lenLongestGene=`fastalength  $file 2>/dev/null | sort -n | tail -n 1 | awk '{print $1}' `				                 # The longest recovered gene in the aln
     maxColOcc=`fastalength  ${gene}_mafft_dna_aln_AMAS_${fractnMaxColOcc}.fasta  2>/dev/null | sort -n | tail -n 1 | awk '{print $1}' `     # minimum column occupancy (aln columns)
     maxColOccP=`fastalength  ${gene}_mafft_dna_aln_AMAS_${fractnMaxColOcc}_-p.fasta  2>/dev/null | sort -n | tail -n 1 | awk '{print $1}' ` # minimum column occupancy (parsimonious sites ONLY)
-	lenLongestGeneAfterTrim=`fastalength ${gene}_mafft_dna_aln_ovr${fractnAlnCovrg_pc}pc_aln_covrg_trimCols0.001.fasta 2>/dev/null | sort -n | tail -n 1 | awk '{print $1}' `
+	lenLongestGeneAfterTrim=`fastalength ${gene}_mafft_dna_aln_ovr${fractnAlnCovrg_pc}pc_aln_covrg_trimCols0.003.fasta 2>/dev/null | sort -n | tail -n 1 | awk '{print $1}' `
 	ratio=`echo  $lenLongestGeneAfterTrim  $maxColOcc | awk '{printf "%.2f", $1/$2}' `								         # Might be an indicator of overall effectiveness of gene recovery for samples submitted
     echo "$gene $lenLongestGene $lenLongestGeneAfterTrim $maxColOcc $maxColOccP $ratio $numbrSamples"| column -t
 done | sort -k4n| column -t >> ${fileNamePrefix}_summary_gene_recovery.txt

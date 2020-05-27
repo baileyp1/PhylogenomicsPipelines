@@ -25,7 +25,12 @@ with open(treeTipInfoMapfile, 'r') as mapfile:
 	for line in mapfile:
 		(ID1, treeTipInfo) = line.rstrip('\n').split()
 		# Add in sum length of all contigs for the sample (guide to sample quality):
-		treeTipInfo = ID1 + ' ' + treeTipInfo + '_' + sampleQualityDict[ID1] + '\n'
-		outfh.write(treeTipInfo)
+		# (Any table header will not match any key in sampleQuality)
+		if ID1 in sampleQualityDict:
+			treeTipInfo = ID1 + ' ' + treeTipInfo + '_' + sampleQualityDict[ID1] + '\n'
+			outfh.write(treeTipInfo)
+		else:
+			treeTipInfo = ID1 + ' ' + treeTipInfo + '\n'
+			outfh.write(treeTipInfo)
 		print treeTipInfo
 outfh.close()

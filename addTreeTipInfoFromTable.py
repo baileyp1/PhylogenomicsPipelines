@@ -17,6 +17,7 @@ with open(sampleTableFile, 'r') as csvfile:
 	for row in csvreader:					### 17.5.2020 - just realied that row here is actually field of row - not sure now?
 		treeTipInfo= '_'.join(row)
 		uniqId = row[0]
+#### 27.5.2020 - NEED TO CONVERT TO REMOVE THE FIRST ARRAY ELEMENT BEFORE JOIN if wanting to use the file name.
 
 		# Need  to strip all chars that interfere with Newick format i.e. ( ) : [ ] and ; - any others? Check in Newick definition - see K52.p5 note
 		treeTipInfo = re.sub(r'[\]\[\)\(:;]', '_', treeTipInfo)
@@ -42,29 +43,36 @@ argvList.pop(0)		# Removes treeTipInfoMapfile --> now only sample files in list
 # Prepare mapfile for Newick Utilites:
 fh = open(treeTipInfoMapfile, 'w')
 
-fileNameDict = {}	# Just for determining uniqueness of the filename
-for filePathName in argvList:
-	print filePathName
-	print os.path.split(filePathName)
-	fileName = os.path.basename(filePathName)
-	print fileName
-	# Get filenme prefix (no ending):
-	fields = fileName.split('.')
-	uniqueSampleId = fields[0]
-	print uniqueSampleId
+# fileNameDict = {}	# Just for determining uniqueness of the filename
+# for filePathName in argvList:
+# 	#print filePathName
+# 	#print os.path.split(filePathName)
+# 	fileName = os.path.basename(filePathName)
+# 	#print fileName
+# 	# Get filenme prefix (no ending):
+# 	fields = fileName.split('.')
+# 	uniqueSampleId = fields[0]
+# 	#print uniqueSampleId
 
-	# First test that filename is unique. 
-	# (It might not be unique if filenames do not originate from a single directory.)
-	if uniqueSampleId in fileNameDict:
-		print 'ERROR: this sample name ID is not unique in the set of filenames - it MUST be:', uniqueSampleId
-		sys.exit()
-	else:
-		if uniqueSampleId not in csvDict:
-			print "ERROR: sample name ID in fasta file not present in table - will use filename in the tree tip: ", uniqueSampleId
-			# NB - if the filename is not in the csvDict then it MUST still be unique in the csv file sample name IDs, so no real need to check IDs are still unique here.
-			fh.write(uniqueSampleId + " " + uniqueSampleId + "\n")
-		else:
-			fh.write(uniqueSampleId + " " + csvDict[uniqueSampleId] + "\n")
+# 	# First test that filename is unique. 
+# 	# (It might not be unique if filenames do not originate from a single directory.)
+# 	if uniqueSampleId in fileNameDict:
+# 		print 'ERROR: this sample name ID is not unique in the set of filenames - it MUST be:', uniqueSampleId
+# 		sys.exit()
+# 	else:
+# 		if uniqueSampleId not in csvDict:
+# 			print "WARNING: sample name ID in fasta file not present in table - will use filename in the tree tip: ", uniqueSampleId
+# 			# NB - if the filename is not in the csvDict then it MUST still be unique in the csv file sample name IDs, so no real need to check IDs are still unique here.
+# 			fh.write(uniqueSampleId + " " + uniqueSampleId + "\n")
+# 		else:
+# 			fh.write(uniqueSampleId + " " + csvDict[uniqueSampleId] + "\n")
+
+### 27.5.2020 - I've got confused between filename which may or may not comprise of the sample name and the sampleId that's present in the tree.
+### It's much easier to just prepare the map file from a user-derived csv file containing the sampleIds on the tree tip instead of also cross-checking with the sample name!
+### Just can't check files are unique - but should be doing that earlier.
+
+for key in csvDict:
+	fh.write(key + " " + csvDict[key] + "\n")
 fh.close()		
 
 

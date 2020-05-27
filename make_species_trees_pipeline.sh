@@ -24,13 +24,13 @@ fileNamePrefix=tree_pipeline
 phyloProgramDNA=fasttree
 phyloProgramPROT=no			# Work around to specify any program so software testing code will not crash! Ensures cmd parameter is always occupied which is critical. 
 cpu=8						# number of cpu to use for RAxML in supermatrix method
-partitionName=fast  		# Values depend on the cluster being used so good to have a flagged option for this
+partitionName=main   		# Values depend on the cluster being used so good to have a flagged option for this - NOT used yet
 
 # Hidden options (i.e. not apparent from the help menu but they always have a value so can be and have to be used in downstream scripts).
 # Need to check them if I make them public
 fractnMaxColOcc=0.7
 slurmThrottle=1
-mafftAlgorithm='--retree 2'     #'--maxiterate 1000' #'--retree 1'   '--retree 2' - use maxiterate
+mafftAlgorithm='--maxiterate 1000'     #'--maxiterate 1000' #'--retree 1'   '--retree 2' - use maxiterate
 cpuGeneTree=1					# still keep this separate from the supermatrix tree; then I can specify loads more for the supermatrix.
 								# Maybe hava a comma separated list e.g. 4,30 for gene and species tree.
 speciesTreeMem=100000			# I think I need 500000 GB mem for the RAxML large tree (Slurm)
@@ -53,8 +53,9 @@ OPTIONS:
 	               Expected gene identifier format in the fasta header: >geneId (no hyphen '-' characters)
 	-t <csv file>  add sample name and other info from a comma separated value (csv) table file into the tree leaf labels.
 	               Format of table row: sample_name/identifier, followed by any species information as required. 
-	               Sample_name/identifier must match the sample fasta file name (minus any [dot] ending suffix e.g. .fasta)
+	               Sample_name/identifier must match the sample fasta file name (minus any [dot] ending suffix e.g. .fasta) - not true now
 	-u             add contig length info onto species tree tips (requires option -t)
+                   NB - only works if filname is identical to filename - sorry!			  
 	-g <file>      file (including path to it) containing list of gene names (required option)
 	-i             make gene trees only
 	-j             make species trees only
@@ -363,6 +364,11 @@ if [[ $sampleTableFile != 'no' ]]; then
 
 		# Prepare a mapfile for Newick Utils to switch in sample info onto the tree tips:
 		addTreeTipInfoFromTable.py  $sampleTableFile  tree_tip_info_mapfile.txt  ${@:$OPTIND:$#}
+		# Check that tree_tip_info_mapfile.txt now exists, if not an identifier is not unique in the table:
+		if [[ ! -s tree_tip_info_mapfile.txt ]]; then
+			echo "The sample table (from option -t) contains a sample Id that is not unique in the table. Exiting..."
+			exit
+		fi
 
 
 ### 8.5.2020 - DON"T NEED THIS CODE ANY MORE - DELETE
@@ -500,7 +506,7 @@ if [[ $os == 'Darwin' && $speciesTreesOnly == 'no' ]]; then
 		"$mafftAlgorithm" \
 		"$exePrefix"
 	done > make_gene_tree.log 2>&1
-	$pathToScripts/assess_gene_alignments.sh $fractnAlnCovrg $fractnMaxColOcc $fractnSamples $numbrSamples $fileNamePrefix $geneFile tree_tip_info_mapfile.txt $option_u
+	$pathToScripts/assess_gene_alignments.sh $fractnAlnCovrg $fractnMaxColOcc $fractnSamples $numbrSamples $fileNamePrefix $geneFile tree_tip_info_mapfile.txt $option_u > assess_gene_alns.log 2>&1
 elif [[ $os == 'Linux' && $speciesTreesOnly == 'no' ]]; then
 	###exePrefix="/usr/bin/time -v -o g${gene}_mafft_dna_aln_time_and_mem.log"		# NB - this will not work here - need to pick up gene id in Slurm script instead.
     slurm=`sbatch -V | grep ^slurm | wc -l `
@@ -540,7 +546,7 @@ elif [[ $os == 'Linux' && $speciesTreesOnly == 'no' ]]; then
 		echo jobInfo: $jobInfo
 		jobId=`echo $jobInfo | cut -d ' ' -f 4 `
 		echo \$jobId: $jobId - same id as \$SLURM_ARRAY_JOB_ID 
-		jobInfo1=`sbatch -J assess_gene_alns  --dependency=afterok:$jobId -p fast -c 1 -n 1 -o assess_gene_alns.log -o assess_gene_alns.err  $pathToScripts/assess_gene_alignments.sh $fractnAlnCovrg $fractnMaxColOcc $fractnSamples $numbrSamples $fileNamePrefix $geneFile $option_u `
+		jobInfo1=`sbatch -J assess_gene_alns  --dependency=afterok:$jobId -p $partitionName -c 1 -n 1 -o assess_gene_alns.log -e assess_gene_alns.err  $pathToScripts/assess_gene_alignments.sh $fractnAlnCovrg $fractnMaxColOcc $fractnSamples $numbrSamples $fileNamePrefix $geneFile $option_u `
     	echo jobInfo1: $jobInfo1
 		jobId1=`echo $jobInfo1 | cut -d ' ' -f 4 `
 		echo \$jobId1: $jobId1 - from running assess_gene_alignments.sh
