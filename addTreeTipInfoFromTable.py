@@ -14,10 +14,13 @@ treeTipInfoMapfile = sys.argv[2]
 csvDict = {}
 with open(sampleTableFile, 'r') as csvfile:
 	csvreader = csv.reader(csvfile, delimiter=',', quotechar='"') # NB - quotechar seems to be OK with e.g. ,WZVCST Broccoli""WN12-95A"",
-	for row in csvreader:					### 17.5.2020 - just realied that row here is actually field of row - not sure now?
+	for row in csvreader:
+		#print row
+		# Removing the sampleId from the list so it doesn't appear in the tree.
+		# If still required, user needs to copy this column again into the csv table.
+		uniqId = row.pop(0)
+		#print uniqId, row
 		treeTipInfo= '_'.join(row)
-		uniqId = row[0]
-#### 27.5.2020 - NEED TO CONVERT TO REMOVE THE FIRST ARRAY ELEMENT BEFORE JOIN if wanting to use the file name.
 
 		# Need  to strip all chars that interfere with Newick format i.e. ( ) : [ ] and ; - any others? Check in Newick definition - see K52.p5 note
 		treeTipInfo = re.sub(r'[\]\[\)\(:;]', '_', treeTipInfo)
@@ -28,6 +31,8 @@ with open(sampleTableFile, 'r') as csvfile:
 		else:
 			csvDict[ uniqId ] = treeTipInfo		# NB - don't need to remove the csv file header!
 
+
+### 29.5.2020 - don't think I need the code below now
 
 # Prepare to get sample names from file names and test for uniqueness.
 # Make copy of sys.argv:

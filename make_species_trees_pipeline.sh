@@ -52,10 +52,9 @@ OPTIONS:
 	-a             add sample name onto the fasta header from the input fasta file name.
 	               Expected gene identifier format in the fasta header: >geneId (no hyphen '-' characters)
 	-t <csv file>  add sample name and other info from a comma separated value (csv) table file into the tree leaf labels.
-	               Format of table row: sample_name/identifier, followed by any species information as required. 
-	               Sample_name/identifier must match the sample fasta file name (minus any [dot] ending suffix e.g. .fasta) - not true now
+	               Format of table row: sample_name/identifier, followed by any species information, including sample_name/identifier, as required. 
 	-u             add contig length info onto species tree tips (requires option -t)
-                   NB - only works if filname is identical to filename - sorry!			  
+                   Sample_name/identifier must be identical to the sample fasta file name (minus any [dot] ending suffix e.g. .fasta)	  
 	-g <file>      file (including path to it) containing list of gene names (required option)
 	-i             make gene trees only
 	-j             make species trees only
@@ -364,6 +363,7 @@ if [[ $sampleTableFile != 'no' ]]; then
 
 		# Prepare a mapfile for Newick Utils to switch in sample info onto the tree tips:
 		addTreeTipInfoFromTable.py  $sampleTableFile  tree_tip_info_mapfile.txt  ${@:$OPTIND:$#}
+		### 29.1.2020 - not now using ${@:$OPTIND:$#}
 		# Check that tree_tip_info_mapfile.txt now exists, if not an identifier is not unique in the table:
 		if [[ ! -s tree_tip_info_mapfile.txt ]]; then
 			echo "The sample table (from option -t) contains a sample Id that is not unique in the table. Exiting..."

@@ -51,8 +51,10 @@ numbrSamplesThreshold=`awk -v FRACTN=$fractnSpecies -v numbrSamples=$totalNumbrS
 # Sum length of all contigs per sample
 ######################################
 echo "Sample NumbrGenes SumOfContigLengths" > ${fileNamePrefix}_summary_of_sample_quality.txt
-for file in *modified.fasta; do 
-	sample=$(echo $file| sed 's/_modified.fasta//')	
+for file in *modified.fasta; do
+	# 29.5.2020 - now taking the sample name from the fasta header of the *_modified.fasta sample-wise files
+	#sample=$(echo $file| sed 's/_modified.fasta//')
+	sample=$(head -n 1 $file | awk '{print $2}')
 	len_bp=$(fastalength $file  2>/dev/null | awk '{sum +=$1} END {print sum}')
 	# Some files may be empty, if so print a zero:
 	if [ -z $len_bp ]; then len_bp=0; fi 	# Need to test whether variable is empty when using set cmds; doesn't seem to work though, only works when all set cmd are removed!!
