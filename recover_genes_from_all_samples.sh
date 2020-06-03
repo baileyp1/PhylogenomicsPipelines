@@ -72,7 +72,7 @@ EOF
 
 
 #echo User inputs:    ### For testing only 
-while getopts "hvs:t:f:a:y:p:c:de:m:q:"  OPTION; do
+while getopts "hvs:t:f:a:y:p:c:de:m:Q:"  OPTION; do
  
   #echo -$OPTION $OPTARG    ### For testing only - could try to run through options below 
    
@@ -90,7 +90,7 @@ while getopts "hvs:t:f:a:y:p:c:de:m:q:"  OPTION; do
     d) usePaftolDb='usePaftolDb' ;;
     e) slurmThrottle=$OPTARG ;;
     m) slurmMemory=$OPTARG ;;
-    q) partitionName=$OPTARG ;;    
+    Q) partitionName=$OPTARG ;;    
     ?)  echo This option does not exist. Read the usage summary below.
             echo
             usage; exit 1 ;;
