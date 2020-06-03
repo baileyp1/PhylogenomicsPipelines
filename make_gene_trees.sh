@@ -216,12 +216,28 @@ if [ $maxColOcc -ge 150 ]; then
 			cp -p ${gene}_mafft_dna_aln_ovr60pc_aln_covrg.raxml.supportFBP \
 			${gene}_dna_gene_tree_USE_THIS.nwk
 			rm ${gene}_mafft_dna_aln_ovr60pc_aln_covrg.raxml.supportFBP
+		elif [ "$phyloProgramDNA" == 'iqtree2' ]; then
+
+			echo
+			echo Running IQ-Tree on the DNA alignment...
+			$exePrefix iqtree2 -T AUTO -ntmax $cpuGeneTree \
+			-redo \
+			--seqtype DNA \
+			-s ${gene}_mafft_dna_aln_ovr${fractnAlnCovrg_pc}pc_aln_covrg_trimCols0.003.fasta \
+			--prefix ${gene}_mafft_dna_aln_iqtree \
+			-B 1000 \
+			-alrt 1000
+
+			# Rename final tree file to a clearer name:
+			cp -p ${gene}_mafft_dna_aln_iqtree.contree \
+			${gene}_dna_gene_tree_USE_THIS.nwk
+			rm  ${gene}_mafft_dna_aln_iqtree.contree
 		else 
 			echo "Phylogeny program for gene trees from DNA sequences not detected - - will not make gene trees from DNA sequence."
 		fi
 
 
-		if [[ "$phyloProgramPROT" == 'fasttree' || "$phyloProgramPROT" == 'raxml-ng' ]]; then
+		if [[ "$phyloProgramPROT" == 'fasttree' || "$phyloProgramPROT" == 'raxml-ng' || "$phyloProgramPROT" == 'iqtree2'  ]]; then
 
 			echo ########################################
 			echo 'Creating proteins and aligning them...'  
@@ -294,12 +310,28 @@ if [ $maxColOcc -ge 150 ]; then
 				cp -p ${gene}_mafft_protein_aln_ovr60pc_aln_covrg.raxml.supportFBP \
 				${gene}_protein_gene_tree_USE_THIS.nwk
 				rm ${gene}_mafft_protein_aln_ovr60pc_aln_covrg.raxml.supportFBP
+			elif [ "$phyloProgramDNA" == 'iqtree2' ]; then
+
+				echo
+				echo Running IQ-Tree on the DNA alignment...
+				$exePrefix iqtree2 -T AUTO -ntmax $cpuGeneTree \
+				-redo \
+				--seqtype AA \
+				-s ${gene}_mafft_protein_aln_ovr${fractnAlnCovrg_pc}pc_aln_covrg_trimCols0.003.fasta \
+				--prefix ${gene}_mafft_protein_aln_iqtree \
+				-B 1000 \
+				-alrt 1000
+
+				# Rename final tree file to a clearer name:
+				cp -p ${gene}_mafft_protein_aln_iqtree.contree \
+				${gene}_protein_gene_tree_USE_THIS.nwk
+				rm  ${gene}_mafft_protein_aln_iqtree.contree
 			else 
 				echo "Phylogeny program for gene trees from protein sequences not detected - will not make gene trees from protein sequence."
 			fi
 
 
-			### Other gene tree programs/tests to go here: IQTree
+			### Other gene tree programs/tests to go here
 
 
 		fi

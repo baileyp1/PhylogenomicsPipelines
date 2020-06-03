@@ -55,7 +55,7 @@ done \
 | xargs cat > ${fileNamePrefix}_dna_gene_trees_for_coelescence_phylo.nwk
 
 
-if [[ "$phyloProgramPROT" == 'fasttree' ||  "$phyloProgramPROT" == 'raxml-ng' ]]; then
+if [[ "$phyloProgramPROT" == 'fasttree' ||  "$phyloProgramPROT" == 'raxml-ng' || "$phyloProgramPROT" == 'iqtree2' ]]; then
     # Concatenate the protein gene trees as well (almost repeat of the above code):
     for file in *_mafft_protein_aln_ovr${fractnAlnCovrg_pc}pc_aln_covrg_trimCols0.003.fasta; do
  	  gene=`echo $file | sed "s/_mafft_protein_aln_ovr${fractnAlnCovrg_pc}pc_aln_covrg_trimCols0.003.fasta//" `
@@ -81,7 +81,7 @@ nw_ed  ${fileNamePrefix}_dna_gene_trees_for_coelescence_phylo.nwk 'i & (b <= 0.1
 ### I think I will have to assess the number of samples lost at this stage as well - yes - in which case this needs to be done in the stats script!!!! or could append results here
 ### Could be interesting - they should indicate difficult seqs - NBNB - does it just remove internal nodes or some tree tips as well?!
 
-if [[ "$phyloProgramPROT" == 'fasttree' ||  "$phyloProgramPROT" == 'raxml-ng' ]]; then
+if [[ "$phyloProgramPROT" == 'fasttree' ||  "$phyloProgramPROT" == 'raxml-ng' || "$phyloProgramPROT" == 'iqtree2' ]]; then
     # Remove clades with low bootstrap values (15%) from the protein trees:
     nw_ed  ${fileNamePrefix}_protein_gene_trees_for_coelescence_phylo.nwk 'i & (b <= 0.15)' o > ${fileNamePrefix}_protein_gene_trees_for_coelescence_phylo_bs_less15pc_rmed.nwk
 fi
@@ -90,7 +90,7 @@ fi
 ### 8.5.2020 - LIKE FOR PROTEIN CREATE A CONDITIONAL HERE FOR DNA - NB - BUT SORT ASTRAL PROGAM PATH OUTSIDE CONDITIOANL
 # Need to find the location of ASTRAL and supply the absolute path to the jar file.
 # This assumes that the ASTRAL directory is already in $PATH. 
-### NB - 11.12.2019 - could always set up an alias! e.g. astral='java -jar $PATH/astral.5.6.3.jar' 
+### NB - iqtree11.12.2019 - could always set up an alias! e.g. astral='java -jar $PATH/astral.5.6.3.jar' 
 pathToAstral=`which astral.5.7.3.jar `
 echo Running Astral on the DNA gene trees...
 $exePrefix java -jar $pathToAstral \
@@ -106,7 +106,7 @@ if [ -s $treeTipInfoMapFile ]; then
 fi
 
 
-if [[ "$phyloProgramPROT" == 'fasttree' ||  "$phyloProgramPROT" == 'raxml-ng' ]]; then
+if [[ "$phyloProgramPROT" == 'fasttree' ||  "$phyloProgramPROT" == 'raxml-ng'  || "$phyloProgramPROT" == 'iqtree2' ]]; then
     echo Running Astral on the protein gene trees...
     $exePrefix java -jar $pathToAstral \
     -i ${fileNamePrefix}_protein_gene_trees_for_coelescence_phylo_bs_less15pc_rmed.nwk \
@@ -151,7 +151,7 @@ AMAS.py concat  -c 1 \
 # NB- also creates a partitions file with coords for each gene which could be used to set different models.
 
 
-if [[ "$phyloProgramPROT" == 'fasttree' ||  "$phyloProgramPROT" == 'raxml-ng' ]]; then
+if [[ "$phyloProgramPROT" == 'fasttree' ||  "$phyloProgramPROT" == 'raxml-ng' || "$phyloProgramPROT" == 'iqtree2' ]]; then
     # Also concatenate protein alns:
     AMAS.py concat  -c 1 \
     -i `cat mafft_protein_alns_fasta_file_list.txt` \
@@ -190,7 +190,7 @@ if [[ -s $treeTipInfoMapFile ]]; then
 fi
 
  
-if [[ "$phyloProgramPROT" == 'fasttree' ||  "$phyloProgramPROT" == 'raxml-ng' ]]; then
+if [[ "$phyloProgramPROT" == 'fasttree' ||  "$phyloProgramPROT" == 'raxml-ng'  || "$phyloProgramPROT" == 'iqtree2' ]]; then
     echo Running fasttree on the protein supermatrix...
     $exePrefix fasttree \
     ${fileNamePrefix}__mafft_protein_alns__ovr${fractnAlnCovrg_pc}pc_acpg_ovr${fractnSpecies_pc}pc_spgt__concatenated.fasta \
@@ -243,7 +243,7 @@ if [[ -s $treeTipInfoMapFile ]]; then
 fi
 
 
-if [[ "$phyloProgramPROT" == 'fasttree' ||  "$phyloProgramPROT" == 'raxml-ng' ]]; then
+if [[ "$phyloProgramPROT" == 'fasttree' ||  "$phyloProgramPROT" == 'raxml-ng'  || "$phyloProgramPROT" == 'iqtree2' ]]; then
      echo Running RAxML on the protein supermatrix...
     # RAxML won't run if files already exists from a previous run so remove them here: 
     if [ -a RAxML_bootstrap.${fileNamePrefix}__raxmlHPC-PTHREADS-SSE ]; then rm RAxML_bootstrap.${fileNamePrefix}__raxmlHPC-PTHREADS-SSE; fi

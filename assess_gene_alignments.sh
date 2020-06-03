@@ -52,7 +52,7 @@ numbrSamplesThreshold=`awk -v FRACTN=$fractnSpecies -v numbrSamples=$totalNumbrS
 ######################################
 echo "Sample NumbrGenes SumOfContigLengths" > ${fileNamePrefix}_summary_of_sample_quality.txt
 for file in *modified.fasta; do
-	# 29.5.2020 - now taking the sample name from the fasta header of the *_modified.fasta sample-wise files
+	# 29.5.2020 - now taking the sample name from the fasta header of the *_modified.fasta sample-wise files.
 	#sample=$(echo $file| sed 's/_modified.fasta//')
 	sample=$(head -n 1 $file | awk '{print $2}')
 	len_bp=$(fastalength $file  2>/dev/null | awk '{sum +=$1} END {print sum}')
@@ -153,8 +153,8 @@ done | sort -k4n| column -t >> ${fileNamePrefix}_summary_gene_recovery.txt
 
 
 
-# Number of gene alignments containing $fractnSpecies_pc % of samples:"
-numbrGeneAlnsForSpeciesTree=`for file in *_mafft_dna_aln_ovr${fractnAlnCovrg_pc}pc_aln_covrg.fasta; do
+# Number of gene alignments containing $fractnSpecies_pc % of samples (NB - also after trimming for rare insertions):
+numbrGeneAlnsForSpeciesTree=`for file in *_mafft_dna_aln_ovr${fractnAlnCovrg_pc}pc_aln_covrg_trimCols0.003.fasta; do
  	numbrSamples=$(cat $file | grep '>' | wc -l)
     echo $numbrSamples
 done \
@@ -162,8 +162,8 @@ done \
 | wc -l `
 
 
-# Total number of alignment columns in the area of common overlap for these genes:
-numbrOverlapColsForSpeciesTree=`for file in *_mafft_dna_aln_ovr${fractnAlnCovrg_pc}pc_aln_covrg.fasta; do
+# Total number of alignment columns in the area of common overlap for these genes (NB - also after trimming for rare insertions):
+numbrOverlapColsForSpeciesTree=`for file in *_mafft_dna_aln_ovr${fractnAlnCovrg_pc}pc_aln_covrg_trimCols0.003.fasta; do
 	gene=$(echo $file | sed "s/_mafft_dna_aln_ovr${fractnAlnCovrg_pc}pc_aln_covrg.fasta//")
  	numbrSamples=$(cat $file | grep '>' | wc -l)
     #lenLongestGene=$(fastalength  $file | sort -n | tail -n 1 | awk '{print $1}')				                 		   # The longest recovered gene in the aln
@@ -249,11 +249,3 @@ cat mafft_dna_alns_fasta_file_list.txt | xargs cat | grep '>' | sed 's/>//' | so
 
 
 rm samples_submitted.txt mafft_dna_alns_fasta_samples_in_tree.txt
-
-
-
-
-
-
-
-

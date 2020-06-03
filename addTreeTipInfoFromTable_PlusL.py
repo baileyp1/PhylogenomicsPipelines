@@ -32,5 +32,5 @@ with open(treeTipInfoMapfile, 'r') as mapfile:
 		else:
 			treeTipInfo = ID1 + ' ' + treeTipInfo + '\n'
 			outfh.write(treeTipInfo)
-		print treeTipInfo
+		#print treeTipInfo
 outfh.close()
