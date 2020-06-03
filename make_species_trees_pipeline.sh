@@ -138,7 +138,7 @@ pathToScripts=`dirname $fullPathToWrapperScript `
 # User input checks and setup
 #############################
 
-# Prints usage if no parameters are given:ß
+# Prints usage if no parameters are given:
 if [ "$#" -lt 1 ]; then usage; exit 1; fi
 
 
