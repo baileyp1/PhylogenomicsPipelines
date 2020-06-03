@@ -24,7 +24,8 @@ fileNamePrefix=tree_pipeline
 phyloProgramDNA=fasttree
 phyloProgramPROT=no			# Work around to specify any program so software testing code will not crash! Ensures cmd parameter is always occupied which is critical. 
 cpu=8						# number of cpu to use for RAxML in supermatrix method
-partitionName=main   		# Values depend on the cluster being used so good to have a flagged option for this - NOT used yet
+partitionName=main   		# Values depend on the cluster being used so good to have a flagged option for this
+							# NB - make_species_tree.sh uses 'long' queue - need an extra variable for that 
 
 # Hidden options (i.e. not apparent from the help menu but they always have a value so can be and have to be used in downstream scripts).
 # Need to check them if I make them public
@@ -66,8 +67,9 @@ OPTIONS:
 	-q <string>    name of phylogeny program for gene trees from DNA sequences.
                    	Options are, fastest to slowest: fasttree, iqtree2, raxml-ng (default=fasttree)
 	-r <string>    name of phylogeny program for gene trees from protein sequences.
-                   	If required, options are, fastest to slowest: fasttree2, iqtree raxml-ng (no default)
+                   	If required, options are, fastest to slowest: fasttree2, iqtree, raxml-ng (no default)
 	-c <integer>   number of cpu to use for RAxML in supermatrix method (default=8)
+	-Q <string>    Slurm partition (queue) to use (default=medium) ]
 
 
 A typical example:
@@ -90,7 +92,7 @@ EOF
 
 
 #echo User inputs:    ### For testing only 
-while getopts "hvat:ug:ijf:m:s:p:q:r:c:d:"  OPTION; do	# Remaining options - try capital letters!
+while getopts "hvat:ug:ijf:m:s:p:q:r:c:d:Q:"  OPTION; do	# Remaining options - try capital letters!
 
 	#echo -$OPTION $OPTARG	### For testing only - could try to run through options again below 
 	 
@@ -112,6 +114,7 @@ while getopts "hvat:ug:ijf:m:s:p:q:r:c:d:"  OPTION; do	# Remaining options - try
 		r) phyloProgramPROT=$OPTARG ;;
 		c) cpu=$OPTARG ;;
 		d) cpuGeneTree=$OPTARG ;;
+		Q) partitionName=$OPTARG ;;  
 		?)  echo This is not allowed. Read the usage summary below.
       	    echo
       	    usage; exit 1 ;;
@@ -312,8 +315,8 @@ else
      	afterDashCheck=`cat $file | awk '{if($1 ~ /^>/)  {print $1} }' |  awk -F '-' '{print $2}' | sort | uniq -c | awk '$1 > 1' | wc -l `
      	#echo "beforeDashCheck (sampleId): " $beforeDashCheck 
      	#echo "afterDashCheck (geneId): " $afterDashCheck 
-     	if [[ $beforeDashCheck -gt 1 ]]; then echo "ERROR: more than one sample identifier detected (there should only be one) for this sample: $file"; exit 1
-     	elif [[ $afterDashCheck -gt 1 ]]; then echo "ERROR: Gene identfiers should be unique, one or more not unique for this sample: $file"; exit 1
+     	if [[ $beforeDashCheck -gt 1 ]]; then echo "ERROR: more than one sample identifier detected on fasta header line (there should only be one) for this sample: $file \nAlso check that fasta header lines have this format: >sampleId-geneId"; exit 1
+     	elif [[ $afterDashCheck -gt 1 ]]; then echo "ERROR: gene identfiers should be unique, one or more not unique for this sample: $file \nAlso check that fasta header lines have this format: >sampleId-geneId"; exit 1
 		else cat $file | awk '{if($1 ~ /^>/)  {print $1} else {print $0}}' \
 			| awk -F '-' '{if($1 ~ /^>/) {{gsub(/>/,"",$1)} {print ">" $2 " " $1}} else {print $0}}' \
 			> ${uniqueSampleId}_modified.fasta
@@ -531,7 +534,7 @@ elif [[ $os == 'Linux' && $speciesTreesOnly == 'no' ]]; then
       		slurmThrottle=$numbrGenes
     	fi
 
-        jobInfo=`sbatch -c $cpuGeneTree  --array=0-${numbrGenes}%$slurmThrottle  $pathToScripts/slurm_setup_array_to_make_gene_trees.sh \
+        jobInfo=`sbatch -p $partitionName -c $cpuGeneTree -t 0-36:00 --mem 10000 --array=0-${numbrGenes}%$slurmThrottle  $pathToScripts/slurm_setup_array_to_make_gene_trees.sh \
 		$geneFile \
 		$geneListFile \
 		$fractnAlnCovrg \

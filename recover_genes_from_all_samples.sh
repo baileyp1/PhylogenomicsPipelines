@@ -51,7 +51,7 @@ Usage: recover_genes_from_all_samples.sh
   [ -p   directory prefix for each sample (default=Sample) ]
   [ -c   number of cpu to use (default=4) ]
   [ -m   Slurm memory to use (in MB); Paftools requires >> 20000, HybPiper requires << 20000 (default=20000) ]
-  [ -q   Slurm partition (queue) to use (default=fast) ]
+  [ -q   Slurm partition (queue) to use (default=medium) ]
   [ -h   prints usage and description ]
   [ -v   program version]
 
