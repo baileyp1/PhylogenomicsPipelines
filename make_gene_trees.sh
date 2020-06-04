@@ -128,7 +128,7 @@ echo maxColOcc: $maxColOcc  >> ${geneId}_aln_summary.log
 # ratioLenOcc=`echo $length $maxOcc | awk '{printf "%.0f", $1/$2}' `
 # However, then I'm relying on $lenLongestGene again and the are some issues with that (see above)   
 # Just testing $maxColOcc should be OK:
-if [ $maxColOcc -ge 150 ]; then
+if [[ $maxColOcc -ge 150 ]]; then
 
 	# Calculate the number of parsimonious columns (-p option) for the columns found from $maxColOcc:
 	AMAS.py trim -f fasta -d dna -t $fractnMaxColOcc -p -i ${gene}_mafft_dna_aln_AMAS_${fractnMaxColOcc}.fasta -o ${gene}_mafft_dna_aln_AMAS_${fractnMaxColOcc}_-p.fasta
@@ -332,6 +332,11 @@ if [ $maxColOcc -ge 150 ]; then
 
 
 			### Other gene tree programs/tests to go here
+
+			### Treeshrink - can shrink the tree here but then need to repeat the aln and tree again - i.e.:
+			### seqtk again on *_dna.fasta with   ${gene}_mafft_dna_aln_ovr${fractnAlnCovrg_pc}pc_aln_covrg.txt
+			### MAFFT aln + AMAS trim
+			### redo tree but need to know which program to use
 
 
 		fi

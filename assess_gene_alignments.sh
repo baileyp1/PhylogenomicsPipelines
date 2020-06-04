@@ -164,7 +164,7 @@ done \
 
 # Total number of alignment columns in the area of common overlap for these genes (NB - also after trimming for rare insertions):
 numbrOverlapColsForSpeciesTree=`for file in *_mafft_dna_aln_ovr${fractnAlnCovrg_pc}pc_aln_covrg_trimCols0.003.fasta; do
-	gene=$(echo $file | sed "s/_mafft_dna_aln_ovr${fractnAlnCovrg_pc}pc_aln_covrg.fasta//")
+	gene=$(echo $file | sed "s/_mafft_dna_aln_ovr${fractnAlnCovrg_pc}pc_aln_covrg_trimCols0.003.fasta//")
  	numbrSamples=$(cat $file | grep '>' | wc -l)
     #lenLongestGene=$(fastalength  $file | sort -n | tail -n 1 | awk '{print $1}')				                 		   # The longest recovered gene in the aln
     maxColOcc=$(fastalength  ${gene}_mafft_dna_aln_AMAS_${fractnMaxColOcc}.fasta  2>/dev/null | sort -n | tail -n 1 | awk '{print $1}')   # maximum column occupancy (aln columns)
