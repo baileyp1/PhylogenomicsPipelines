@@ -20,7 +20,8 @@ with open(sampleTableFile, 'r') as csvfile:
 		# If still required, user needs to copy this column again into the csv table.
 		uniqId = row.pop(0)
 		#print uniqId, row
-		treeTipInfo= '_'.join(row)
+		treeTipInfo = '_'.join(row)
+		treeTipInfo = treeTipInfo.rstrip('_')
 
 		# Need  to strip all chars that interfere with Newick format i.e. ( ) : [ ] and ; - any others? Check in Newick definition - see K52.p5 note
 		treeTipInfo = re.sub(r'[\]\[\)\(:;]', '_', treeTipInfo)
