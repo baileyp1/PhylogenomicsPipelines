@@ -365,7 +365,6 @@ if [[ $sampleTableFile != 'no' ]]; then
 
 		# Prepare a mapfile for Newick Utils to switch in sample info onto the tree tips:
 		addTreeTipInfoFromTable.py  $sampleTableFile  tree_tip_info_mapfile.txt  ${@:$OPTIND:$#}
-		exit
 		### 29.1.2020 - not now using ${@:$OPTIND:$#}
 		# Check that tree_tip_info_mapfile.txt now exists, if not an identifier is not unique in the table:
 		if [[ ! -s tree_tip_info_mapfile.txt ]]; then
@@ -549,7 +548,7 @@ elif [[ $os == 'Linux' && $speciesTreesOnly == 'no' ]]; then
 		echo jobInfo: $jobInfo
 		jobId=`echo $jobInfo | cut -d ' ' -f 4 `
 		echo \$jobId: $jobId - same id as \$SLURM_ARRAY_JOB_ID 
-		jobInfo1=`sbatch -J assess_gene_alns  --dependency=afterok:$jobId -p $partitionName -c 1 -n 1 -o assess_gene_alns.log -e assess_gene_alns.err  $pathToScripts/assess_gene_alignments.sh $fractnAlnCovrg $fractnMaxColOcc $fractnSamples $numbrSamples $fileNamePrefix $geneFile $option_u `
+		jobInfo1=`sbatch -J assess_gene_alns  --dependency=afterok:$jobId -p $partitionName -c 1 -n 1 -o assess_gene_alns.log -e assess_gene_alns.err  $pathToScripts/assess_gene_alignments.sh $fractnAlnCovrg $fractnMaxColOcc $fractnSamples $numbrSamples $fileNamePrefix $geneFile $sampleTableFile $option_u `
     	echo jobInfo1: $jobInfo1
 		jobId1=`echo $jobInfo1 | cut -d ' ' -f 4 `
 		echo \$jobId1: $jobId1 - from running assess_gene_alignments.sh
@@ -572,7 +571,7 @@ elif [[ $os == 'Linux' && $speciesTreesOnly == 'no' ]]; then
 			"$mafftAlgorithm" \
 			"$exePrefix"
 		done > make_gene_tree.log 2>&1
-		$pathToScripts/assess_gene_alignments.sh $fractnAlnCovrg $fractnMaxColOcc $fractnSamples $numbrSamples $fileNamePrefix $geneFile tree_tip_info_mapfile.txt  $option_u
+		$pathToScripts/assess_gene_alignments.sh $fractnAlnCovrg $fractnMaxColOcc $fractnSamples $numbrSamples $fileNamePrefix $geneFile $sampleTableFile $option_u
 	fi
 fi
 ### Could toggle off/on this step - if no aln, then make pipeline stop at this point
@@ -638,7 +637,7 @@ elif [ $os == 'Linux' ]; then
 		$numbrSamples \
 		$fileNamePrefix \
 		$geneFile \
-		tree_tip_info_mapfile.txt \
+		$sampleTableFile \
 		$option_u \
 		> assess_gene_alns.log 2>&1
 		$pathToScripts/make_species_trees.sh \
