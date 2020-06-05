@@ -71,7 +71,7 @@ if [[ -s $treeTipInfoMapFile && $option_u == 'yes' ]]; then
 	${fileNamePrefix}_summary_of_sample_quality.txt \
 	tree_tip_info_mapfile_plusL.txt
 	# Now move new file to original mapfile created to avoid changing any other code:
-	cp -p tree_tip_info_mapfile_plusL.txt  tree_tip_info_mapfile.txt
+	#####cp -p tree_tip_info_mapfile_plusL.txt  tree_tip_info_mapfile.txt
 	### 27.5.2020 - copy not move for now to check outputs
 fi
 exit

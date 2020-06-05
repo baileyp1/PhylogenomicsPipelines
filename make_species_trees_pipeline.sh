@@ -365,6 +365,7 @@ if [[ $sampleTableFile != 'no' ]]; then
 
 		# Prepare a mapfile for Newick Utils to switch in sample info onto the tree tips:
 		addTreeTipInfoFromTable.py  $sampleTableFile  tree_tip_info_mapfile.txt  ${@:$OPTIND:$#}
+		exit
 		### 29.1.2020 - not now using ${@:$OPTIND:$#}
 		# Check that tree_tip_info_mapfile.txt now exists, if not an identifier is not unique in the table:
 		if [[ ! -s tree_tip_info_mapfile.txt ]]; then
