@@ -68,6 +68,7 @@ OPTIONS:
                    	Options are, fastest to slowest: fasttree, iqtree2, raxml-ng (default=fasttree)
 	-r <string>    name of phylogeny program for gene trees from protein sequences.
                    	If required, options are, fastest to slowest: fasttree2, iqtree, raxml-ng (no default)
+    -C <integer>   number of cpu to use for genetrees; NB - not convinced it works robustly for raxml-ng (default=1)              	
 	-c <integer>   number of cpu to use for RAxML in supermatrix method (default=8)
 	-Q <string>    Slurm partition (queue) to use (default=medium) ]
 
@@ -92,7 +93,7 @@ EOF
 
 
 #echo User inputs:    ### For testing only 
-while getopts "hvat:ug:ijf:m:s:p:q:r:c:d:Q:"  OPTION; do	# Remaining options - try capital letters!
+while getopts "hvat:ug:ijf:m:s:p:q:r:C:c:d:Q:"  OPTION; do	# Remaining options - try capital letters!
 
 	#echo -$OPTION $OPTARG	### For testing only - could try to run through options again below 
 	 
@@ -112,9 +113,9 @@ while getopts "hvat:ug:ijf:m:s:p:q:r:c:d:Q:"  OPTION; do	# Remaining options - t
 		p) fileNamePrefix=$OPTARG ;;
 		q) phyloProgramDNA=$OPTARG ;;
 		r) phyloProgramPROT=$OPTARG ;;
+		C) cpuGeneTree=$OPTARG ;;
 		c) cpu=$OPTARG ;;
-		d) cpuGeneTree=$OPTARG ;;
-		Q) partitionName=$OPTARG ;;  
+		Q) partitionName=$OPTARG ;;
 		?)  echo This is not allowed. Read the usage summary below.
       	    echo
       	    usage; exit 1 ;;
