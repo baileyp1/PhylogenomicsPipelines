@@ -74,7 +74,7 @@ if [[ -s $treeTipInfoMapFile && $option_u == 'yes' ]]; then
 	cp -p tree_tip_info_mapfile_plusL.txt  tree_tip_info_mapfile.txt
 	### 27.5.2020 - copy not move for now to check outputs
 fi
-exit
+#exit
 
 maxSumOfContigLengths=`tail -n+2 ${fileNamePrefix}_summary_of_sample_quality.txt | sort -k3n | tail -n 1 | awk '{print $3 " (sample " $1 ")" }' `
 

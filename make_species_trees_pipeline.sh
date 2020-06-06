@@ -68,7 +68,7 @@ OPTIONS:
                    	Options are, fastest to slowest: fasttree, iqtree2, raxml-ng (default=fasttree)
 	-r <string>    name of phylogeny program for gene trees from protein sequences.
                    	If required, options are, fastest to slowest: fasttree2, iqtree, raxml-ng (no default)
-    -C <integer>   number of cpu to use for genetrees; NB - not convinced it works robustly for raxml-ng (default=1)              	
+     -C <integer>   number of cpu to use for genetrees; NB - not convinced >1 cpu works robustly for raxml-ng! (default=1)              	
 	-c <integer>   number of cpu to use for RAxML in supermatrix method (default=8)
 	-Q <string>    Slurm partition (queue) to use (default=medium) ]
 
