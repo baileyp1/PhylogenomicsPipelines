@@ -67,7 +67,9 @@ OPTIONS:
 	-q <string>    name of phylogeny program for gene trees from DNA sequences.
                    	Options are, fastest to slowest: fasttree, iqtree2, raxml-ng (default=fasttree)
 	-r <string>    name of phylogeny program for gene trees from protein sequences.
-                   	If required, options are, fastest to slowest: fasttree2, iqtree, raxml-ng (no default)
+                   	If required, options are, fastest to slowest: fasttree, iqtree, raxml-ng (no default)
+    -S <string>    name of phylogeny program for supermatrix approach (concatenated gene alignments).
+    				If required, options are, fastest to slowest: fasttree, raxml-ng (no default)
      -C <integer>   number of cpu to use for genetrees; NB - not convinced >1 cpu works robustly for raxml-ng! (default=1)              	
 	-c <integer>   number of cpu to use for RAxML in supermatrix method (default=8)
 	-Q <string>    Slurm partition (queue) to use (default=medium) ]
@@ -283,7 +285,14 @@ if [[ $addSampleName == 'yes' ]]; then
     	cat  $file | awk -v sampleId=$uniqueSampleId '{if($1 ~ /^>/) {print $1 " " sampleId} else {print $0}}' \
     	> ${uniqueSampleId}_modified.fasta
     	### NB - need to change awk code when altering format
-		### NB - keep an eye on the max line length allowed w.r.t. seqtk 
+		### NB - keep an eye on the max line length allowed w.r.t. seqtk
+
+		# If an input fasta file name doesn't exist then the 'modified.fasta' created above will not exist.
+		# Testing whether file exists here:
+		if [[ ! -s ${uniqueSampleId}_modified.fasta ]]; then
+			echo "ERROR: this input fasta file does not exist or is empty: ${uniqueSampleId}_modified.fasta"
+			exit 1
+		fi
     done
 
     # Concatenate fasta files and put seqs on a single line:
@@ -322,6 +331,13 @@ else
 			| awk -F '-' '{if($1 ~ /^>/) {{gsub(/>/,"",$1)} {print ">" $2 " " $1}} else {print $0}}' \
 			> ${uniqueSampleId}_modified.fasta
 			# NB - fasta format now: >geneId sampleId
+
+			# If an input fasta file name doesn't exist then the 'modified.fasta' filename created above will not exist.
+			# Testing whether file exists here:
+			if [[ ! -s ${uniqueSampleId}_modified.fasta ]]; then
+				echo "ERROR: this input fasta file does not exist or is empty: ${uniqueSampleId}_modified.fasta"
+				exit 1
+			fi
 		fi
 
 		### [[To convert from 'gene species' my format to species-gene format:
