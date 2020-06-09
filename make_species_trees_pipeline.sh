@@ -56,9 +56,9 @@ OPTIONS:
 	               Format of table row: sample_name/identifier, followed by any species information, including sample_name/identifier, as required. 
 	-u             add contig length info onto species tree tips (requires option -t)
                    Sample_name/identifier must be identical to the sample fasta file name (minus any [dot] ending suffix e.g. .fasta)	  
-	-g <file>      file (including path to it) containing list of gene names (required option)
+	-g <file>      file (including path to it) containing list of gene names only (required option)
 	-i             make gene trees only
-	-j             make species trees only
+	-j             make species trees only. Gene trees must exist.
 	-f <float>     fraction of [well conserved regions in] the alignment covered by a sample sequence.
 	               Minimum to tolerate (default=0.6; 0 would mean no filtering, i.e. include sequence of any length)
 	-s <float>     fraction of samples in each gene tree.
@@ -551,7 +551,7 @@ elif [[ $os == 'Linux' && $speciesTreesOnly == 'no' ]]; then
       		slurmThrottle=$numbrGenes
     	fi
 
-        jobInfo=`sbatch -p $partitionName -c $cpuGeneTree -t 0-36:00 --mem 10000 --array=0-${numbrGenes}%$slurmThrottle  $pathToScripts/slurm_setup_array_to_make_gene_trees.sh \
+        jobInfo=`sbatch -p $partitionName -c $cpuGeneTree -t 0-36:00 --mem 50000 --array=0-${numbrGenes}%$slurmThrottle  $pathToScripts/slurm_setup_array_to_make_gene_trees.sh \
 		$geneFile \
 		$geneListFile \
 		$fractnAlnCovrg \
