@@ -24,7 +24,8 @@ with open(sampleTableFile, 'r') as csvfile:
 		treeTipInfo = treeTipInfo.rstrip('_')
 
 		# Need  to strip all chars that interfere with Newick format i.e. ( ) : [ ] and ; - any others? Check in Newick definition - see K52.p5 note
-		treeTipInfo = re.sub(r'[\]\[\)\(:;]', '_', treeTipInfo)
+		# NB - spaces must also be converted to satisfy code in sister script, addTreeTipInfoFromTable_PlusL.py line 26
+		treeTipInfo = re.sub(r'[\]\[\)\(:; ]', '_', treeTipInfo)
 
 		if uniqId in csvDict:
 			print 'ERROR: id in 1st column of csv file is not unique - it MUST be - offending id:', uniqId
