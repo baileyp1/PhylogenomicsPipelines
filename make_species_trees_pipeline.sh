@@ -552,7 +552,7 @@ elif [[ $os == 'Linux' && $speciesTreesOnly == 'no' ]]; then
       		slurmThrottle=$numbrGenes
     	fi
 
-        jobInfo=`sbatch -p $partitionName -c $cpuGeneTree -t 0-36:00 --mem 48000 --array=0-${numbrGenes}%$slurmThrottle  $pathToScripts/slurm_setup_array_to_make_gene_trees.sh \
+        jobInfo=`sbatch -p $partitionName -c $cpuGeneTree -t 0-36:00 --mem 20000 --array=0-${numbrGenes}%$slurmThrottle  $pathToScripts/slurm_setup_array_to_make_gene_trees.sh \
 		$geneFile \
 		$geneListFile \
 		$fractnAlnCovrg \
