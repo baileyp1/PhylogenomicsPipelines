@@ -225,8 +225,8 @@ if [[ $maxColOcc -ge 150 ]]; then
 			--seqtype DNA \
 			-s ${gene}_mafft_dna_aln_ovr${fractnAlnCovrg_pc}pc_aln_covrg_trimCols0.003.fasta \
 			--prefix ${gene}_mafft_dna_aln_iqtree \
-			-B 100 \
-			-alrt 100
+			-B 1000
+			### 9.6.2020 - removign this option for the moment incase it taeks up time: -alrt 100
 
 			# Rename final tree file to a clearer name:
 			cp -p ${gene}_mafft_dna_aln_iqtree.contree \
