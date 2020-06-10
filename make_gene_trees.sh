@@ -225,8 +225,8 @@ if [[ $maxColOcc -ge 150 ]]; then
 			--seqtype DNA \
 			-s ${gene}_mafft_dna_aln_ovr${fractnAlnCovrg_pc}pc_aln_covrg_trimCols0.003.fasta \
 			--prefix ${gene}_mafft_dna_aln_iqtree \
-			-B 1000 \
-			-alrt 1000
+			-B 100 \
+			-alrt 100
 
 			# Rename final tree file to a clearer name:
 			cp -p ${gene}_mafft_dna_aln_iqtree.contree \
@@ -313,14 +313,14 @@ if [[ $maxColOcc -ge 150 ]]; then
 			elif [ "$phyloProgramDNA" == 'iqtree2' ]; then
 
 				echo
-				echo Running IQ-Tree on the DNA alignment...
+				echo Running IQ-Tree on the protein alignment...
 				$exePrefix iqtree2 -T AUTO -ntmax $cpuGeneTree \
 				-redo \
 				--seqtype AA \
 				-s ${gene}_mafft_protein_aln_ovr${fractnAlnCovrg_pc}pc_aln_covrg_trimCols0.003.fasta \
 				--prefix ${gene}_mafft_protein_aln_iqtree \
-				-B 1000 \
-				-alrt 1000
+				-B 100 \
+				-alrt 100
 
 				# Rename final tree file to a clearer name:
 				cp -p ${gene}_mafft_protein_aln_iqtree.contree \
