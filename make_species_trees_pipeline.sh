@@ -31,7 +31,7 @@ partitionName=main   		# Values depend on the cluster being used so good to have
 # Need to check them if I make them public
 fractnMaxColOcc=0.7
 slurmThrottle=1
-mafftAlgorithm='--maxiterate 1000'     #'--maxiterate 1000' #'--retree 1'   '--retree 2' - use maxiterate
+mafftAlgorithm='--retree 2'     #'--maxiterate 1000' #'--retree 1'   '--retree 2' - use maxiterate
 cpuGeneTree=1					# still keep this separate from the supermatrix tree; then I can specify loads more for the supermatrix.
 								# Maybe hava a comma separated list e.g. 4,30 for gene and species tree.
 speciesTreeMem=100000			# I think I need 500000 GB mem for the RAxML large tree (Slurm)
@@ -95,7 +95,7 @@ EOF
 
 
 #echo User inputs:    ### For testing only 
-while getopts "hvat:ug:ijf:m:s:p:q:r:C:c:d:Q:"  OPTION; do	# Remaining options - try capital letters!
+while getopts "hvat:ug:ijf:m:s:p:M:q:r:C:c:d:Q:"  OPTION; do	# Remaining options - try capital letters!
 
 	#echo -$OPTION $OPTARG	### For testing only - could try to run through options again below 
 	 
@@ -113,6 +113,7 @@ while getopts "hvat:ug:ijf:m:s:p:q:r:C:c:d:Q:"  OPTION; do	# Remaining options -
 		m) fractnMaxColOcc=$OPTARG ;;
 		s) fractnSamples=$OPTARG ;;
 		p) fileNamePrefix=$OPTARG ;;
+		M) mafftAlgorithm="$OPTARG" ;;
 		q) phyloProgramDNA=$OPTARG ;;
 		r) phyloProgramPROT=$OPTARG ;;
 		C) cpuGeneTree=$OPTARG ;;
