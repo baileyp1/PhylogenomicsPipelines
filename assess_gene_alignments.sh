@@ -213,7 +213,7 @@ echo "##########################################
 Summary statistics for the gene alignments
 ##########################################
 
-Parameters set:
+Filtering parameters set:
 fractnAlnCovrg: $fractnAlnCovrg (user set)
 fractnMaxColOcc: $fractnMaxColOcc (fixed)
 fractnSpecies: $fractnSpecies (user set)
