@@ -612,7 +612,7 @@ if [ $os == 'Darwin' ]; then
 	$phyloProgramPROT \
 	"$exePrefix" \
 	$sampleTableFile \
-	> make_species_trees.log 2>&1
+	> ${fileNamePrefix}_make_species_trees.log 2>&1
 	### 31.8.2019 - I think I can move all intermediate and gene tree files here
 	### Actually, this is a lot of files - just delay this and think if I need to do it!!!!
 	### I think a better way is to copy all input files to the tmp dir, then cd into it and run everythign there - then put all the final files in the starting dir.
@@ -669,7 +669,7 @@ elif [ $os == 'Linux' ]; then
 		$phyloProgramPROT \
 		"$exePrefix" \
 		$sampleTableFile \
-		> make_species_trees.log 2>&1
+		> ${fileNamePrefix}_make_species_trees.log 2>&1
 		### 31.8.2019 - I think I can move all intermediate and gene tree files here 
 	fi
 fi
