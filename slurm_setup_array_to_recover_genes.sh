@@ -1,7 +1,7 @@
 #!/bin/bash
 #SBATCH -J recover_genes
 #SBATCH -n 1
-#SBATCH -t 0-36:00					# Was 24h but increase to 36 for the larger samples
+#SBATCH -t 0-36:00					# Was 24h but increased to 36 for the larger samples
 #SBATCH -o recover_genes-%a.log		# If this line is not set, default output name is slurm-%A_%a.out: %A = $SLURM_ARRAY_JOB_ID; %a = $SLURM_ARRAY_TASK_ID		 
 #SBATCH -e recover_genes-%a.log 	# NB - if I just specify the %a, then I don't get an accumulation of ouput files for each run of the script
 									
@@ -40,4 +40,4 @@ echo
 # Finally input the line of current sample into the worker script.
 ### Confirm I don't need srun here - if I used it maybe I could get the memory used.
 $pathToScript/recover_genes_from_one_sample.sh "${SAMPLELIST[$SLURM_ARRAY_TASK_ID]}"  $targetsFile  $paftolDataSymlinksDir  $adapterFasta  $samplePrefix  $cpu  "$exePrefix"  $hybSeqProgram $usePaftolDb
-sleep 1		# Not yet sure whether sleep positioned here makes the script sleep between suubmitting samples
+sleep 2		# Not yet sure whether sleep positioned here makes the script sleep between suubmitting samples
