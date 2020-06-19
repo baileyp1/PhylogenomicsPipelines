@@ -231,9 +231,7 @@ elif [ $os == 'Linux' ]; then
       slurmThrottle=$numbrSamples
     fi
 
-    ####jobInfo=`sbatch -p $partitionName -c $cpu  --mem $slurmMemory  --array=1-${numbrSamples}%$slurmThrottle  $pathToScripts/slurm_setup_array_to_recover_genes.sh \
-    ### 19.6.2020 - removed Slurm memory to test
-    jobInfo=`sbatch -p $partitionName -c $cpu   --array=1-${numbrSamples}%$slurmThrottle  $pathToScripts/slurm_setup_array_to_recover_genes.sh \
+    jobInfo=`sbatch -p $partitionName -c $cpu  --mem $slurmMemory  --array=1-${numbrSamples}%$slurmThrottle  $pathToScripts/slurm_setup_array_to_recover_genes.sh \
     $sampleList \
     $targetsFile \
     $paftolDataSymlinksDir \
