@@ -111,7 +111,7 @@ if [ "$#" -lt 1 ]; then usage; exit 1; fi
 ######################################
 # Only two programs to check currently (Paftools and HybPiper; can use -h and --help, both give a zero exit code)
 ### 29.3.2020 - maybe do this after all other checks so the print out doesn't appear if there is an issue with input parameters
-### 12.5.2020 - also FastQC is required
+### 12.5.2020 - also Trimmomatic is required. Others e.g. fastqc are dependancies of Paftools
 if [ $hybSeqProgram == 'hybpiper' ]; then
     echo 'Testing HybPiper is installed, will exit with a 127 error if not found.' 
     reads_first.py -h >/dev/null 2>&1    # Will exit here if not found!
@@ -231,7 +231,9 @@ elif [ $os == 'Linux' ]; then
       slurmThrottle=$numbrSamples
     fi
 
-    jobInfo=`sbatch -p $partitionName -c $cpu  --mem $slurmMemory  --array=1-${numbrSamples}%$slurmThrottle  $pathToScripts/slurm_setup_array_to_recover_genes.sh \
+    ####jobInfo=`sbatch -p $partitionName -c $cpu  --mem $slurmMemory  --array=1-${numbrSamples}%$slurmThrottle  $pathToScripts/slurm_setup_array_to_recover_genes.sh \
+    ### 19.6.2020 - removed Slurm memory to test
+    jobInfo=`sbatch -p $partitionName -c $cpu   --array=1-${numbrSamples}%$slurmThrottle  $pathToScripts/slurm_setup_array_to_recover_genes.sh \
     $sampleList \
     $targetsFile \
     $paftolDataSymlinksDir \
