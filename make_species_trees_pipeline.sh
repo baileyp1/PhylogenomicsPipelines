@@ -18,6 +18,7 @@ sampleTableFile=no			# 10.5.2020 - only just added in - check - ensures cmdline 
 option_u=no
 geneTreesOnly=no
 speciesTreesOnly=no
+useGenewiseFiles=no
 fractnAlnCovrg=0.6
 fractnSamples=0.6
 fileNamePrefix=tree_pipeline
@@ -55,10 +56,15 @@ OPTIONS:
 	-t <csv file>  add sample name and other info from a comma separated value (csv) table file into the tree leaf labels.
 	               Format of table row: sample_name/identifier, followed by any species information, including sample_name/identifier, as required. 
 	-u             add contig length info onto species tree tips (requires option -t)
-                   Sample_name/identifier must be identical to the sample fasta file name (minus any [dot] ending suffix e.g. .fasta)	  
+                   Sample_name/identifier must be identical to the sample fasta file name (minus any [dot] ending suffix e.g. .fasta)
+                   Not available in gene-wise mode (option -G)	  
 	-g <file>      file (including path to it) containing list of gene names only (required option)
 	-i             make gene trees only
 	-j             make species trees only. Gene trees must exist.
+	-G             make gene trees, starting from gene-wise fasta files rather than files containing all genes per sample
+	               Gene name/identifier must be identical to the sample fasta file name (minus any [dot] ending suffix e.g. .fasta),
+	               else change the gene name list in option -g so that it is.	
+	               Fasta header line format MUST BE: >sampleId
 	-f <float>     fraction of [well conserved regions in] the alignment covered by a sample sequence.
 	               Minimum to tolerate (default=0.6; 0 would mean no filtering, i.e. include sequence of any length)
 	-s <float>     fraction of samples in each gene tree.
@@ -95,7 +101,7 @@ EOF
 
 
 #echo User inputs:    ### For testing only 
-while getopts "hvat:ug:ijf:m:s:p:M:q:r:C:c:d:Q:"  OPTION; do	# Remaining options - try capital letters!
+while getopts "hvat:ug:ijGf:m:s:p:M:q:r:C:c:d:Q:"  OPTION; do	# Remaining options - try capital letters!
 
 	#echo -$OPTION $OPTARG	### For testing only - could try to run through options again below 
 	 
@@ -109,6 +115,7 @@ while getopts "hvat:ug:ijf:m:s:p:M:q:r:C:c:d:Q:"  OPTION; do	# Remaining options
 		g) geneListFile=$OPTARG ;;
 		i) geneTreesOnly=yes ;;
 		j) speciesTreesOnly=yes ;;
+		G) useGenewiseFiles=yes ;;
 		f) fractnAlnCovrg=$OPTARG ;;
 		m) fractnMaxColOcc=$OPTARG ;;
 		s) fractnSamples=$OPTARG ;;
@@ -181,6 +188,7 @@ numbrSamples=$(( $# - $OPTIND + 1 ))
 
 
 if [ $(( $# - $OPTIND + 1 )) -lt 4 ]; then				### 30.3.2020 AND speciesTreesOnly == no to handle scritp just processing species trees
+														### 4.7.2020 AND now if gene-wise files are entered - can have less than one of those right?
     echo
     usage
     echo "ERROR: you need to input fasta files containing recovered genes from at least four species!"
@@ -266,7 +274,7 @@ fi
 ####################
 # Code for option -a
 ####################
-if [[ $addSampleName == 'yes' ]]; then
+if [[ $addSampleName == 'yes' && $useGenewiseFiles  != 'yes' ]]; then
 
 	echo Will add sample name from filename: $addSampleName
 
@@ -295,12 +303,43 @@ if [[ $addSampleName == 'yes' ]]; then
 			exit 1
 		fi
     done
-
+### NB - 16.6.2020 - do I need to check the above files like I do for the format below? - I think I do because even though I'm creating it above
+### they may be in a different format e.g. gene-wise files!!!!!!!! Just need to check with code below # samples in the data set
     # Concatenate fasta files and put seqs on a single line:
 	fileList=`ls *_modified.fasta `
 	echo $fileList
 	cat $fileList | seqtk seq -l 0 /dev/fd/0 > all_samples_concatenated.fasta
 	geneFile=all_samples_concatenated.fasta
+
+elif [[ $useGenewiseFiles == 'yes' && $addSampleName != 'yes' ]]; then
+
+	echo Will use prepared gene-wise files directly: $useGenewiseFiles
+
+	# Copy the fasta files to exactly <geneName>_dna.fasta, then they are ready to go.
+	# The fasta filename (minus the dot suffix) needs to be exactly the name of the gene in the genelist.
+	for file in ${@:$OPTIND:$#}; do
+
+		if [[ ! -s $file ]]; then
+			echo "ERROR: this input fasta file does not exist or is empty: $file"
+			exit 1
+		fi
+
+		# Get filename and chop off the file ending if there is one:
+    	geneName=`basename $file | awk -F '.' '{print $1}' `
+    	#echo $geneName
+		cp $file ${geneName}_dna.fasta
+		if [[ $? == 1 ]]; then 
+			echo "ERROR: if running pipeline again in gene-wise mode, please run again in a new directory
+and input gene-wise fasta files with a relative path from the previous run e.g. ../old_run/*_dna.fasta"
+			exit 1
+		fi
+	done
+	geneFile='use_genewise_files'	# Used to change conditional statements
+
+	# Need to recalculate numbrsamples variable here - up to here, $numbrSamples contains the number of gene-wise files entered.
+	# NB - Fasta file format here is: >sampelId.
+    # NB - on MacOS awk inserts a blank line between output lines so removing them with grep -v '^$'.
+    numbrSamples=`cat *_dna.fasta | awk '{if($1 ~ /^>/)  {print $1} }' | grep -v  '^$' | sort -u | wc -l `
 else
 	# Format is already ready to go (>sampleId-geneId).
    
@@ -326,7 +365,7 @@ else
      	afterDashCheck=`cat $file | awk '{if($1 ~ /^>/)  {print $1} }' |  awk -F '-' '{print $2}' | sort | uniq -c | awk '$1 > 1' | wc -l `
      	#echo "beforeDashCheck (sampleId): " $beforeDashCheck 
      	#echo "afterDashCheck (geneId): " $afterDashCheck 
-     	if [[ $beforeDashCheck -gt 1 ]]; then echo "ERROR: more than one sample identifier detected on fasta header line (there should only be one) for this sample: $file \nAlso check that fasta header lines have this format: >sampleId-geneId"; exit 1
+     	if [[ $beforeDashCheck -gt 1 ]]; then echo "ERROR: more than one sample identifier detected on fasta header line (there should only be one sample identifier for the default format) for this sample: $file \nAlso check that fasta header lines have this format: >sampleId-geneId"; exit 1
      	elif [[ $afterDashCheck -gt 1 ]]; then echo "ERROR: gene identfiers should be unique, one or more not unique for this sample: $file \nAlso check that fasta header lines have this format: >sampleId-geneId"; exit 1
 		else cat $file | awk '{if($1 ~ /^>/)  {print $1} else {print $0}}' \
 			| awk -F '-' '{if($1 ~ /^>/) {{gsub(/>/,"",$1)} {print ">" $2 " " $1}} else {print $0}}' \
@@ -369,7 +408,7 @@ fi
 # Code for option -t
 ####################
 if [[ $sampleTableFile != 'no' ]]; then
-	if [[ -s $sampleTableFile ]]; then echo ""
+	if [[ -s $sampleTableFile ]]; then
 		echo Will use this file containing text for the tree leaves: $sampleTableFile
 		# First check that the table is a csv file (plus header - is possible?)
 		### I think I can check here the csv file - must start with the table header! - only check needed - maybe check that it has ',' chars (?)
@@ -527,6 +566,15 @@ if [[ $os == 'Darwin' && $speciesTreesOnly == 'no' ]]; then
 		"$exePrefix"
 	done > make_gene_tree.log 2>&1
 	$pathToScripts/assess_gene_alignments.sh $fractnAlnCovrg $fractnMaxColOcc $fractnSamples $numbrSamples $fileNamePrefix $geneFile tree_tip_info_mapfile.txt $option_u > assess_gene_alns.log 2>&1
+
+	### 3.7.2020 - if treeshrink is required, runtreeshrink - here (?) + prepare files for re-running in geenwise mode
+	### I think $geneFile should be set to  use_genewise_files but if this varaibel is not longer use in assses scritp more logical to use $useGenewiseFiles AND also rm from make_species script
+	### Re-run above loop with the gene-wise flag
+	### maybe I need an end flag for suffing each new dna file for e.g. _treeshrunk.fasta - I know you copy old *_dna.fasta files to _before_treeshrink.fasta, then 
+		#### copy the new shrunk files to *.dna.fasta
+	### Finally the tree-pipeline prefix files need copying to before treeshrink plus all the log files - getting complex 
+
+
 elif [[ $os == 'Linux' && $speciesTreesOnly == 'no' ]]; then
 	###exePrefix="/usr/bin/time -v -o g${gene}_mafft_dna_aln_time_and_mem.log"		# NB - this will not work here - need to pick up gene id in Slurm script instead.
     slurm=`sbatch -V | grep ^slurm | wc -l `

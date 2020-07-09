@@ -24,7 +24,8 @@ echo SLURM_ARRAY_JOB_ID: $SLURM_ARRAY_JOB_ID
 echo SLURM_ARRAY_TASK_ID: $SLURM_ARRAY_TASK_ID
 
 
-geneId=`echo $geneId | cut -d ',' -f 1 `		#### 20.8.2019 - does this do anything now?
+geneId=`echo $geneId | cut -d ',' -f 1 `		#### 20.8.2019 - does this do anything now? Required only for ${geneId}_aln_summary.log but i coudl change that.
+gene=`echo $geneId | tr -d '\n' `				# Need to remove line return, if present after the first field! Was for the sample- to gene-wise conversion 
 ### Might also be good to have the family
 #genus=`echo $line | cut -d ',' -f 2 `
 #species=`echo $line | cut -d ',' -f 3 `
@@ -44,29 +45,39 @@ echo mafftAlgorithm: $mafftAlgorithm
 echo gene Id: ${geneId} >> ${geneId}_aln_summary.log
 
 
-echo
-echo
-echo ###############################################
-echo 'Step 1 - Organising sequences on a per gene basis (rather than on a per sample basis)...'
-echo ###############################################
+if [[ $geneFile != 'use_genewise_files' ]]; then
 
-# Description of code just below that does the organising of sequences into a gene file:
-# For each gene:
-# 1. find specific gene from all species in turn (NB - sequence is on a single line 
-#    which is why this code can work - bash line length limit much much longer than required here)
-#    NB - using ">" ensures that I don't also grep out a species id: grep -A1 ">$gene" \
-#	 Improvement: current grep now matches whole words so can have gene identifiers
-#                 e.g. 50, 506 and 5064 and they won't pick each other out (BUT these chars count as word endings: '.'  '/' )   
-# 2. print seqs for current gene to a separate file
-# 3. reorganise the fasta header so that species info is next to '>' and the gene id is removed (required to run in coalescence)
-gene=`echo $geneId | tr -d '\n' `	# Need to remove line return, if present after the first field!
-#echo Gene: $gene
-cat $geneFile \
-| grep -Ew -A1 ">$gene" \
-| awk '{if($1 ~ /^>/) {print ">" $2} else {print $0} }' \
-| grep -v '^--$' \
-> ${gene}_dna.fasta
-# NB - grep -v '^--$' removes output between each set of rows that grep produces.
+	echo
+	echo
+	echo ###############################################
+	echo 'Step 1 - Organising sequences on a per gene basis (from data input on a per sample basis)...'
+	echo ###############################################
+
+	# Description of code just below that does the organising of sequences into a gene file:
+	# For each gene:
+	# 1. find specific gene from all species in turn (NB - sequence is on a single line 
+	#    which is why this code can work - bash line length limit much much longer than required here)
+	#    NB - using ">" ensures that I don't also grep out a species id: grep -A1 ">$gene" \
+	#	 Improvement: current grep now matches whole words so can have gene identifiers
+	#                 e.g. 50, 506 and 5064 and they won't pick each other out (BUT these chars count as word endings: '.'  '/' )   
+	# 2. print seqs for current gene to a separate file
+	# 3. reorganise the fasta header so that species info is next to '>' and the gene id is removed (required to run in coalescence)
+	###gene=`echo $geneId | tr -d '\n' `	# Need to remove line return, if present after the first field! Now moved furtehr up.
+	#echo Gene: $gene
+	cat $geneFile \
+	| grep -Ew -A1 ">$gene" \
+	| awk '{if($1 ~ /^>/) {print ">" $2} else {print $0} }' \
+	| grep -v '^--$' \
+	> ${gene}_dna.fasta
+	# NB - grep -v '^--$' removes output between each set of rows that grep produces.
+
+# If an input fasta file name doesn't exist then the 'modified.fasta' created above will not exist.
+# Testing whether file exists here:
+elif [[ ! -s ${gene}_dna.fasta ]]; then
+	echo "ERROR: this input gene-wise fasta file does not exist or is empty: ${gene}_dna.fasta 
+It indicates that there are no samples with this gene, or in gene-wise mode (option -G), the gene list is incompatible with the input gene-wise fasta files"
+	exit 1
+fi
 
 
 echo ########################################
@@ -93,6 +104,23 @@ ${gene}_dna.fasta \
 # 2. Progressive method (fast - up to 5k seqs) --retree 2 (better than retree 1)    			FFT-NS-2/NW-NS-2
 # 3. Iterative refinement method (slower, more accurate) --maxiterate 1000 - use this if poss   Builds on FFT-NS-2 --> FFT-NS-i - refinement repeated until no more improvement in the WSP score is made or the number of cycles reaches 1,000.         
 # 4. L-INS-i, E-INS-i, G-INS-i — Iterative refinement methods using WSP and consistency scores - not sure if I need this level (slowest, most accurate)
+
+
+### Alignment with UPP
+###run_upp.py -s ${gene}_dna.fasta -o ${gene}
+# Other options to consider:
+# UPP(Fast): run_upp.py -s input.fas -B 100
+# -m [dna|rna|amino]
+# -x <cpus> - runs a ||elised version of UPP
+# Ouput files:
+# _pasta.fasta 	- backbone aln (?)
+# _pasta.Fasttree - backbone tree (?)
+# _alignment.fasta 	- main aln
+# _alignment_masked.fasta - masked aln where non-homologous sites in the query set are removed
+
+
+
+
 
 
 # Find the length of the alignment to calculate the coverage of each sequence:
@@ -336,7 +364,9 @@ if [[ $maxColOcc -ge 150 ]]; then
 			### Treeshrink - can shrink the tree here but then need to repeat the aln and tree again - i.e.:
 			### seqtk again on *_dna.fasta with   ${gene}_mafft_dna_aln_ovr${fractnAlnCovrg_pc}pc_aln_covrg.txt
 			### MAFFT aln + AMAS trim
-			### redo tree but need to know which program to use
+			### redo tree but need to know which program to use (maybe this code can go into a new script)
+
+
 
 
 		fi

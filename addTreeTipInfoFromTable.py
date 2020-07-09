@@ -34,7 +34,7 @@ with open(sampleTableFile, 'r') as csvfile:
 			csvDict[ uniqId ] = treeTipInfo		# NB - don't need to remove the csv file header!
 
 
-### 29.5.2020 - don't think I need the code below now
+### 29.5.2020 - don't think I need the code just below now
 
 # Prepare to get sample names from file names and test for uniqueness.
 # Make copy of sys.argv:

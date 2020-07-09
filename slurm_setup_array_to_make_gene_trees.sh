@@ -41,3 +41,4 @@ echo
 exePrefix="/usr/bin/time -v "		# this time command gets the RSS memory
 $exePrefix $pathToScript/make_gene_trees.sh  ${SAMPLELIST[$SLURM_ARRAY_TASK_ID]} $geneFile $fractnAlnCovrg $phyloProgramDNA $phyloProgramPROT $fractnMaxColOcc $cpuGeneTree "$mafftAlgorithm" "$exePrefix"
 ### 16.3.2020 - could remove this $$exePrefix - but it might be useful to see whether sub-processes get added to the mem used for this script.
+### 3.6.2020 - yes they do - the time and mem from this command is the total of tiem within script AND max mem used within the child processes - good 

@@ -39,6 +39,30 @@ echo exePrefix: $exePrefix
 echo treeTipInfoMapFile: $treeTipInfoMapFile
 
 
+# Function for tree stats and tree comparisons:
+# getTreeStats <newickFile>
+getTreeStats () {
+
+    newickTree=$1
+
+    # Count number of low support nodes:
+    numbrLowSupportNodes=`nw_ed -r $newickTree  "i & b < 0.7" s | wc -l | sed 's/ //g' `
+    # Count the total number of support nodes with support values: 
+    totalNumbrSupportNodes=`nw_ed -r $newickTree  "i & b > 0" s | wc -l | sed 's/ //g' `
+    # Write summary stats:
+    echo >> ${fileNamePrefix}_summary_stats.txt
+    echo "$newickTree - number of internal nodes with low support values (total number of internal nodes): ${numbrLowSupportNodes} (${totalNumbrSupportNodes})" >> ${fileNamePrefix}_summary_stats.txt 
+
+    outFilePrefix=`basename $newickTree .nwk`
+
+    # Also prepare a list of sorted clades for comparing with other trees: 
+    nw_ed $newickTree  "i & b >0" s | nw_topology -I - | \
+    while read clade; do 
+    echo $clade | sed 's/[)(;]//g' | tr ',' '\n' | sort |tr '\n' ' '; echo
+    done | sort > ${outFilePrefix}_sorted_clade_list.txt
+}
+
+
 #### 14.1.2019 - this step belwo can stay in this script
 #### Need to use the trim0.01.fasta file for this step so I concatenate the correct files.
 
@@ -70,6 +94,40 @@ fi
 
 echo
 echo
+echo ##############################
+echo Step 2 - running TreeShrink...
+echo ##############################
+echo
+echo
+
+# ### if [ $phyloProgramDNA is ON && treeshrink option ON  ]; then
+
+#     # Need to arrange directories for tree and alignment per gene:
+#     # Current aln name: *_mafft_dna_aln_ovr${fractnAlnCovrg_pc}pc_aln_covrg_trimCols0.003.fasta
+#     # Current tree name: *_dna_gene_tree_USE_THIS.nwk
+#     mkdir treeshrink_dna_gene_trees
+#     # for $file in  *_dna_gene_tree_USE_THIS.nwk; do
+#         extract gene name e.g. gene=`echo $file | sed "s/_mafft_dna_aln_ovr${fractnAlnCovrg_pc}pc_aln_covrg_trimCols0.003.fasta//"
+#         # mkdir treeshrink_dna_gene_trees/$geneId 
+#         # Copy file into the gene directory and need to give it a name common to all the gene tree and aln files:
+#         cp -p $file  treeshrink_dna_gene_trees/$geneId/dna_gene_tree_USE_THIS.nwk
+#         cp ${geneId}_mafft_dna_aln_ovr${fractnAlnCovrg_pc}pc_aln_covrg_trimCols0.003.fasta  treeshrink_dna_gene_trees/$geneId/dna_gene_tree_aln.fasta
+#     #done
+#     run_treeshrink.py -i treeshrunk_dna_gene_trees  -t dna_gene_tree_USE_THIS.nwk -a dna_gene_tree_aln.fasta   >treeshrink.log 2>&1
+# # fi
+
+# mv treeshrunk_dna_gene_trees  treeshrink_dna_gene_trees_1st_round - required???????
+### NBNB - just a list of species to realign - so maybe best to extract with seqtk from a list
+### Also need a list of samples that were removed from the gene trees and how many times in total 
+### NB - what happens if no samples were removed?! Need to report that as well.
+
+
+
+
+
+
+echo
+echo
 echo ##########################
 echo Step 2 - running ASTRAL...
 echo ##########################
@@ -97,6 +155,9 @@ $exePrefix java -jar $pathToAstral \
 -i ${fileNamePrefix}_dna_gene_trees_for_coelescence_phylo_bs_less15pc_rmed.nwk \
 -o ${fileNamePrefix}_astral_dna_species_tree.nwk
 
+getTreeStats ${fileNamePrefix}_astral_dna_species_tree.nwk
+
+
 # Add tree tip info.
 # NB - for this option, the $treeTipInfoMapFile must have been submitted BUT I'm re-formatting it --> 'tree_tip_info_mapfile.txt'!):
 if [ -s $treeTipInfoMapFile ]; then 
@@ -111,6 +172,8 @@ if [[ "$phyloProgramPROT" == 'fasttree' ||  "$phyloProgramPROT" == 'raxml-ng'  |
     $exePrefix java -jar $pathToAstral \
     -i ${fileNamePrefix}_protein_gene_trees_for_coelescence_phylo_bs_less15pc_rmed.nwk \
     -o ${fileNamePrefix}_astral_protein_species_tree.nwk
+
+    getTreeStats ${fileNamePrefix}_astral_protein_species_tree.nwk
 
     # Add tree tip info:
     if [[ -s $treeTipInfoMapFile ]]; then
@@ -182,6 +245,8 @@ $exePrefix fasttree -nt \
 ${fileNamePrefix}__mafft_dna_alns__ovr${fractnAlnCovrg_pc}pc_acpg_ovr${fractnSpecies_pc}pc_spgt__concatenated.fasta \
 > ${fileNamePrefix}_fasttree_dna_species_tree.nwk
 
+getTreeStats ${fileNamePrefix}_fasttree_dna_species_tree.nwk
+
 # Add tree tip info:
 if [[ -s $treeTipInfoMapFile ]]; then 
     nw_rename -l  ${fileNamePrefix}_fasttree_dna_species_tree.nwk \
@@ -195,6 +260,8 @@ if [[ "$phyloProgramPROT" == 'fasttree' ||  "$phyloProgramPROT" == 'raxml-ng'  |
     $exePrefix fasttree \
     ${fileNamePrefix}__mafft_protein_alns__ovr${fractnAlnCovrg_pc}pc_acpg_ovr${fractnSpecies_pc}pc_spgt__concatenated.fasta \
     > ${fileNamePrefix}_fasttree_protein_species_tree.nwk
+
+    getTreeStats ${fileNamePrefix}_fasttree_protein_species_tree.nwk
 
     # Add tree tip info:
     if [[ -s $treeTipInfoMapFile ]]; then 
@@ -235,6 +302,8 @@ $exePrefix raxmlHPC-PTHREADS-SSE3 -T $cpu \
 # This is the Newick  output file compatible with NewickTools):
 # RAxML_bipartitions.${fileNamePrefix}__raxmlHPC-PTHREADS-SSE
 
+getTreeStats RAxML_bipartitions.${fileNamePrefix}__raxmlHPC-PTHREADS-SSE
+
 # Add tree tip info:
 if [[ -s $treeTipInfoMapFile ]]; then 
     nw_rename -l  RAxML_bipartitions.${fileNamePrefix}__raxmlHPC-PTHREADS-SSE \
@@ -246,6 +315,7 @@ fi
 if [[ "$phyloProgramPROT" == 'fasttree' ||  "$phyloProgramPROT" == 'raxml-ng'  || "$phyloProgramPROT" == 'iqtree2' ]]; then
      echo Running RAxML on the protein supermatrix...
     # RAxML won't run if files already exists from a previous run so remove them here: 
+    ### Could look for a --force option
     if [ -a RAxML_bootstrap.${fileNamePrefix}__raxmlHPC-PTHREADS-SSE ]; then rm RAxML_bootstrap.${fileNamePrefix}__raxmlHPC-PTHREADS-SSE; fi
     if [ -a RAxML_bestTree.${fileNamePrefix}__raxmlHPC-PTHREADS-SSE ]; then rm RAxML_bestTree.${fileNamePrefix}__raxmlHPC-PTHREADS-SSE; fi
     if [ -a RAxML_bipartitions.${fileNamePrefix}__raxmlHPC-PTHREADS-SSE ]; then rm RAxML_bipartitions.${fileNamePrefix}__raxmlHPC-PTHREADS-SSE; fi
@@ -263,6 +333,8 @@ if [[ "$phyloProgramPROT" == 'fasttree' ||  "$phyloProgramPROT" == 'raxml-ng'  |
     -n ${fileNamePrefix}__raxmlHPC-PTHREADS-SSE
     # This is the Newick  output file compatible with NewickTools):
     # RAxML_bipartitions.${fileNamePrefix}__raxmlHPC-PTHREADS-SSE
+
+    getTreeStats RAxML_bipartitions.${fileNamePrefix}__raxmlHPC-PTHREADS-SSE
 
     # Add tree tip info:
     if [[ -s $treeTipInfoMapFile ]]; then 

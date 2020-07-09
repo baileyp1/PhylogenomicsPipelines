@@ -47,61 +47,63 @@ numbrSamplesThreshold=`awk -v FRACTN=$fractnSpecies -v numbrSamples=$totalNumbrS
 #echo numbrSamplesThreshold: $numbrSamplesThreshold
 
 
-######################################
-# Sum length of all contigs per sample
-######################################
-echo "Sample NumbrGenes SumOfContigLengths" > ${fileNamePrefix}_summary_of_sample_quality.txt
-for file in *modified.fasta; do
-	# 29.5.2020 - now taking the sample name from the fasta header of the *_modified.fasta sample-wise files.
-	#sample=$(echo $file| sed 's/_modified.fasta//')
-	sample=$(head -n 1 $file | awk '{print $2}')
-	len_bp=$(fastalength $file  2>/dev/null | awk '{sum +=$1} END {print sum}')
-	# Some files may be empty, if so print a zero:
-	if [ -z $len_bp ]; then len_bp=0; fi 	# Need to test whether variable is empty when using set cmds; doesn't seem to work though, only works when all set cmd are removed!!
-	numbrGenes=$(cat $file | grep '>' | wc -l)
-	echo $sample " " $numbrGenes " " $len_bp
-done | sort -k3n \
->> ${fileNamePrefix}_summary_of_sample_quality.txt
-#exit
+if [[ $geneFile != 'use_genewise_files' ]]; then 
+	######################################
+	# Sum length of all contigs per sample
+	######################################
+	echo "Sample NumbrGenes SumOfContigLengths" > ${fileNamePrefix}_summary_of_sample_quality.txt
+	for file in *modified.fasta; do
+		# 29.5.2020 - now taking the sample name from the fasta header of the *_modified.fasta sample-wise files.
+		#sample=$(echo $file| sed 's/_modified.fasta//')
+		sample=$(head -n 1 $file | awk '{print $2}')
+		len_bp=$(fastalength $file  2>/dev/null | awk '{sum +=$1} END {print sum}')
+		# Some files may be empty, if so print a zero:
+		if [ -z $len_bp ]; then len_bp=0; fi 	# Need to test whether variable is empty when using set cmds; doesn't seem to work though, only works when all set cmd are removed!!
+		numbrGenes=$(cat $file | grep '>' | wc -l)
+		echo $sample " " $numbrGenes " " $len_bp
+	done | sort -k3n \
+	>> ${fileNamePrefix}_summary_of_sample_quality.txt
+	#exit
 
-if [[ -s $treeTipInfoMapFile && $option_u == 'yes' ]]; then
-	# Prepare the mapfile again to add in the sum length values onto the tree tips, if requested
-	addTreeTipInfoFromTable_PlusL.py \
-	tree_tip_info_mapfile.txt \
-	${fileNamePrefix}_summary_of_sample_quality.txt \
-	tree_tip_info_mapfile_plusL.txt
-	# Now move new file to original mapfile created to avoid changing any other code:
-	cp -p tree_tip_info_mapfile_plusL.txt  tree_tip_info_mapfile.txt
-	### 27.5.2020 - copy not move for now to check outputs
-fi
-#exit
+	if [[ -s $treeTipInfoMapFile && $option_u == 'yes' ]]; then
+		# Prepare the mapfile again to add in the sum length values onto the tree tips, if requested
+		addTreeTipInfoFromTable_PlusL.py \
+		tree_tip_info_mapfile.txt \
+		${fileNamePrefix}_summary_of_sample_quality.txt \
+		tree_tip_info_mapfile_plusL.txt
+		# Now move new file to original mapfile created to avoid changing any other code:
+		cp -p tree_tip_info_mapfile_plusL.txt  tree_tip_info_mapfile.txt
+		### 27.5.2020 - copy not move for now to check outputs
+	fi
+	#exit
 
-maxSumOfContigLengths=`tail -n+2 ${fileNamePrefix}_summary_of_sample_quality.txt | sort -k3n | tail -n 1 | awk '{print $3 " (sample " $1 ")" }' `
-
-
-minSumOfContigLengthsToTolerate=`echo $maxSumOfContigLengths | awk '{printf "%.0f", 0.20 * $1}' `
+	maxSumOfContigLengths=`tail -n+2 ${fileNamePrefix}_summary_of_sample_quality.txt | sort -k3n | tail -n 1 | awk '{print $3 " (sample " $1 ")" }' `
 
 
-poorQualitySamples=`tail -n+2 ${fileNamePrefix}_summary_of_sample_quality.txt \
-| awk -v minSumOfContigLengthsToTolerate=$minSumOfContigLengthsToTolerate '$3 <= minSumOfContigLengthsToTolerate {print $0}' \
-| sort -k3n | wc -l `
-
-okQualitySamples=`tail -n+2 ${fileNamePrefix}_summary_of_sample_quality.txt \
-| awk -v minSumOfContigLengthsToTolerate=$minSumOfContigLengthsToTolerate '$3 > minSumOfContigLengthsToTolerate {print $0}' \
-| sort -k3n | wc -l `
+	minSumOfContigLengthsToTolerate=`echo $maxSumOfContigLengths | awk '{printf "%.0f", 0.20 * $1}' `
 
 
-# If there are any poor quality samples, print their ids to a file (to be used for further investigation):
-if [ $poorQualitySamples -ge 1 ]; then
+	poorQualitySamples=`tail -n+2 ${fileNamePrefix}_summary_of_sample_quality.txt \
+	| awk -v minSumOfContigLengthsToTolerate=$minSumOfContigLengthsToTolerate '$3 <= minSumOfContigLengthsToTolerate {print $0}' \
+	| sort -k3n | wc -l | sed 's/ //g' `		# NB - Macbook Darwin wc -l print 7 space characters infront of the number. Just tidying up print with sed 's/ //g' in this script
+
+	okQualitySamples=`tail -n+2 ${fileNamePrefix}_summary_of_sample_quality.txt \
+	| awk -v minSumOfContigLengthsToTolerate=$minSumOfContigLengthsToTolerate '$3 > minSumOfContigLengthsToTolerate {print $0}' \
+	| sort -k3n | wc -l | sed 's/ //g' `
+
+
+	# If there are any poor quality samples, print their ids to a file (to be used for further investigation):
+	if [ $poorQualitySamples -ge 1 ]; then
+		tail -n+2 ${fileNamePrefix}_summary_of_sample_quality.txt \
+		| awk -v minSumOfContigLengthsToTolerate=$minSumOfContigLengthsToTolerate '$3 <= minSumOfContigLengthsToTolerate {print $1}' \
+		> ${fileNamePrefix}_poor_quality_samples.txt
+	fi
+
+	# Now print a list of ok/good quality samples (to be used for repeating the species trees):
 	tail -n+2 ${fileNamePrefix}_summary_of_sample_quality.txt \
-	| awk -v minSumOfContigLengthsToTolerate=$minSumOfContigLengthsToTolerate '$3 <= minSumOfContigLengthsToTolerate {print $1}' \
-	> ${fileNamePrefix}_poor_quality_samples.txt
+	| awk -v minSumOfContigLengthsToTolerate=$minSumOfContigLengthsToTolerate '$3 > minSumOfContigLengthsToTolerate {print $1}' \
+	> ${fileNamePrefix}_ok_quality_samples.txt
 fi
-
-# Now print a list of ok/good quality samples (to be used for repeating the species trees):
-tail -n+2 ${fileNamePrefix}_summary_of_sample_quality.txt \
-| awk -v minSumOfContigLengthsToTolerate=$minSumOfContigLengthsToTolerate '$3 > minSumOfContigLengthsToTolerate {print $1}' \
-> ${fileNamePrefix}_ok_quality_samples.txt
 
 
 
@@ -160,7 +162,7 @@ numbrGeneAlnsForSpeciesTree=`for file in *_mafft_dna_aln_ovr${fractnAlnCovrg_pc}
     echo $numbrSamples
 done \
 | awk -v numbrSamplesThreshold=$numbrSamplesThreshold  '$1 >= numbrSamplesThreshold' \
-| wc -l `
+| wc -l | sed 's/ //g'`
 
 
 # Total number of alignment columns in the area of common overlap for these genes (NB - also after trimming for rare insertions):
@@ -195,15 +197,18 @@ cat mafft_dna_alns_fasta_file_list.txt | sed 's/dna/protein/' > mafft_protein_al
 
 
 # Count the number of samples in the gene trees being used and place a sorted list into a file:
-numbrSamplesInTrees=`cat mafft_dna_alns_fasta_file_list.txt | xargs cat | grep '>' | sort -u | wc -l`
+numbrSamplesInTrees=`cat mafft_dna_alns_fasta_file_list.txt | xargs cat | grep '>' | sort -u | wc -l | sed 's/ //g'`
 cat mafft_dna_alns_fasta_file_list.txt | xargs cat | grep '>' | sed 's/>//' | sort -u > mafft_dna_alns_fasta_samples_in_tree.txt
 
 
 # Print out a list of all samples submitted to this tool:
-cat $geneFile | awk '{print $2}' | grep -v  '^$'| sort -u > samples_submitted.txt
+#cat $geneFile | awk '{print $2}' | grep -v  '^$'| sort -u > samples_submitted.txt
+# Altered above line to now use a set of files that is common to both species-wise and dna-wise datasets, i.e. *_dna.fasta:
+cat *_dna.fasta | grep '>' | sed 's/^>//' | sort -u > samples_submitted.txt
+
 
 # Number of samples not present in ASTRAL or RAxML trees:
-samplesNotInSpeciesTrees=$(comm -23 samples_submitted.txt  mafft_dna_alns_fasta_samples_in_tree.txt | wc -l)
+samplesNotInSpeciesTrees=$(comm -23 samples_submitted.txt  mafft_dna_alns_fasta_samples_in_tree.txt | wc -l | sed 's/ //g')
 
 
 
@@ -218,11 +223,19 @@ fractnAlnCovrg: $fractnAlnCovrg (user set)
 fractnMaxColOcc: $fractnMaxColOcc (fixed)
 fractnSpecies: $fractnSpecies (user set)
 
-Largest sum length of all genes for a sample found (that sample in brackets): $maxSumOfContigLengths
-Total number of samples: $totalNumbrSamples
-Number of poor quality samples (<= 20% of the largest sum length of all genes per sample): $poorQualitySamples
-Number of ok/good quality samples (> 20% of the largest sum length of all genes per sample): $okQualitySamples
+Total number of samples: $totalNumbrSamples" > ${fileNamePrefix}_summary_stats.txt
 
+
+if [[ $geneFile != 'use_genewise_files' ]]; then 
+
+	echo "
+Largest sum length of all genes for a sample found (that sample in brackets): $maxSumOfContigLengths
+Number of poor quality samples (<= 20% of the largest sum length of all genes per sample): $poorQualitySamples
+Number of ok/good quality samples (> 20% of the largest sum length of all genes per sample): $okQualitySamples" >> ${fileNamePrefix}_summary_stats.txt
+fi
+
+
+echo "
 Sum Length of the longest gene sequence in each alignment: $sumLenLongestGene
 Sum Length of the longest gene sequence in each alignment after trimming rare inserts: $sumLenLongestGeneAfterTrim
 Total number of homologous columns occupied by >= $fractnMaxColOcc_pc % of samples: $sumMaxColOcc (area of common overlap)
@@ -235,7 +248,7 @@ Total number of alignment columns in the area of common overlap for these genes:
 After filtering genes by coverage AND/OR by number of samples in each gene tree:
 Number of samples that will be present in final ASTRAL and RaxML trees (total samples submitted): $numbrSamplesInTrees ($totalNumbrSamples)
 Number of samples that will NOT be in the species trees: $samplesNotInSpeciesTrees
-" > ${fileNamePrefix}_summary_stats.txt
+" >> ${fileNamePrefix}_summary_stats.txt
 
 
 if [ $numbrSamplesInTrees -ne $totalNumbrSamples ]; then
@@ -244,7 +257,7 @@ if [ $numbrSamplesInTrees -ne $totalNumbrSamples ]; then
 	echo >> ${fileNamePrefix}_summary_stats.txt
 fi
 
-echo 'Number times each sample will appear in the gene trees (Format: number sample).' >> ${fileNamePrefix}_summary_stats.txt
+echo 'Number times each sample will appear in the gene trees (Format: number_of_gene_trees sample).' >> ${fileNamePrefix}_summary_stats.txt
 echo '(Low numbers suggest low gene recovery for that sample)' >> ${fileNamePrefix}_summary_stats.txt
 cat mafft_dna_alns_fasta_file_list.txt | xargs cat | grep '>' | sed 's/>//' | sort | uniq -c | sort -k1n >> ${fileNamePrefix}_summary_stats.txt
 

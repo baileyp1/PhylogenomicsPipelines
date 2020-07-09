@@ -40,4 +40,4 @@ echo
 # Finally input the line of current sample into the worker script.
 ### Confirm I don't need srun here - if I used it maybe I could get the memory used.
 $pathToScript/recover_genes_from_one_sample.sh "${SAMPLELIST[$SLURM_ARRAY_TASK_ID]}"  $targetsFile  $paftolDataSymlinksDir  $adapterFasta  $samplePrefix  $cpu  "$exePrefix"  $hybSeqProgram $usePaftolDb
-sleep 2		# Not yet sure whether sleep positioned here makes the script sleep between suubmitting samples
+sleep 1		# Not yet sure whether sleep positioned here makes the script sleep between suubmitting samples
