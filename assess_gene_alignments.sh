@@ -121,11 +121,11 @@ sumLenLongestGeneAfterTrim=`cat *_aln_summary.log | grep '^lenLongestGeneAfterTr
 
 # Sum length of all columns with maxColOcc (same for all values of $fractnAlnCov) 
 # NB - still need to filter on min maxColOcc to tolerate.
-sumMaxColOcc=`cat *_aln_summary.log | grep '^maxColOcc:' | awk '$2 >= 150 {sum+=$2} END {print sum}' `
+sumMaxColOcc=`cat *_aln_summary.log | grep '^maxColOcc:' | awk '$2 >= 90 {sum+=$2} END {print sum}' `
 
 
 # Sum length of all parsimonious columns with maxColOcc (same for different values of $fractnAlnCov) 
-sumMaxParsCols=`cat *_aln_summary.log | grep '^maxParsCols:' | awk '$2 >= 150 {sum+=$2} END {print sum}' `
+sumMaxParsCols=`cat *_aln_summary.log | grep '^maxParsCols:' | awk '$2 >= 90 {sum+=$2} END {print sum}' `
 ### NB - should not need to filter on min maxParsCols to tolerate BUT
 ### there is one value of 144 which I don't understand - they should arleady be filtered   
 

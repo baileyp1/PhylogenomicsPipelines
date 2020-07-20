@@ -176,11 +176,15 @@ if [[ $maxColOcc -ge 90 ]]; then
 	# Now find the lengths of each sequence in bases only (not dashes!)
 	# and create a list of sequences that are > $lenLongestGene:
 	# NB - this code works because, luckily for this case, fastalength ignores dash characters (unlike seqtk used above)!
-	#### NB 9.12.2019 - but in the case of $maxColOcc do/should I need to ignore dash chars????? I think it needs to be theobsolute length plus
-	###			31.1.2020 - no I think it's OK as it is.		
+	#### NB 9.12.2019 - but in the case of $maxColOcc do/should I need to ignore dash chars????? I think it needs to be theobsolute length plus...   31.1.2020 - no I think it's OK as it is
+	# 20.7.2020 - now also filtering out below a minimum length - 85 bases seems OK to me 		
+	#fastalength ${gene}_mafft_dna_aln_AMAS_${fractnMaxColOcc}.fasta 2>/dev/null \
+	#| awk -v LENG=$maxColOcc -v FRACTN=$fractnAlnCovrg '{if( ($1/LENG) >= FRACTN ) {print $2} }' \
+	#> ${gene}_mafft_dna_aln_ovr${fractnAlnCovrg_pc}pc_aln_covrg.txt
 	fastalength ${gene}_mafft_dna_aln_AMAS_${fractnMaxColOcc}.fasta 2>/dev/null \
-	| awk -v LENG=$maxColOcc -v FRACTN=$fractnAlnCovrg '{if( ($1/LENG) >= FRACTN ) {print $2} }' \
+	| awk -v LENG=$maxColOcc -v FRACTN=$fractnAlnCovrg '{if( ($1/LENG) >= FRACTN && $1 >= 85) {print $2} }' \
 	> ${gene}_mafft_dna_aln_ovr${fractnAlnCovrg_pc}pc_aln_covrg.txt
+
 
 
 	echo
