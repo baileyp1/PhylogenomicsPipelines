@@ -291,6 +291,8 @@ if [[ $addSampleName == 'yes' && $useGenewiseFiles  != 'yes' ]]; then
  	# Prepare fasta files:
 	for file in ${@:$OPTIND:$#}; do
 
+		echo option -a file test: $file
+
     	# Get filename and chop off the file ending if there is one:
     	uniqueSampleId=`basename $file | awk -F '.' '{print $1}' `
     	#echo $uniqueSampleId
