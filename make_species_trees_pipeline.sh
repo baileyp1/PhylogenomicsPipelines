@@ -23,7 +23,8 @@ fractnAlnCovrg=0.6
 fractnSamples=0.6
 fileNamePrefix=tree_pipeline
 phyloProgramDNA=fasttree
-phyloProgramPROT=no			# Work around to specify any program so software testing code will not crash! Ensures cmd parameter is always occupied which is critical. 
+phyloProgramPROT=no			# Work around to specify any program so software testing code will not crash! Ensures cmd parameter is always occupied which is critical
+treeshrink=no
 cpu=8						# number of cpu to use for RAxML in supermatrix method
 partitionName=main   		# Values depend on the cluster being used so good to have a flagged option for this
 							# NB - make_species_tree.sh uses 'long' queue - need an extra variable for that 
@@ -76,6 +77,7 @@ OPTIONS:
                    	If required, options are, fastest to slowest: fasttree, iqtree, raxml-ng (no default)
     -S <string>    name of phylogeny program for supermatrix approach (concatenated gene alignments).
     				If required, options are, fastest to slowest: fasttree, raxml-ng (no default)
+    -T             use Treeshrink on gene trees
      -C <integer>   number of cpu to use for genetrees; NB - not convinced >1 cpu works robustly for raxml-ng! (default=1)              	
 	-c <integer>   number of cpu to use for RAxML in supermatrix method (default=8)
 	-Q <string>    Slurm partition (queue) to use (default=medium) ]
@@ -101,7 +103,7 @@ EOF
 
 
 #echo User inputs:    ### For testing only 
-while getopts "hvat:ug:ijGf:m:s:p:M:q:r:C:c:d:Q:"  OPTION; do	# Remaining options - try capital letters!
+while getopts "hvat:ug:ijGf:m:s:p:M:q:r:TC:c:d:Q:"  OPTION; do	# Remaining options - try capital letters!
 
 	#echo -$OPTION $OPTARG	### For testing only - could try to run through options again below 
 	 
@@ -123,6 +125,7 @@ while getopts "hvat:ug:ijGf:m:s:p:M:q:r:C:c:d:Q:"  OPTION; do	# Remaining option
 		M) mafftAlgorithm="$OPTARG" ;;
 		q) phyloProgramDNA=$OPTARG ;;
 		r) phyloProgramPROT=$OPTARG ;;
+		T) treeshrink=yes ;;
 		C) cpuGeneTree=$OPTARG ;;
 		c) cpu=$OPTARG ;;
 		Q) partitionName=$OPTARG ;;
@@ -181,14 +184,15 @@ done
 echo '$# == ' $#										# Total number of all parameters (excludes script name, includes flags and their values, excludes free parameters (ones with no flags)) 
 echo \$OPTIND == $OPTIND								# Position of the first free parameter after any options - free parameters must come after any optional parameters.
 #echo 'Value of first free parameter: ' ${@:$OPTIND:1}	# Lists the value of the first free parameter from the $@ variable; ${@:$OPTIND:2} will access the first two free parameters.
-#echo 'Values of all free parameters: '${@:$OPTIND:$#}	# Therefore ${@:$OPTIND:$#} will access all the free parameters
+echo 'Values of all free parameters: '${@:$OPTIND:$#}	# Therefore ${@:$OPTIND:$#} will access all the free parameters
 echo $(( $# - $OPTIND + 1 ))							# Number of free parameters, in this case the number of samples
 numbrSamples=$(( $# - $OPTIND + 1 ))
 #echo $numbrSamples
 
 
 if [ $(( $# - $OPTIND + 1 )) -lt 4 ]; then				### 30.3.2020 AND speciesTreesOnly == no to handle scritp just processing species trees
-														### 4.7.2020 AND now if gene-wise files are entered - can have less than one of those right?
+														###		Would need to think how to specify the input file(s) !!!!!!!!!!! 
+														### 4.7.2020 AND now if gene-wise files == no are entered - can have less than one of those right?
     echo
     usage
     echo "ERROR: you need to input fasta files containing recovered genes from at least four species!"
@@ -228,6 +232,7 @@ fi
 
 
 ### 7.10.2019 - NOT YET STRESS TESTED ALL SITUATIONS
+### 16.7.2020 - also does it work for dna-wise files; also go through logic - doesn't make too much sense now.
 # 2. First ensure all filenames supplied are unique:
 numbrDuplicateNames=`for file in ${@:$OPTIND:$#}; do 
 					uniqueSampleId=$(basename $file | awk -F '.' '{print $1}' )
@@ -295,11 +300,15 @@ if [[ $addSampleName == 'yes' && $useGenewiseFiles  != 'yes' ]]; then
     	> ${uniqueSampleId}_modified.fasta
     	### NB - need to change awk code when altering format
 		### NB - keep an eye on the max line length allowed w.r.t. seqtk
+		### 14.7.2020 - consider to do what I've done just below for ${geneName}_dna.fasta and check  ${uniqueSampleId}_modified.fasta doesn't already exist
+		###				Actually not such a good idea - means that people can't over-run previuous run 
 
 		# If an input fasta file name doesn't exist then the 'modified.fasta' created above will not exist.
+		### 9.7.2020 - Can't remember why it is important to test - I think it because otherwise you end up with failed gene tree runs!  
 		# Testing whether file exists here:
 		if [[ ! -s ${uniqueSampleId}_modified.fasta ]]; then
 			echo "ERROR: this input fasta file does not exist or is empty: ${uniqueSampleId}_modified.fasta"
+			### Consider to add: If it exists and is empty, rename this file so that it is not picked up again e.g. to <prefix>.fasta_not_used"
 			exit 1
 		fi
     done
@@ -310,6 +319,7 @@ if [[ $addSampleName == 'yes' && $useGenewiseFiles  != 'yes' ]]; then
 	echo $fileList
 	cat $fileList | seqtk seq -l 0 /dev/fd/0 > all_samples_concatenated.fasta
 	geneFile=all_samples_concatenated.fasta
+
 
 elif [[ $useGenewiseFiles == 'yes' && $addSampleName != 'yes' ]]; then
 
@@ -328,15 +338,16 @@ elif [[ $useGenewiseFiles == 'yes' && $addSampleName != 'yes' ]]; then
     	geneName=`basename $file | awk -F '.' '{print $1}' `
     	#echo $geneName
 		cp $file ${geneName}_dna.fasta
-		if [[ $? == 1 ]]; then 
-			echo "ERROR: if running pipeline again in gene-wise mode, please run again in a new directory
-and input gene-wise fasta files with a relative path from the previous run e.g. ../old_run/*_dna.fasta"
+		if [[ $? == 1 ]]; then
+			### I've kept this in - it avoids _dna.fasta file stamping on itself if these files are submitted by the user 
+			echo "ERROR: if running pipeline (possibly again) in gene-wise mode, please run in a another directory
+and input gene-wise fasta files with a relative path (probably from a previous run) e.g. ../old_run/*_dna.fasta"
 			exit 1
 		fi
 	done
 	geneFile='use_genewise_files'	# Used to change conditional statements
 
-	# Need to recalculate numbrsamples variable here - up to here, $numbrSamples contains the number of gene-wise files entered.
+	# Need to recalculate numbrsamples variable here - up till here in script, $numbrSamples contains the number of gene-wise files entered.
 	# NB - Fasta file format here is: >sampelId.
     # NB - on MacOS awk inserts a blank line between output lines so removing them with grep -v '^$'.
     numbrSamples=`cat *_dna.fasta | awk '{if($1 ~ /^>/)  {print $1} }' | grep -v  '^$' | sort -u | wc -l `
@@ -365,7 +376,8 @@ else
      	afterDashCheck=`cat $file | awk '{if($1 ~ /^>/)  {print $1} }' |  awk -F '-' '{print $2}' | sort | uniq -c | awk '$1 > 1' | wc -l `
      	#echo "beforeDashCheck (sampleId): " $beforeDashCheck 
      	#echo "afterDashCheck (geneId): " $afterDashCheck 
-     	if [[ $beforeDashCheck -gt 1 ]]; then echo "ERROR: more than one sample identifier detected on fasta header line (there should only be one sample identifier for the default format) for this sample: $file \nAlso check that fasta header lines have this format: >sampleId-geneId"; exit 1
+     	if [[ $beforeDashCheck -gt 1 ]]; then echo "ERROR: more than one sample identifier detected on fasta header line (there should only be one sample identifier for the default format) for this sample: $file.
+     		Also check that fasta header lines have this format: >sampleId-geneId"; exit 1
      	elif [[ $afterDashCheck -gt 1 ]]; then echo "ERROR: gene identfiers should be unique, one or more not unique for this sample: $file \nAlso check that fasta header lines have this format: >sampleId-geneId"; exit 1
 		else cat $file | awk '{if($1 ~ /^>/)  {print $1} else {print $0}}' \
 			| awk -F '-' '{if($1 ~ /^>/) {{gsub(/>/,"",$1)} {print ">" $2 " " $1}} else {print $0}}' \
@@ -407,6 +419,7 @@ fi
 ####################
 # Code for option -t
 ####################
+# First need to determien whether option is even selected.
 if [[ $sampleTableFile != 'no' ]]; then
 	if [[ -s $sampleTableFile ]]; then
 		echo Will use this file containing text for the tree leaves: $sampleTableFile
@@ -496,7 +509,7 @@ if [[ "$cpu" -eq "$cpu" || "$cpuGeneTree" -eq "$cpuGeneTree" ]] 2>/dev/null
 then echo ""
 else echo "ERROR: option -c should contain an integer value - exiting "; exit; fi
 
-if [ -z $fileNamePrefix ]; then echo ""
+if [ -z $fileNamePrefix ]; then 	#echo ""
 	echo "ERROR: option -p used but an output file name prefix string was not supplied - exiting"
 	exit
 	### This doesn't really work because if there is no paramter value the next parameter becomes the value which is a string!
@@ -565,15 +578,37 @@ if [[ $os == 'Darwin' && $speciesTreesOnly == 'no' ]]; then
 		"$mafftAlgorithm" \
 		"$exePrefix"
 	done > make_gene_tree.log 2>&1
-	$pathToScripts/assess_gene_alignments.sh $fractnAlnCovrg $fractnMaxColOcc $fractnSamples $numbrSamples $fileNamePrefix $geneFile tree_tip_info_mapfile.txt $option_u > assess_gene_alns.log 2>&1
+	$pathToScripts/assess_gene_alignments.sh \
+	$fractnAlnCovrg \
+	$fractnMaxColOcc \
+	$fractnSamples \
+	$numbrSamples \
+	$fileNamePrefix \
+	$geneFile \
+	tree_tip_info_mapfile.txt \
+	$option_u \
+	> assess_gene_alns.log 2>&1
 
-	### 3.7.2020 - if treeshrink is required, runtreeshrink - here (?) + prepare files for re-running in geenwise mode
-	### I think $geneFile should be set to  use_genewise_files but if this varaibel is not longer use in assses scritp more logical to use $useGenewiseFiles AND also rm from make_species script
-	### Re-run above loop with the gene-wise flag
-	### maybe I need an end flag for suffing each new dna file for e.g. _treeshrunk.fasta - I know you copy old *_dna.fasta files to _before_treeshrink.fasta, then 
-		#### copy the new shrunk files to *.dna.fasta
-	### Finally the tree-pipeline prefix files need copying to before treeshrink plus all the log files - getting complex 
-
+	if [[ $treeshrink == 'yes' ]]; then
+		##########################################
+		echo 'Running TreeShrink on gene trees and continuing analysis in the "after_treeshrink_USE_THIS" directory...'
+		##########################################
+		run_treeshrink_and_realign.sh \
+		"$numbrSamples" \
+		"$phyloProgramDNA" \
+		"$phyloProgramPROT" \
+		"$sampleTableFile" \
+		"$geneListFile" \
+		"$fractnAlnCovrg" \
+		"$fractnMaxColOcc" \
+		"$fractnSamples" \
+		"$mafftAlgorithm" \
+		"$cpuGeneTree" \
+		"$partitionName" \
+		"$pathToScripts" \
+		> run_treeshrink_and_realign.log 2>&1
+		exit	# Species trees will be made after TreeShrink step in nested call to thhis script, if requested.
+	fi
 
 elif [[ $os == 'Linux' && $speciesTreesOnly == 'no' ]]; then
 	###exePrefix="/usr/bin/time -v -o g${gene}_mafft_dna_aln_time_and_mem.log"		# NB - this will not work here - need to pick up gene id in Slurm script instead.
@@ -618,6 +653,11 @@ elif [[ $os == 'Linux' && $speciesTreesOnly == 'no' ]]; then
     	echo jobInfo1: $jobInfo1
 		jobId1=`echo $jobInfo1 | cut -d ' ' -f 4 `
 		echo \$jobId1: $jobId1 - from running assess_gene_alignments.sh
+
+		if [[ $treeshrink == 'yes' ]]; then
+			echo "Set off via slurm:  run_treeshrink_and_realign.sh > run_treeshrink.log"
+		fi
+
 	else
 		cat $geneListFile | \
 		while read line ; do
@@ -640,6 +680,8 @@ elif [[ $os == 'Linux' && $speciesTreesOnly == 'no' ]]; then
 		$pathToScripts/assess_gene_alignments.sh $fractnAlnCovrg $fractnMaxColOcc $fractnSamples $numbrSamples $fileNamePrefix $geneFile $sampleTableFile $option_u
 	fi
 fi
+
+
 ### Could toggle off/on this step - if no aln, then make pipeline stop at this point
 if [ $geneTreesOnly == 'yes' ]; then exit; fi
 
@@ -694,18 +736,8 @@ elif [ $os == 'Linux' ]; then
     	### One option is to put the "time script" cmd in a wrapper but then I need a log file for this sbatch call and delete it from the script header..
     	### I think this is the only way without changing the main script itself.
 													
-        sbatch --dependency=afterok:$jobId1 -p long -c $cpu --mem=$speciesTreeMem  $pathToScripts/make_species_trees.sh $fractnAlnCovrg $fractnSamples $numbrSamples $fileNamePrefix $geneFile $cpu $phyloProgramDNA $phyloProgramPROT "$exePrefix" $sampleTableFile
+        sbatch --dependency=afterok:$jobId1 -p long -c $cpu --mem=$speciesTreeMem -o ${fileNamePrefix}_make_species_trees.log -e ${fileNamePrefix}_make_species_trees.log  $pathToScripts/make_species_trees.sh $fractnAlnCovrg $fractnSamples $numbrSamples $fileNamePrefix $geneFile $cpu $phyloProgramDNA $phyloProgramPROT "$exePrefix" $sampleTableFile
 	else
-		$pathToScripts/assess_gene_alignments.sh \
-		$fractnAlnCovrg \
-		$fractnMaxColOcc \
-		$fractnSamples \
-		$numbrSamples \
-		$fileNamePrefix \
-		$geneFile \
-		$sampleTableFile \
-		$option_u \
-		> assess_gene_alns.log 2>&1
 		$pathToScripts/make_species_trees.sh \
 		$fractnAlnCovrg \
 		$fractnSamples \

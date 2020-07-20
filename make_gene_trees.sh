@@ -71,6 +71,15 @@ if [[ $geneFile != 'use_genewise_files' ]]; then
 	> ${gene}_dna.fasta
 	# NB - grep -v '^--$' removes output between each set of rows that grep produces.
 
+	# It is possible that this file ${gene}_dna.fasta will be empty if option -a is set but gene-wise files have been input
+	# OR if there are no sequences for this gene
+	### Consider to copy the below elif to here as well to capture this - it just means that when no gene seqs exit for
+	### a gene the pipeline will exit - this is probablsbly a good thing to happen, no?
+	### he decision is to print an error ONLY or also to exit - I'm just ignoring the gene if # seqs < 3 so should do that here as well 
+	### -OK this is easy!!!   Also for lien 195 if [ "$numbrSeqs" -gt 3 ]; then --> need a WARNING in an else clause!!!!!!!!!ß
+
+
+
 # If an input fasta file name doesn't exist then the 'modified.fasta' created above will not exist.
 # Testing whether file exists here:
 elif [[ ! -s ${gene}_dna.fasta ]]; then
@@ -156,7 +165,7 @@ echo maxColOcc: $maxColOcc  >> ${geneId}_aln_summary.log
 # ratioLenOcc=`echo $length $maxOcc | awk '{printf "%.0f", $1/$2}' `
 # However, then I'm relying on $lenLongestGene again and the are some issues with that (see above)   
 # Just testing $maxColOcc should be OK:
-if [[ $maxColOcc -ge 150 ]]; then
+if [[ $maxColOcc -ge 90 ]]; then
 
 	# Calculate the number of parsimonious columns (-p option) for the columns found from $maxColOcc:
 	AMAS.py trim -f fasta -d dna -t $fractnMaxColOcc -p -i ${gene}_mafft_dna_aln_AMAS_${fractnMaxColOcc}.fasta -o ${gene}_mafft_dna_aln_AMAS_${fractnMaxColOcc}_-p.fasta
@@ -210,8 +219,15 @@ if [[ $maxColOcc -ge 150 ]]; then
 		# Stats on the number of bases removed (it will be considerable for large trees with diverse taxa)
 		lenLongestGeneAfterTrim=`fastalength ${gene}_mafft_dna_aln_ovr${fractnAlnCovrg_pc}pc_aln_covrg_trimCols0.003.fasta | sort -n | tail -n 1 | awk '{print $1}' `
 		echo lenLongestGeneAfterTrim: $lenLongestGeneAfterTrim  >> ${geneId}_aln_summary.log
+
+
 		
 
+
+### After any trimming need to end up with a common filename e.g.:
+### ${gene}_mafft_dna_aln_ovr${fractnAlnCovrg_pc}pc_aln_covrg_trim.fasta
+### Don't I just assign it to a varialbe and use that?!!!!!!
+### 11.7.2020 - this is the point common to any trimming step before.
 		if [ "$phyloProgramDNA" == 'fasttree' ]; then
 			###srun -J ${gene}_make_tree -n 1 \
 			echo
@@ -261,7 +277,7 @@ if [[ $maxColOcc -ge 150 ]]; then
 			${gene}_dna_gene_tree_USE_THIS.nwk
 			rm  ${gene}_mafft_dna_aln_iqtree.contree
 		else 
-			echo "Phylogeny program for gene trees from DNA sequences not detected - - will not make gene trees from DNA sequence."
+			echo "Phylogeny program for gene trees from DNA sequences not detected - will not make gene trees from DNA sequence."
 		fi
 
 

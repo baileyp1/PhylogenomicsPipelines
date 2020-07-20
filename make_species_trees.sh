@@ -1,9 +1,10 @@
 #!/bin/bash
 #SBATCH -J make_species_trees                               # -c option: need to set cpu before sbatch calls so doing that with the sbatch call instead.
 #SBATCH -n 1                                                # Also setting these paramters in the sbatch call:  -p long, --mem 100000 
-#SBATCH -o ${fileNamePrefix}_make_species_trees.log			# If this line is not set, default output name is slurm-%A_%a.out: %A = $SLURM_ARRAY_JOB_ID; %a = $SLURM_ARRAY_TASK_ID		 
-#SBATCH -e ${fileNamePrefix}_make_species_trees.log			# NB - if I just specify the %a, then I don't get an accumulation of ouput files for each run of the script
-												            ### Test whether you can specify redirection to .log file via 2>&1
+####SBATCH -o ${fileNamePrefix}_make_species_trees.log			# If this line is not set, default output name is slurm-%A_%a.out: %A = $SLURM_ARRAY_JOB_ID; %a = $SLURM_ARRAY_TASK_ID		 
+####SBATCH -e ${fileNamePrefix}_make_species_trees.log			# NB - if I just specify the %a, then I don't get an accumulation of ouput files for each run of the script
+												            ### Test whether you can specify redirection to .log file via 2>&
+                                                            ### NBNB - moved the -o and -flags to the main script because you can't specify fileNamePrefix variable at this point in the script!
 
 shopt -s failglob 
 
@@ -90,40 +91,6 @@ if [[ "$phyloProgramPROT" == 'fasttree' ||  "$phyloProgramPROT" == 'raxml-ng' ||
     '$2 >= numbrSamplesThreshold  {print $1 "_protein_gene_tree_USE_THIS.nwk"}' \
     | xargs cat > ${fileNamePrefix}_protein_gene_trees_for_coelescence_phylo.nwk
 fi
-
-
-echo
-echo
-echo ##############################
-echo Step 2 - running TreeShrink...
-echo ##############################
-echo
-echo
-
-# ### if [ $phyloProgramDNA is ON && treeshrink option ON  ]; then
-
-#     # Need to arrange directories for tree and alignment per gene:
-#     # Current aln name: *_mafft_dna_aln_ovr${fractnAlnCovrg_pc}pc_aln_covrg_trimCols0.003.fasta
-#     # Current tree name: *_dna_gene_tree_USE_THIS.nwk
-#     mkdir treeshrink_dna_gene_trees
-#     # for $file in  *_dna_gene_tree_USE_THIS.nwk; do
-#         extract gene name e.g. gene=`echo $file | sed "s/_mafft_dna_aln_ovr${fractnAlnCovrg_pc}pc_aln_covrg_trimCols0.003.fasta//"
-#         # mkdir treeshrink_dna_gene_trees/$geneId 
-#         # Copy file into the gene directory and need to give it a name common to all the gene tree and aln files:
-#         cp -p $file  treeshrink_dna_gene_trees/$geneId/dna_gene_tree_USE_THIS.nwk
-#         cp ${geneId}_mafft_dna_aln_ovr${fractnAlnCovrg_pc}pc_aln_covrg_trimCols0.003.fasta  treeshrink_dna_gene_trees/$geneId/dna_gene_tree_aln.fasta
-#     #done
-#     run_treeshrink.py -i treeshrunk_dna_gene_trees  -t dna_gene_tree_USE_THIS.nwk -a dna_gene_tree_aln.fasta   >treeshrink.log 2>&1
-# # fi
-
-# mv treeshrunk_dna_gene_trees  treeshrink_dna_gene_trees_1st_round - required???????
-### NBNB - just a list of species to realign - so maybe best to extract with seqtk from a list
-### Also need a list of samples that were removed from the gene trees and how many times in total 
-### NB - what happens if no samples were removed?! Need to report that as well.
-
-
-
-
 
 
 echo
