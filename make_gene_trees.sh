@@ -247,6 +247,7 @@ if [[ $maxColOcc -ge 90 ]]; then
 			### and also aln length - keep an eye on this - test larger dataet with 2, 4 cpu
 			echo
 			echo Running raxml-ng on the DNA alignment...
+			$cpuGeneTree=1		# NB - at the moment keeping cpu to 1 because very small trees can crash if # cpu is higher - can do ||elisation other ways with RAxML though 
 			$exePrefix raxml-ng --threads $cpuGeneTree \
 			--redo \
 			--all \
@@ -344,6 +345,7 @@ if [[ $maxColOcc -ge 90 ]]; then
 				# RAxML-NG with protein (uses conventional bs support - how fast is it? it is slow!):
 				echo
 				echo Running raxml-ng on the protein alignment...
+				$cpuGeneTree=1		# NB - at the moment keeping cpu to 1 because very small trees can crash if # cpu is higher - can do ||elisation other ways with RAxML though 
 				$exePrefix raxml-ng --threads $cpuGeneTree \
 				--redo \
 				--all \
@@ -367,8 +369,9 @@ if [[ $maxColOcc -ge 90 ]]; then
 				--seqtype AA \
 				-s ${gene}_mafft_protein_aln_ovr${fractnAlnCovrg_pc}pc_aln_covrg_trimCols0.003.fasta \
 				--prefix ${gene}_mafft_protein_aln_iqtree \
-				-B 100 \
-				-alrt 100
+				-B 1000 \
+				#####-alrt 100
+
 
 				# Rename final tree file to a clearer name:
 				cp -p ${gene}_mafft_protein_aln_iqtree.contree \
