@@ -17,12 +17,12 @@ shopt -s failglob
 # Set up commandline parameters and fetch their values using getopts
 ####################################################################
 
-# Variables for any command line flags needing a default value:
+# Variables for any command line flags requiring a default value:
 hybSeqProgram=paftools
 samplePrefix=Sample
-cpu=4
-slurmMemory=130000  # Using 80,000 MB for most samples and 130000 MB for very large samples - could use 130000 MB on all samples; only 0.3GB required for HybPiper it seems, use 20GB
-partitionName=fast  # Values depend on the cluster being used so good to have a flagged option for this
+cpu=''              # Was 4
+slurmMemory=''      # No default required any more; Using 80,000 MB for most samples and 130000 MB for very large samples - could use 130000 MB on all samples; only 0.3GB required for HybPiper it seems, use 20GB
+partitionName=''    # No default now. Values depend on the cluster being used so good to have a flagged option for this
 
 # Hidden options (i.e. not apparent from the help menu but they always have a value so can be used in downstream scripts):
 usePaftolDb=no  # d) usePaftolDb='--usePaftolDb' ;;
@@ -49,9 +49,9 @@ Usage: recover_genes_from_all_samples.sh
   [ -a   file name of adaptors in fasta format (required option) ]
   [ -y   Hyb-Seq program; options are 'paftools' or 'hybpiper' (default=paftools) ]
   [ -p   directory prefix for each sample (default=Sample) ]
-  [ -c   number of cpu to use (default=4) ]
-  [ -m   Slurm memory to use (in MB); Paftools requires >> 20000, HybPiper requires << 20000 (default=20000) ]
-  [ -Q   Slurm partition (queue) to use (default=medium) ]
+  [ -c   Slurm cpu flag and number of cpu to use (e.g. '-c 4') ]
+  [ -m   Slurm memory flag and memory to use (in MB); Paftools requires >> 20000, HybPiper requires << 20000 (e.g. '--mem 20000') ]
+  [ -Q   Slurm partition (queue) flag and partition to use (e.g. '-p medium') ]
   [ -h   prints usage and description ]
   [ -v   program version]
 
@@ -89,8 +89,8 @@ while getopts "hvs:t:f:a:y:p:c:de:m:Q:"  OPTION; do
     c) cpu=$OPTARG ;;
     d) usePaftolDb='usePaftolDb' ;;
     e) slurmThrottle=$OPTARG ;;
-    m) slurmMemory=$OPTARG ;;
-    Q) partitionName=$OPTARG ;;    
+    m) slurmMemory="$OPTARG" ;;
+    Q) partitionName="$OPTARG" ;;    
     ?)  echo This option does not exist. Read the usage summary below.
             echo
             usage; exit 1 ;;
@@ -231,7 +231,7 @@ elif [ $os == 'Linux' ]; then
       slurmThrottle=$numbrSamples
     fi
 
-    jobInfo=`sbatch -p $partitionName -c $cpu  --mem $slurmMemory  --array=1-${numbrSamples}%$slurmThrottle  $pathToScripts/slurm_setup_array_to_recover_genes.sh \
+    jobInfo=`sbatch  $partitionName  $cpu  $slurmMemory  --array=1-${numbrSamples}%$slurmThrottle  $pathToScripts/slurm_setup_array_to_recover_genes.sh \
     $sampleList \
     $targetsFile \
     $paftolDataSymlinksDir \

@@ -77,7 +77,7 @@ fi
 usePaftolDbFlag=''
 if [ $hybSeqProgram == 'paftools' ]; then
 
-	if [ $usePaftolDb == 'usePaftolDb' ]; then
+	if [ $usePaftolDb == 'usePaftolDb' ]; then 			### 21.7.2020 - To fit with other data types, change to $usePaftolDb == 'usePaftolDb' then test each name entered, else exit if not a proper dataset acronym 
 		usePaftolDbFlag='--usePaftolDb'
 
 		# Remove the .gz ending from the file name for adding to the pafto_da database
@@ -88,7 +88,7 @@ if [ $hybSeqProgram == 'paftools' ]; then
 		gunzip -f -c $paftolDataSymlinksDir/$R1FastqFile > $unzippedR1FastqFile
 		gunzip -f -c $paftolDataSymlinksDir/$R2FastqFile > $unzippedR2FastqFile
 		export PYTHONPATH=$HOME/lib/python
-		paftools addPaftolFastq  $unzippedR1FastqFile  $unzippedR2FastqFile --fastqPath $paftolDataSymlinksDir --dataOrigin PAFTOL
+		paftools addPaftolFastq  $unzippedR1FastqFile  $unzippedR2FastqFile --fastqPath $paftolDataSymlinksDir --dataOrigin PAFTOL 	######--sampleId=sampleId - must be inlcuded for all data types, except paftol (but there is no harm in always including it) 
 		# NB - the name must be of this format e.g. PAFTOL_005853_R1.fastq
 		### Need to add the legacy path name which would be e.g. $paftolDataSymlinksDir/$unzippedR1FastqFile
 		### Add a new option to program for uploading SRA e.g. -d PAFTOL, -d SRA
