@@ -50,7 +50,7 @@ Usage: recover_genes_from_all_samples.sh
   [ -y   Hyb-Seq program; options are 'paftools' or 'hybpiper' (default=paftools) ]
   [ -p   directory prefix for each sample (default=Sample) ]
   [ -c   number of cpu to use (default=4) ]
-  [ -m   Slurm memory to use (in MB); Paftools requires >> 20000, HybPiper requires << 20000 (default=0) ]
+  [ -m   Slurm memory to use (in MB); Paftools requires >> 20000, HybPiper requires << 20000 (default=0; means no limit is set) ]
   [ -Q   Slurm partition (queue) to use (default=medium) ]
   [ -h   prints usage and description ]
   [ -v   program version]
@@ -72,7 +72,7 @@ EOF
 
 
 #echo User inputs:    ### For testing only 
-while getopts "hvs:t:f:a:y:p:c:de:m:Q:"  OPTION; do
+while getopts "hvs:t:f:a:y:p:c:d:e:m:Q:"  OPTION; do
  
   #echo -$OPTION $OPTARG    ### For testing only - could try to run through options below 
    
@@ -87,7 +87,7 @@ while getopts "hvs:t:f:a:y:p:c:de:m:Q:"  OPTION; do
     y) hybSeqProgram=$OPTARG ;;
     p) samplePrefix=$OPTARG ;;
     c) cpu=$OPTARG ;;
-    d) usePaftolDb='usePaftolDb' ;;
+    d) usePaftolDb=$OPTARG ;;
     e) slurmThrottle=$OPTARG ;;
     m) slurmMemory=$OPTARG ;;
     Q) partitionName=$OPTARG ;;    
@@ -110,7 +110,7 @@ if [ "$#" -lt 1 ]; then usage; exit 1; fi
 # Check required software dependancies
 ######################################
 # Only two programs to check currently (Paftools and HybPiper; can use -h and --help, both give a zero exit code)
-### 29.3.2020 - maybe do this after all other checks so the print out doesn't appear if there is an issue with input parameters
+### 29.3.2020 - addpaftolfastqmaybe do this after all other checks so the print out doesn't appear if there is an issue with input parameters
 ### 12.5.2020 - also Trimmomatic is required. Others e.g. fastqc are dependancies of Paftools
 if [ $hybSeqProgram == 'hybpiper' ]; then
     echo 'Testing HybPiper is installed, will exit with a 127 error if not found.' 
@@ -156,6 +156,12 @@ fi
 if [ "$cpu" -eq "$cpu" ] 2>/dev/null
 then echo ""
 else usage; echo "ERROR: option -c should be an integer - exiting "; exit; fi  
+
+
+if [[ $usePaftolDb != 'PAFTOL' && $usePaftolDb != 'OneKP_Transcripts' && $usePaftolDb != 'OneKP_Reads' && $usePaftolDb != 'SRA' && $usePaftolDb != 'AG' ]]; then 
+  usage; echo "ERROR: option -d should contain one of the following data sets: PAFTOL, OneKP_Transcripts, OneKP_Reads, SRA or AG - you added $usePaftolDb. Exiting"
+  exit
+fi    
 
 ##########################
 # End of user input checks
@@ -207,7 +213,7 @@ if [ $os == 'Darwin' ]; then
   	### Keep an eye on whether the $line variable value can break up with any chars
     echo $line
   	$pathToScripts/recover_genes_from_one_sample.sh "$line"  $targetsFile  $paftolDataSymlinksDir  $adapterFasta  $samplePrefix  $cpu  "$exePrefix" $hybSeqProgram $usePaftolDb
-  done > recover_genes_from_all_samples.log 2>&1
+  done
 elif [ $os == 'Linux' ]; then
   exePrefix="/usr/bin/time -v"	# PYTHONPATH works on the Cluster, but on Macbook, it deosn't need to be set (only really need to alter the flag char!)
   slurm=`sbatch -V | grep ^slurm | wc -l `
