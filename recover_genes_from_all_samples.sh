@@ -158,8 +158,8 @@ then echo ""
 else usage; echo "ERROR: option -c should be an integer - exiting "; exit; fi  
 
 
-if [[ $usePaftolDb != 'PAFTOL' && $usePaftolDb != 'OneKP_Transcripts' && $usePaftolDb != 'OneKP_Reads' && $usePaftolDb != 'SRA' && $usePaftolDb != 'AG' ]]; then 
-  usage; echo "ERROR: option -d should contain one of the following data sets: PAFTOL, OneKP_Transcripts, OneKP_Reads, SRA or AG - you added $usePaftolDb. Exiting"
+if [[ $usePaftolDb != 'PAFTOL' && $usePaftolDb != 'OneKP_Transcripts' && $usePaftolDb != 'OneKP_Reads' && $usePaftolDb != 'SRA' && $usePaftolDb != 'AG' && $usePaftolDb != 'no' ]]; then 
+  usage; echo "ERROR: option -d should contain one of the following data sets: PAFTOL, OneKP_Transcripts, OneKP_Reads, SRA or AG - you added \'$usePaftolDb\'. Exiting"
   exit
 fi    
 
