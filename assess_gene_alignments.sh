@@ -25,6 +25,8 @@ fileNamePrefix=$5
 geneFile=$6
 treeTipInfoMapFile=$7
 option_u=$8
+seqType=$9
+alnFileForTreeSuffix=${10}
 
 ### Potential additional (hidden) parameters to set:
 ###minColOccToTolerate
@@ -45,6 +47,8 @@ numbrSamplesThreshold=`awk -v FRACTN=$fractnSpecies -v numbrSamples=$totalNumbrS
 #echo fractnSpecies to use: $fractnSpecies
 #echo numbrSamples: $totalNumbrSamples
 #echo numbrSamplesThreshold: $numbrSamplesThreshold
+echo "seqType (in assess script): " $seqType
+echo "alnFileForTreeSuffix (in assess script): " $alnFileForTreeSuffix
 
 
 if [[ $geneFile != 'use_genewise_files' ]]; then 
@@ -131,7 +135,8 @@ sumMaxParsCols=`cat *_aln_summary.log | grep '^maxParsCols:' | awk '$2 >= 90 {su
 
 
 # Total number of bases in the maxColOcc area for all samples:
-totalBasesInMaxColOccRegion=`for file in *_mafft_dna_aln_ovr${fractnAlnCovrg_pc}pc_aln_covrg.fasta; do fastalength $file 2>/dev/null ; done | awk '{sum+=$1} END {print sum}' `
+totalBasesInMaxColOccRegion=`for file in *.$alnFileForTreeSuffix; do fastalength $file 2>/dev/null ; done | awk '{sum+=$1} END {print sum}' `
+										 ### 20.8.2020 - was file before trim 0.003 
 
 
 echo 'Table for gene alignments showing numbers per gene for:
@@ -141,13 +146,13 @@ echo 'Table for gene alignments showing numbers per gene for:
 4. Number of parsimonious columns in length of common overlap (ParsimCols)
 5. number of samples (NumberSamples, after filtering sequences by coverage)' > ${fileNamePrefix}_summary_gene_recovery.txt
 echo 'GeneId LenLongestGene LenLongestGeneTrim MinColOcc ParsimCols Ratio:Col3/Col4 NumberSamples' | column -t >> ${fileNamePrefix}_summary_gene_recovery.txt
-for file in *_mafft_dna_aln_ovr${fractnAlnCovrg_pc}pc_aln_covrg.fasta; do
- 	gene=`echo $file | sed "s/_mafft_dna_aln_ovr${fractnAlnCovrg_pc}pc_aln_covrg.fasta//" `
+for file in *.$alnFileForTreeSuffix; do
+ 	gene=`echo $file | sed "s/.$alnFileForTreeSuffix//" `
  	numbrSamples=`cat $file | grep '>' | wc -l `
 	lenLongestGene=`fastalength  $file 2>/dev/null | sort -n | tail -n 1 | awk '{print $1}' `				                 # The longest recovered gene in the aln
-    maxColOcc=`fastalength  ${gene}_mafft_dna_aln_AMAS_${fractnMaxColOcc}.fasta  2>/dev/null | sort -n | tail -n 1 | awk '{print $1}' `     # minimum column occupancy (aln columns)
-    maxColOccP=`fastalength  ${gene}_mafft_dna_aln_AMAS_${fractnMaxColOcc}_-p.fasta  2>/dev/null | sort -n | tail -n 1 | awk '{print $1}' ` # minimum column occupancy (parsimonious sites ONLY)
-	lenLongestGeneAfterTrim=`fastalength ${gene}_mafft_dna_aln_ovr${fractnAlnCovrg_pc}pc_aln_covrg_trimCols0.003.fasta 2>/dev/null | sort -n | tail -n 1 | awk '{print $1}' `
+    maxColOcc=`fastalength  ${gene}_${seqType}_aln_AMAS_trim_${fractnMaxColOcc}.fasta  2>/dev/null | sort -n | tail -n 1 | awk '{print $1}' `     # minimum column occupancy (aln columns)
+    maxColOccP=`fastalength  ${gene}_${seqType}_aln_AMAS_trim_-p_${fractnMaxColOcc}.fasta  2>/dev/null | sort -n | tail -n 1 | awk '{print $1}' ` # minimum column occupancy (parsimonious sites ONLY)
+	lenLongestGeneAfterTrim=`fastalength ${gene}.$alnFileForTreeSuffix 2>/dev/null | sort -n | tail -n 1 | awk '{print $1}' `
 	ratio=`echo  $lenLongestGeneAfterTrim  $maxColOcc | awk '{printf "%.2f", $1/$2}' `								         # Might be an indicator of overall effectiveness of gene recovery for samples submitted
     echo "$gene $lenLongestGene $lenLongestGeneAfterTrim $maxColOcc $maxColOccP $ratio $numbrSamples"| column -t
 done | sort -k4n| column -t >> ${fileNamePrefix}_summary_gene_recovery.txt
@@ -157,7 +162,7 @@ done | sort -k4n| column -t >> ${fileNamePrefix}_summary_gene_recovery.txt
 
 
 # Number of gene alignments containing $fractnSpecies_pc % of samples (NB - also after trimming for rare insertions):
-numbrGeneAlnsForSpeciesTree=`for file in *_mafft_dna_aln_ovr${fractnAlnCovrg_pc}pc_aln_covrg_trimCols0.003.fasta; do
+numbrGeneAlnsForSpeciesTree=`for file in *.$alnFileForTreeSuffix; do
  	numbrSamples=$(cat $file | grep '>' | wc -l)
     echo $numbrSamples
 done \
@@ -166,11 +171,11 @@ done \
 
 
 # Total number of alignment columns in the area of common overlap for these genes (NB - also after trimming for rare insertions):
-numbrOverlapColsForSpeciesTree=`for file in *_mafft_dna_aln_ovr${fractnAlnCovrg_pc}pc_aln_covrg_trimCols0.003.fasta; do
-	gene=$(echo $file | sed "s/_mafft_dna_aln_ovr${fractnAlnCovrg_pc}pc_aln_covrg_trimCols0.003.fasta//")
+numbrOverlapColsForSpeciesTree=`for file in *.$alnFileForTreeSuffix; do
+	gene=$(echo $file | sed "s/.$alnFileForTreeSuffix//")
  	numbrSamples=$(cat $file | grep '>' | wc -l)
     #lenLongestGene=$(fastalength  $file | sort -n | tail -n 1 | awk '{print $1}')				                 		   # The longest recovered gene in the aln
-    maxColOcc=$(fastalength  ${gene}_mafft_dna_aln_AMAS_${fractnMaxColOcc}.fasta  2>/dev/null | sort -n | tail -n 1 | awk '{print $1}')   # maximum column occupancy (aln columns)
+    maxColOcc=$(fastalength  ${gene}_${seqType}_aln_AMAS_trim_${fractnMaxColOcc}.fasta  2>/dev/null | sort -n | tail -n 1 | awk '{print $1}')   # maximum column occupancy (aln columns)
     echo $numbrSamples  " " $maxColOcc
     ####echo 2000  "test" $maxColOcc
 done \
@@ -180,16 +185,19 @@ done \
 
 
 
+### 20.8.2020 - Need to re-work this section 
+### Still get the same stats but better now to redo the protein lists in the species tree script i think 
+
 ################################################################################################################################
 # Create list of gene alns with > ${fractnAlnCovrg_pc} gene coverge AND containing more than the $fractnSpecies % of the samples
 # Used to concatenate gene alns for supermatrix methods AND to gather the stats below
 ################################################################################################################################
-for file in *_mafft_dna_aln_ovr${fractnAlnCovrg_pc}pc_aln_covrg_trimCols0.003.fasta; do
- 	gene=`echo $file | sed "s/_mafft_dna_aln_ovr${fractnAlnCovrg_pc}pc_aln_covrg_trimCols0.003.fasta//" `
+for file in *.$alnFileForTreeSuffix; do
+ 	gene=`echo $file | sed "s/.$alnFileForTreeSuffix//" `
  	numbrSamples=`cat $file | grep '>' | wc -l `;
     echo $gene " " $numbrSamples
 done \
-| awk -v numbrSamplesThreshold=$numbrSamplesThreshold -v fractnAlnCovrg_pc=${fractnAlnCovrg_pc}  '$2 >= numbrSamplesThreshold  {print $1 "_mafft_dna_aln_ovr" fractnAlnCovrg_pc "pc_aln_covrg_trimCols0.003.fasta"}' \
+| awk -v alnFileForTreeSuffix=$alnFileForTreeSuffix -v numbrSamplesThreshold=$numbrSamplesThreshold -v fractnAlnCovrg_pc=${fractnAlnCovrg_pc}  '$2 >= numbrSamplesThreshold  {print $1 "." alnFileForTreeSuffix}' \
 > mafft_dna_alns_fasta_file_list.txt
 
 # For protein file list:
@@ -229,18 +237,19 @@ Total number of samples: $totalNumbrSamples" > ${fileNamePrefix}_summary_stats.t
 if [[ $geneFile != 'use_genewise_files' ]]; then 
 
 	echo "
-Largest sum length of all genes for a sample found (that sample in brackets): $maxSumOfContigLengths
+Largest sum length of all genes in bases for a sample found (that sample in brackets): $maxSumOfContigLengths
 Number of poor quality samples (<= 20% of the largest sum length of all genes per sample): $poorQualitySamples
 Number of ok/good quality samples (> 20% of the largest sum length of all genes per sample): $okQualitySamples" >> ${fileNamePrefix}_summary_stats.txt
 fi
 
 
 echo "
+Sequence type assessed: $seqType
 Sum Length of the longest gene sequence in each alignment: $sumLenLongestGene
 Sum Length of the longest gene sequence in each alignment after trimming rare inserts: $sumLenLongestGeneAfterTrim
 Total number of homologous columns occupied by >= $fractnMaxColOcc_pc % of samples: $sumMaxColOcc (area of common overlap)
 Total number of homologous + parsimonious columns occupied by >= $fractnMaxColOcc_pc % of samples: $sumMaxParsCols
-Total number of bases in area of common overlap: $totalBasesInMaxColOccRegion
+Total number of residues in area of common overlap: $totalBasesInMaxColOccRegion
 
 Number of gene alignments containing >= $fractnSpecies_pc % of the samples after filtering by coverage (will be used in the species tree): $numbrGeneAlnsForSpeciesTree
 Total number of alignment columns in the area of common overlap for these genes: $numbrOverlapColsForSpeciesTree

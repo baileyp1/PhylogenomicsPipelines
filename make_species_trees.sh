@@ -23,6 +23,10 @@ phyloProgramDNA=$7
 phyloProgramPROT=$8
 exePrefix="$9"
 treeTipInfoMapFile=${10}
+dnaSelected=${11}
+proteinSelected=${12}
+codonSelected=${13}
+alnFileForTreeSuffix=${14}      # Should be generic for dna, protein or codon filenames! gene_tree_USE_THIS.nwk
 
 # Convert $emptyMatchStateFractn and $fractnSpecies to a percent for use in the output files:
 fractnAlnCovrg_pc=`awk -v FRACTN=$fractnAlnCovrg 'BEGIN{printf "%.0f", FRACTN * 100}' `
@@ -61,35 +65,48 @@ getTreeStats () {
     while read clade; do 
     echo $clade | sed 's/[)(;]//g' | tr ',' '\n' | sort |tr '\n' ' '; echo
     done | sort > ${outFilePrefix}_sorted_clade_list.txt
+    ### 21.7.2020 - also bring in the USE_THIS .nwk file and repeat - required for annotation file
 }
 
 
 #### 14.1.2019 - this step belwo can stay in this script
 #### Need to use the trim0.01.fasta file for this step so I concatenate the correct files.
 
+### 20.8.2020 - need to put conditonals for each residue type:
+### if [[ $dnaSelected == 'yes' ]]; then
+###     seqType=dna   
+###     make a dna species tree - can I make a subroutine for dna protein and codon and for supermatrix trees? 
+
 
 # Concatenate trees containing more than $fractnSpecies of samples for use with ASTRAL:
 # NB - have made filenames generic so they can be derived from different phylo programs.
-for file in *_mafft_dna_aln_ovr${fractnAlnCovrg_pc}pc_aln_covrg_trimCols0.003.fasta; do
- 	gene=`echo $file | sed "s/_mafft_dna_aln_ovr${fractnAlnCovrg_pc}pc_aln_covrg_trimCols0.003.fasta//" `
- 	numbrSamples=`cat $file | grep '>' | wc -l `;
-    echo $gene " " $numbrSamples
-done \
-| awk -v numbrSamplesThreshold=$numbrSamplesThreshold -v fractnAlnCovrg_pc=${fractnAlnCovrg_pc} \
-'$2 >= numbrSamplesThreshold  {print $1 "_dna_gene_tree_USE_THIS.nwk"}' \
-| xargs cat > ${fileNamePrefix}_dna_gene_trees_for_coelescence_phylo.nwk
+echo dnaSelected: $dnaSelected
+if [[ $dnaSelected == 'yes' ]]; then    ### TEMP SET UP - this doesn't woerk!!!!
+    seqType=dna     ### Still to finish implementation
+    echo Listing required files:
+    ls *.${seqType}_$alnFileForTreeSuffix
+    for file in *.${seqType}.$alnFileForTreeSuffix; do
+ 	  gene=`echo $file | sed "s/.${seqType}.$alnFileForTreeSuffix//" `
+ 	  numbrSamples=`cat $file | grep '>' | wc -l `;
+        echo $gene " " $numbrSamples
+    done \
+    | awk -v numbrSamplesThreshold=$numbrSamplesThreshold -v fractnAlnCovrg_pc=${fractnAlnCovrg_pc} \
+    '$2 >= numbrSamplesThreshold  {print $1 "_dna_gene_tree_USE_THIS.nwk"}' \
+    | xargs cat > ${fileNamePrefix}_${seqType}_gene_trees_for_coelescence_phylo.nwk
+fi
 
 
 if [[ "$phyloProgramPROT" == 'fasttree' ||  "$phyloProgramPROT" == 'raxml-ng' || "$phyloProgramPROT" == 'iqtree2' ]]; then
+    seqType=protein
     # Concatenate the protein gene trees as well (almost repeat of the above code):
-    for file in *_mafft_protein_aln_ovr${fractnAlnCovrg_pc}pc_aln_covrg_trimCols0.003.fasta; do
- 	  gene=`echo $file | sed "s/_mafft_protein_aln_ovr${fractnAlnCovrg_pc}pc_aln_covrg_trimCols0.003.fasta//" `
+    for file in *.${seqType}.$alnFileForTreeSuffix; do
+ 	  gene=`echo $file | sed "s/.${seqType}.$alnFileForTreeSuffix//" `
  	  numbrSamples=`cat $file | grep '>' | wc -l `;
         echo $gene " " $numbrSamples
     done \
     | awk -v numbrSamplesThreshold=$numbrSamplesThreshold -v fractnAlnCovrg_pc=${fractnAlnCovrg_pc} \
     '$2 >= numbrSamplesThreshold  {print $1 "_protein_gene_tree_USE_THIS.nwk"}' \
-    | xargs cat > ${fileNamePrefix}_protein_gene_trees_for_coelescence_phylo.nwk
+    | xargs cat > ${fileNamePrefix}_${seqType}_gene_trees_for_coelescence_phylo.nwk
 fi
 
 

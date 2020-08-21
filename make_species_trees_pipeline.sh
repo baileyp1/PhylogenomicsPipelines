@@ -13,15 +13,25 @@ shopt -s failglob
 ####################################################################
 
 # Variables for any command line flags needing a default value:
+# INPUT FILE OPTIONS:
+useGenewiseFiles=no
 addSampleName=no
 sampleTableFile=no			# 10.5.2020 - only just added in - check - ensures cmdline parameter is always accupied which is critical
 option_u=no
-geneTreesOnly=no
-speciesTreesOnly=no
-useGenewiseFiles=no
+
+# ALIGNMENT OPTIONS:
+seqType=dna
+alnProgram=mafft 				# 27.7.2020 - may want to merge this option with mafftAlgorithm so it woudl be quoted liek so: 'mafft --retree 2'
+
+# FILTERING AND TRIMMING OPTIONS:
+filterSeqs1='no'			# My filter sequencing option (option 1)
 fractnAlnCovrg=0.6
 fractnSamples=0.6
 fileNamePrefix=tree_pipeline
+
+# PHYLOGENY OPTIONS:
+geneTreesOnly=no
+speciesTreesOnly=no
 phyloProgramDNA=fasttree
 phyloProgramPROT=no			# Work around to specify any program so software testing code will not crash! Ensures cmd parameter is always occupied which is critical
 treeshrink=no
@@ -29,6 +39,7 @@ cpu=8						# number of cpu to use for RAxML in supermatrix method
 partitionName=main   		# Values depend on the cluster being used so good to have a flagged option for this
 							# NB - make_species_tree.sh uses 'long' queue - need an extra variable for that 
 
+# OTHER OPTIONS:
 # Hidden options (i.e. not apparent from the help menu but they always have a value so can be and have to be used in downstream scripts).
 # Need to check them if I make them public
 fractnMaxColOcc=0.7
@@ -44,46 +55,67 @@ function usage	{
 
 cat << EOF
 
-Program description: makes species trees from fasta files containing recovered genes from multiple samples, one fasta file per sample.
-                     By Default, the fasta header format MUST BE: >sampleId-geneId but one other option (-a) is available.
+Program description: makes species trees from fasta files containing either (1) recovered genes (DNA) from multiple samples, one fasta file per sample
+                     or (2) gene-wise fasta files, one fasta file per gene (DNA).
+                     By Default for (1), the fasta header format MUST BE: >sampleId-geneId but one other option (-a) is available.
 
-Usage: make_species_trees_pipeline.sh [options] fastafile1 fastafile2 fastafile3 ...
+Usage:               make_species_trees_pipeline.sh [options] fastafile1 fastafile2 fastafile3 ...
 
 OPTIONS:
-	-h             shows this message
-	-v             program version  
-	-a             add sample name onto the fasta header from the input fasta file name.
-	               Expected gene identifier format in the fasta header: >geneId (no hyphen '-' characters)
-	-t <csv file>  add sample name and other info from a comma separated value (csv) table file into the tree leaf labels.
-	               Format of table row: sample_name/identifier, followed by any species information, including sample_name/identifier, as required. 
-	-u             add contig length info onto species tree tips (requires option -t)
-                   Sample_name/identifier must be identical to the sample fasta file name (minus any [dot] ending suffix e.g. .fasta)
-                   Not available in gene-wise mode (option -G)	  
-	-g <file>      file (including path to it) containing list of gene names only (required option)
+    -h            shows this message
+    -v            program version
+INPUT FILE OPTIONS:
+    -G            make gene trees, starting from gene-wise fasta files rather than files containing all genes per sample
+	              Gene name/identifier must be identical to the sample fasta file name (minus any [dot] ending suffix e.g. .fasta),
+	              else change the gene name list in option -g so that it is.	
+	              Fasta header line format MUST BE: >sampleId
+    -g <file>     file (including path to it) containing list of gene names only (required option)        
+    -a            add sample name onto the fasta header from the input fasta file name.
+                  Expected gene identifier format in the fasta header: >geneId (no hyphen '-' characters)
+	-t <csv file> add sample name and other info from a comma separated value (csv) table file into the tree leaf labels.
+	              Format of table row: sample_name/identifier, followed by any species information, including sample_name/identifier, as required. 
+	-u            add contig length info onto species tree tips (requires option -t)
+                  Sample_name/identifier must be identical to the sample fasta file name (minus any [dot] ending suffix e.g. .fasta)
+                  Not available in gene-wise mode (option -G)	  
+	-p <string>   prefix for the output filenames e.g. taxonomic group (default=tree_pipeline)			--> change to -o or O
+ALIGNMENT OPTIONS:
+	-D             sequence type to use: dna, protein, codon (default=dna)
+                   codon is input DNA aligned but guided by a protein alignment
+	-A             alignment program to use: mafft, UPP 	[ but for which residue type - make for all for now ]
+FILTERING AND TRIMMING OPTIONS:
+    -F <string>   filter sequence option 1
+	-f 			   filter sequences. Options:
+	               1. filter sequences in gene alignments by coverage i.e. percent of [well conserved regions in] the alignment covered by a sample sequence
+	                  Minimum percent to tolerate (default=60; 0 would mean no filtering, i.e. include sequence of any length)
+	               2. percent of samples in each gene tree.
+	                  Minumum percent to tolerate (default=30; 0 would mean no filtering, include all available samples in each gene tree) 
+	               3. filter rare insertions
+	               	  Minumum percent to tolerate (default=0.3);
+	               4. use the well conserved regions in each alignment only to build an additional tree (0=no, 1=yes)
+	                  NBNB - NEED TO WORK OUT HOW THIS WORKS FOR DNA AND PROTEIN - LOTS OF FILES NOE   
+	                       - working dir: conservedDNARegionsTree, conservedProteinRegionsTree, conservedCodonRegionsTree
+	               Format: <1> <2> <3> <4>; default: 60 30 0.3 0
+PHYLOGENY OPTIONS:
 	-i             make gene trees only
-	-j             make species trees only. Gene trees must exist.
-	-G             make gene trees, starting from gene-wise fasta files rather than files containing all genes per sample
-	               Gene name/identifier must be identical to the sample fasta file name (minus any [dot] ending suffix e.g. .fasta),
-	               else change the gene name list in option -g so that it is.	
-	               Fasta header line format MUST BE: >sampleId
-	-f <float>     fraction of [well conserved regions in] the alignment covered by a sample sequence.
-	               Minimum to tolerate (default=0.6; 0 would mean no filtering, i.e. include sequence of any length)
-	-s <float>     fraction of samples in each gene tree.
-	               Minumum to tolerate (default=0.6; 0 would mean no filtering, include all available samples in each gene tree)
-	-p <string>    prefix for the output filenames e.g. taxonomic group (default=tree_pipeline)
-	-q <string>    name of phylogeny program for gene trees from DNA sequences.
-                   	Options are, fastest to slowest: fasttree, iqtree2, raxml-ng (default=fasttree)
-	-r <string>    name of phylogeny program for gene trees from protein sequences.
+	-j             make species trees only. Gene trees must already exist in run directory
+
+
+	-q <string>    name of phylogeny program for gene trees from DNA sequences.							--> change to -d or D - use DNA sequence to build gene trees and name a phylogeny program
+                   	Options are, fastest to slowest: fasttree, iqtree2, raxml-ng (default=fasttree)	
+	-r <string>    name of phylogeny program for gene trees from protein sequences.						--> change to p or P - use amino acid sequence to build gene trees and name a phylogeny program
                    	If required, options are, fastest to slowest: fasttree, iqtree, raxml-ng (no default)
+                   																						--> 				   use DNA codon sequence to build gene trees and name a phylogeny program
     -S <string>    name of phylogeny program for supermatrix approach (concatenated gene alignments).
     				If required, options are, fastest to slowest: fasttree, raxml-ng (no default)
-    -T             use Treeshrink on gene trees
+
+    -T             use Treeshrink on gene trees (followed by re-alignment)
+OTHER OPTIONS:
      -C <integer>   number of cpu to use for genetrees; NB - not convinced >1 cpu works robustly for raxml-ng! (default=1)              	
 	-c <integer>   number of cpu to use for RAxML in supermatrix method (default=8)
 	-Q <string>    Slurm partition (queue) to use (default=medium) ]
 
 
-A typical example:
+A typical example (explain further ... in which sample fasta files containing gene sequences:
 <path to>/make_species_trees_pipeline.sh \\
 -g <geneListFile> \\
 -t <sampleTreeTipInfoFile> \\
@@ -103,7 +135,7 @@ EOF
 
 
 #echo User inputs:    ### For testing only 
-while getopts "hvat:ug:ijGf:m:s:p:M:q:r:TC:c:d:Q:"  OPTION; do	# Remaining options - try capital letters!
+while getopts "hvat:ug:ijGF:f:m:s:p:M:q:r:TC:c:d:Q:A:D:"  OPTION; do	# Remaining options - try capital letters!
 
 	#echo -$OPTION $OPTARG	### For testing only - could try to run through options again below 
 	 
@@ -114,10 +146,15 @@ while getopts "hvat:ug:ijGf:m:s:p:M:q:r:TC:c:d:Q:"  OPTION; do	# Remaining optio
 		a) addSampleName=yes ;;
 		t) sampleTableFile=$OPTARG ;;
 		u) option_u=yes ;;
+#ALIGNMENT OPTIONS
+		D) seqType=$OPTARG ;;
+		A) alnProgram=$OPTARG ;;
+
 		g) geneListFile=$OPTARG ;;
 		i) geneTreesOnly=yes ;;
 		j) speciesTreesOnly=yes ;;
 		G) useGenewiseFiles=yes ;;
+		F) filterSeqs1=yes ;;
 		f) fractnAlnCovrg=$OPTARG ;;
 		m) fractnMaxColOcc=$OPTARG ;;
 		s) fractnSamples=$OPTARG ;;
@@ -132,6 +169,7 @@ while getopts "hvat:ug:ijGf:m:s:p:M:q:r:TC:c:d:Q:"  OPTION; do	# Remaining optio
 		?)  echo This is not allowed. Read the usage summary below.
       	    echo
       	    usage; exit 1 ;;
+      	:) echo "Invalid option: $OPTARG requires an argument" 1>&2 ;;		# 26.7.2020 - Added - captures error for options that require an argument - useful - actually doesn't work if option requiring a value is followed by a flag instead
     esac
 done
 
@@ -193,6 +231,7 @@ numbrSamples=$(( $# - $OPTIND + 1 ))
 if [ $(( $# - $OPTIND + 1 )) -lt 4 ]; then				### 30.3.2020 AND speciesTreesOnly == no to handle scritp just processing species trees
 														###		Would need to think how to specify the input file(s) !!!!!!!!!!! 
 														### 4.7.2020 AND now if gene-wise files == no are entered - can have less than one of those right?
+														### 12.8.2020 - Just have an if else clause and say: less than 1 files but in gene-wise mode so OK 
     echo
     usage
     echo "ERROR: you need to input fasta files containing recovered genes from at least four species!"
@@ -291,8 +330,6 @@ if [[ $addSampleName == 'yes' && $useGenewiseFiles  != 'yes' ]]; then
  	# Prepare fasta files:
 	for file in ${@:$OPTIND:$#}; do
 
-		echo option -a file test: $file
-
     	# Get filename and chop off the file ending if there is one:
     	uniqueSampleId=`basename $file | awk -F '.' '{print $1}' `
     	#echo $uniqueSampleId
@@ -327,7 +364,7 @@ elif [[ $useGenewiseFiles == 'yes' && $addSampleName != 'yes' ]]; then
 
 	echo Will use prepared gene-wise files directly: $useGenewiseFiles
 
-	# Copy the fasta files to exactly <geneName>_dna.fasta, then they are ready to go.
+	# Copy the fasta files to exactly <geneName>_dna.fasta, then they are ready for the alignment step.
 	# The fasta filename (minus the dot suffix) needs to be exactly the name of the gene in the genelist.
 	for file in ${@:$OPTIND:$#}; do
 
@@ -340,6 +377,7 @@ elif [[ $useGenewiseFiles == 'yes' && $addSampleName != 'yes' ]]; then
     	geneName=`basename $file | awk -F '.' '{print $1}' `
     	#echo $geneName
 		cp $file ${geneName}_dna.fasta
+		### 11.8.2020 - consider to reanme to e.g.  ${geneName}_dna_for_aln.fasta and move rather than copy (one less file)
 		if [[ $? == 1 ]]; then
 			### I've kept this in - it avoids _dna.fasta file stamping on itself if these files are submitted by the user 
 			echo "ERROR: if running pipeline (possibly again) in gene-wise mode, please run in a another directory
@@ -443,31 +481,6 @@ if [[ $sampleTableFile != 'no' ]]; then
 			echo "The sample table (from option -t) contains a sample Id that is not unique in the table. Exiting..."
 			exit
 		fi
-
-
-### 8.5.2020 - DON"T NEED THIS CODE ANY MORE - DELETE
-		# for file in ${@:$OPTIND:$#}; do
-
-		# 	# Get filename and chop off the file ending if there is one:
-  #   		uniqueSampleId=`basename $file | awk -F '.' '{print $1}' `
-  #   		uniqueSampleId=`expr $uniqueSampleId + 0`
-  #   		#echo $uniqueSampleId
-
-		# 	$pathToScripts/add_sample_id_from_table.py  $sampleTableFile  $file  $uniqueSampleId  ${uniqueSampleId}_modified.fasta
-		# 	### NB - 31.10.2019 - just realised that this for loop should be done within the python script so that the Dict only 
-		# 	### has to be set up once; may improve the speed of this step.
-		# 	### NB - I could also get the uniqueSampleId in above script after stripping out any zeros - now doing
-		# 	### 13.10.2019 - NB - doing this means that if there are > one files with same identifier but differ by leading zeros,
-		# 	### these files will overwrite each other and only one will be produced --> avoids duplicate samples going into the analysis.
-		# 	### This is convenient for now but consider to be completely strict about sample names, if filenames are not as in the csv file,
-		# 	### then they are not found!! However it would seem very silly to have different ids only by the presence of leading zeros!
-		# done
-  #   	# Concatenate fasta files and put seqs on a single line:
-		# fileList=`ls *_modified.fasta `
-		# #echo $fileList
-		# ### Not required now - seqs coming out of python are already on a single line (I think)
-		# cat $fileList | seqtk seq -l 0 /dev/fd/0 > all_samples_concatenated.fasta
-		# geneFile=all_samples_concatenated.fasta
 	else
     	echo File containing text for the tree leaves does not exist or is empty: $sampleTableFile - exiting.
 		exit 1
@@ -522,6 +535,38 @@ fi
 	### 16.3.2020 - this really doesn't work - is triggered no matter what! Now have a solution in make_gene_trees.sh
 	### This doesn't really work because if there is no paramter value the next parameter becomes the value which is a string!
 #fi
+
+
+
+### 26.7.2020 - input checks for new options:
+dnaSelected=no
+proteinSelected=no
+codonSelected=no
+if [[ `echo $seqType | grep -o 'dna' ` == 'dna' ]];then 
+	dnaSelected=yes
+fi
+if [[ `echo $seqType | grep -o 'protein' ` == 'protein' ]];then 
+	proteinSelected=yes
+fi
+if [[ `echo $seqType | grep -o 'codon' ` == 'codon' ]];then 
+	codonSelected=yes
+fi
+#echo dnaSelected=$dnaSelected proteinSelected=$proteinSelected codonSelected=$codonSelected
+if [[ $dnaSelected == 'no' &&  $proteinSelected == 'no' && $codonSelected == 'no' ]]; then
+	echo "ERROR: No sequence type (option -D) was entered or recognised."; exit
+fi
+
+# Filter sequence options (option -f)
+### Extract the 4 numbers into an array
+### Count the array
+### then use awk to put into each variable
+### Then check each variable has a sensible range - easy - maybe check first that it is a number - already have code for that
+
+
+
+
+
+
 
 ##########################
 # End of user input checks
@@ -578,22 +623,45 @@ if [[ $os == 'Darwin' && $speciesTreesOnly == 'no' ]]; then
 		$fractnMaxColOcc \
 		$cpuGeneTree \
 		"$mafftAlgorithm" \
-		"$exePrefix"
+		"$exePrefix" \
+		"$alnProgram" \
+		$dnaSelected \
+		$proteinSelected \
+		$codonSelected \
+		"$filterSeqs1"
 	done > make_gene_tree.log 2>&1
-	$pathToScripts/assess_gene_alignments.sh \
-	$fractnAlnCovrg \
-	$fractnMaxColOcc \
-	$fractnSamples \
-	$numbrSamples \
-	$fileNamePrefix \
-	$geneFile \
-	tree_tip_info_mapfile.txt \
-	$option_u \
-	> assess_gene_alns.log 2>&1
-
-	if [[ $treeshrink == 'yes' ]]; then
+	#exit
+	if [[ $filterSeqs1 != 'no' ]]; then
+		# Need to name the files to use in the assess script, depends on sequence type selected. 
+		if [[ $proteinSelected == 'yes' || $codonSelected == 'yes' ]]; then
+			seqType=protein
+			###alnFileSuffix=${seqType}.aln.for_tree.fasta		# before AMAS trim - consider to add this or just do stats at end of all filtering+trimming 
+			alnFileForTreeSuffix=${seqType}.aln.for_tree.fasta  # after AMAS trim
+			## Could add other filenames used in script (?) 
+		else
+			seqType=dna
+			alnFileForTreeSuffix=${seqType}.aln.for_tree.fasta
+		fi
+		echo seqType: $seqType
+		echo alnFileForTreeSuffix: $alnFileForTreeSuffix
+		$pathToScripts/assess_gene_alignments.sh \
+		$fractnAlnCovrg \
+		$fractnMaxColOcc \
+		$fractnSamples \
+		$numbrSamples \
+		$fileNamePrefix \
+		$geneFile \
+		tree_tip_info_mapfile.txt \
+		$option_u \
+		$seqType \
+		$alnFileForTreeSuffix
+		> assess_gene_alns.log 2>&1
+	fi
+	echo treeshrink: $treeshrink
+	echo filterSeqs1: $filterSeqs1
+	if [[ $treeshrink == 'yes' || $filterSeqs1 != 'no' ]]; then
 		##########################################
-		echo 'Running TreeShrink on gene trees and continuing analysis in the "after_treeshrink_USE_THIS" directory...'
+		echo 'Re-aligning gene alignments because TreeShrink option or filterSeqs1 option is on, then continuing analysis in the "after_treeshrink_USE_THIS" or "after_reAlnFilterSeqs_USE_THIS" directory...'
 		##########################################
 		run_treeshrink_and_realign.sh \
 		"$numbrSamples" \
@@ -608,8 +676,14 @@ if [[ $os == 'Darwin' && $speciesTreesOnly == 'no' ]]; then
 		"$cpuGeneTree" \
 		"$partitionName" \
 		"$pathToScripts" \
+		"geneTreesOnly" \
+		"$dnaSelected" \
+		"$proteinSelected" \
+		"$codonSelected" \
+		"$treeshrink" \
+		"$filterSeqs1" \
 		> run_treeshrink_and_realign.log 2>&1
-		exit	# Species trees will be made after TreeShrink step in nested call to thhis script, if requested.
+		exit	# Species trees will be made after TreeShrink step in nested call to this script, if requested.
 	fi
 
 elif [[ $os == 'Linux' && $speciesTreesOnly == 'no' ]]; then
@@ -704,33 +778,11 @@ if [ $os == 'Darwin' ]; then
 	$phyloProgramPROT \
 	"$exePrefix" \
 	$sampleTableFile \
+	$dnaSelected \
+	$proteinSelected \
+	$codonSelected \
+	"aln.for_tree.fasta" \
 	> ${fileNamePrefix}_make_species_trees.log 2>&1
-	### 31.8.2019 - I think I can move all intermediate and gene tree files here
-	### Actually, this is a lot of files - just delay this and think if I need to do it!!!!
-	### I think a better way is to copy all input files to the tmp dir, then cd into it and run everythign there - then put all the final files in the starting dir.
-	# mv *_modified.fasta  $tempOutputsDir
-	# mv all_samples_concatenated.fasta  $tempOutputsDir
-	# g${gene}_dna.fasta
-	# g${gene}_protein.fasta
-	# g4471_mafft_dna_aln.fasta
-	# g4471_mafft_dna_aln_ovr70pc_aln_covrg.txt
-	# g4471_mafft_protein_aln.fastag
-	# g4471_mafft_protein_aln_ovr70pc_aln_covrg.fasta
-	# g4471_mafft_dna_aln_ovr70pc_aln_covrg_fasttree.nwk
-	# g4471_mafft_protein_aln_ovr70pc_aln_covrg_fasttree.nwk
-	# Malpighiales_fasttree_trees_for_coelescence_phylo.nwk
-	# Malpighiales_fasttree_protein_trees_for_coelescence_phylo.nwk
-	# mafft_dna_alns_fasta_file_list.txt
-	# Malpighiales_fasttree_trees_for_coelescence_phylo_bs_less15pc_rmed.nwk
-	# Malpighiales_fasttree_trees_for_coelescence_phylo_astral.nwk
-	# mafft_dna_alns_fasta_samples_in_tree.txt
-	# samples_submitted.txt
-	# RAxML_bootstrap.Malpighiales__raxmlHPC-PTHREADS-SSE
-	# RAxML_bestTree.Malpighiales__raxmlHPC-PTHREADS-SSE
-	# RAxML_bipartitions.Malpighiales__raxmlHPC-PTHREADS-SSE
-	# RAxML_bipartitionsBranchLabels.Malpighiales__raxmlHPC-PTHREADS-SSE
-
-
 elif [ $os == 'Linux' ]; then
 	exePrefix="/usr/bin/time -v"
     if [ $slurm -eq 1 ]; then
