@@ -856,7 +856,7 @@ elif [ $os == 'Linux' ]; then
         $phyloProgramDNA \
         $phyloProgramPROT \
         "$exePrefix" \
-        $sampleTableFile
+        $sampleTableFile \
         $dnaSelected \
 		$proteinSelected \
 		$codonSelected \
