@@ -59,14 +59,14 @@ Program description: makes species trees from fasta files containing either (1) 
                      or (2) gene-wise fasta files, one fasta file per gene (DNA).
                      By Default for (1), the fasta header format MUST BE: >sampleId-geneId but one other option (-a) is available.
 
-Usage:               make_species_trees_pipeline.sh [options] fastafile1 fastafile2 fastafile3 ...
+Usage:               make_species_trees_pipeline.sh [OPTIONS] fastafile1 fastafile2 fastafile3 ...
 
 OPTIONS:
-    -h            shows this message
-    -v            program version
+    -h               shows this message
+    -v               program version
 INPUT FILE OPTIONS:
-    -G            make gene trees, starting from gene-wise fasta files rather than files containing all genes per sample
-	              Gene name/identifier must be identical to the sample fasta file name (minus any [dot] ending suffix e.g. .fasta),
+    -G               make gene trees, starting from gene-wise fasta files rather than files containing all genes per sample
+	                 Gene name/identifier must be identical to the sample fasta file name (minus any [dot] ending suffix e.g. .fasta),
 	              else change the gene name list in option -g so that it is.	
 	              Fasta header line format MUST BE: >sampleId
     -g <file>     file (including path to it) containing list of gene names only (required option)        
@@ -538,7 +538,7 @@ fi
 
 
 
-### 26.7.2020 - input checks for new options:
+# Input checks for the seqeunce type option:
 dnaSelected=no
 proteinSelected=no
 codonSelected=no
@@ -556,16 +556,17 @@ if [[ $dnaSelected == 'no' &&  $proteinSelected == 'no' && $codonSelected == 'no
 	echo "ERROR: No sequence type (option -D) was entered or recognised."; exit
 fi
 
+### 21.8.2020 - Need to delete these files before re-running analysis in same directory if any of them exist i.e. wc -l > 0 (?) - do at line 546 of wrapper script:
+###*.aln.for_tree.fasta
+###*gene_tree_USE_THIS.nwk 
+###This is only important to do if the filtering/trimming thresholds have changed and the analysis is re-run in the current working dir.
+
+
 # Filter sequence options (option -f)
 ### Extract the 4 numbers into an array
 ### Count the array
 ### then use awk to put into each variable
 ### Then check each variable has a sensible range - easy - maybe check first that it is a number - already have code for that
-
-
-
-
-
 
 
 ##########################
@@ -654,7 +655,7 @@ if [[ $os == 'Darwin' && $speciesTreesOnly == 'no' ]]; then
 		tree_tip_info_mapfile.txt \
 		$option_u \
 		$seqType \
-		$alnFileForTreeSuffix
+		$alnFileForTreeSuffix \
 		> assess_gene_alns.log 2>&1
 	fi
 	echo treeshrink: $treeshrink
@@ -683,16 +684,13 @@ if [[ $os == 'Darwin' && $speciesTreesOnly == 'no' ]]; then
 		"$treeshrink" \
 		"$filterSeqs1" \
 		> run_treeshrink_and_realign.log 2>&1
-		exit	# Species trees will be made after TreeShrink step in nested call to this script, if requested.
+		exit	# Species trees will be made after TreeShrink or re-alignment step(s) in nested call to this script, if requested.
 	fi
 
 elif [[ $os == 'Linux' && $speciesTreesOnly == 'no' ]]; then
 	###exePrefix="/usr/bin/time -v -o g${gene}_mafft_dna_aln_time_and_mem.log"		# NB - this will not work here - need to pick up gene id in Slurm script instead.
     slurm=`sbatch -V | grep ^slurm | wc -l `
     if [ $slurm -eq 1 ]; then
-
-
-
 		# Count the # genes to process and fix that number in the Slurm --array parameter.
     	# It has to be set outside the sbatch script I think so that I can automatically set the array size .
     	# It has to be set each time otherwise.
@@ -721,19 +719,77 @@ elif [[ $os == 'Linux' && $speciesTreesOnly == 'no' ]]; then
 		$fractnMaxColOcc \
 		$cpuGeneTree \
 		"$mafftAlgorithm" \
-		"$exePrefix" `
+		"$exePrefix" \
+		"$alnProgram" \
+		$dnaSelected \
+		$proteinSelected \
+		$codonSelected \
+		"$filterSeqs1" `
+
 		echo jobInfo: $jobInfo
 		jobId=`echo $jobInfo | cut -d ' ' -f 4 `
-		echo \$jobId: $jobId - same id as \$SLURM_ARRAY_JOB_ID 
-		jobInfo1=`sbatch -J assess_gene_alns  --dependency=afterok:$jobId -p $partitionName -c 1 -n 1 -o assess_gene_alns.log -e assess_gene_alns.err  $pathToScripts/assess_gene_alignments.sh $fractnAlnCovrg $fractnMaxColOcc $fractnSamples $numbrSamples $fileNamePrefix $geneFile $sampleTableFile $option_u `
-    	echo jobInfo1: $jobInfo1
-		jobId1=`echo $jobInfo1 | cut -d ' ' -f 4 `
-		echo \$jobId1: $jobId1 - from running assess_gene_alignments.sh
+		echo \$jobId: $jobId - same id as \$SLURM_ARRAY_JOB_ID
+		# NB - If jobId variable is used after each call to Slurm then it doesn't matter if
+		# a Slurm step is missed out - the jobId last assigned will alway be used
+		if [[ $filterSeqs1 != 'no' ]]; then
+			# Need to name the files to use in the assess script, depends on sequence type selected. 
+			if [[ $proteinSelected == 'yes' || $codonSelected == 'yes' ]]; then
+				seqType=protein
+				###alnFileSuffix=${seqType}.aln.for_tree.fasta		# before AMAS trim - consider to add this or just do stats at end of all filtering+trimming 
+				alnFileForTreeSuffix=${seqType}.aln.for_tree.fasta  # after AMAS trim
+				### Could add other filenames used in script (?) 
+			else
+				seqType=dna
+				alnFileForTreeSuffix=${seqType}.aln.for_tree.fasta
+			fi
+			echo seqType: $seqType
+			echo alnFileForTreeSuffix: $alnFileForTreeSuffix
 
-		if [[ $treeshrink == 'yes' ]]; then
-			echo "Set off via slurm:  run_treeshrink_and_realign.sh > run_treeshrink.log"
+			jobInfo1=`sbatch -J assess_gene_alns  --dependency=afterok:$jobId -p $partitionName -c 1 -n 1 -o assess_gene_alns.log -e assess_gene_alns.err  $pathToScripts/assess_gene_alignments.sh \
+			$fractnAlnCovrg \
+			$fractnMaxColOcc \
+			$fractnSamples \
+			$numbrSamples \
+			$fileNamePrefix \
+			$geneFile \
+			$sampleTableFile \
+			$option_u \
+			$seqType \
+			$alnFileForTreeSuffix `
+
+    		echo jobInfo1: $jobInfo1
+			jobId=`echo $jobInfo1 | cut -d ' ' -f 4 `
+			echo \$jobId: $jobId - from running assess_gene_alignments.sh
 		fi
+ 
 
+		echo treeshrink: $treeshrink
+		echo filterSeqs1: $filterSeqs1
+		if [[ $treeshrink == 'yes' || $filterSeqs1 != 'no' ]]; then
+			##########################################
+			echo 'Re-aligning gene alignments because TreeShrink option or filterSeqs1 option is on, then continuing analysis in the "after_treeshrink_USE_THIS" or "after_reAlnFilterSeqs_USE_THIS" directory...'
+			##########################################
+			jobInfo2=`sbatch -J trShrnk_realgn  --dependency=afterok:$jobId -p $partitionName -c 1 -n 1 -o run_treeshrink_and_realign.log  -e run_treeshrink_and_realign.err  $pathToScripts/run_treeshrink_and_realign.sh \
+			"$numbrSamples" \
+			"$phyloProgramDNA" \
+			"$phyloProgramPROT" \
+			"$sampleTableFile" \
+			"$geneListFile" \
+			"$fractnAlnCovrg" \
+			"$fractnMaxColOcc" \
+			"$fractnSamples" \
+			"$mafftAlgorithm" \
+			"$cpuGeneTree" \
+			"$partitionName" \
+			"$pathToScripts" \
+			"geneTreesOnly" \
+			"$dnaSelected" \
+			"$proteinSelected" \
+			"$codonSelected" \
+			"$treeshrink" \
+			"$filterSeqs1" `
+			exit	# Species trees will be made after TreeShrink or re-alignment step(s) in nested call to this script, if requested.
+		fi
 	else
 		cat $geneListFile | \
 		while read line ; do
@@ -790,7 +846,21 @@ elif [ $os == 'Linux' ]; then
     	### One option is to put the "time script" cmd in a wrapper but then I need a log file for this sbatch call and delete it from the script header..
     	### I think this is the only way without changing the main script itself.
 													
-        sbatch --dependency=afterok:$jobId1 -p long -c $cpu --mem=$speciesTreeMem -o ${fileNamePrefix}_make_species_trees.log -e ${fileNamePrefix}_make_species_trees.log  $pathToScripts/make_species_trees.sh $fractnAlnCovrg $fractnSamples $numbrSamples $fileNamePrefix $geneFile $cpu $phyloProgramDNA $phyloProgramPROT "$exePrefix" $sampleTableFile
+        sbatch --dependency=afterok:$jobId -p long -c $cpu --mem=$speciesTreeMem -o ${fileNamePrefix}_make_species_trees.log -e ${fileNamePrefix}_make_species_trees.log  $pathToScripts/make_species_trees.sh \
+        $fractnAlnCovrg \
+        $fractnSamples \
+        $numbrSamples \
+        $fileNamePrefix \
+        $geneFile \
+        $cpu \
+        $phyloProgramDNA \
+        $phyloProgramPROT \
+        "$exePrefix" \
+        $sampleTableFile
+        $dnaSelected \
+		$proteinSelected \
+		$codonSelected \
+		"aln.for_tree.fasta"
 	else
 		$pathToScripts/make_species_trees.sh \
 		$fractnAlnCovrg \
@@ -803,7 +873,10 @@ elif [ $os == 'Linux' ]; then
 		$phyloProgramPROT \
 		"$exePrefix" \
 		$sampleTableFile \
+		$dnaSelected \
+		$proteinSelected \
+		$codonSelected \
+		"aln.for_tree.fasta" \
 		> ${fileNamePrefix}_make_species_trees.log 2>&1
-		### 31.8.2019 - I think I can move all intermediate and gene tree files here 
 	fi
 fi

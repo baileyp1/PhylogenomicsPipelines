@@ -124,14 +124,18 @@ sumLenLongestGeneAfterTrim=`cat *_aln_summary.log | grep '^lenLongestGeneAfterTr
 
 
 # Sum length of all columns with maxColOcc (same for all values of $fractnAlnCov) 
-# NB - still need to filter on min maxColOcc to tolerate.
-sumMaxColOcc=`cat *_aln_summary.log | grep '^maxColOcc:' | awk '$2 >= 90 {sum+=$2} END {print sum}' `
+# NB - still need to filter on min maxColOcc to tolerate
+### 21.8.2020 - NBNB - for assessment of protein seqs, need to be able to alter '90' to '30'
+### changed for now to 30 so at least protein is correct.
+### Consider to remove this filter, then summarise columns after all filtering/trimming
+sumMaxColOcc=`cat *_aln_summary.log | grep '^maxColOcc:' | awk '$2 >= 30 {sum+=$2} END {print sum}' `
 
 
-# Sum length of all parsimonious columns with maxColOcc (same for different values of $fractnAlnCov) 
-sumMaxParsCols=`cat *_aln_summary.log | grep '^maxParsCols:' | awk '$2 >= 90 {sum+=$2} END {print sum}' `
+# Sum length of all parsimonious columns with maxColOcc (same for different values of $fractnAlnCov)
+# NB - 21.8.2020 - I think I need to bring in the $sumMaxColOcc variable for filtering! - done 
+sumMaxParsCols=`cat *_aln_summary.log | grep '^maxParsCols:' | awk -v sumMaxColOcc=$sumMaxColOcc 'sumMaxColOcc >= 30 {sum+=$2} END {print sum}' `
 ### NB - should not need to filter on min maxParsCols to tolerate BUT
-### there is one value of 144 which I don't understand - they should arleady be filtered   
+  
 
 
 # Total number of bases in the maxColOcc area for all samples:
@@ -170,7 +174,7 @@ done \
 | wc -l | sed 's/ //g'`
 
 
-# Total number of alignment columns in the area of common overlap for these genes (NB - also after trimming for rare insertions):
+# Total number of alignment columns in the area of common overlap for these genes (NB - after all filterign and trimming, also after trimming for rare insertions):
 numbrOverlapColsForSpeciesTree=`for file in *.$alnFileForTreeSuffix; do
 	gene=$(echo $file | sed "s/.$alnFileForTreeSuffix//")
  	numbrSamples=$(cat $file | grep '>' | wc -l)
