@@ -728,7 +728,7 @@ elif [[ $os == 'Linux' && $speciesTreesOnly == 'no' ]]; then
 
 		echo jobInfo: $jobInfo
 		jobId=`echo $jobInfo | cut -d ' ' -f 4 `
-		echo \$jobId: $jobId - same id as \$SLURM_ARRAY_JOB_ID
+		echo \$jobId: $jobId - same id as \$SLURM_ARRAY_JOB_ID - from running assess_gene_alignments.sh
 		# NB - If jobId variable is used after each call to Slurm then it doesn't matter if
 		# a Slurm step is missed out - the jobId last assigned will alway be used
 		if [[ $filterSeqs1 != 'no' ]]; then
@@ -837,7 +837,7 @@ if [ $os == 'Darwin' ]; then
 	$dnaSelected \
 	$proteinSelected \
 	$codonSelected \
-	"aln.for_tree.fasta" \
+	aln.for_tree.fasta \
 	> ${fileNamePrefix}_make_species_trees.log 2>&1
 elif [ $os == 'Linux' ]; then
 	exePrefix="/usr/bin/time -v"
@@ -860,7 +860,7 @@ elif [ $os == 'Linux' ]; then
         $dnaSelected \
 		$proteinSelected \
 		$codonSelected \
-		"aln.for_tree.fasta"
+		aln.for_tree.fasta
 	else
 		$pathToScripts/make_species_trees.sh \
 		$fractnAlnCovrg \
@@ -876,7 +876,7 @@ elif [ $os == 'Linux' ]; then
 		$dnaSelected \
 		$proteinSelected \
 		$codonSelected \
-		"aln.for_tree.fasta" \
+		aln.for_tree.fasta \
 		> ${fileNamePrefix}_make_species_trees.log 2>&1
 	fi
 fi

@@ -161,7 +161,7 @@ reAlignSeqs()   {
             sampleTableFileForReAln=$sampleTableFile
         fi
     fi
-    ls -l $sampleTableFile
+    ls -l $sampleTableFileForReAln
 
     # Amend option -g path if necessary (mandatory option so always have to check):
     if [[ $geneListFile != /* ]]; then 
@@ -169,7 +169,7 @@ reAlignSeqs()   {
     else
         geneListFileForReAln=$geneListFile
     fi
-    ls -l $geneListFile
+    ls -l $geneListFileForReAln
     # exit
 
 
