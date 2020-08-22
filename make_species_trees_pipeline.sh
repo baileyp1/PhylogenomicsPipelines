@@ -728,7 +728,7 @@ elif [[ $os == 'Linux' && $speciesTreesOnly == 'no' ]]; then
 
 		echo jobInfo: $jobInfo
 		jobId=`echo $jobInfo | cut -d ' ' -f 4 `
-		echo \$jobId: $jobId - same id as \$SLURM_ARRAY_JOB_ID - from running assess_gene_alignments.sh
+		echo \$jobId: $jobId - same id as \$SLURM_ARRAY_JOB_ID - from running slurm_setup_array_to_make_gene_trees.sh
 		# NB - If jobId variable is used after each call to Slurm then it doesn't matter if
 		# a Slurm step is missed out - the jobId last assigned will alway be used
 		if [[ $filterSeqs1 != 'no' ]]; then
