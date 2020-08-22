@@ -15,6 +15,12 @@ fractnMaxColOcc=$7
 cpuGeneTree=$8
 mafftAlgorithm="$9"
 exePrefix="${10}"
+alnProgram="${11}"
+dnaSelected="${12}"
+proteinSelected="${13}"
+codonSelected="${14}"
+filterSeqs1="${15}"
+
 echo Inside Slurm array script, listFile: $listFile
 echo Inside Slurm array script, fractnAlnCovrge: $fractnAlnCovrg
 
