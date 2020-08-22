@@ -11,6 +11,8 @@
 # Author: Paul Bailey
 ###################
 
+shopt -s failglob
+
 numbrSamples="$1"
 phyloProgramDNA="$2"
 phyloProgramPROT="$3"
@@ -112,12 +114,12 @@ Total number of sequences removed by TreeShrink: $numbrSeqsRemoved " > treeshrin
     # Move the TreeShrunk alignment files to *_dna.fasta for each gene after unaligning them by removing all '-' gaps:
     ### NB - will treeshrink always produce a file even if it has no contents - look at code?
     # Using .nwk file as a guide i.e. you only create alignments again for existing gene trees (i.e. ignoring any gene trees that have been filtered for whatever reason)
-    for file in  ../*_${1}_gene_tree_USE_THIS.nwk; do
-        gene=`echo $file | sed "s/_${1}_gene_tree_USE_THIS.nwk//" | sed "s/^\.\.\///" `
-        cat treeshrink_${1}_gene_trees/$gene/${1}_gene_tree_aln_shrunk_0.05.fasta \
-        | awk '{ if($1 ~ /^>/) {print $1} else { gsub(/-/,"",$1);print $1 }  }' \
-        > ${gene}_after_treeshrink.fasta
-    done
+    # for file in  ../*_${1}_gene_tree_USE_THIS.nwk; do
+    #     gene=`echo $file | sed "s/_${1}_gene_tree_USE_THIS.nwk//" | sed "s/^\.\.\///" `
+    #     cat treeshrink_${1}_gene_trees/$gene/${1}_gene_tree_aln_shrunk_0.05.fasta \
+    #     | awk '{ if($1 ~ /^>/) {print $1} else { gsub(/-/,"",$1);print $1 }  }' \
+    #     > ${gene}_after_treeshrink.fasta
+    # done
     # 21.8.2020 - Now having to use an alternative approach to obtain the gene-wise DNA sequence file.
     # Still using the Newick file to obtain a list of seq names but then extract sequences from
     # the original genewise file.
