@@ -26,7 +26,7 @@ treeTipInfoMapFile=${10}
 dnaSelected=${11}
 proteinSelected=${12}
 codonSelected=${13}
-alnFileForTreeSuffix=${14}      # Should be generic for dna, protein or codon filenames! gene_tree_USE_THIS.nwk
+alnFileForTreeSuffix=${14}      # Should be generic for dna, protein or codon filenames!  aln.for_tree.fasta
 
 # Convert $emptyMatchStateFractn and $fractnSpecies to a percent for use in the output files:
 fractnAlnCovrg_pc=`awk -v FRACTN=$fractnAlnCovrg 'BEGIN{printf "%.0f", FRACTN * 100}' `
@@ -84,7 +84,7 @@ echo dnaSelected: $dnaSelected
 if [[ $dnaSelected == 'yes' ]]; then    ### TEMP SET UP - this doesn't woerk!!!!
     seqType=dna     ### Still to finish implementation
     echo Listing required files:
-    ls *.${seqType}_$alnFileForTreeSuffix
+    ls *.${seqType}.$alnFileForTreeSuffix
     for file in *.${seqType}.$alnFileForTreeSuffix; do
  	  gene=`echo $file | sed "s/.${seqType}.$alnFileForTreeSuffix//" `
  	  numbrSamples=`cat $file | grep '>' | wc -l `;
