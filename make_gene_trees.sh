@@ -299,8 +299,9 @@ makeGeneTree()	{
 
 
 
-dnaFastaFileForAln="${gene}_dna.fasta"	# Name of the gene-wise DNA fasta input file, ready for aligning; two other input files are possible and dealt with below
+
 # Main code:
+dnaFastaFileForAln="${gene}_dna.fasta"	# Name of the gene-wise DNA fasta input file, ready for aligning; two other input files are possible and dealt with below
 if [[ $geneFile != 'use_genewise_files' ]]; then
 
 	echo
@@ -351,7 +352,10 @@ elif [[ ! -s $dnaFastaFileForAln ]]; then
 		echo "ERROR: the input gene-wise fasta file for this gene does not exist or is empty: $gene
 It indicates that there are no samples for this gene (possibly after a filtering step), or in gene-wise mode (option -G), the gene list is incompatible with the input gene-wise fasta files
 Not processing this gene further."
-		exit 1
+		# NB - acknowledged error above so OK to exit with zero.
+		# Anyway it has to be zero to satisy Slurm --dependancy afterok:$jobId parameter.
+		# Only works if $jobId exit code is 0, otherwise woudl need to use --dependancy afterany:$jobId     
+		exit 0
 	fi
 fi
 
@@ -463,7 +467,7 @@ if [[ $proteinSelected == 'yes' || $codonSelected == 'yes' ]]; then
 	if [[ $filterSeqs1 != 'no' ]]; then 
 		echo "Filter sequences option 1 - assessing the protein aln for filtering (even if DNA has also been selected)."
 		maxColOccThreshold=30		# Required in filterSequences method and in tree making conditionals below
-		# Function parameters: input_fasta_file, residue_type, .......
+		# Function parameters: input_fasta_file, residue_type, maxColOccThreshold, minimum seq to tolerate
     	filterSequences $proteinAlnToUse protein $maxColOccThreshold 28
     	### Alternative for returning filename from function - to stdout (can only echo the filename though):
     	### filteredSeqListToUse=$(filterSequences ${gene}.dna.aln.fasta  dna 90 84)
