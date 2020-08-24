@@ -84,7 +84,7 @@ echo dnaSelected: $dnaSelected
 if [[ $dnaSelected == 'yes' ]]; then    ### TEMP SET UP - this doesn't woerk!!!!
     seqType=dna     ### Still to finish implementation
     echo Listing required files:
-    ls *.${seqType}.$alnFileForTreeSuffix
+    ls *.${seqType}.$alnFileForTreeSuffix       # This gives the whole set
     for file in *.${seqType}.$alnFileForTreeSuffix; do
  	  gene=`echo $file | sed "s/.${seqType}.$alnFileForTreeSuffix//" `
  	  numbrSamples=`cat $file | grep '>' | wc -l `;
@@ -94,6 +94,15 @@ if [[ $dnaSelected == 'yes' ]]; then    ### TEMP SET UP - this doesn't woerk!!!!
     '$2 >= numbrSamplesThreshold  {print $1 "_dna_gene_tree_USE_THIS.nwk"}' \
     | xargs cat > ${fileNamePrefix}_${seqType}_gene_trees_for_coelescence_phylo.nwk
 fi
+
+### 24.8.2020 - improving the above selection of tree files.
+### make_species_trees.sh line ~84ff - have had an error with gene dna_gene_tree_USE_THIS.nwk files not existing
+### - Yes it is because when I’m tryign to use the gene aln file but it has been removed from the analysis due to that 
+### it only has 2 seqs so the .nwk file doesn’t exist but the aln does (and that’s OK), The code is OK but to remvoe the error shoudl do:
+### 1.just use the .nwk files to begin with.To coutn the # seqs in fasta - could use Newick Utils on the trees instead - 
+### I still think i need to filter here unless I remove the fratnSpecies variable
+### 2.implement removal of the for_tree aln andnwk files before start of analysis, then any previous runs can’t affect 
+### the outcome of next run if run in same directory - better solution i think 
 
 
 if [[ "$phyloProgramPROT" == 'fasttree' ||  "$phyloProgramPROT" == 'raxml-ng' || "$phyloProgramPROT" == 'iqtree2' ]]; then

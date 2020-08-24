@@ -353,8 +353,8 @@ elif [[ ! -s $dnaFastaFileForAln ]]; then
 It indicates that there are no samples for this gene (possibly after a filtering step), or in gene-wise mode (option -G), the gene list is incompatible with the input gene-wise fasta files
 Not processing this gene further."
 		# NB - acknowledged error above so OK to exit with zero.
-		# Anyway it has to be zero to satisy Slurm --dependancy afterok:$jobId parameter.
-		# Only works if $jobId exit code is 0, otherwise woudl need to use --dependancy afterany:$jobId     
+		# Anyway it has to be zero to satisfy Slurm --dependancy afterok:$jobId parameter;
+		# Only works if $jobId exit code is 0, otherwise would need to use --dependancy afterany:$jobId     
 		exit 0
 	fi
 fi

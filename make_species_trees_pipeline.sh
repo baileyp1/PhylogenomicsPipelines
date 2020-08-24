@@ -846,8 +846,8 @@ elif [ $os == 'Linux' ]; then
     	### One option is to put the "time script" cmd in a wrapper but then I need a log file for this sbatch call and delete it from the script header..
     	### I think this is the only way without changing the main script itself.
 		echo \$jobId: $jobId - should match previous Slurm step.
-		sbatch --dependency=afterok:$jobId -o testing_make_species_trees.log -e testing_make_species_trees.log --wrap "echo Entered make species tree step" 
-
+		# NB - previous Slurm jobs have to have an exit code of zero to satisfy Slurm --dependancy afterok:$jobId parameter,
+		# otherwise would need to use --dependancy afterany:$jobId if exit code coudl be > 0.  
         sbatch --dependency=afterok:$jobId -p long -c $cpu --mem=$speciesTreeMem -o ${fileNamePrefix}_make_species_trees.log -e ${fileNamePrefix}_make_species_trees.log  $pathToScripts/make_species_trees.sh \
         $fractnAlnCovrg \
         $fractnSamples \
