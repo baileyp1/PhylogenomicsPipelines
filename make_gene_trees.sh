@@ -145,11 +145,14 @@ if [[ $maxColOcc -ge $3 ]]; then
 		> ${gene}_${2}_aln_ovr${fractnAlnCovrg_pc}pc_aln_covrg.fasta
 		# NB - if .txt and .fasta are empty seqtk subseq still exits normally.
 
-		# Record stats:
+		# Record stats (NB - before trimming)
 		lenLongestGene=`fastalength  $1 | sort -n | tail -n 1 | awk '{print $1}' `
 		echo lenLongestGene: $lenLongestGene  >> ${geneId}_aln_summary.log
-### 21.7.2020 - calculate the avrg and medium values for gene length (before filtering)
-#### Avrg geneLength:   fastalength  ${gene}_mafft_dna_aln.fasta | awk '{sum+=$1} END {print sum/NR}'	--> print to summary file
+
+		# Median value of sequence length for current gene:
+		medianPoint=`fastalength $1 | awk 'END {printf "%.0f" , NR/2}' `
+		medianGeneLength=`fastalength $1 | awk '{print $1}' | sort -n | head -n $medianPoint | tail -n 1 `
+		echo medianGeneLength: $medianGeneLength  >> ${geneId}_aln_summary.log
 
 
 		# Trim columns to remove rare inserts, say ones filled only 0.1% with residues.
@@ -387,6 +390,10 @@ if [[ $dnaSelected == 'yes' ]]; then
         dnaAlnToUse=${gene}.dna.aln.fasta
     elif [[ "$alnProgram" == 'upp' ]]; then
    		echo Creating a DNA alignment with UPP...
+
+   		### 24.8.2020 - If using the -M option calculate the median value of the gene seqs before aligning them
+   		### - see above for code - use $dnaFastaFileForAln
+
 		run_upp.py -s $dnaFastaFileForAln -o ${gene}.dna
 		# Other options to consider:
 		# UPP(Fast): run_upp.py -s input.fas -B 100. - what's the -B option??!!
@@ -413,6 +420,13 @@ if [[ $proteinSelected == 'yes' || $codonSelected == 'yes' ]]; then
 	### 27.1.2020 - should be removing seqs with > 2-3 STOP codons - there are some!!!!
 	###				if the seq is on a single line it will be much easier to assess STOPs
 	###				YES - look at this NOW! It will affect the alignment!!!!
+	### 24.8.2020
+	### Count stops with grep -o - can this be done without printing above file first?
+	### if == 1 pritn seqs to file - also create a list of seqs liek above - e.g.
+	### cat  
+	###fastalength ${gene}_${2}_aln_AMAS_trim_${fractnMaxColOcc}.fasta 2>/dev/null \
+	###| awk -v LENG=$maxColOcc -v FRACTN=$fractnAlnCovrg -v seqLenThreshold=$4 '{if( ($1/LENG) >= FRACTN && $1 >= seqLenThreshold) {print $2} }' \
+	###> ${gene}_${2}_aln_ovr${fractnAlnCovrg_pc}pc_aln_covrg.txt
 
  	if [[ "$alnProgram" == 'mafft' ]]; then 	# If aligners can be set to auto residue detect, can use a generic subR - or brign in a variable.
 		echo Creating a protein alignment with MAFFT...
@@ -461,6 +475,7 @@ trimmedCodonAlnToUse=''
 dnaAlnForTree=$filteredDnaAlnToUse				# Variables for applying the correct alignment filename ready for building the gene trees.
 												# Just need to assign the output filename at the end after each filtering step.
 												# These variables are not strictly required now but will keep using them.
+												### 24.8.2020 - not sure now why I need to assign $filtered*AlnToUse variables to therse vars here!!
 proteinAlnFOrTree=$filteredProteinAlnToUse
 codonAlnForTree=$filteredCodonAlnToUse
 if [[ $proteinSelected == 'yes' || $codonSelected == 'yes' ]]; then

@@ -122,6 +122,10 @@ sumLenLongestGene=`cat *_aln_summary.log | grep '^lenLongestGene:' | awk '{sum+=
 # Sum Length of the longest gene seq in each alignment after trimming to remove very rare insertions:
 sumLenLongestGeneAfterTrim=`cat *_aln_summary.log | grep '^lenLongestGeneAfterTrim:' | awk '{sum+=$2} END {print sum}' `
 
+# Sum of MedianGeneLength in each alignment (before filtering/trimming):
+sumMedianGeneLength=`cat *_aln_summary.log | grep '^medianGeneLength:' | awk '{sum+=$2} END {print sum}' `
+### 24.8.2020 - not prited this out to summary file yet
+
 
 # Sum length of all columns with maxColOcc (same for all values of $fractnAlnCov) 
 # NB - still need to filter on min maxColOcc to tolerate
@@ -137,7 +141,6 @@ sumMaxParsCols=`cat *_aln_summary.log | grep '^maxParsCols:' | awk -v sumMaxColO
 ### NB - should not need to filter on min maxParsCols to tolerate BUT
   
 
-
 # Total number of bases in the maxColOcc area for all samples:
 totalBasesInMaxColOccRegion=`for file in *.$alnFileForTreeSuffix; do fastalength $file 2>/dev/null ; done | awk '{sum+=$1} END {print sum}' `
 										 ### 20.8.2020 - was file before trim 0.003 
@@ -149,16 +152,17 @@ echo 'Table for gene alignments showing numbers per gene for:
 3. length of common overlap (MinColOcc, table ordered on this value, shortest to longest).
 4. Number of parsimonious columns in length of common overlap (ParsimCols)
 5. number of samples (NumberSamples, after filtering sequences by coverage)' > ${fileNamePrefix}_summary_gene_recovery.txt
-echo 'GeneId LenLongestGene LenLongestGeneTrim MinColOcc ParsimCols Ratio:Col3/Col4 NumberSamples' | column -t >> ${fileNamePrefix}_summary_gene_recovery.txt
+echo 'GeneId LenLongestGene LenLongestGeneTrim MedianGeneLength MinColOcc ParsimCols Ratio:Col4/Col5 NumberSamples' | column -t >> ${fileNamePrefix}_summary_gene_recovery.txt
 for file in *.$alnFileForTreeSuffix; do
  	gene=`echo $file | sed "s/.$alnFileForTreeSuffix//" `
  	numbrSamples=`cat $file | grep '>' | wc -l `
 	lenLongestGene=`fastalength  $file 2>/dev/null | sort -n | tail -n 1 | awk '{print $1}' `				                 # The longest recovered gene in the aln
-    maxColOcc=`fastalength  ${gene}_${seqType}_aln_AMAS_trim_${fractnMaxColOcc}.fasta  2>/dev/null | sort -n | tail -n 1 | awk '{print $1}' `     # minimum column occupancy (aln columns)
+    maxColOcc=`fastalength  ${gene}_${seqType}_aln_AMAS_trim_${fractnMaxColOcc}.fasta  2>/dev/null | sort -n | tail -n 1 | awk '{print $1}' `     # minimum column occupancy (aln columns) - NB 24.8.2020 - can't i also get this from the summary.log file??? And other values - woudl be easier
     maxColOccP=`fastalength  ${gene}_${seqType}_aln_AMAS_trim_-p_${fractnMaxColOcc}.fasta  2>/dev/null | sort -n | tail -n 1 | awk '{print $1}' ` # minimum column occupancy (parsimonious sites ONLY)
 	lenLongestGeneAfterTrim=`fastalength ${gene}.$alnFileForTreeSuffix 2>/dev/null | sort -n | tail -n 1 | awk '{print $1}' `
-	ratio=`echo  $lenLongestGeneAfterTrim  $maxColOcc | awk '{printf "%.2f", $1/$2}' `								         # Might be an indicator of overall effectiveness of gene recovery for samples submitted
-    echo "$gene $lenLongestGene $lenLongestGeneAfterTrim $maxColOcc $maxColOccP $ratio $numbrSamples"| column -t
+	ratio=`echo  $lenLongestGeneAfterTrim  $medianGeneLength | awk '{printf "%.2f", $1/$2}' `							         # Might be an indicator of overall effectiveness of gene recovery for samples submitted
+	medianGeneLength=`cat ${gene}_aln_summary.log | grep '^medianGeneLength:' | awk '{print $2}' `
+    echo "$gene $lenLongestGene $lenLongestGeneAfterTrim $medianGeneLength $maxColOcc $maxColOccP $ratio $numbrSamples"| column -t
 done | sort -k4n| column -t >> ${fileNamePrefix}_summary_gene_recovery.txt
 
 
