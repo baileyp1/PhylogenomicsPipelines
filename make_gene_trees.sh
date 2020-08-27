@@ -430,6 +430,8 @@ if [[ $proteinSelected == 'yes' || $codonSelected == 'yes' ]]; then
 	| sed 's/ \[translate(1)\]//' \
 	> ${gene}.protein.fasta
 
+	### 27.8.2020 - Detect STOP codons here with various_tasks_in_python.py assess_stops ${gene}.protein.fasta - create stats then remove them
+
  	if [[ "$alnProgram" == 'mafft' ]]; then 	# If aligners can be set to auto residue detect, can use a generic subR - or brign in a variable.
 		echo ''; echo Creating a protein alignment with MAFFT...
 		$exePrefix mafft --thread $cpuGeneTree \
@@ -604,7 +606,7 @@ if [[ -s $dnaAlnForTree || -s $proteinAlnForTree ]]; then
 			makeGeneTree protein $proteinAlnForTree '.' 'JTT+G' 'AA' ''
 		fi
 	else
-		echo WARNING: Not able to build a tree for this gene: $gene (less than four sequences)
+		echo "WARNING: Not able to build a tree for this gene: $gene (less than four sequences)"
 	fi # end of block testing $numbrSeqs > 3
 
 fi # end of block testing $maxColOcc threshold
