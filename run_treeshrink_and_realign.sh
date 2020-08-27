@@ -192,6 +192,7 @@ reAlignSeqs()   {
     -m $fractnMaxColOcc \
     $2 \
     -C $cpuGeneTree \
+    -c 10 \
     -Q $partitionName \
     *_${3}.fasta \
     > make_species_trees_pipeline_${3}.log 2>&1 #"
