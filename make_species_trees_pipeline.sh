@@ -790,7 +790,7 @@ elif [[ $os == 'Linux' && $speciesTreesOnly == 'no' ]]; then
 			"$proteinSelected" \
 			"$codonSelected" \
 			"$treeshrink" \
-			"$filterSeqs1"
+			"$filterSeqs1" \
 			"$alnProgram" `
 			exit	# Species trees will be made after TreeShrink or re-alignment step(s) in nested call to this script, if requested.
 		fi
