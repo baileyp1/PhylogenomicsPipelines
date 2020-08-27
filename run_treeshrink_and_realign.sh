@@ -31,6 +31,7 @@ proteinSelected="${15}"
 codonSelected="${16}"
 treeshrink="${17}"
 filterSeqs1="${18}"
+alnProgram="${19}"
 
 echo "$numbrSamples"
 echo "$phyloProgramDNA"
@@ -182,12 +183,13 @@ reAlignSeqs()   {
     $pathToScripts/make_species_trees_pipeline.sh $iOption \
     -G \
     -D "$1" \
+    -A $alnProgram \
+    -M "$mafftAlgorithm" \
     -t $sampleTableFileForReAln \
     -g $geneListFileForReAln \
     -f $fractnAlnCovrg \
     -s $fractnSamples \
     -m $fractnMaxColOcc \
-    -M "$mafftAlgorithm" \
     $2 \
     -C $cpuGeneTree \
     -Q $partitionName \
