@@ -22,6 +22,7 @@ option_u=no
 # ALIGNMENT OPTIONS:
 seqType=dna
 alnProgram=mafft 				# 27.7.2020 - may want to merge this option with mafftAlgorithm so it woudl be quoted liek so: 'mafft --retree 2'
+mafftAlgorithm='--retree 2'     # Hidden option - '--maxiterate 1000' #'--retree 1'   '--retree 2' - need to ry and merge with the alnProgram option somehow
 
 # FILTERING AND TRIMMING OPTIONS:
 filterSeqs1='no'			# My filter sequencing option (option 1)
@@ -44,7 +45,6 @@ partitionName=main   		# Values depend on the cluster being used so good to have
 # Need to check them if I make them public
 fractnMaxColOcc=0.7
 slurmThrottle=1
-mafftAlgorithm='--retree 2'     #'--maxiterate 1000' #'--retree 1'   '--retree 2' - use maxiterate
 cpuGeneTree=1					# still keep this separate from the supermatrix tree; then I can specify loads more for the supermatrix.
 								# Maybe hava a comma separated list e.g. 4,30 for gene and species tree.
 speciesTreeMem=100000			# I think I need 500000 GB mem for the RAxML large tree (Slurm)
@@ -55,9 +55,10 @@ function usage	{
 
 cat << EOF
 
-Program description: makes species trees from fasta files containing either (1) recovered genes (DNA) from multiple samples, one fasta file per sample
-                     or (2) gene-wise fasta files, one fasta file per gene (DNA).
-                     By Default for (1), the fasta header format MUST BE: >sampleId-geneId but one other option (-a) is available.
+Program description: makes species trees from fasta files, either of two types:
+                     1. recovered genes (DNA) from multiple samples, one fasta file per sample (default)
+                        By Default, the fasta header format MUST BE: >sampleId-geneId but one other option (-a) is available.
+                     2. gene-wise (DNA) fasta files, one fasta file per gene (option -G) 
 
 Usage:               make_species_trees_pipeline.sh [OPTIONS] fastafile1 fastafile2 fastafile3 ...
 
@@ -66,22 +67,23 @@ OPTIONS:
     -v               program version
 INPUT FILE OPTIONS:
     -G               make gene trees, starting from gene-wise fasta files rather than files containing all genes per sample
-	                 Gene name/identifier must be identical to the sample fasta file name (minus any [dot] ending suffix e.g. .fasta),
-	              else change the gene name list in option -g so that it is.	
-	              Fasta header line format MUST BE: >sampleId
-    -g <file>     file (including path to it) containing list of gene names only (required option)        
-    -a            add sample name onto the fasta header from the input fasta file name.
-                  Expected gene identifier format in the fasta header: >geneId (no hyphen '-' characters)
-	-t <csv file> add sample name and other info from a comma separated value (csv) table file into the tree leaf labels.
-	              Format of table row: sample_name/identifier, followed by any species information, including sample_name/identifier, as required. 
-	-u            add contig length info onto species tree tips (requires option -t)
-                  Sample_name/identifier must be identical to the sample fasta file name (minus any [dot] ending suffix e.g. .fasta)
-                  Not available in gene-wise mode (option -G)	  
-	-p <string>   prefix for the output filenames e.g. taxonomic group (default=tree_pipeline)			--> change to -o or O
+                     Gene name/identifier must be identical to the sample fasta file name (minus any [dot] ending suffix e.g. .fasta),
+                     else change the gene name list in option -g so that it is.	
+                     Fasta header line format MUST BE: >sampleId
+    -g <file>        file (including path to it) containing list of gene names only (required option)        
+    -a               add sample name onto the fasta header from the input fasta file name.
+                     Expected gene identifier format in the fasta header: >geneId (no hyphen '-' characters)
+    -t <csv file>    add sample name and other info from a comma separated value (csv) table file into the tree leaf labels.
+                     Format of table row: sample_name/identifier, followed by any species information, including sample_name/identifier, as required. 
+    -u               add contig length info onto species tree tips (requires option -t)
+                     Sample_name/identifier must be identical to the sample fasta file name (minus any [dot] ending suffix e.g. .fasta)
+                     Not available in gene-wise mode (option -G)
+    -p <string>      prefix for the output filenames e.g. taxonomic group (default=tree_pipeline)			--> change to -o or O
 ALIGNMENT OPTIONS:
-	-D             sequence type to use: dna, protein, codon (default=dna)
-                   codon is input DNA aligned but guided by a protein alignment
-	-A             alignment program to use: mafft, UPP 	[ but for which residue type - make for all for now ]
+    -D               sequence type to use: dna, protein, codon (default=dna)
+                     codon is input DNA aligned but guided by a protein alignment
+    -A <string>      alignment program to use: mafft, UPP 	[ but for which residue type - make for all for now ]
+    -M <string>      if using mafft, specify algorithm to use in quotes i.e. '--retree 1', '--retree 2', '--maxiterate 1000' etc (default='--retree 2')
 FILTERING AND TRIMMING OPTIONS:
     -F <string>   filter sequence option 1
 	-f 			   filter sequences. Options:
@@ -630,7 +632,7 @@ if [[ $os == 'Darwin' && $speciesTreesOnly == 'no' ]]; then
 		$proteinSelected \
 		$codonSelected \
 		"$filterSeqs1"
-	done > make_gene_tree.log 2>&1
+	done > make_gene_trees.log 2>&1
 	#exit
 	if [[ $filterSeqs1 != 'no' ]]; then
 		# Need to name the files to use in the assess script, depends on sequence type selected. 
@@ -652,7 +654,7 @@ if [[ $os == 'Darwin' && $speciesTreesOnly == 'no' ]]; then
 		$numbrSamples \
 		$fileNamePrefix \
 		$geneFile \
-		tree_tip_info_mapfile.txt \
+		$sampleTableFile \
 		$option_u \
 		$seqType \
 		$alnFileForTreeSuffix \
@@ -683,6 +685,7 @@ if [[ $os == 'Darwin' && $speciesTreesOnly == 'no' ]]; then
 		"$codonSelected" \
 		"$treeshrink" \
 		"$filterSeqs1" \
+		"$alnProgram" \
 		> run_treeshrink_and_realign.log 2>&1
 		exit	# Species trees will be made after TreeShrink or re-alignment step(s) in nested call to this script, if requested.
 	fi
@@ -690,7 +693,7 @@ if [[ $os == 'Darwin' && $speciesTreesOnly == 'no' ]]; then
 elif [[ $os == 'Linux' && $speciesTreesOnly == 'no' ]]; then
 	###exePrefix="/usr/bin/time -v -o g${gene}_mafft_dna_aln_time_and_mem.log"		# NB - this will not work here - need to pick up gene id in Slurm script instead.
     slurm=`sbatch -V | grep ^slurm | wc -l `
-    if [ $slurm -eq 1 ]; then
+    if [ $slurm -eq 0 ]; then
 		# Count the # genes to process and fix that number in the Slurm --array parameter.
     	# It has to be set outside the sbatch script I think so that I can automatically set the array size .
     	# It has to be set each time otherwise.
@@ -787,7 +790,8 @@ elif [[ $os == 'Linux' && $speciesTreesOnly == 'no' ]]; then
 			"$proteinSelected" \
 			"$codonSelected" \
 			"$treeshrink" \
-			"$filterSeqs1" `
+			"$filterSeqs1"
+			"$alnProgram" `
 			exit	# Species trees will be made after TreeShrink or re-alignment step(s) in nested call to this script, if requested.
 		fi
 	else
@@ -807,9 +811,69 @@ elif [[ $os == 'Linux' && $speciesTreesOnly == 'no' ]]; then
 			$fractnMaxColOcc \
 			$cpuGeneTrees \
 			"$mafftAlgorithm" \
-			"$exePrefix"
-		done > make_gene_tree.log 2>&1
-		$pathToScripts/assess_gene_alignments.sh $fractnAlnCovrg $fractnMaxColOcc $fractnSamples $numbrSamples $fileNamePrefix $geneFile $sampleTableFile $option_u
+			"$exePrefix" \
+			"$alnProgram" \
+			$dnaSelected \
+			$proteinSelected \
+			$codonSelected \
+			"$filterSeqs1"
+		done > make_gene_trees.log 2>&1
+
+		if [[ $filterSeqs1 != 'no' ]]; then
+			# Need to name the files to use in the assess script, depends on sequence type selected. 
+			if [[ $proteinSelected == 'yes' || $codonSelected == 'yes' ]]; then
+				seqType=protein
+				###alnFileSuffix=${seqType}.aln.for_tree.fasta		# before AMAS trim - consider to add this or just do stats at end of all filtering+trimming 
+				alnFileForTreeSuffix=${seqType}.aln.for_tree.fasta  # after AMAS trim
+				## Could add other filenames used in script (?) 
+			else
+				seqType=dna
+				alnFileForTreeSuffix=${seqType}.aln.for_tree.fasta
+			fi
+			echo seqType: $seqType
+			echo alnFileForTreeSuffix: $alnFileForTreeSuffix
+			$pathToScripts/assess_gene_alignments.sh \
+			$fractnAlnCovrg \
+			$fractnMaxColOcc \
+			$fractnSamples \
+			$numbrSamples \
+			$fileNamePrefix \
+			$geneFile \
+			$sampleTableFile \
+			$option_u \
+			$seqType \
+			$alnFileForTreeSuffix \
+			> assess_gene_alns.log 2>&1
+		fi
+		echo treeshrink: $treeshrink
+		echo filterSeqs1: $filterSeqs1
+		if [[ $treeshrink == 'yes' || $filterSeqs1 != 'no' ]]; then
+			##########################################
+			echo 'Re-aligning gene alignments because TreeShrink option or filterSeqs1 option is on, then continuing analysis in the "after_treeshrink_USE_THIS" or "after_reAlnFilterSeqs_USE_THIS" directory...'
+			##########################################
+			run_treeshrink_and_realign.sh \
+			"$numbrSamples" \
+			"$phyloProgramDNA" \
+			"$phyloProgramPROT" \
+			"$sampleTableFile" \
+			"$geneListFile" \
+			"$fractnAlnCovrg" \
+			"$fractnMaxColOcc" \
+			"$fractnSamples" \
+			"$mafftAlgorithm" \
+			"$cpuGeneTree" \
+			"$partitionName" \
+			"$pathToScripts" \
+			"geneTreesOnly" \
+			"$dnaSelected" \
+			"$proteinSelected" \
+			"$codonSelected" \
+			"$treeshrink" \
+			"$filterSeqs1" \
+			"$alnProgram" \
+			> run_treeshrink_and_realign.log 2>&1
+			exit	# Species trees will be made after TreeShrink or re-alignment step(s) in nested call to this script, if requested.
+		fi
 	fi
 fi
 
@@ -841,7 +905,7 @@ if [ $os == 'Darwin' ]; then
 	> ${fileNamePrefix}_make_species_trees.log 2>&1
 elif [ $os == 'Linux' ]; then
 	exePrefix="/usr/bin/time -v"
-    if [ $slurm -eq 1 ]; then
+    if [ $slurm -eq 0 ]; then
     	### NB - not sure where to put the $exePrefix!!!!
     	### One option is to put the "time script" cmd in a wrapper but then I need a log file for this sbatch call and delete it from the script header..
     	### I think this is the only way without changing the main script itself.
