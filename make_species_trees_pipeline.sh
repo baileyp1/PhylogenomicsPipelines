@@ -693,7 +693,7 @@ if [[ $os == 'Darwin' && $speciesTreesOnly == 'no' ]]; then
 elif [[ $os == 'Linux' && $speciesTreesOnly == 'no' ]]; then
 	###exePrefix="/usr/bin/time -v -o g${gene}_mafft_dna_aln_time_and_mem.log"		# NB - this will not work here - need to pick up gene id in Slurm script instead.
     slurm=`sbatch -V | grep ^slurm | wc -l `
-    if [ $slurm -eq 0 ]; then
+    if [ $slurm -eq 1 ]; then
 		# Count the # genes to process and fix that number in the Slurm --array parameter.
     	# It has to be set outside the sbatch script I think so that I can automatically set the array size .
     	# It has to be set each time otherwise.
@@ -905,7 +905,7 @@ if [ $os == 'Darwin' ]; then
 	> ${fileNamePrefix}_make_species_trees.log 2>&1
 elif [ $os == 'Linux' ]; then
 	exePrefix="/usr/bin/time -v"
-    if [ $slurm -eq 0 ]; then
+    if [ $slurm -eq 1 ]; then
     	### NB - not sure where to put the $exePrefix!!!!
     	### One option is to put the "time script" cmd in a wrapper but then I need a log file for this sbatch call and delete it from the script header..
     	### I think this is the only way without changing the main script itself.
