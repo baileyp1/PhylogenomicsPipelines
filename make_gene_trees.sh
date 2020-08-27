@@ -138,7 +138,9 @@ if [[ $maxColOcc -ge $3 ]]; then
 	numbrSeqs=`cat ${gene}_${2}_aln_ovr${fractnAlnCovrg_pc}pc_aln_covrg.txt | wc -l `
 	echo numbrSeqs for tree = $numbrSeqs
 	if [ "$numbrSeqs" -gt 3 ]; then 		# Conditonal here not essential - but don't know how AMAS.py behaves with empty input files so leaving in here
-											# Actually now using to print out filename if it fails 
+											# Actually now using to print out filename if it fails
+											### 27.8.2020 - can improve this check; if possible leave it to the main code to not build tree if < 3 seqs after all filtering checks 
+											### OR just repeat the identical error message at this stage as well
 		seqtk subseq -l $alnLength \
 		$1 \
 		${gene}_${2}_aln_ovr${fractnAlnCovrg_pc}pc_aln_covrg.txt \
@@ -352,9 +354,9 @@ elif [[ ! -s $dnaFastaFileForAln ]]; then
 		dnaFastaFileForAln=${gene}_after_filterSeqs_dna.fasta
 		echo File for aligning: ${gene}_after_filterSeqs_dna.fasta
 	else
-		echo "ERROR: the input gene-wise fasta file for this gene does not exist or is empty: $gene
-It indicates that there are no samples for this gene (possibly after a filtering step), or in gene-wise mode (option -G), the gene list is incompatible with the input gene-wise fasta files
-Not processing this gene further."
+		echo "ERROR: the input gene-wise fasta file for this gene does not exist or is empty: $gene - skipping alignment of this gene.
+(It indicates that there are no samples for this gene (possibly after a filtering step),
+or in gene-wise mode (option -G), the gene list is incompatible with the input gene-wise fasta files.)"
 		# NB - acknowledged error above so OK to exit with zero.
 		# Anyway it has to be zero to satisfy Slurm --dependancy afterok:$jobId parameter;
 		# Only works if $jobId exit code is 0, otherwise would need to use --dependancy afterany:$jobId     
@@ -390,23 +392,33 @@ if [[ $dnaSelected == 'yes' ]]; then
         dnaAlnToUse=${gene}.dna.aln.fasta
     elif [[ "$alnProgram" == 'upp' ]]; then
    		echo Creating a DNA alignment with UPP...
-
-   		### 24.8.2020 - If using the -M option calculate the median value of the gene seqs before aligning them
-   		### - see above for code - use $dnaFastaFileForAln
-
-		run_upp.py -s $dnaFastaFileForAln -o ${gene}.dna
+   		# Before running check whether pasta has already been run and delete previous files (they can't be overwritten!):
+   		if [[ -f ${gene}.dna.upp_pasta.fasta ]]; then
+   			rm ${gene}.dna.upp_pasta.fasta ${gene}.dna.upp_pasta.Fasttree ${gene}.dna.upp_alignment_masked.fasta
+   			# Don't think this file always exists (for very small datasets):
+   			if [[ -f ${gene}.dna.upp_insertion_columns.txt ]]; then rm ${gene}.dna.upp_insertion_columns.txt; fi
+   		fi
+		run_upp.py -x $cpuGeneTree -M -1 -s $dnaFastaFileForAln -M -1 -o ${gene}.dna.upp
 		# Other options to consider:
 		# UPP(Fast): run_upp.py -s input.fas -B 100. - what's the -B option??!!
 		# -m [dna|rna|amino]
 		# -x <cpus> - runs a ||elised version of UPP
 		# -M <median_full_length> - specify the median full length of the gene for selecting a set of backbone seqs that are within 25% of that value
-		#						    would have to bring in an external file of size - also useful for filterSeqs option 2 
+		#						    would have to bring in an external file of size - also useful for filterSeqs option 2 - actually '-M -1' will use the median full length of the seqs  
 		# Ouput files:
 		# _pasta.fasta 	- backbone aln (?)
 		# _pasta.Fasttree - backbone tree (?)
 		# _alignment.fasta 	- main aln
 		# _alignment_masked.fasta - masked aln where non-homologous sites in the query set are removed
-		mv ${gene}.dna_alignment.fasta ${gene}.dna.aln.fasta 
+
+		# NB - UPP might not be able to align small gene sets (e.g. from the test data set) - will report this and skip this gene.
+		#      UPP doesn’t seem to align two seqs but it does align three seqs!
+    	#	   With the -M -1 flag it couldn’t align 5 genes but sucess depends on how complete the sequences are.
+		if [[ ! -s ${gene}.dna.upp_alignment.fasta ]]; then 
+			echo "ERROR: UPP was not able to align this gene set - skipping alignment of $dnaFastaFileForAln"
+			exit 0	# zero allows Slurm to continue with the dependancies
+		fi
+		mv ${gene}.dna.upp_alignment.fasta ${gene}.dna.aln.fasta 
        	dnaAlnToUse=${gene}.dna.aln.fasta
     fi
 fi
@@ -417,19 +429,9 @@ if [[ $proteinSelected == 'yes' || $codonSelected == 'yes' ]]; then
 	fastatranslate -F 1  $dnaFastaFileForAln \
 	| sed 's/ \[translate(1)\]//' \
 	> ${gene}.protein.fasta
-	### 27.1.2020 - should be removing seqs with > 2-3 STOP codons - there are some!!!!
-	###				if the seq is on a single line it will be much easier to assess STOPs
-	###				YES - look at this NOW! It will affect the alignment!!!!
-	### 24.8.2020
-	### Count stops with grep -o - can this be done without printing above file first?
-	### if == 1 pritn seqs to file - also create a list of seqs liek above - e.g.
-	### cat  
-	###fastalength ${gene}_${2}_aln_AMAS_trim_${fractnMaxColOcc}.fasta 2>/dev/null \
-	###| awk -v LENG=$maxColOcc -v FRACTN=$fractnAlnCovrg -v seqLenThreshold=$4 '{if( ($1/LENG) >= FRACTN && $1 >= seqLenThreshold) {print $2} }' \
-	###> ${gene}_${2}_aln_ovr${fractnAlnCovrg_pc}pc_aln_covrg.txt
 
  	if [[ "$alnProgram" == 'mafft' ]]; then 	# If aligners can be set to auto residue detect, can use a generic subR - or brign in a variable.
-		echo Creating a protein alignment with MAFFT...
+		echo ''; echo Creating a protein alignment with MAFFT...
 		$exePrefix mafft --thread $cpuGeneTree \
 		$mafftAlgorithm \
 		--reorder \
@@ -439,8 +441,16 @@ if [[ $proteinSelected == 'yes' || $codonSelected == 'yes' ]]; then
 		proteinAlnToUse=${gene}.protein.aln.fasta
 	elif [[ "$alnProgram" == 'upp' ]]; then
    		echo Creating a protein alignment with UPP...
-		run_upp.py -s ${gene}.protein.fasta -o ${gene}.protein
-		mv ${gene}.protein_alignment.fasta ${gene}.protein.aln.fasta
+   		if [[ -f ${gene}.protein.upp_pasta.fasta ]]; then
+   			rm ${gene}.protein.upp_pasta.fasta ${gene}.protein.upp_pasta.Fasttree ${gene}.protein.upp_alignment_masked.fasta
+   			if [[ -f ${gene}.protein.upp_insertion_columns.txt ]]; then rm ${gene}.protein.upp_insertion_columns.txt; fi
+   		fi
+		run_upp.py -x $cpuGeneTree -M -1 -m amino -s ${gene}.protein.fasta -o ${gene}.protein.upp
+		if [[ ! -s ${gene}.protein.upp_alignment.fasta ]]; then 
+			echo "ERROR: UPP was not able to align this gene set - skipping alignment of ${gene}.protein.fasta"
+			exit 0
+		fi
+		mv ${gene}.protein.upp_alignment.fasta ${gene}.protein.aln.fasta
 		proteinAlnToUse=${gene}.protein.aln.fasta
 	fi
 
@@ -593,7 +603,10 @@ if [[ -s $dnaAlnForTree || -s $proteinAlnForTree ]]; then
 		if [[ $proteinSelected == 'yes' ]]; then 
 			makeGeneTree protein $proteinAlnForTree '.' 'JTT+G' 'AA' ''
 		fi
+	else
+		echo WARNING: Not able to build a tree for this gene: $gene (less than four sequences)
 	fi # end of block testing $numbrSeqs > 3
+
 fi # end of block testing $maxColOcc threshold
 
 # If there are no .nwk trees built, need to report that and exit with message - reporting that in the next step (make_species_trees.sh)
