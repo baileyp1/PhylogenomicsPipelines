@@ -393,8 +393,12 @@ if [[ $dnaSelected == 'yes' ]]; then
     elif [[ "$alnProgram" == 'upp' ]]; then
    		echo Creating a DNA alignment with UPP...
    		# Before running check whether pasta has already been run and delete previous files (they can't be overwritten!):
+   		echo BEFORE
+   		ls ${gene}.dna.upp*
    		if [[ -f ${gene}.dna.upp_pasta.fasta ]]; then
-   			rm ${gene}.dna.upp_pasta.fasta ${gene}.dna.upp_pasta.fasttree ${gene}.dna.upp_alignment_masked.fasta
+   			echo AFTER
+   			ls ${gene}.dna.upp*
+   			rm ${gene}.dna.upp_pasta.fasta  ${gene}.dna.upp_pasta.fasttree  ${gene}.dna.upp_alignment_masked.fasta
    			# Don't think this file always exists (for very small datasets):
    			if [[ -f ${gene}.dna.upp_insertion_columns.txt ]]; then rm ${gene}.dna.upp_insertion_columns.txt; fi
    		fi
