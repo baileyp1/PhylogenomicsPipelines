@@ -394,7 +394,7 @@ if [[ $dnaSelected == 'yes' ]]; then
    		echo Creating a DNA alignment with UPP...
    		# Before running check whether pasta has already been run and delete previous files (they can't be overwritten!):
    		if [[ -f ${gene}.dna.upp_pasta.fasta ]]; then
-   			rm ${gene}.dna.upp_pasta.fasta ${gene}.dna.upp_pasta.Fasttree ${gene}.dna.upp_alignment_masked.fasta
+   			rm ${gene}.dna.upp_pasta.fasta ${gene}.dna.upp_pasta.fasttree ${gene}.dna.upp_alignment_masked.fasta
    			# Don't think this file always exists (for very small datasets):
    			if [[ -f ${gene}.dna.upp_insertion_columns.txt ]]; then rm ${gene}.dna.upp_insertion_columns.txt; fi
    		fi
@@ -444,7 +444,7 @@ if [[ $proteinSelected == 'yes' || $codonSelected == 'yes' ]]; then
 	elif [[ "$alnProgram" == 'upp' ]]; then
    		echo Creating a protein alignment with UPP...
    		if [[ -f ${gene}.protein.upp_pasta.fasta ]]; then
-   			rm ${gene}.protein.upp_pasta.fasta ${gene}.protein.upp_pasta.Fasttree ${gene}.protein.upp_alignment_masked.fasta
+   			rm ${gene}.protein.upp_pasta.fasta ${gene}.protein.upp_pasta.fasttree ${gene}.protein.upp_alignment_masked.fasta
    			if [[ -f ${gene}.protein.upp_insertion_columns.txt ]]; then rm ${gene}.protein.upp_insertion_columns.txt; fi
    		fi
 		run_upp.py -x $cpuGeneTree -M -1 -m amino -s ${gene}.protein.fasta -o ${gene}.protein.upp
