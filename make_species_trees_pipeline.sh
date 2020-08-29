@@ -62,6 +62,7 @@ Program description: makes species trees from fasta files, either of two types:
 
 Usage:               make_species_trees_pipeline.sh [OPTIONS] fastafile1 fastafile2 fastafile3 ...
 
+
 OPTIONS:
     -h               shows this message
     -v               program version
@@ -72,7 +73,7 @@ INPUT FILE OPTIONS:
                      Fasta header line format MUST BE: >sampleId
     -g <file>        file (including path to it) containing list of gene names only (required option)        
     -a               add sample name onto the fasta header from the input fasta file name.
-                     Expected gene identifier format in the fasta header: >geneId (no hyphen '-' characters)
+                     Expected gene identifier format in the input fasta header: >geneId (no hyphen '-' characters allowed)
     -t <csv file>    add sample name and other info from a comma separated value (csv) table file into the tree leaf labels.
                      Format of table row: sample_name/identifier, followed by any species information, including sample_name/identifier, as required. 
     -u               add contig length info onto species tree tips (requires option -t)
@@ -85,46 +86,54 @@ ALIGNMENT OPTIONS:
     -A <string>      alignment program to use: mafft, UPP 	[ but for which residue type - make for all for now ]
     -M <string>      if using mafft, specify algorithm to use in quotes i.e. '--retree 1', '--retree 2', '--maxiterate 1000' etc (default='--retree 2')
 FILTERING AND TRIMMING OPTIONS:
-    -F <string>   filter sequence option 1
-	-f 			   filter sequences. Options:
-	               1. filter sequences in gene alignments by coverage i.e. percent of [well conserved regions in] the alignment covered by a sample sequence
-	                  Minimum percent to tolerate (default=60; 0 would mean no filtering, i.e. include sequence of any length)
-	               2. percent of samples in each gene tree.
-	                  Minumum percent to tolerate (default=30; 0 would mean no filtering, include all available samples in each gene tree) 
-	               3. filter rare insertions
-	               	  Minumum percent to tolerate (default=0.3);
-	               4. use the well conserved regions in each alignment only to build an additional tree (0=no, 1=yes)
-	                  NBNB - NEED TO WORK OUT HOW THIS WORKS FOR DNA AND PROTEIN - LOTS OF FILES NOE   
-	                       - working dir: conservedDNARegionsTree, conservedProteinRegionsTree, conservedCodonRegionsTree
-	               Format: <1> <2> <3> <4>; default: 60 30 0.3 0
+    -F <string>      filter sequence option 1
+    -f               filter sequences. Options:
+                     1. filter sequences in gene alignments by coverage i.e. percent of [well conserved regions in] the alignment covered by a sample sequence
+                        Minimum percent to tolerate (default=60; 0 would mean no filtering, i.e. include sequence of any length)
+                     2. percent of samples in each gene tree.
+                        Minumum percent to tolerate (default=30; 0 would mean no filtering, include all available samples in each gene tree)
+                     3. filter rare insertions
+                        Minumum percent to tolerate (default=0.3);
+                     4. use the well conserved regions in each alignment only to build an additional tree (0=no, 1=yes)
+                        NBNB - NEED TO WORK OUT HOW THIS WORKS FOR DNA AND PROTEIN - LOTS OF FILES NOE   
+                        - working dir: conservedDNARegionsTree, conservedProteinRegionsTree, conservedCodonRegionsTree
+                        Format: <1> <2> <3> <4>; default: 60 30 0.3 0
 PHYLOGENY OPTIONS:
-	-i             make gene trees only
-	-j             make species trees only. Gene trees must already exist in run directory
+    -i make gene trees only
+    -j              make species trees only. Gene trees must already exist in run directory
 
 
-	-q <string>    name of phylogeny program for gene trees from DNA sequences.							--> change to -d or D - use DNA sequence to build gene trees and name a phylogeny program
+    -q <string>     name of phylogeny program for gene trees from DNA sequences.							--> change to -d or D - use DNA sequence to build gene trees and name a phylogeny program
                    	Options are, fastest to slowest: fasttree, iqtree2, raxml-ng (default=fasttree)	
-	-r <string>    name of phylogeny program for gene trees from protein sequences.						--> change to p or P - use amino acid sequence to build gene trees and name a phylogeny program
+    -r <string>     name of phylogeny program for gene trees from protein sequences.						--> change to p or P - use amino acid sequence to build gene trees and name a phylogeny program
                    	If required, options are, fastest to slowest: fasttree, iqtree, raxml-ng (no default)
                    																						--> 				   use DNA codon sequence to build gene trees and name a phylogeny program
-    -S <string>    name of phylogeny program for supermatrix approach (concatenated gene alignments).
-    				If required, options are, fastest to slowest: fasttree, raxml-ng (no default)
-
-    -T             use Treeshrink on gene trees (followed by re-alignment)
+    -S <string>     name of phylogeny program for supermatrix approach (concatenated gene alignments).
+                    If required, options are, fastest to slowest: fasttree, raxml-ng (no default)
+    -T              use Treeshrink on gene trees (followed by re-alignment)
 OTHER OPTIONS:
-     -C <integer>   number of cpu to use for genetrees; NB - not convinced >1 cpu works robustly for raxml-ng! (default=1)              	
-	-c <integer>   number of cpu to use for RAxML in supermatrix method (default=8)
-	-Q <string>    Slurm partition (queue) to use (default=medium) ]
+    -C <integer>    number of cpu to use for genetrees; NB - not convinced >1 cpu works robustly for raxml-ng! (default=1)              	-
+    -c <integer>    number of cpu to use for RAxML in supermatrix method (default=8)
+    -Q <string>     Slurm partition (queue) to use (default=medium) ]
 
 
-A typical example (explain further ... in which sample fasta files containing gene sequences:
-<path to>/make_species_trees_pipeline.sh \\
--g <geneListFile> \\
+A basic example shown below:
+make genes trees from sample fasta files - formatted as described for option -a - by aligning the input
+DNA sequence for each gene with MAFFT, building each gene tree with FASTTREE, then making species trees with 
+ASTRAL, FASTTREE and RAxML (last two program make a supermatrix tree from concatenated gene alignments).
+
+make_species_trees_pipeline.sh \\
+-a \\
+-D 'dna' \\
+-A mafft \\
+-M '--retree 2' \\
 -t <sampleTreeTipInfoFile> \\
--f 0.6 \\
--s 0.3 \\
+-g <geneListFile> \\
+-F 'yes' \\
 -q fasttree \\
 -c 8 \\
+-C 1 \\
+-Q medium \\
 <path_to_recovered_genes_from_samples>/*.fasta \\
 > make_species_trees_pipeline.log 2>&1 &
 
@@ -168,7 +177,7 @@ while getopts "hvat:ug:ijGF:f:m:s:p:M:q:r:TC:c:d:Q:A:D:"  OPTION; do	# Remaining
 		C) cpuGeneTree=$OPTARG ;;
 		c) cpu=$OPTARG ;;
 		Q) partitionName=$OPTARG ;;
-		?)  echo This is not allowed. Read the usage summary below.
+		?)  echo This option is not allowed. Read the usage summary below.
       	    echo
       	    usage; exit 1 ;;
       	:) echo "Invalid option: $OPTARG requires an argument" 1>&2 ;;		# 26.7.2020 - Added - captures error for options that require an argument - useful - actually doesn't work if option requiring a value is followed by a flag instead
@@ -235,7 +244,6 @@ if [ $(( $# - $OPTIND + 1 )) -lt 4 ]; then				### 30.3.2020 AND speciesTreesOnly
 														### 4.7.2020 AND now if gene-wise files == no are entered - can have less than one of those right?
 														### 12.8.2020 - Just have an if else clause and say: less than 1 files but in gene-wise mode so OK 
     echo
-    usage
     echo "ERROR: you need to input fasta files containing recovered genes from at least four species!"
     exit 1
 fi
@@ -693,7 +701,7 @@ if [[ $os == 'Darwin' && $speciesTreesOnly == 'no' ]]; then
 elif [[ $os == 'Linux' && $speciesTreesOnly == 'no' ]]; then
 	###exePrefix="/usr/bin/time -v -o g${gene}_mafft_dna_aln_time_and_mem.log"		# NB - this will not work here - need to pick up gene id in Slurm script instead.
     slurm=`sbatch -V | grep ^slurm | wc -l `
-    if [ $slurm -eq 1 ]; then
+    if [ $slurm -eq 0 ]; then
 		# Count the # genes to process and fix that number in the Slurm --array parameter.
     	# It has to be set outside the sbatch script I think so that I can automatically set the array size .
     	# It has to be set each time otherwise.
@@ -905,7 +913,7 @@ if [ $os == 'Darwin' ]; then
 	> ${fileNamePrefix}_make_species_trees.log 2>&1
 elif [ $os == 'Linux' ]; then
 	exePrefix="/usr/bin/time -v"
-    if [ $slurm -eq 1 ]; then
+    if [ $slurm -eq 0 ]; then
     	### NB - not sure where to put the $exePrefix!!!!
     	### One option is to put the "time script" cmd in a wrapper but then I need a log file for this sbatch call and delete it from the script header..
     	### I think this is the only way without changing the main script itself.

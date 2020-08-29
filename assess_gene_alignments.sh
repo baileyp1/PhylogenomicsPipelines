@@ -161,6 +161,7 @@ for file in *.$alnFileForTreeSuffix; do
     maxColOccP=`fastalength  ${gene}_${seqType}_aln_AMAS_trim_-p_${fractnMaxColOcc}.fasta  2>/dev/null | sort -n | tail -n 1 | awk '{print $1}' ` # minimum column occupancy (parsimonious sites ONLY)
 	lenLongestGeneAfterTrim=`fastalength ${gene}.$alnFileForTreeSuffix 2>/dev/null | sort -n | tail -n 1 | awk '{print $1}' `
 	ratio=`echo  $lenLongestGeneAfterTrim  $medianGeneLength | awk '{printf "%.2f", $1/$2}' `							         # Might be an indicator of overall effectiveness of gene recovery for samples submitted
+	### 27.8.2020 - I think this is sometiems divisible by zero which is fatal!!!!
 	medianGeneLength=`cat ${gene}_aln_summary.log | grep '^medianGeneLength:' | awk '{print $2}' `
     echo "$gene $lenLongestGene $lenLongestGeneAfterTrim $medianGeneLength $maxColOcc $maxColOccP $ratio $numbrSamples"| column -t
 done | sort -k4n| column -t >> ${fileNamePrefix}_summary_gene_recovery.txt

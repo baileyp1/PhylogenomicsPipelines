@@ -393,11 +393,10 @@ if [[ $dnaSelected == 'yes' ]]; then
     elif [[ "$alnProgram" == 'upp' ]]; then
    		echo Creating a DNA alignment with UPP...
    		# Before running check whether pasta has already been run and delete previous files (they can't be overwritten!):
-   		echo BEFORE
-   		ls ${gene}.dna.upp*
+   		### NB - had an issue with removing all files when only testing one of them, in the end my own error I think.
+   		### If it happens again (UPP will complain about overwriting files) can use this conditional instead to check all the files in the set at once:
+   		### if ls *.dna.upp* 2>&1 >/dev/null; then echo exists; ls -l *.dna.upp* ; fi
    		if [[ -f ${gene}.dna.upp_pasta.fasta ]]; then
-   			echo AFTER
-   			ls ${gene}.dna.upp*
    			rm ${gene}.dna.upp_pasta.fasta  ${gene}.dna.upp_pasta.fasttree  ${gene}.dna.upp_alignment_masked.fasta
    			# Don't think this file always exists (for very small datasets):
    			if [[ -f ${gene}.dna.upp_insertion_columns.txt ]]; then rm ${gene}.dna.upp_insertion_columns.txt; fi
@@ -437,7 +436,8 @@ if [[ $proteinSelected == 'yes' || $codonSelected == 'yes' ]]; then
 	### 27.8.2020 - Detect STOP codons here with various_tasks_in_python.py assess_stops ${gene}.protein.fasta - create stats then remove them
 
  	if [[ "$alnProgram" == 'mafft' ]]; then 	# If aligners can be set to auto residue detect, can use a generic subR - or brign in a variable.
-		echo ''; echo Creating a protein alignment with MAFFT...
+		echo
+		echo Creating a protein alignment with MAFFT...
 		$exePrefix mafft --thread $cpuGeneTree \
 		$mafftAlgorithm \
 		--reorder \
