@@ -75,7 +75,7 @@ INPUT FILE OPTIONS:
     -a               add sample name onto the fasta header from the input fasta file name.
                      Expected gene identifier format in the input fasta header: >geneId (no hyphen '-' characters allowed)
     -t <csv file>    add sample name and other info from a comma separated value (csv) table file into the tree leaf labels.
-                     Format of table row: sample_name/identifier, followed by any species information, including sample_name/identifier, as required. 
+                     Format of table row: sample_name/identifier, followed by any species information (include sample_name/identifier again if required) 
     -u               add contig length info onto species tree tips (requires option -t)
                      Sample_name/identifier must be identical to the sample fasta file name (minus any [dot] ending suffix e.g. .fasta)
                      Not available in gene-wise mode (option -G)
@@ -101,13 +101,11 @@ FILTERING AND TRIMMING OPTIONS:
 PHYLOGENY OPTIONS:
     -i make gene trees only
     -j              make species trees only. Gene trees must already exist in run directory
-
-
-    -q <string>     name of phylogeny program for gene trees from DNA sequences.							--> change to -d or D - use DNA sequence to build gene trees and name a phylogeny program
+    -q <string>     name of phylogeny program for gene trees from DNA sequences.				--> change to -d or D - use DNA sequence to build gene trees and name a phylogeny program
                    	Options are, fastest to slowest: fasttree, iqtree2, raxml-ng (default=fasttree)	
-    -r <string>     name of phylogeny program for gene trees from protein sequences.						--> change to p or P - use amino acid sequence to build gene trees and name a phylogeny program
+    -r <string>     name of phylogeny program for gene trees from protein sequences.			--> change to p or P - use amino acid sequence to build gene trees and name a phylogeny program
                    	If required, options are, fastest to slowest: fasttree, iqtree, raxml-ng (no default)
-                   																						--> 				   use DNA codon sequence to build gene trees and name a phylogeny program
+ 																								-->  use DNA codon sequence to build gene trees and name a phylogeny program
     -S <string>     name of phylogeny program for supermatrix approach (concatenated gene alignments).
                     If required, options are, fastest to slowest: fasttree, raxml-ng (no default)
     -T              use Treeshrink on gene trees (followed by re-alignment)
@@ -117,10 +115,10 @@ OTHER OPTIONS:
     -Q <string>     Slurm partition (queue) to use (default=medium) ]
 
 
-A basic example shown below:
+A basic example described below:
 make genes trees from sample fasta files - formatted as described for option -a - by aligning the input
 DNA sequence for each gene with MAFFT, building each gene tree with FASTTREE, then making species trees with 
-ASTRAL, FASTTREE and RAxML (last two program make a supermatrix tree from concatenated gene alignments).
+ASTRAL, FASTTREE and RAxML (last two program make a supermatrix tree from concatenated gene alignments):
 
 make_species_trees_pipeline.sh \\
 -a \\
@@ -706,7 +704,7 @@ if [[ $os == 'Darwin' && $speciesTreesOnly == 'no' ]]; then
 elif [[ $os == 'Linux' && $speciesTreesOnly == 'no' ]]; then
 	###exePrefix="/usr/bin/time -v -o g${gene}_mafft_dna_aln_time_and_mem.log"		# NB - this will not work here - need to pick up gene id in Slurm script instead.
     slurm=`sbatch -V | grep ^slurm | wc -l `
-    if [ $slurm -eq 0 ]; then
+    if [ $slurm -eq 1 ]; then
 		# Count the # genes to process and fix that number in the Slurm --array parameter.
     	# It has to be set outside the sbatch script I think so that I can automatically set the array size .
     	# It has to be set each time otherwise.
@@ -918,7 +916,7 @@ if [ $os == 'Darwin' ]; then
 	> ${fileNamePrefix}_make_species_trees.log 2>&1
 elif [ $os == 'Linux' ]; then
 	exePrefix="/usr/bin/time -v"
-    if [ $slurm -eq 0 ]; then
+    if [ $slurm -eq 1 ]; then
     	### NB - not sure where to put the $exePrefix!!!!
     	### One option is to put the "time script" cmd in a wrapper but then I need a log file for this sbatch call and delete it from the script header..
     	### I think this is the only way without changing the main script itself.

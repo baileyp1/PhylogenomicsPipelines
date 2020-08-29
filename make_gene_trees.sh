@@ -140,7 +140,7 @@ if [[ $maxColOcc -ge $3 ]]; then
 	if [ "$numbrSeqs" -gt 3 ]; then 		# Conditonal here not essential - but don't know how AMAS.py behaves with empty input files so leaving in here
 											# Actually now using to print out filename if it fails
 											### 27.8.2020 - can improve this check; if possible leave it to the main code to not build tree if < 3 seqs after all filtering checks 
-											### OR just repeat the identical error message at this stage as well
+											### For now have just repeated the identical error message at this stage as well
 		seqtk subseq -l $alnLength \
 		$1 \
 		${gene}_${2}_aln_ovr${fractnAlnCovrg_pc}pc_aln_covrg.txt \
@@ -214,7 +214,8 @@ if [[ $maxColOcc -ge $3 ]]; then
 		fi
 	else
 		# Printing out the alignments with < 4 sequences for assessing further (can concatenate them together)
-		# NB - this file is produced only for the protein seqs, even if DNA is selected; but is produced for DNA if DNA only has been selected. 
+		# NB - this file is produced only for the protein seqs, even if DNA is selected; but is produced for DNA if DNA only has been selected.
+		echo "WARNING: Not able to build a tree for this gene: $gene (less than four sequences)"
 		echo $1 >> filtered_out_alignments.txt
 	fi
 else
@@ -374,6 +375,7 @@ proteinAlnToUse=''
 codonAlnToUse=''
 if [[ $dnaSelected == 'yes' ]]; then
     if [[ "$alnProgram" == 'mafft' ]]; then 	# If aligners can be set to auto residue detect, can use a generic subR - or brign in a variable.
+    	echo
         echo Creating a DNA alignment with MAFFT...
 		$exePrefix mafft --thread $cpuGeneTree \
 		$mafftAlgorithm \
@@ -391,6 +393,7 @@ if [[ $dnaSelected == 'yes' ]]; then
 		### 25.7.2020 - look at docs to see best/max number of thread worthwhile to use - hard code so it only uses max # thread (== to cpu?)
         dnaAlnToUse=${gene}.dna.aln.fasta
     elif [[ "$alnProgram" == 'upp' ]]; then
+    	echo
    		echo Creating a DNA alignment with UPP...
    		# Before running check whether pasta has already been run and delete previous files (they can't be overwritten!):
    		### NB - had an issue with removing all files when only testing one of them, in the end my own error I think.
@@ -446,6 +449,7 @@ if [[ $proteinSelected == 'yes' || $codonSelected == 'yes' ]]; then
 		> ${gene}.protein.aln.fasta
 		proteinAlnToUse=${gene}.protein.aln.fasta
 	elif [[ "$alnProgram" == 'upp' ]]; then
+		echo
    		echo Creating a protein alignment with UPP...
    		if [[ -f ${gene}.protein.upp_pasta.fasta ]]; then
    			rm ${gene}.protein.upp_pasta.fasta ${gene}.protein.upp_pasta.fasttree ${gene}.protein.upp_alignment_masked.fasta
@@ -461,6 +465,7 @@ if [[ $proteinSelected == 'yes' || $codonSelected == 'yes' ]]; then
 	fi
 
 	if [[ $codonSelected == 'yes' ]]; then
+		echo
 		echo Creating a DNA alignment guided by the protein alignment...
 		if [[ ! -d codonAln ]]; then mkdir codonAln; fi
 		### Not tested yet - need to check protein fasta header is identical to dna header.
