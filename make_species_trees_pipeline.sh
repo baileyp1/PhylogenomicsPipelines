@@ -547,7 +547,6 @@ fi
 #fi
 
 
-
 # Input checks for the seqeunce type option:
 dnaSelected=no
 proteinSelected=no
@@ -570,6 +569,12 @@ fi
 ###*.aln.for_tree.fasta
 ###*gene_tree_USE_THIS.nwk 
 ###This is only important to do if the filtering/trimming thresholds have changed and the analysis is re-run in the current working dir.
+
+
+# Input checks for the alignment type option -A:
+if [[ "$alnProgram" != 'mafft' && "$alnProgram" != 'upp' ]];then 
+	echo "ERROR: No alignment program (option -A) was entered or recognised."; exit
+fi
 
 
 # Filter sequence options (option -f)
@@ -817,7 +822,7 @@ elif [[ $os == 'Linux' && $speciesTreesOnly == 'no' ]]; then
 			$phyloProgramDNA \
 			$phyloProgramPROT \
 			$fractnMaxColOcc \
-			$cpuGeneTrees \
+			$cpuGeneTree \
 			"$mafftAlgorithm" \
 			"$exePrefix" \
 			"$alnProgram" \
@@ -838,7 +843,7 @@ elif [[ $os == 'Linux' && $speciesTreesOnly == 'no' ]]; then
 				seqType=dna
 				alnFileForTreeSuffix=${seqType}.aln.for_tree.fasta
 			fi
-			echo seqType: $seqType
+			echo seqType for assess script: $seqType
 			echo alnFileForTreeSuffix: $alnFileForTreeSuffix
 			$pathToScripts/assess_gene_alignments.sh \
 			$fractnAlnCovrg \
