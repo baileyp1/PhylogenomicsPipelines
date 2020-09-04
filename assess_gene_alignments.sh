@@ -145,6 +145,20 @@ sumMaxParsCols=`cat *_aln_summary.log | grep '^maxParsCols:' | awk -v sumMaxColO
 totalBasesInMaxColOccRegion=`for file in *.$alnFileForTreeSuffix; do fastalength $file 2>/dev/null ; done | awk '{sum+=$1} END {print sum}' `
 										 ### 20.8.2020 - was file before trim 0.003 
 
+if [[ $seqType == 'protein' ]]; then
+	totalNumbrSeqs=`cat  *.protein.fasta | grep '>' | wc -l `
+	totalNumbrSeqsWithStops=`cat *.protein.log | grep '^TotalNumbrSeqsWithStops:' | awk '{sum+=$2} END {print sum}' `
+	echo totalNumbrSeqs:  $totalNumbrSeqs
+	echo totalNumbrSeqsWithStops: $totalNumbrSeqsWithStops
+	if [[ $totalNumbrSeqs -eq 0 || $totalNumbrSeqsWithStops -eq 0 ]]; then
+		percentSeqsWithStops=0
+		echo percentSeqsWithStops: $percentSeqsWithStops
+	else
+		percentSeqsWithStops=`awk -v totalNumbrSeqsWithStops=$totalNumbrSeqsWithStops -v totalNumbrSeqs=$totalNumbrSeqs 'BEGIN{printf "%.2f", (totalNumbrSeqsWithStops/totalNumbrSeqs) * 100}' `
+		echo percentSeqsWithStops1: $percentSeqsWithStops
+	fi
+fi 
+
 
 echo 'Table for gene alignments showing numbers per gene for:
 1. longest recovered gene length (LenLongestGene)
@@ -242,15 +256,12 @@ fractnSpecies: $fractnSpecies (user set)
 
 Total number of samples: $totalNumbrSamples" > ${fileNamePrefix}_summary_stats.txt
 
-
 if [[ $geneFile != 'use_genewise_files' ]]; then 
-
 	echo "
 Largest sum length of all genes in bases for a sample found (that sample in brackets): $maxSumOfContigLengths
 Number of poor quality samples (<= 20% of the largest sum length of all genes per sample): $poorQualitySamples
 Number of ok/good quality samples (> 20% of the largest sum length of all genes per sample): $okQualitySamples" >> ${fileNamePrefix}_summary_stats.txt
 fi
-
 
 echo "
 Sequence type assessed: $seqType
@@ -258,8 +269,14 @@ Sum Length of the longest gene sequence in each alignment: $sumLenLongestGene
 Sum Length of the longest gene sequence in each alignment after trimming rare inserts: $sumLenLongestGeneAfterTrim
 Total number of homologous columns occupied by >= $fractnMaxColOcc_pc % of samples: $sumMaxColOcc (area of common overlap)
 Total number of homologous + parsimonious columns occupied by >= $fractnMaxColOcc_pc % of samples: $sumMaxParsCols
-Total number of residues in area of common overlap: $totalBasesInMaxColOccRegion
+Total number of residues in area of common overlap: $totalBasesInMaxColOccRegion " >> ${fileNamePrefix}_summary_stats.txt
 
+if [[ $seqType == 'protein' ]]; then
+	echo " 
+Number of sequences with STOP codons (total number of seqs): $totalNumbrSeqsWithStops ($totalNumbrSeqs) " >> ${fileNamePrefix}_summary_stats.txt
+fi
+
+echo "
 Number of gene alignments containing >= $fractnSpecies_pc % of the samples after filtering by coverage (will be used in the species tree): $numbrGeneAlnsForSpeciesTree
 Total number of alignment columns in the area of common overlap for these genes: $numbrOverlapColsForSpeciesTree
 

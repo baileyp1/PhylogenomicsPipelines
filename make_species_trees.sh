@@ -44,9 +44,15 @@ echo exePrefix: $exePrefix
 echo treeTipInfoMapFile: $treeTipInfoMapFile
 
 
-# Function for tree stats and tree comparisons:
-# getTreeStats <newickFile>
 getTreeStats () {
+    ###########
+    # Function: for tree stats and tree comparisons
+
+    # Input parameters:
+    # $1 = NewickFile
+
+    # NB - pretty sure that the Newick file must only hae a single value at each node i.e. not the Astral -t 2 outputs
+    ###########
 
     newickTree=$1
 
@@ -144,36 +150,64 @@ fi
 ### NB - iqtree11.12.2019 - could always set up an alias! e.g. astral='java -jar $PATH/astral.5.6.3.jar' 
 pathToAstral=`which astral.5.7.3.jar `
 echo Running Astral on the DNA gene trees...
-$exePrefix java -jar $pathToAstral \
+$exePrefix java -jar $pathToAstral -t 2 \
 -i ${fileNamePrefix}_dna_gene_trees_for_coelescence_phylo_bs_less15pc_rmed.nwk \
--o ${fileNamePrefix}_astral_dna_species_tree.nwk
+-o ${fileNamePrefix}.dna.species_tree.astral_-t2.nwk
+### Old name: -o ${fileNamePrefix}_astral_-t2_dna_species_tree.nwk
+# Astral commands:
+# -t 2 - outputs all branch annotations
+# -t 16 - output a table file called freqQuad.csv - useful for finding high pp scores for the alternative probabilities
 
-getTreeStats ${fileNamePrefix}_astral_dna_species_tree.nwk
+# Extract the pp1 scores from the main Astral tree:
+cat ${fileNamePrefix}.dna.species_tree.astral_-t2.nwk \
+| sed "s/'\[[fq=.\;0-9']\{1,\}pp1=//g" \
+| sed "s/;[QCENp=.\;0-9-]\{1,\}\]':/:/g" \
+> ${fileNamePrefix}.dna.species_tree.astral_pp1_value.nwk
 
+getTreeStats ${fileNamePrefix}.dna.species_tree.astral_pp1_value.nwk
 
 # Add tree tip info.
 # NB - for this option, the $treeTipInfoMapFile must have been submitted BUT I'm re-formatting it --> 'tree_tip_info_mapfile.txt'!):
 if [ -s $treeTipInfoMapFile ]; then 
-    nw_rename -l  ${fileNamePrefix}_astral_dna_species_tree.nwk \
+    nw_rename -l  ${fileNamePrefix}.dna.species_tree.astral_pp1_value.nwk \
     tree_tip_info_mapfile.txt \
-    > ${fileNamePrefix}_astral_dna_species_tree_USE_THIS.nwk
+    > ${fileNamePrefix}.dna.species_tree.astral_USE_THIS.nwk
 fi
+
+# Also running with -t option set to 16:
+$exePrefix java -jar $pathToAstral -t 16 \
+-i ${fileNamePrefix}_dna_gene_trees_for_coelescence_phylo_bs_less15pc_rmed.nwk \
+-o ${fileNamePrefix}.dna.species_tree.astral_-t16.nwk
+mv freqQuad.csv ${fileNamePrefix}.dna.species_tree.astral_-t16_freqQuad.txt
+
 
 
 if [[ "$phyloProgramPROT" == 'fasttree' ||  "$phyloProgramPROT" == 'raxml-ng'  || "$phyloProgramPROT" == 'iqtree2' ]]; then
     echo Running Astral on the protein gene trees...
-    $exePrefix java -jar $pathToAstral \
+    $exePrefix java -jar $pathToAstral -t 2 \
     -i ${fileNamePrefix}_protein_gene_trees_for_coelescence_phylo_bs_less15pc_rmed.nwk \
-    -o ${fileNamePrefix}_astral_protein_species_tree.nwk
+    -o ${fileNamePrefix}.protein.species_tree.astral_-t2.nwk
 
-    getTreeStats ${fileNamePrefix}_astral_protein_species_tree.nwk
+    # Extract the pp1 scores from the main Astral tree:
+    cat ${fileNamePrefix}.protein.species_tree.astral_-t2.nwk \
+    | sed "s/'\[[fq=.\;0-9']\{1,\}pp1=//g" \
+    | sed "s/;[QCENp=.\;0-9-]\{1,\}\]':/:/g" \
+    > ${fileNamePrefix}.protein.species_tree.astral_pp1_value.nwk
+
+    getTreeStats ${fileNamePrefix}.protein.species_tree.astral_pp1_value.nwk
 
     # Add tree tip info:
     if [[ -s $treeTipInfoMapFile ]]; then
-        nw_rename -l ${fileNamePrefix}_astral_protein_species_tree.nwk \
+        nw_rename -l ${fileNamePrefix}.protein.species_tree.astral_pp1_value.nwk \
         tree_tip_info_mapfile.txt \
-        > ${fileNamePrefix}_astral_protein_species_tree_USE_THIS.nwk
+        > ${fileNamePrefix}.protein.species_tree.astral_USE_THIS.nwk
     fi
+
+    # Also running with -t option set to 16:
+    $exePrefix java -jar $pathToAstral -t 16 \
+    -i ${fileNamePrefix}_protein_gene_trees_for_coelescence_phylo_bs_less15pc_rmed.nwk \
+    -o ${fileNamePrefix}.protein.species_tree.astral_-t16.nwk
+    mv freqQuad.csv ${fileNamePrefix}.protein.species_tree.astral_-t16_freqQuad.txt
 fi
 
 

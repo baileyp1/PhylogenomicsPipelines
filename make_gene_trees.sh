@@ -19,6 +19,7 @@ dnaSelected="${11}"
 proteinSelected="${12}"
 codonSelected="${13}"
 filterSeqs1="${14}"
+pathToScripts="${15}"
 
 # Convert $emptyMatchStateFractn to a percent for use in the output files:
 fractnAlnCovrg_pc=`awk -v FRACTN=$fractnAlnCovrg 'BEGIN{printf "%.0f", FRACTN * 100}' `
@@ -55,9 +56,10 @@ filterSequences()	{
     #           depending on their coverage across well occupied columns,
     #			as determined in this function.
     #			Also creates filtering stats and prepares files for stats.
-    #
+
+    # Input parameters:
     # $1 = alignment filename in fasta format
-    # $2 = residue type for AMAS.py option -d: dna, aa 
+    # $2 = residue type for AMAS.py option -d: dna, aa  (NB - AMAS trim -d dna also seems to work with aa!) 
     # $3 = maxColOcc threshold - 90 for DNA, 30 for protein
     # $4 = seqLength threshold - 84 for DNA, 28 for protein
     # NB - only importing variables into this function if they vary depending on the residue type of $1,
@@ -75,7 +77,8 @@ filterSequences()	{
 
     # Create gene alignment summary file or empty an existing one:
 	>${geneId}_aln_summary.log
-	echo gene Id: ${geneId} >> ${geneId}_aln_summary.log
+	echo "gene Id: ${geneId}
+residueType: $2" >> ${geneId}_aln_summary.log
 
 	# Find the length of the alignment to calculate the coverage of each sequence:
 	# NB - this code works because seqtk also counts dashes - c.f. fastalength which does not.
@@ -141,6 +144,9 @@ if [[ $maxColOcc -ge $3 ]]; then
 											# Actually now using to print out filename if it fails
 											### 27.8.2020 - can improve this check; if possible leave it to the main code to not build tree if < 3 seqs after all filtering checks 
 											### For now have just repeated the identical error message at this stage as well
+### 3.9.2020 - now consider to drop seqs < x residues long
+### BUT wait - go throught logic of this next section  and work out what residue tyep I'm workign on
+### It's Ok - just need to use the residueType var in AMAS -d flag but it seems to work with it beign DNA
 		seqtk subseq -l $alnLength \
 		$1 \
 		${gene}_${2}_aln_ovr${fractnAlnCovrg_pc}pc_aln_covrg.txt \
@@ -227,21 +233,22 @@ fi
 
 makeGeneTree()	{
 	###########
-    # Function: makes the gene tree from the available methods in this function
+    # Function: makes the gene tree from the available methods in this function 
     # 			from a DNA alignment
-    #
-    # NB - only works for DNA aln at the moment, not for codon aln!!! For all residues, need to:
-    # raxmlngModel='GTR+G' - for DNA; for prtoein raxmlngModel='JTT+G'
-    # iqTree2SeqType='DNA; for protein iqTree2SeqType='AA'
-    # fasttreeFlags='-nt -gtr' - for DNA; for protein fasttreeFlags='' - but this needs to be at the end of the function input parameters in case it is blank!!!
-    #
-    # $1 = residue type: dna, aa or codon 
+ 	#
+ 	# Input parameters:
+ 	# $1 = residue type: dna, aa or codon 
     # $2 = filtered alignment filename in fasta format
     # $3 = output file prefix including the path to any directory
+    # $4 = raxmlng_model e.g. raxmlngModel='GTR+G' - for DNA; for prtoein raxmlngModel='JTT+G'
+    # $5 = iqtree2_seq_type  iqTree2SeqType='DNA'; for protein iqTree2SeqType='AA'
+    # $6 = fasttreeFlags='-nt -gtr' - for DNA; for protein fasttreeFlags='' - NB - this last flag needs to be last in case it is blank - it needs to be blank for protein analysis)
+    ###########
+
     raxmlngModel=$4
     iqTree2SeqType=$5
     fasttreeFlags=$6
-    ###########
+
 	if [[ "$phyloProgramDNA" == 'fasttree' ||  "$phyloProgramPROT" == 'fasttree' ]]; then
 		###srun -J ${gene}_make_tree -n 1 \
 		echo
@@ -436,7 +443,10 @@ if [[ $proteinSelected == 'yes' || $codonSelected == 'yes' ]]; then
 	| sed 's/ \[translate(1)\]//' \
 	> ${gene}.protein.fasta
 
-	### 27.8.2020 - Detect STOP codons here with various_tasks_in_python.py assess_stops ${gene}.protein.fasta - create stats then remove them
+	# Detect STOP codons and create STOPS stats, then switch to use file containing 0 or 1 STOP codons:
+	$pathToScripts/various_tasks_in_python.py detect_stops ${gene}.protein.fasta  ${gene}.protein
+	cp ${gene}.protein.0or1_STOP.fasta ${gene}.protein.fasta
+
 
  	if [[ "$alnProgram" == 'mafft' ]]; then 	# If aligners can be set to auto residue detect, can use a generic subR - or brign in a variable.
 		echo
@@ -609,8 +619,6 @@ if [[ -s $dnaAlnForTree || -s $proteinAlnForTree ]]; then
 		if [[ $codonSelected == 'yes' ]]; then
 			makeGeneTree codon $codonAlnForTree 'codonAln' 'GTR+G' 'DNA' '-nt -gtr'
 		fi
-		### Still to consider to use the gene tree function for prtoein as well;
-		### just need to include variables for model and residue type. 
 		if [[ $proteinSelected == 'yes' ]]; then 
 			makeGeneTree protein $proteinAlnForTree '.' 'JTT+G' 'AA' ''
 		fi

@@ -21,7 +21,8 @@ shopt -s failglob
 hybSeqProgram=paftools
 samplePrefix=Sample
 cpu=4
-slurmMemory=0  # Using 80,000 MB for most samples and 130000 MB for very large samples - could use 130000 MB on all samples; only 0.3GB required for HybPiper it seems, use 20GB
+slurmTime=0-36:00     # SBATCH -t 0-36:00 - was 24h but increased to 36 for the larger samples, then 3 days necessary for just a few PAFTOL samples 
+slurmMemory=0         # Using 80,000 MB for most samples and 130000 MB for very large samples - could use 130000 MB on all samples; only 0.3GB required for HybPiper it seems, use 20GB
 partitionName=medium  # Values depend on the cluster being used so good to have a flagged option for this
 
 # Hidden options (i.e. not apparent from the help menu but they always have a value so can be used in downstream scripts):
@@ -51,6 +52,7 @@ Usage: recover_genes_from_all_samples.sh
   [ -p   directory prefix for each sample (default=Sample) ]
   [ -c   number of cpu to use (default=4) ]
   [ -m   Slurm memory to use (in MB); Paftools requires >> 20000, HybPiper requires << 20000 (default=0; means no limit is set) ]
+  [ -T   Slurm time limit, format <days>-<hours>:<minutes> (default=0-36:00 (36 hours) ]
   [ -Q   Slurm partition (queue) to use (default=medium) ]
   [ -h   prints usage and description ]
   [ -v   program version]
@@ -90,6 +92,7 @@ while getopts "hvs:t:f:a:y:p:c:d:e:m:Q:"  OPTION; do
     d) usePaftolDb=$OPTARG ;;
     e) slurmThrottle=$OPTARG ;;
     m) slurmMemory=$OPTARG ;;
+    T) slurmTime=$OPTARG ;;
     Q) partitionName=$OPTARG ;;    
     ?)  echo This option does not exist. Read the usage summary below.
             echo
@@ -237,7 +240,10 @@ elif [ $os == 'Linux' ]; then
       slurmThrottle=$numbrSamples
     fi
 
-    jobInfo=`sbatch -p $partitionName -c $cpu  --mem $slurmMemory  --array=1-${numbrSamples}%$slurmThrottle  $pathToScripts/slurm_setup_array_to_recover_genes.sh \
+    #SBATCH -t 0-36:00          # Was 24h but increased to 36 for the larger samples
+
+
+    jobInfo=`sbatch -p $partitionName -c $cpu -t $slurmTime  --mem $slurmMemory  --array=1-${numbrSamples}%$slurmThrottle  $pathToScripts/slurm_setup_array_to_recover_genes.sh \
     $sampleList \
     $targetsFile \
     $paftolDataSymlinksDir \

@@ -62,7 +62,6 @@ Program description: makes species trees from fasta files, either of two types:
 
 Usage:               make_species_trees_pipeline.sh [OPTIONS] fastafile1 fastafile2 fastafile3 ...
 
-
 OPTIONS:
     -h               shows this message
     -v               program version
@@ -79,7 +78,7 @@ INPUT FILE OPTIONS:
     -u               add contig length info onto species tree tips (requires option -t)
                      Sample_name/identifier must be identical to the sample fasta file name (minus any [dot] ending suffix e.g. .fasta)
                      Not available in gene-wise mode (option -G)
-    -p <string>      prefix for the output filenames e.g. taxonomic group (default=tree_pipeline)			--> change to -o or O
+    -p <string>      prefix for the output filenames e.g. taxonomic group (default=tree_pipeline)	--> change to -o or O
 ALIGNMENT OPTIONS:
     -D               sequence type to use: dna, protein, codon (default=dna)
                      codon is input DNA aligned but guided by a protein alignment
@@ -101,24 +100,25 @@ FILTERING AND TRIMMING OPTIONS:
 PHYLOGENY OPTIONS:
     -i make gene trees only
     -j              make species trees only. Gene trees must already exist in run directory
-    -q <string>     name of phylogeny program for gene trees from DNA sequences.				--> change to -d or D - use DNA sequence to build gene trees and name a phylogeny program
+    -q <string>     name of phylogeny program for gene trees from DNA sequences.		--> change to -d or D - use DNA sequence to build gene trees and name a phylogeny program
                    	Options are, fastest to slowest: fasttree, iqtree2, raxml-ng (default=fasttree)	
-    -r <string>     name of phylogeny program for gene trees from protein sequences.			--> change to p or P - use amino acid sequence to build gene trees and name a phylogeny program
+    -r <string>     name of phylogeny program for gene trees from protein sequences.	--> change to p or P - use amino acid sequence to build gene trees and name a phylogeny program
                    	If required, options are, fastest to slowest: fasttree, iqtree, raxml-ng (no default)
- 																								-->  use DNA codon sequence to build gene trees and name a phylogeny program
+ 																						-->  use DNA codon sequence to build gene trees and name a phylogeny program
     -S <string>     name of phylogeny program for supermatrix approach (concatenated gene alignments).
                     If required, options are, fastest to slowest: fasttree, raxml-ng (no default)
     -T              use Treeshrink on gene trees (followed by re-alignment)
 OTHER OPTIONS:
-    -C <integer>    number of cpu to use for genetrees; NB - not convinced >1 cpu works robustly for raxml-ng! (default=1)              	-
+    -C <integer>    number of cpu to use for genetrees; NB - not convinced >1 cpu works robustly for raxml-ng with small datasets! (default=1)              	-
     -c <integer>    number of cpu to use for RAxML in supermatrix method (default=8)
     -Q <string>     Slurm partition (queue) to use (default=medium) ]
 
 
-A basic example described below:
-make genes trees from sample fasta files - formatted as described for option -a - by aligning the input
-DNA sequence for each gene with MAFFT, building each gene tree with FASTTREE, then making species trees with 
-ASTRAL, FASTTREE and RAxML (last two program make a supermatrix tree from concatenated gene alignments):
+A basic example run is described below:
+make genes trees from sample fasta files, formatted as described for option -a, by aligning the input
+DNA sequence for each gene with the MAFFT --retree 2 algorithm , building each gene tree with FASTTREE, 
+then making species trees with ASTRAL, FASTTREE and RAxML (last two program make a supermatrix tree from 
+concatenated gene alignments):
 
 make_species_trees_pipeline.sh \\
 -a \\
@@ -212,6 +212,7 @@ softwareList=(seqtk fastatranslate fastalength $phyloProgramDNA $phyloProgramPRO
 ### NB - astral.5.6.3.jar also may not be straight forward to check!!!! Also fasttreeMP not on Macbook - fasttree is the minimum.
 ### NBNBNB - in recover_genes_from_all_samples.sh, running seqtk like this makes the script stop, but here it doesn't seem to!!!! It's because there a no set options in this script
 #echo ${softwareList[@]}
+### NB - 29.8.2020 - only need to check the software actually being used e.g. upp, maffft, phylog programs - could check software when checking the  
 for software in ${softwareList[@]}; do
 	if [[ $software != 'no' ]]; then			# The default state $phyloProgramPROT and some other software - so don't want to test that!
 		echo Testing $software is installed...
@@ -545,7 +546,7 @@ fi
 #fi
 
 
-# Input checks for the seqeunce type option:
+# Input checks for the sequence type option:
 dnaSelected=no
 proteinSelected=no
 codonSelected=no
@@ -563,11 +564,6 @@ if [[ $dnaSelected == 'no' &&  $proteinSelected == 'no' && $codonSelected == 'no
 	echo "ERROR: No sequence type (option -D) was entered or recognised."; exit
 fi
 
-### 21.8.2020 - Need to delete these files before re-running analysis in same directory if any of them exist i.e. wc -l > 0 (?) - do at line 546 of wrapper script:
-###*.aln.for_tree.fasta
-###*gene_tree_USE_THIS.nwk 
-###This is only important to do if the filtering/trimming thresholds have changed and the analysis is re-run in the current working dir.
-
 
 # Input checks for the alignment type option -A:
 if [[ "$alnProgram" != 'mafft' && "$alnProgram" != 'upp' ]];then 
@@ -581,6 +577,12 @@ fi
 ### then use awk to put into each variable
 ### Then check each variable has a sensible range - easy - maybe check first that it is a number - already have code for that
 
+
+# In case analysis is re-run in the same working directory AND the filtering/thresholds have beeen changed,
+# need to delete the existing alignment and tree files first, otherwise files for some genes may 
+# be used from a previous run, even if they have been filtered out in the current run. Probably is
+# only relevant for small datasets:
+if ls *.aln.for_tree.fasta 2>&1 >/dev/null; then rm *.aln.for_tree.fasta *gene_tree_USE_THIS.nwk ; fi
 
 ##########################
 # End of user input checks
@@ -642,7 +644,8 @@ if [[ $os == 'Darwin' && $speciesTreesOnly == 'no' ]]; then
 		$dnaSelected \
 		$proteinSelected \
 		$codonSelected \
-		"$filterSeqs1"
+		"$filterSeqs1" \
+		$pathToScripts
 	done > make_gene_trees.log 2>&1
 	#exit
 	if [[ $filterSeqs1 != 'no' ]]; then
@@ -738,7 +741,8 @@ elif [[ $os == 'Linux' && $speciesTreesOnly == 'no' ]]; then
 		$dnaSelected \
 		$proteinSelected \
 		$codonSelected \
-		"$filterSeqs1" `
+		"$filterSeqs1" \
+		$pathToScripts `
 
 		echo jobInfo: $jobInfo
 		jobId=`echo $jobInfo | cut -d ' ' -f 4 `
@@ -827,7 +831,8 @@ elif [[ $os == 'Linux' && $speciesTreesOnly == 'no' ]]; then
 			$dnaSelected \
 			$proteinSelected \
 			$codonSelected \
-			"$filterSeqs1"
+			"$filterSeqs1" \
+			$pathToScripts
 		done > make_gene_trees.log 2>&1
 
 		if [[ $filterSeqs1 != 'no' ]]; then
