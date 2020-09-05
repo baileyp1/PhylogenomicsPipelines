@@ -582,7 +582,7 @@ fi
 # need to delete the existing alignment and tree files first, otherwise files for some genes may 
 # be used from a previous run, even if they have been filtered out in the current run. Probably is
 # only relevant for small datasets:
-if ls *.aln.for_tree.fasta 2>&1 >/dev/null; then rm *.aln.for_tree.fasta *gene_tree_USE_THIS.nwk ; fi
+if ls *.aln.for_tree.fasta >/dev/null 2>&1; then rm *.aln.for_tree.fasta *gene_tree_USE_THIS.nwk ; fi
 
 ##########################
 # End of user input checks
