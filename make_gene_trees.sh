@@ -252,9 +252,17 @@ makeGeneTree()	{
     iqTree2SeqType=$5
     fasttreeFlags=$6
 
-	if [[ "$phyloProgramDNA" == 'fasttree' ||  "$phyloProgramPROT" == 'fasttree' ]]; then
+### 5.9.2020 - incorrect logic when different programs have been seelected for DNA and protein:
+    echo phyloProgramDNA: $phyloProgramDNA
+    echo phyloProgramPROT: $phyloProgramPROT
+### I think you need to do the following:
+### programToUse= <bring in to method as a varaible e.g. $phyloProgramDNA
+### Then it's  if [[ $programToUse == 'fasttree' ]]; then
+
+
+    if [[ "$phyloProgramDNA" == 'fastttree' || "$phyloProgramPROT" == 'fasttree' ]]; then
 		###srun -J ${gene}_make_tree -n 1 \
-		echo
+		echo echo phyloProgramDNA: $phyloProgramDNA
 		echo Running fasttree on the alignment...
 		$exePrefix fasttree $fasttreeFlags \
     	$2 \
@@ -515,9 +523,10 @@ codonAlnForTree=$filteredCodonAlnToUse
 if [[ $proteinSelected == 'yes' || $codonSelected == 'yes' ]]; then
 	if [[ $filterSeqs1 != 'no' ]]; then 
 		echo "Filter sequences option 1 - assessing the protein aln for filtering (even if DNA has also been selected)."
-		maxColOccThreshold=30		# Required in filterSequences method and in tree making conditionals below
+		maxColOccThreshold=10	# Required in filterSequences method and in tree making conditionals below
+								# was 90, now testing 30; seq covrg across region was 84, now testing 28
 		# Function parameters: input_fasta_file, residue_type, maxColOccThreshold, minimum seq to tolerate
-    	filterSequences $proteinAlnToUse protein $maxColOccThreshold 28
+    	filterSequences $proteinAlnToUse protein $maxColOccThreshold 9
     	### Alternative for returning filename from function - to stdout (can only echo the filename though):
     	### filteredSeqListToUse=$(filterSequences ${gene}.dna.aln.fasta  dna 90 84)
     	### OR submit the output filename to the function, then I have more control in this code here if I want to change filenames and variables
@@ -565,8 +574,8 @@ if [[ $proteinSelected == 'yes' || $codonSelected == 'yes' ]]; then
 elif [[ $dnaSelected == 'yes' ]]; then
     if [[ $filterSeqs1 != 'no' ]]; then 
     	echo "Filter sequences option 1 - assessing the DNA aln for filtering."
-    	maxColOccThreshold=90
-    	filterSequences $dnaAlnToUse dna $maxColOccThreshold 84
+    	maxColOccThreshold=30	# was 90, now testing 30; seq covrg across region was 84, now testing 28
+    	filterSequences $dnaAlnToUse dna $maxColOccThreshold 27
     	dnaAlnForTree=${gene}.dna.aln.for_tree.fasta
     	echo maxColOcc: $maxColOcc
     	echo numbrSeqs: $numbrSeqs
