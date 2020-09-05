@@ -178,7 +178,7 @@ for file in *.$alnFileForTreeSuffix; do
 	ratio=`echo  $lenLongestGeneAfterTrim  $medianGeneLength | awk '{printf "%.2f", $1/$2}' `							         # Might be an indicator of overall effectiveness of gene recovery for samples submitted
 	### 27.8.2020 - I think this is sometiems divisible by zero which is fatal!!!!
     echo "$gene $lenLongestGene $lenLongestGeneAfterTrim $medianGeneLength $maxColOcc $maxColOccP $ratio $numbrSamples"| column -t
-done | sort -k4n| column -t >> ${fileNamePrefix}_summary_gene_recovery.txt
+done | sort -k5n| column -t >> ${fileNamePrefix}_summary_gene_recovery.txt
 
 
 

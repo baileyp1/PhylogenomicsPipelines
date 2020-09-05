@@ -113,7 +113,7 @@ Total number of sequences removed by TreeShrink: $numbrSeqsRemoved " > treeshrin
 
 
     # Move the TreeShrunk alignment files to *_dna.fasta for each gene after unaligning them by removing all '-' gaps:
-    ### NB - will treeshrink always produce a file even if it has no contents - look at code?
+    ### NB - will treeshrink always produce a file even if it has no contents? - look at code
     # Using .nwk file as a guide i.e. you only create alignments again for existing gene trees (i.e. ignoring any gene trees that have been filtered for whatever reason)
     # for file in  ../*_${1}_gene_tree_USE_THIS.nwk; do
     #     gene=`echo $file | sed "s/_${1}_gene_tree_USE_THIS.nwk//" | sed "s/^\.\.\///" `

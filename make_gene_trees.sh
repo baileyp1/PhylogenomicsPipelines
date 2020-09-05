@@ -260,7 +260,7 @@ makeGeneTree()	{
 ### Then it's  if [[ $programToUse == 'fasttree' ]]; then
 
 
-    if [[ "$phyloProgramDNA" == 'fastttree' || "$phyloProgramPROT" == 'fasttree' ]]; then
+    if [[ "$phyloProgramDNA" == 'fasttree' || "$phyloProgramPROT" == 'fasttree' ]]; then
 		###srun -J ${gene}_make_tree -n 1 \
 		echo echo phyloProgramDNA: $phyloProgramDNA
 		echo Running fasttree on the alignment...
