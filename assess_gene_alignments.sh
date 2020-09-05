@@ -157,7 +157,7 @@ if [[ $seqType == 'protein' ]]; then
 		percentSeqsWithStops=`awk -v totalNumbrSeqsWithStops=$totalNumbrSeqsWithStops -v totalNumbrSeqs=$totalNumbrSeqs 'BEGIN{printf "%.2f", (totalNumbrSeqsWithStops/totalNumbrSeqs) * 100}' `
 		echo percentSeqsWithStops1: $percentSeqsWithStops
 	fi
-fi 
+fi
 
 
 echo 'Table for gene alignments showing numbers per gene for:
@@ -174,9 +174,9 @@ for file in *.$alnFileForTreeSuffix; do
     maxColOcc=`fastalength  ${gene}_${seqType}_aln_AMAS_trim_${fractnMaxColOcc}.fasta  2>/dev/null | sort -n | tail -n 1 | awk '{print $1}' `     # minimum column occupancy (aln columns) - NB 24.8.2020 - can't i also get this from the summary.log file??? And other values - woudl be easier
     maxColOccP=`fastalength  ${gene}_${seqType}_aln_AMAS_trim_-p_${fractnMaxColOcc}.fasta  2>/dev/null | sort -n | tail -n 1 | awk '{print $1}' ` # minimum column occupancy (parsimonious sites ONLY)
 	lenLongestGeneAfterTrim=`fastalength ${gene}.$alnFileForTreeSuffix 2>/dev/null | sort -n | tail -n 1 | awk '{print $1}' `
+	medianGeneLength=`cat ${gene}_aln_summary.log | grep '^medianGeneLength:' | awk '{print $2}' `
 	ratio=`echo  $lenLongestGeneAfterTrim  $medianGeneLength | awk '{printf "%.2f", $1/$2}' `							         # Might be an indicator of overall effectiveness of gene recovery for samples submitted
 	### 27.8.2020 - I think this is sometiems divisible by zero which is fatal!!!!
-	medianGeneLength=`cat ${gene}_aln_summary.log | grep '^medianGeneLength:' | awk '{print $2}' `
     echo "$gene $lenLongestGene $lenLongestGeneAfterTrim $medianGeneLength $maxColOcc $maxColOccP $ratio $numbrSamples"| column -t
 done | sort -k4n| column -t >> ${fileNamePrefix}_summary_gene_recovery.txt
 
@@ -267,6 +267,7 @@ echo "
 Sequence type assessed: $seqType
 Sum Length of the longest gene sequence in each alignment: $sumLenLongestGene
 Sum Length of the longest gene sequence in each alignment after trimming rare inserts: $sumLenLongestGeneAfterTrim
+$sumMedianGeneLength
 Total number of homologous columns occupied by >= $fractnMaxColOcc_pc % of samples: $sumMaxColOcc (area of common overlap)
 Total number of homologous + parsimonious columns occupied by >= $fractnMaxColOcc_pc % of samples: $sumMaxParsCols
 Total number of residues in area of common overlap: $totalBasesInMaxColOccRegion " >> ${fileNamePrefix}_summary_stats.txt
