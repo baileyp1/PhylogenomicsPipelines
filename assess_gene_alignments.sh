@@ -267,7 +267,7 @@ echo "
 Sequence type assessed: $seqType
 Sum Length of the longest gene sequence in each alignment: $sumLenLongestGene
 Sum Length of the longest gene sequence in each alignment after trimming rare inserts: $sumLenLongestGeneAfterTrim
-$sumMedianGeneLength
+Sum Length of the median gene sequence in each alignment: $sumMedianGeneLength
 Total number of homologous columns occupied by >= $fractnMaxColOcc_pc % of samples: $sumMaxColOcc (area of common overlap)
 Total number of homologous + parsimonious columns occupied by >= $fractnMaxColOcc_pc % of samples: $sumMaxParsCols
 Total number of residues in area of common overlap: $totalBasesInMaxColOccRegion " >> ${fileNamePrefix}_summary_stats.txt
