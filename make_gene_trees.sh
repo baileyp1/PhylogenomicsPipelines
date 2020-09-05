@@ -48,6 +48,9 @@ echo alnProgram: $alnProgram
 echo dnaSelected: $dnaSelected
 echo proteinSelected: $proteinSelected
 echo codonSelected: $codonSelected
+echo phyloProgramDNA: $phyloProgramDNA
+echo phyloProgramPROT: $phyloProgramPROT
+
 
 
 filterSequences()	{
@@ -598,9 +601,9 @@ fi
 
 echo
 echo
-echo ##########################
-echo 'Making the gene trees...'
-echo ##########################
+echo ############################
+echo 'Making the gene tree(s)...'
+echo ############################
 #if [[ $maxColOcc -ge 90 ]]; then 	 	# $maxColOcc created in filterSequences function - not making trees if $maxColOcc is below specified threshold
 										# NB - this conditional is only appropriate with the filterSequences function, so insteaad assessing whether a 
 										#      filtered fasta file has been created from any filtering function and making tree if it exists. Note that
