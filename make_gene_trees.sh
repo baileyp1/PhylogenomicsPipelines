@@ -75,7 +75,7 @@ filterSequences()	{
     fi
 
     # Empty this file so contents is removed from the last run and new content can be appended:
-    > filtered_out_alignments.txt
+    > ${gene}_filtered_out_alignments.txt
 
 
     # Create gene alignment summary file or empty an existing one:
@@ -225,11 +225,11 @@ if [[ $maxColOcc -ge $3 ]]; then
 		# Printing out the alignments with < 4 sequences for assessing further (can concatenate them together)
 		# NB - this file is produced only for the protein seqs, even if DNA is selected; but is produced for DNA if DNA only has been selected.
 		echo "WARNING: Not able to build a tree for this gene: $gene (less than four sequences)"
-		echo $1 >> filtered_out_alignments.txt
+		echo $1 >> ${gene}_filtered_out_alignments.txt
 	fi
 else
 	# Printing out the alignments with little sequence overlap for assessing further (can concatenate them together)
-	echo $1 >> filtered_out_alignments.txt 
+	echo $1 >> ${gene}_filtered_out_alignments.txt 
 fi 
 } # End of filterSequences function
 
