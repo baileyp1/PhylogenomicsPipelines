@@ -574,8 +574,8 @@ if [[ $proteinSelected == 'yes' || $codonSelected == 'yes' ]]; then
 elif [[ $dnaSelected == 'yes' ]]; then
     if [[ $filterSeqs1 != 'no' ]]; then 
     	echo "Filter sequences option 1 - assessing the DNA aln for filtering."
-    	maxColOccThreshold=30	# was 90, now testing 30; seq covrg across region was 84, now testing 28
-    	filterSequences $dnaAlnToUse dna $maxColOccThreshold 27
+    	maxColOccThreshold=15	# was 90, now testing 30, then 15; seq covrg across region was 84, now testing 27, then 14
+    	filterSequences $dnaAlnToUse dna $maxColOccThreshold 14
     	dnaAlnForTree=${gene}.dna.aln.for_tree.fasta
     	echo maxColOcc: $maxColOcc
     	echo numbrSeqs: $numbrSeqs

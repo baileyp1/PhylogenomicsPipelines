@@ -128,17 +128,12 @@ sumMedianGeneLength=`cat *_aln_summary.log | grep '^medianGeneLength:' | awk '{s
 
 
 # Sum length of all columns with maxColOcc (same for all values of $fractnAlnCov) 
-# NB - still need to filter on min maxColOcc to tolerate
-### 21.8.2020 - NBNB - for assessment of protein seqs, need to be able to alter '90' to '30'
-### changed for now to 30 so at least protein is correct.
-### Consider to remove this filter, then summarise columns after all filtering/trimming
-sumMaxColOcc=`cat *_aln_summary.log | grep '^maxColOcc:' | awk '$2 >= 30 {sum+=$2} END {print sum}' `
+# NB - was filtering on min maxColOcc ($1) but now removed - filtering is inlcuded in the $numbrOverlapColsForSpeciesTree value.
+sumMaxColOcc=`cat *_aln_summary.log | grep '^maxColOcc:' | awk '{sum+=$2} END {print sum}' `
 
 
 # Sum length of all parsimonious columns with maxColOcc (same for different values of $fractnAlnCov)
-# NB - 21.8.2020 - I think I need to bring in the $sumMaxColOcc variable for filtering! - done 
-sumMaxParsCols=`cat *_aln_summary.log | grep '^maxParsCols:' | awk -v sumMaxColOcc=$sumMaxColOcc 'sumMaxColOcc >= 30 {sum+=$2} END {print sum}' `
-### NB - should not need to filter on min maxParsCols to tolerate BUT
+sumMaxParsCols=`cat *_aln_summary.log | grep '^maxParsCols:' | awk -v sumMaxColOcc=$sumMaxColOcc '{sum+=$2} END {print sum}' `
   
 
 # Total number of bases in the maxColOcc area for all samples:
@@ -193,7 +188,7 @@ done \
 | wc -l | sed 's/ //g'`
 
 
-# Total number of alignment columns in the area of common overlap for these genes (NB - after all filterign and trimming, also after trimming for rare insertions):
+# Total number of alignment columns in the area of common overlap for these genes (NB - AFTER all filtering and trimming, also after trimming for rare insertions):
 numbrOverlapColsForSpeciesTree=`for file in *.$alnFileForTreeSuffix; do
 	gene=$(echo $file | sed "s/.$alnFileForTreeSuffix//")
  	numbrSamples=$(cat $file | grep '>' | wc -l)
