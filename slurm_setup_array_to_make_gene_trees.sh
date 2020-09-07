@@ -8,7 +8,7 @@
 geneFile=$1
 listFile=$2
 fractnAlnCovrg=$3
-pathToScript=$4
+pathToScripts=$4
 phyloProgramDNA=$5
 phyloProgramPROT=$6
 fractnMaxColOcc=$7
@@ -46,7 +46,7 @@ echo
 # Finally input the line of current sample into the worker script.
 ### Confirm I don't need srun here - if I used it maybe I could get the memory used.
 exePrefix="/usr/bin/time -v "		# this time command gets the RSS memory
-$exePrefix $pathToScript/make_gene_trees.sh \
+$exePrefix $pathToScripts/make_gene_trees.sh \
 ${SAMPLELIST[$SLURM_ARRAY_TASK_ID]} \
 $geneFile \
 $fractnAlnCovrg \

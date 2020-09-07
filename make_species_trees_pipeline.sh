@@ -747,7 +747,6 @@ elif [[ $os == 'Linux' && $speciesTreesOnly == 'no' ]]; then
 		$proteinSelected \
 		$codonSelected \
 		"$filterSeqs1" \
-		$pathToScripts \
 		$maxColOccThreshold `
 
 		echo jobInfo: $jobInfo
