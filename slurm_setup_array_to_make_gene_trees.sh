@@ -20,7 +20,7 @@ dnaSelected="${12}"
 proteinSelected="${13}"
 codonSelected="${14}"
 filterSeqs1="${15}"
-pathToScripts="${16}"
+maxColOccThreshold="${16}"
 
 echo Inside Slurm array script, listFile: $listFile
 echo Inside Slurm array script, fractnAlnCovrge: $fractnAlnCovrg
