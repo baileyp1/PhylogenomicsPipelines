@@ -20,6 +20,7 @@ proteinSelected="${12}"
 codonSelected="${13}"
 filterSeqs1="${14}"
 pathToScripts="${15}"
+maxColOccThreshold="${16}"
 
 # Convert $emptyMatchStateFractn to a percent for use in the output files:
 fractnAlnCovrg_pc=`awk -v FRACTN=$fractnAlnCovrg 'BEGIN{printf "%.0f", FRACTN * 100}' `
@@ -50,6 +51,7 @@ echo proteinSelected: $proteinSelected
 echo codonSelected: $codonSelected
 echo phyloProgramDNA: $phyloProgramDNA
 echo phyloProgramPROT: $phyloProgramPROT
+echo maxColOccThreshold: $maxColOccThreshold
 
 
 
@@ -523,8 +525,11 @@ codonAlnForTree=$filteredCodonAlnToUse
 if [[ $proteinSelected == 'yes' || $codonSelected == 'yes' ]]; then
 	if [[ $filterSeqs1 != 'no' ]]; then 
 		echo "Filter sequences option 1 - assessing the protein aln for filtering (even if DNA has also been selected)."
-		maxColOccThreshold=10	# Required in filterSequences method and in tree making conditionals below
-								# was 90, now testing 30; seq covrg across region was 84, now testing 28
+		# maxColOccThreshold is required in filterSequences method and in tree making conditionals below.
+		# For protein need to divide by 3:
+		maxColOccThreshold=`echo $maxColOccThreshold | awk -v maxColOccThreshold=$maxColOccThreshold 'BEGIN{printf "%.0f", maxColOccThreshold/3}' `
+		echo maxColOccThreshold for protein: $maxColOccThreshold
+							# was 90, now testing 30; seq covrg across region was 84, now testing 28
 		# Function parameters: input_fasta_file, residue_type, maxColOccThreshold, minimum seq to tolerate
     	filterSequences $proteinAlnToUse protein $maxColOccThreshold 9
     	### Alternative for returning filename from function - to stdout (can only echo the filename though):
@@ -574,7 +579,7 @@ if [[ $proteinSelected == 'yes' || $codonSelected == 'yes' ]]; then
 elif [[ $dnaSelected == 'yes' ]]; then
     if [[ $filterSeqs1 != 'no' ]]; then 
     	echo "Filter sequences option 1 - assessing the DNA aln for filtering."
-    	maxColOccThreshold=15	# was 90, now testing 30, then 15; seq covrg across region was 84, now testing 27, then 14
+    	###############maxColOccThreshold=15	# was 90, now testing 30, then 15; seq covrg across region was 84, now testing 27, then 14
     	filterSequences $dnaAlnToUse dna $maxColOccThreshold 14
     	dnaAlnForTree=${gene}.dna.aln.for_tree.fasta
     	echo maxColOcc: $maxColOcc

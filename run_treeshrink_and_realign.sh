@@ -32,6 +32,7 @@ codonSelected="${16}"
 treeshrink="${17}"
 filterSeqs1="${18}"
 alnProgram="${19}"
+maxColOccThreshold="${20}"
 
 echo "$numbrSamples"
 echo "$phyloProgramDNA"
@@ -45,6 +46,7 @@ echo "$mafftAlgorithm"
 echo "$cpuGeneTree"
 echo "$partitionName"
 echo "$pathToScripts"
+echo maxColOccThreshold: $maxColOccThreshold
 
 # Convert $emptyMatchStateFractn to a percent for use in the output files:
 fractnAlnCovrg_pc=`awk -v FRACTN=$fractnAlnCovrg 'BEGIN{printf "%.0f", FRACTN * 100}' `
@@ -190,6 +192,7 @@ reAlignSeqs()   {
     -f $fractnAlnCovrg \
     -s $fractnSamples \
     -m $fractnMaxColOcc \
+    -O $maxColOccThreshold \
     $2 \
     -C $cpuGeneTree \
     -c 10 \

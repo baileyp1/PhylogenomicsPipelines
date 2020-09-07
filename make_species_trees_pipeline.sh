@@ -29,6 +29,8 @@ filterSeqs1='no'			# My filter sequencing option (option 1)
 fractnAlnCovrg=0.6
 fractnSamples=0.6
 fileNamePrefix=tree_pipeline
+maxColOccThreshold=90		### 7.9.2020 - now testing lower values e.g. 30 and 15 - still need to check input value; also shoudl it be minColOccLenThreshold
+							### Hidden variable
 
 # PHYLOGENY OPTIONS:
 geneTreesOnly=no
@@ -144,7 +146,7 @@ EOF
 
 
 #echo User inputs:    ### For testing only 
-while getopts "hvat:ug:ijGF:f:m:s:p:M:q:r:TC:c:d:Q:A:D:"  OPTION; do	# Remaining options - try capital letters!
+while getopts "hvat:ug:ijGF:f:m:s:p:M:q:r:TC:c:d:Q:A:D:O:"  OPTION; do	# Remaining options - try capital letters!
 
 	#echo -$OPTION $OPTARG	### For testing only - could try to run through options again below 
 	 
@@ -175,6 +177,7 @@ while getopts "hvat:ug:ijGF:f:m:s:p:M:q:r:TC:c:d:Q:A:D:"  OPTION; do	# Remaining
 		C) cpuGeneTree=$OPTARG ;;
 		c) cpu=$OPTARG ;;
 		Q) partitionName=$OPTARG ;;
+		O) maxColOccThreshold=$OPTARG ;;
 		?)  echo This option is not allowed. Read the usage summary below.
       	    echo
       	    usage; exit 1 ;;
@@ -645,7 +648,8 @@ if [[ $os == 'Darwin' && $speciesTreesOnly == 'no' ]]; then
 		$proteinSelected \
 		$codonSelected \
 		"$filterSeqs1" \
-		$pathToScripts
+		$pathToScripts \
+		$maxColOccThreshold
 	done > make_gene_trees.log 2>&1
 	#exit
 	if [[ $filterSeqs1 != 'no' ]]; then
@@ -700,6 +704,7 @@ if [[ $os == 'Darwin' && $speciesTreesOnly == 'no' ]]; then
 		"$treeshrink" \
 		"$filterSeqs1" \
 		"$alnProgram" \
+		"$maxColOccThreshold" \
 		> run_treeshrink_and_realign.log 2>&1
 		exit	# Species trees will be made after TreeShrink or re-alignment step(s) in nested call to this script, if requested.
 	fi
@@ -742,7 +747,8 @@ elif [[ $os == 'Linux' && $speciesTreesOnly == 'no' ]]; then
 		$proteinSelected \
 		$codonSelected \
 		"$filterSeqs1" \
-		$pathToScripts `
+		$pathToScripts \
+		$maxColOccThreshold `
 
 		echo jobInfo: $jobInfo
 		jobId=`echo $jobInfo | cut -d ' ' -f 4 `
@@ -806,7 +812,8 @@ elif [[ $os == 'Linux' && $speciesTreesOnly == 'no' ]]; then
 			"$codonSelected" \
 			"$treeshrink" \
 			"$filterSeqs1" \
-			"$alnProgram" `
+			"$alnProgram" \
+			"$maxColOccThreshold" `
 			exit	# Species trees will be made after TreeShrink or re-alignment step(s) in nested call to this script, if requested.
 		fi
 	else
@@ -832,7 +839,8 @@ elif [[ $os == 'Linux' && $speciesTreesOnly == 'no' ]]; then
 			$proteinSelected \
 			$codonSelected \
 			"$filterSeqs1" \
-			$pathToScripts
+			$pathToScripts \
+			$maxColOccThreshold
 		done > make_gene_trees.log 2>&1
 
 		if [[ $filterSeqs1 != 'no' ]]; then
@@ -887,6 +895,7 @@ elif [[ $os == 'Linux' && $speciesTreesOnly == 'no' ]]; then
 			"$treeshrink" \
 			"$filterSeqs1" \
 			"$alnProgram" \
+			"$maxColOccThreshold" \
 			> run_treeshrink_and_realign.log 2>&1
 			exit	# Species trees will be made after TreeShrink or re-alignment step(s) in nested call to this script, if requested.
 		fi
