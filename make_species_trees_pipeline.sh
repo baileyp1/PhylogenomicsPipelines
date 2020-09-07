@@ -46,7 +46,7 @@ partitionName=main   		# Values depend on the cluster being used so good to have
 # Hidden options (i.e. not apparent from the help menu but they always have a value so can be and have to be used in downstream scripts).
 # Need to check them if I make them public
 fractnMaxColOcc=0.7
-slurmThrottle=1
+slurmThrottle=50			# Was 1, set to 50 as now have two rounds of alignment 
 cpuGeneTree=1					# still keep this separate from the supermatrix tree; then I can specify loads more for the supermatrix.
 								# Maybe hava a comma separated list e.g. 4,30 for gene and species tree.
 speciesTreeMem=100000			# I think I need 500000 GB mem for the RAxML large tree (Slurm)
