@@ -114,6 +114,7 @@ OTHER OPTIONS:
     -C <integer>    number of cpu to use for genetrees; NB - not convinced >1 cpu works robustly for raxml-ng with small datasets! (default=1)              	-
     -c <integer>    number of cpu to use for RAxML in supermatrix method (default=8)
     -Q <string>     Slurm partition (queue) to use (default=medium) ]
+    -H <integer>	Slurm throttle - not available to change (default=50)
 
 
 A basic example run is described below:

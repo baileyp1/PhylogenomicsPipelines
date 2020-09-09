@@ -148,7 +148,9 @@ if [[ $maxColOcc -ge $3 ]]; then
 	if [ "$numbrSeqs" -gt 3 ]; then 		# Conditonal here not essential - but don't know how AMAS.py behaves with empty input files so leaving in here
 											# Actually now using to print out filename if it fails
 											### 27.8.2020 - can improve this check; if possible leave it to the main code to not build tree if < 3 seqs after all filtering checks 
-											### For now have just repeated the identical error message at this stage as well
+											### For now have just repeated the identical warning message at this stage as well
+											### 8.9.2020 - thinking further, this conditional should be removed but still check if numbrSeqs < 3 so I can print out alns
+											###				Also still print out alns with maxColOcc < 30 separately 
 ### 3.9.2020 - now consider to drop seqs < x residues long
 ### BUT wait - go throught logic of this next section  and work out what residue tyep I'm workign on
 ### It's Ok - just need to use the residueType var in AMAS -d flag but it seems to work with it beign DNA
@@ -510,16 +512,16 @@ fi
 echo ########################################################
 echo 'Options for filtering and/or trimming the alignments...'
 echo ########################################################
-filteredDnaAlnToUse=''
+filteredDnaAlnToUse=''						# Stores the filtered alignment file from the chosen filtering method - useful for specifying the filename later in script 
 filteredProteinAlnToUse='' 
 filteredCodonAlnToUse=''
 trimmedDnaAlnToUse=''
 trimmedProteinAlnToUse='' 
 trimmedCodonAlnToUse=''
-dnaAlnForTree=$filteredDnaAlnToUse				# Variables for applying the correct alignment filename ready for building the gene trees.
-												# Just need to assign the output filename at the end after each filtering step.
-												# These variables are not strictly required now but will keep using them.
-												### 24.8.2020 - not sure now why I need to assign $filtered*AlnToUse variables to therse vars here!!
+dnaAlnForTree=$filteredDnaAlnToUse			# Variables for applying the correct alignment filename ready for building the gene trees.
+											# Just need to assign the output filename at the end after each filtering step.
+											# These variables are not strictly required now but will keep using them.
+											### 24.8.2020 - not sure now why I need to assign $filtered*AlnToUse variables to therse vars here!!
 proteinAlnFOrTree=$filteredProteinAlnToUse
 codonAlnForTree=$filteredCodonAlnToUse
 if [[ $proteinSelected == 'yes' || $codonSelected == 'yes' ]]; then
@@ -535,6 +537,10 @@ if [[ $proteinSelected == 'yes' || $codonSelected == 'yes' ]]; then
     	### Alternative for returning filename from function - to stdout (can only echo the filename though):
     	### filteredSeqListToUse=$(filterSequences ${gene}.dna.aln.fasta  dna 90 84)
     	### OR submit the output filename to the function, then I have more control in this code here if I want to change filenames and variables
+### 8.9.2020 - yes good idea - really the fiel after filtertign should be - e.g.:
+###  5348_dna_aln_ovr60pc_aln_covrg.fasta or 5348.dna.aln.after_filter1.fasta - after filtering only
+###  5348_dna_aln_after_trim1.fasta
+###  ${gene}.protein.aln.for_tree.fasta  - as final step, copy to this fiel name via seqtk seq -l0 -L 80 (to remove seqs < 80 bp or so)
     	proteinAlnForTree=${gene}.protein.aln.for_tree.fasta	# Filtered output file
     	echo maxColOcc: $maxColOcc
     	echo numbrSeqs: $numbrSeqs
@@ -550,12 +556,13 @@ if [[ $proteinSelected == 'yes' || $codonSelected == 'yes' ]]; then
     		echo  codonAlnForTree: $codonAlnForTree
    		fi
 
-    ### filterSeqs2 option - assessing seq covrg length based on reference target length.
+    ### elif filterSeqs2 option - assessing seq covrg length based on reference target length.
 
-    ### trimAln() option 1 function here if selected - for trimming at 0.003 or higher where some datasets are longer than paftol
+    ### if trimAln() option 1 function here if selected - for trimming at 0.003 or higher where some datasets are longer than paftol
     ### Could use AMAS.py for this
+    ### I think here you just use whatever file is assigned in e.g. filteredProteinAlnToUse
 
-    # alnTrim option 2 - this could be opTrimAI
+    ### if alnTrim option 2 - this could be opTrimAI
 	else
 		echo "No filtering selected."
 		# if no filtering or trimming has been selected assign filename to variable ready for tree building
