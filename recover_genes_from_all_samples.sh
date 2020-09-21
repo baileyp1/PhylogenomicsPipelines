@@ -74,7 +74,7 @@ EOF
 
 
 #echo User inputs:    ### For testing only 
-while getopts "hvs:t:f:a:y:p:c:d:e:m:Q:"  OPTION; do
+while getopts "hvs:t:f:a:y:p:c:d:e:m:T:Q:"  OPTION; do
  
   #echo -$OPTION $OPTARG    ### For testing only - could try to run through options below 
    
