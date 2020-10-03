@@ -1,0 +1,1 @@
+For testing upload to a paftol_da database the info for a OneKP 'recovered genes' fasta file.
