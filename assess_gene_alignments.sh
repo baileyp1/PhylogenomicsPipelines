@@ -133,6 +133,7 @@ sumMaxColOcc=`cat *_aln_summary.log | grep '^maxColOcc:' | awk '{sum+=$2} END {p
 
 
 # Sum length of all parsimonious columns with maxColOcc (same for different values of $fractnAlnCov)
+																	### 29.9.2020 - Not using this var now
 sumMaxParsCols=`cat *_aln_summary.log | grep '^maxParsCols:' | awk -v sumMaxColOcc=$sumMaxColOcc '{sum+=$2} END {print sum}' `
   
 
@@ -223,6 +224,7 @@ cat mafft_dna_alns_fasta_file_list.txt | sed 's/dna/protein/' > mafft_protein_al
 
 
 # Count the number of samples in the gene trees being used and place a sorted list into a file:
+### 6.9.2020 - if i now do this on the aln_for_tree.fasta file, then I don't need to generate the file list here!!!!!!
 numbrSamplesInTrees=`cat mafft_dna_alns_fasta_file_list.txt | xargs cat | grep '>' | sort -u | wc -l | sed 's/ //g'`
 cat mafft_dna_alns_fasta_file_list.txt | xargs cat | grep '>' | sed 's/>//' | sort -u > mafft_dna_alns_fasta_samples_in_tree.txt
 

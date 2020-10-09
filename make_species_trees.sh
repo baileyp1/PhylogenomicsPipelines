@@ -104,8 +104,9 @@ fi
 ### 24.8.2020 - improving the above selection of tree files.
 ### make_species_trees.sh line ~84ff - have had an error with gene dna_gene_tree_USE_THIS.nwk files not existing
 ### - Yes it is because when I’m tryign to use the gene aln file but it has been removed from the analysis due to that 
-### it only has 2 seqs so the .nwk file doesn’t exist but the aln does (and that’s OK), The code is OK but to remvoe the error shoudl do:
-### 1.just use the .nwk files to begin with.To coutn the # seqs in fasta - could use Newick Utils on the trees instead - 
+### it only has 2 seqs so the .nwk file doesn’t exist but the aln does (and that’s OK); at least occurs when there is no
+### filtering (?) and now because of filtering small seqs just before the aln. The code is OK but to remvoe the error shoudl do:
+### 1.just use the .nwk files to begin with. To coutn the # seqs in fasta - could use Newick Utils on the trees instead - 
 ### I still think i need to filter here unless I remove the fratnSpecies variable
 ### 2.implement removal of the for_tree aln andnwk files before start of analysis, then any previous runs can’t affect 
 ### the outcome of next run if run in same directory - better solution i think 

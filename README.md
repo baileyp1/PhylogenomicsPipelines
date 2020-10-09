@@ -26,14 +26,15 @@ For phylogenetic analysis:
 * bc, a Linux command line utility
 * exonerate
 * MAFFT
-* fasttree or raxml-ng
+* fasttree, raxml-ng or [IQ-TREE version 2](http://www.iqtree.org)
 * RAxML
 * Newick Utilities
-* Astral, exactly version 5.7.3 (or alter the version number in script make_species_trees.sh, line ~151)
-* AMAS.py
+* [ASTRAL](https://github.com/smirarab/ASTRAL), exactly version 5.7.3 (or alter the version number in script make_species_trees.sh, line ~151)
+* AMAS.py and/or trimAl (if trimming options are selected)
 
-## Further Details options, how to use and outputs 
-
+## Further Details options, how to use and outputs  
+To finish
+<!--
 ### recover_genes_from_all_samples.sh
 All options (NB - problem with presenting all options is what happens if they change - have to update here as well -OK?)
 ```

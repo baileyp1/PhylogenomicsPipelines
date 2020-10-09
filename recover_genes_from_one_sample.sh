@@ -96,9 +96,9 @@ if [ $hybSeqProgram == 'paftools' ]; then
 		--sampleId=$sampleId
 		# NB - the file name must be of this format e.g. PAFTOL_005853_R1.fastq
 		# The fastqPath entered in the database consists of the path and filename e.g. $paftolDataSymlinksDir/$unzippedR1FastqFile
-		# --sampleId=$sampleId - must be inlcuded for all data types, except paftol (but there is no harm in always including it)
+		# --sampleId=$sampleId - must be included for all data types, except paftol (but there is no harm in always including it)
 
-		### Add a new option to program for uploading SRA e.g. -d PAFTOL, -d SRA
+		### Add a new option to THIS program for uploading SRA e.g. -d PAFTOL, -d SRA
 
 		echo "Exit status of paftools addpaftolFastq:" $?
 		### NB - paftools recoverSeqs also runs FastQC stats against the raw reads but this is unnessary.
@@ -106,7 +106,7 @@ if [ $hybSeqProgram == 'paftools' ]; then
 
 		# Paftools --usePaftolDb requires the targets filename WITHOUT the path
 		# i.e. it insists that targets file is in the pwd (but I could change that):
-		cp -p $targetsFile . 
+		cp $targetsFile . 
 		targetsFile=`basename $targetsFile `
 
 		# Use of --usePaftolDb flag requires the use of the trimmomatic flag so have to have a separate paftoools recoverSeqs command here.
