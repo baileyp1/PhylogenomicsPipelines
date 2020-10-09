@@ -25,12 +25,16 @@ alnProgram=mafft 				# 27.7.2020 - may want to merge this option with mafftAlgor
 mafftAlgorithm='--retree 2'     # Hidden option - '--maxiterate 1000' #'--retree 1'   '--retree 2' - need to ry and merge with the alnProgram option somehow
 
 # FILTERING AND TRIMMING OPTIONS:
-filterSeqs1='no'			# My filter sequencing option (option 1)
-fractnAlnCovrg=0.6
-fractnSamples=0.6
-fileNamePrefix=tree_pipeline
+filterSeqs1=no			# My filter sequencing option (option 1)
+filterSeqs2=no
+fractnAlnCovrg=0.6			# NB - variable is used via filterSeqs1, not used if filterSeqs1 is not used
+fractnSamples=0.3			# NB - variable is used via filterSeqs1, not used if filterSeqs1 is not used
+trimAln1=no					# Filter alignment columns with optrimAl
+trimAln2=no					# Filter alignment columns to remove rarer insertions; maximum limit of percent occupancy to trim at
+
+
 maxColOccThreshold=90		### 7.9.2020 - now testing lower values e.g. 30 and 15 - still need to check input value; also shoudl it be minColOccLenThreshold
-							### Hidden variable
+							### Hidden variable - length unit in bases
 
 # PHYLOGENY OPTIONS:
 geneTreesOnly=no
@@ -38,6 +42,7 @@ speciesTreesOnly=no
 phyloProgramDNA=fasttree
 phyloProgramPROT=no			# Work around to specify any program so software testing code will not crash! Ensures cmd parameter is always occupied which is critical
 treeshrink=no
+collapseNodes=no			# option -L
 cpu=8						# number of cpu to use for RAxML in supermatrix method
 partitionName=main   		# Values depend on the cluster being used so good to have a flagged option for this
 							# NB - make_species_tree.sh uses 'long' queue - need an extra variable for that 
@@ -45,6 +50,7 @@ partitionName=main   		# Values depend on the cluster being used so good to have
 # OTHER OPTIONS:
 # Hidden options (i.e. not apparent from the help menu but they always have a value so can be and have to be used in downstream scripts).
 # Need to check them if I make them public
+fileNamePrefix=tree_pipeline
 fractnMaxColOcc=0.7
 slurmThrottle=50			# Was 1, set to 50 as now have two rounds of alignment 
 cpuGeneTree=1					# still keep this separate from the supermatrix tree; then I can specify loads more for the supermatrix.
@@ -64,7 +70,7 @@ Program description: makes species trees from fasta files, either of two types:
 
 Usage:               make_species_trees_pipeline.sh [OPTIONS] fastafile1 fastafile2 fastafile3 ...
 
-OPTIONS:
+OPTIONS <value>:
     -h               shows this message
     -v               program version
 INPUT FILE OPTIONS:
@@ -82,39 +88,39 @@ INPUT FILE OPTIONS:
                      Not available in gene-wise mode (option -G)
     -p <string>      prefix for the output filenames e.g. taxonomic group (default=tree_pipeline)	--> change to -o or O
 ALIGNMENT OPTIONS:
-    -D               sequence type to use: dna, protein, codon (default=dna)
+    -D               sequence type to use: dna, protein, codon (default=dna). N.B. use with multiple types must be quoted (e.g. 'dna protein')
                      codon is input DNA aligned but guided by a protein alignment
     -A <string>      alignment program to use: mafft, UPP 	[ but for which residue type - make for all for now ]
     -M <string>      if using mafft, specify algorithm to use in quotes i.e. '--retree 1', '--retree 2', '--maxiterate 1000' etc (default='--retree 2')
 FILTERING AND TRIMMING OPTIONS:
-    -F <string>      filter sequence option 1
-    -f               filter sequences. Options:
-                     1. filter sequences in gene alignments by coverage i.e. percent of [well conserved regions in] the alignment covered by a sample sequence
-                        Minimum percent to tolerate (default=60; 0 would mean no filtering, i.e. include sequence of any length)
+    -F <2 integers>  filter sequences option 1. Format: '<1> <2>' (no default; N.B. values must be quoted)
+                     1. filters sequences in gene alignments by coverage, in this option by the percent of well conserved regions (columns) 
+                        in the alignment covered by a sample sequence. A well conserved column is one with > 70 % residue occupancy
+                        Minimum percent to tolerate (advised=60; 0 would mean no filtering, i.e. include sequence of any length)
                      2. percent of samples in each gene tree.
-                        Minumum percent to tolerate (default=30; 0 would mean no filtering, include all available samples in each gene tree)
-                     3. filter rare insertions
-                        Minumum percent to tolerate (default=0.3);
-                     4. use the well conserved regions in each alignment only to build an additional tree (0=no, 1=yes)
-                        NBNB - NEED TO WORK OUT HOW THIS WORKS FOR DNA AND PROTEIN - LOTS OF FILES NOE   
-                        - working dir: conservedDNARegionsTree, conservedProteinRegionsTree, conservedCodonRegionsTree
-                        Format: <1> <2> <3> <4>; default: 60 30 0.3 0
+                        Minumum percent to tolerate (advised=30; 0 would mean no filtering, include all available samples in each gene tree)
+                     Don't use with option -I else option -F only will applied.
+    -I <integer>     filter sequences option 2 (no default; advised=60). Filters sequences from the alignment based on their length as a 
+                     percent of the median length of all sequences in the data set. Don't use with option -F else option -F only will applied.
+    -J               trim alignment option 1. Filter columns with OpTrimAL (Shee el al 2020, https://doi.org/10.3389/fpls.2020.00258)
+    -K <fraction>    trim alignment option 2. Filter columns to remove rarer insertions (no default; example: 0.003 will remove columns with 0.3 % occupancy)
 PHYLOGENY OPTIONS:
-    -i make gene trees only
-    -j              make species trees only. Gene trees must already exist in run directory
-    -q <string>     name of phylogeny program for gene trees from DNA sequences.		--> change to -d or D - use DNA sequence to build gene trees and name a phylogeny program
-                   	Options are, fastest to slowest: fasttree, iqtree2, raxml-ng (default=fasttree)	
-    -r <string>     name of phylogeny program for gene trees from protein sequences.	--> change to p or P - use amino acid sequence to build gene trees and name a phylogeny program
-                   	If required, options are, fastest to slowest: fasttree, iqtree, raxml-ng (no default)
+    -i               make gene trees only
+    -j               make species trees only. Gene trees must already exist in run directory
+    -q <string>      name of phylogeny program for gene trees from DNA sequences.		--> change to -d or D - use DNA sequence to build gene trees and name a phylogeny program
+                   	 Options are, fastest to slowest: fasttree, iqtree2, raxml-ng (default=fasttree)	
+    -r <string>      name of phylogeny program for gene trees from protein sequences.	--> change to p or P - use amino acid sequence to build gene trees and name a phylogeny program
+                   	 If required, options are, fastest to slowest: fasttree, iqtree, raxml-ng (no default)
  																						-->  use DNA codon sequence to build gene trees and name a phylogeny program
-    -S <string>     name of phylogeny program for supermatrix approach (concatenated gene alignments).
-                    If required, options are, fastest to slowest: fasttree, raxml-ng (no default)
-    -T              use Treeshrink on gene trees (followed by re-alignment)
-OTHER OPTIONS:
-    -C <integer>    number of cpu to use for genetrees; NB - not convinced >1 cpu works robustly for raxml-ng with small datasets! (default=1)              	-
-    -c <integer>    number of cpu to use for RAxML in supermatrix method (default=8)
-    -Q <string>     Slurm partition (queue) to use (default=medium) ]
-    -H <integer>	Slurm throttle - not available to change (default=50)
+    -S <string>      name of phylogeny program for supermatrix approach (concatenated gene alignments).
+                     If required, options are, fastest to slowest: fasttree, raxml-ng (no default)
+    -T               use Treeshrink on gene trees (followed by re-alignment)
+    -L <integer>     collapse gene tree nodes with bootstrap support less than <integer> percent (no default)
+OTHER OPTIONS: 
+    -C <integer>     number of cpu to use for genetrees; NB - not convinced >1 cpu works robustly for raxml-ng with small datasets! (default=1)              	-
+    -c <integer>     number of cpu to use for RAxML in supermatrix method (default=8)
+    -Q <string>      Slurm partition (queue) to use (default=medium) ]
+    -H <integer>	 Slurm throttle - not available to change (default=50)
 
 
 A basic example run is described below:
@@ -130,7 +136,7 @@ make_species_trees_pipeline.sh \\
 -M '--retree 2' \\
 -t <sampleTreeTipInfoFile> \\
 -g <geneListFile> \\
--F 'yes' \\
+-F '60 30' \\
 -q fasttree \\
 -c 8 \\
 -C 1 \\
@@ -146,8 +152,14 @@ EOF
 # -m  <float> maximum column occupancy (default=0.7; 0.7 means that columns with 70 % residue occupancy will be counted)
 
 
+# Extensions to options not inlcuded yet:
+# option -F 3rd field. Use the well conserved regions in each alignment only to build an additional tree (0=no, 1=yes)
+#                        NBNB - NEED TO WORK OUT HOW THIS WORKS FOR DNA AND PROTEIN - LOTS OF FILES NOW   
+#                        - working dir: conservedDNARegionsTree, conservedProteinRegionsTree, conservedCodonRegionsTree
+
+
 #echo User inputs:    ### For testing only 
-while getopts "hvat:ug:ijGF:f:m:s:p:M:q:r:TC:c:d:Q:A:D:O:"  OPTION; do	# Remaining options - try capital letters!
+while getopts "hvat:ug:ijGF:m:p:M:q:r:TC:c:d:Q:A:D:O:L:I:JK:"  OPTION; do	# Remaining options - try capital letters!
 
 	#echo -$OPTION $OPTARG	### For testing only - could try to run through options again below 
 	 
@@ -166,10 +178,10 @@ while getopts "hvat:ug:ijGF:f:m:s:p:M:q:r:TC:c:d:Q:A:D:O:"  OPTION; do	# Remaini
 		i) geneTreesOnly=yes ;;
 		j) speciesTreesOnly=yes ;;
 		G) useGenewiseFiles=yes ;;
-		F) filterSeqs1=yes ;;
-		f) fractnAlnCovrg=$OPTARG ;;
+		F) filterSeqs1=$OPTARG ;;
+		#f) fractnAlnCovrg=$OPTARG ;;
 		m) fractnMaxColOcc=$OPTARG ;;
-		s) fractnSamples=$OPTARG ;;
+		#s) fractnSamples=$OPTARG ;;
 		p) fileNamePrefix=$OPTARG ;;
 		M) mafftAlgorithm="$OPTARG" ;;
 		q) phyloProgramDNA=$OPTARG ;;
@@ -179,6 +191,10 @@ while getopts "hvat:ug:ijGF:f:m:s:p:M:q:r:TC:c:d:Q:A:D:O:"  OPTION; do	# Remaini
 		c) cpu=$OPTARG ;;
 		Q) partitionName=$OPTARG ;;
 		O) maxColOccThreshold=$OPTARG ;;
+		L) collapseNodes=$OPTARG ;;
+		I) filterSeqs2=$OPTARG ;;
+		J) trimAln1=yes ;;
+		K) trimAln2=$OPTARG ;;
 		?)  echo This option is not allowed. Read the usage summary below.
       	    echo
       	    usage; exit 1 ;;
@@ -190,7 +206,7 @@ done
 ###########################################
 # Set up access to all scripts for pipeline
 ###########################################
-# This script accesses two more scripts in the same directory.
+# This script accesses several more scripts in the same directory.
 # Unless users set the path to this directory they will not be acessible.
 # So, pre-fixing the extra scripts with the path of this script.
 # NB - I think $0 is always the full path. 
@@ -506,17 +522,18 @@ if [ -s $geneListFile ]; then echo ""
 else echo "ERROR: the gene list file (option -g) does not exist or is empty: $geneListFile"; exit; fi
 
 
-# NB - Trying to check that value is an integer - how does this behave when adding 'hello'? look OK; BUT allows through chars A -F - why?
-if (( $(bc <<< "$fractnAlnCovrg < 0 ") || $(bc <<< "$fractnAlnCovrg > 1 ") )); then
-	echo "ERROR1: -f option needs to be a fraction between 0 and 1 - exiting"
-	exit
-fi  
+### 5.10.2020 - no longer need these two checks - being done further done
+# NB - Trying to check that value is an integer - how does this behave when adding 'hello'? looks OK; BUT allows through chars A -F - why?
+# if (( $(bc <<< "$fractnAlnCovrg < 0 ") || $(bc <<< "$fractnAlnCovrg > 1 ") )); then
+# 	echo "ERROR1: -f option needs to be a fraction between 0 and 1 - exiting"
+# 	exit
+# fi  
 
 
-if (( $(bc <<< "$fractnSamples < 0") || $(bc <<< "$fractnSamples > 1") )); then 
-	echo "ERROR: -s option needs to be a fraction between 0 and 1 - exiting"
-	exit
-fi
+# if (( $(bc <<< "$fractnSamples < 0") || $(bc <<< "$fractnSamples > 1") )); then 
+# 	echo "ERROR: -s option needs to be a fraction between 0 and 1 - exiting"
+# 	exit
+# fi
 
 
 if (( $(bc <<< "$fractnMaxColOcc < 0") || $(bc <<< "$fractnMaxColOcc > 1") )); then 
@@ -575,18 +592,90 @@ if [[ "$alnProgram" != 'mafft' && "$alnProgram" != 'upp' ]];then
 fi
 
 
-# Filter sequence options (option -f)
-### Extract the 4 numbers into an array
-### Count the array
-### then use awk to put into each variable
-### Then check each variable has a sensible range - easy - maybe check first that it is a number - already have code for that
+# Check ilter sequence options (option -F):
+if [[ $filterSeqs1 != 'no' ]]; then
+	numbrFields=`echo $filterSeqs1 | awk '{print NF}' `
+	if [[ $numbrFields -eq 2 ]]; then
+		# Check variable has a sensible integer value range, then whether it is an integer value (uses a logical fudge for detecting whether an integer or string, including non-alphanumeric characters)  
+		# then whether there is a value (not sure whether last check is necessary now I check for an integer)
+		fractnAlnCovrg=`echo $filterSeqs1 | awk '$1 >= 0 && $1 <= 100 {print $1}' `
+		if [[ "$fractnAlnCovrg" -eq "$fractnAlnCovrg" ]] 2>/dev/null; then echo ""
+		else echo "ERROR: 1st value of option -F should contain an integer value between 1 and 100 - exiting "; exit; fi
+		if [[ -z "$fractnAlnCovrg" ]]; then echo "ERROR: option -F should contain an integer value between 1 and 100 - exiting "; exit; fi
+		# Eventually could use these percentages directly, but meanwhile changing into a fraction to use with the existing code:	
+		fractnAlnCovrg=`echo $filterSeqs1 | awk 'fractn=$1/100 {print fractn}' `
+
+		fractnSamples=`echo $filterSeqs1 | awk '$2 >= 0 && $2 <= 100 {print $2}' `
+		if [[ "$fractnSamples" -eq "$fractnSamples" ]] 2>/dev/null; then echo ""
+		else echo "ERROR: 2nd value of option -F should contain an integer value - exiting "; exit; fi
+		if [[ -z "$fractnSamples" ]]; then echo "ERROR: option -F should contain an integer value between 1 and 100 - exiting "; exit; fi
+		fractnSamples=`echo $filterSeqs1 | awk 'fractn=$2/100 {print fractn}' `
+	else
+		echo "ERROR: Filter sequences option (option -F) was selected but should contain two values."; exit
+	fi
+fi
+
+
+# Check option to collapse gene tree nodes (option -L):
+if [[ $collapseNodes != 'no' ]]; then
+	# First check variable is an integer (uses a logical fudge for detecting whether an integer or string, including non-alphanumeric characters) 
+	# then check variable has a sensible integer value range, then whether there is a value (not sure whether last check is necessary now I have the first integer check)
+	if [[ "$collapseNodes" -eq "$collapseNodes" ]] 2>/dev/null; then echo ""
+	else echo "ERROR: option -L should contain an integer value - exiting "; exit; fi
+	collapseNodes=`echo $collapseNodes | awk '$1 >= 0 && $1 <= 100 {print $1}' `
+	if [[ -z "$collapseNodes" ]]; then echo "ERROR: option -L should contain an integer value - exiting "; exit; fi
+fi
+
+
+# Check option to filter alignment columns to remove rarer insertions (trimAln2, option -K):
+if [[ $trimAln2 != 'no' ]]; then
+	# First check variable is an integer (uses a logical fudge for detecting whether an integer or string, including non-alphanumeric characters) 
+	# then check variable has a sensible integer value range, then whether there is a value (not sure whether last check is necessary now I have the first integer check)
+	###if [[ "$trimAln2" -eq "$trimAln2" ]] 2>/dev/null; then echo ""
+	###else echo "ERROR: option -K should contain an integer value - exiting "; exit; fi
+	### 5.10.2020 - actually can't perform the above integer check because the value could be less than 1 % - have to trust the user!
+	trimAln2=`echo $trimAln2 | awk '$1 > 0 && $1 <= 100 {print $1}' `
+	if [[ -z "$trimAln2" ]]; then echo "ERROR: option -K should contain an integer or fraction value - exiting "; exit; fi
+	### Could convert a user percent value to a fraction expected by AMAS.py to standardize the inputs, somthing like: 
+	### fractnAlnCovrg=`echo $filterSeqs1 | awk 'fractn=$1/100 {print fractn}' `
+fi
+
+
+# Some parameters selected:
+echo dnaSelected: $dnaSelected
+echo proteinSelected: $proteinSelected
+
+echo 'filter sequence option 1 (option -F): ' $filterSeqs1
+echo 'filter sequence option 2 (option -I): ' $filterSeqs2
+echo '	fractnAlnCovrg: ' $fractnAlnCovrg
+echo '	fractnSamples: ' $fractnSamples
+echo 'collapseNodes (option -L): ' $collapseNodes
+echo 'trimAln1 (option -J): ' $trimAln1
+echo 'trimAln2 (option -K): ' $trimAln2
+#exit
 
 
 # In case analysis is re-run in the same working directory AND the filtering/thresholds have beeen changed,
 # need to delete the existing alignment and tree files first, otherwise files for some genes may 
 # be used from a previous run, even if they have been filtered out in the current run. Probably is
 # only relevant for small datasets:
+#### 29.9.2020 - still get an error message though!!!!!
+#### 1.10.2020 - hey why don't I just put all the other files under the umbrella of the first line, there will always be some *.aln.for_tree.fasta files!
+### OH NO THAT WON'T WORK!!!!!!
 if ls *.aln.for_tree.fasta >/dev/null 2>&1; then rm *.aln.for_tree.fasta *gene_tree_USE_THIS.nwk ; fi
+# Also, now I have added filterShortSeqs() function I need to check whether any of the filtered/trimmed fasta files need removing:
+if ls *.aln.after_filter1.fasta >/dev/null 2>&1; then rm *.aln.after_filter1.fasta ; fi
+if ls *.aln.after_filter2.fasta >/dev/null 2>&1; then rm *.aln.after_filter2.fasta ; fi
+if ls *.aln.after_trim1.fasta >/dev/null 2>&1; then rm *.aln.after_trim1.fasta ; fi
+if ls *.aln.after_trim2.fasta >/dev/null 2>&1; then rm *.aln.after_trim2.fasta ; fi
+# Other filter/trim output files should go here.
+# Also (!), if there is no filtering or trimming done then the file going into 
+# tree building is *.dna.aln.fasta so should be removed as well:
+if ls *.aln.fasta >/dev/null 2>&1; then rm *.aln.fasta ; fi
+# Also w.r.t. the realignment step, also need to delete these files (they mustn't linger around, otherwise gene set will be used, if if already filtered out)
+if ls after_reAlnFilterSeqs_USE_THIS/*after_filterSeqs_dna.fasta >/dev/null 2>&1; then rm after_reAlnFilterSeqs_USE_THIS/*after_filterSeqs_dna.fasta ; fi
+if ls after_reAlnFilterSeqs_USE_THIS/*after_treeshrink_dna.fasta >/dev/null 2>&1; then rm after_reAlnFilterSeqs_USE_THIS/*after_treeshrink_dna.fasta ; fi
+
 
 ##########################
 # End of user input checks
@@ -650,7 +739,11 @@ if [[ $os == 'Darwin' && $speciesTreesOnly == 'no' ]]; then
 		$codonSelected \
 		"$filterSeqs1" \
 		$pathToScripts \
-		$maxColOccThreshold
+		$maxColOccThreshold \
+		$filterSeqs2 \
+		$trimAln1 \
+		$trimAln2 \
+		"$treeshrink"
 	done > make_gene_trees.log 2>&1
 	#exit
 	if [[ $filterSeqs1 != 'no' ]]; then
@@ -664,6 +757,7 @@ if [[ $os == 'Darwin' && $speciesTreesOnly == 'no' ]]; then
 			seqType=dna
 			alnFileForTreeSuffix=${seqType}.aln.for_tree.fasta
 		fi
+		### 6.10.2020 - NBNB - what about codon aln files - I assume they are required as well if used????????
 		echo seqType: $seqType
 		echo alnFileForTreeSuffix: $alnFileForTreeSuffix
 		$pathToScripts/assess_gene_alignments.sh \
@@ -681,9 +775,9 @@ if [[ $os == 'Darwin' && $speciesTreesOnly == 'no' ]]; then
 	fi
 	echo treeshrink: $treeshrink
 	echo filterSeqs1: $filterSeqs1
-	if [[ $treeshrink == 'yes' || $filterSeqs1 != 'no' ]]; then
+	if [[ $treeshrink == 'yes' || $filterSeqs1 != 'no' || $filterSeqs2 != 'no' ]]; then
 		##########################################
-		echo 'Re-aligning gene alignments because TreeShrink option or filterSeqs1 option is on, then continuing analysis in the "after_treeshrink_USE_THIS" or "after_reAlnFilterSeqs_USE_THIS" directory...'
+		echo 'Re-aligning gene alignments because TreeShrink option or filter sequences option 1 or 2 is on, then continuing analysis in the "after_treeshrink_USE_THIS" or "after_reAlnFilterSeqs_USE_THIS" directory...'
 		##########################################
 		run_treeshrink_and_realign.sh \
 		"$numbrSamples" \
@@ -698,7 +792,7 @@ if [[ $os == 'Darwin' && $speciesTreesOnly == 'no' ]]; then
 		"$cpuGeneTree" \
 		"$partitionName" \
 		"$pathToScripts" \
-		"geneTreesOnly" \
+		"$geneTreesOnly" \
 		"$dnaSelected" \
 		"$proteinSelected" \
 		"$codonSelected" \
@@ -706,6 +800,9 @@ if [[ $os == 'Darwin' && $speciesTreesOnly == 'no' ]]; then
 		"$filterSeqs1" \
 		"$alnProgram" \
 		"$maxColOccThreshold" \
+		"$filterSeqs2" \
+		"$trimAln1" \
+		"$trimAln2" \
 		> run_treeshrink_and_realign.log 2>&1
 		exit	# Species trees will be made after TreeShrink or re-alignment step(s) in nested call to this script, if requested.
 	fi
@@ -806,7 +903,7 @@ elif [[ $os == 'Linux' && $speciesTreesOnly == 'no' ]]; then
 			"$cpuGeneTree" \
 			"$partitionName" \
 			"$pathToScripts" \
-			"geneTreesOnly" \
+			"$geneTreesOnly" \
 			"$dnaSelected" \
 			"$proteinSelected" \
 			"$codonSelected" \
@@ -888,7 +985,7 @@ elif [[ $os == 'Linux' && $speciesTreesOnly == 'no' ]]; then
 			"$cpuGeneTree" \
 			"$partitionName" \
 			"$pathToScripts" \
-			"geneTreesOnly" \
+			"$geneTreesOnly" \
 			"$dnaSelected" \
 			"$proteinSelected" \
 			"$codonSelected" \

@@ -21,9 +21,10 @@ codonSelected="${13}"
 filterSeqs1="${14}"
 pathToScripts="${15}"
 maxColOccThreshold="${16}"
-filterSeqs2=no		# New options to incorporate
-trimAln1=no			# New options to incorporate
-trimAln2=no			# New options to incorporate
+filterSeqs2="${17}"
+trimAln1="${18}"
+trimAln2="${19}"
+treeshrink="${20}"
 
 # Convert $emptyMatchStateFractn to a percent for use in the output files:
 fractnAlnCovrg_pc=`awk -v FRACTN=$fractnAlnCovrg 'BEGIN{printf "%.0f", FRACTN * 100}' `
@@ -55,14 +56,20 @@ echo codonSelected: $codonSelected
 echo phyloProgramDNA: $phyloProgramDNA
 echo phyloProgramPROT: $phyloProgramPROT
 echo maxColOccThreshold: $maxColOccThreshold
-
+echo filterSeqs1: $filterSeqs1
+echo filterSeqs2: $filterSeqs2
+echo trimAln1: $trimAln1
+echo trimAln2: $trimAln2
+echo treeshrink: $treeshrink
 
 
 filterSeqs1()	{
 	###########
     # Function: filters sequences from an alignment of any residue type
     #           depending on their coverage across well occupied columns,
-    #			as determined in this function.
+    #			as determined in this function. Also filter sequences from DNA
+    #			and codon alignments using the results of filtering the protein 
+    #			alignment, if a protein alignment has been selected.
     #			Also creates filtering stats and prepares files for stats.
 
     # Input parameters:
@@ -74,7 +81,7 @@ filterSeqs1()	{
     # NB - only importing variables into this function if they vary depending on the residue type of $1,
     #      all other variables a globally available and do not change during running of this script
     ###########
-    if [[ $2 -eq 'protein' ]]; then 
+    if [[ $2 == 'protein' ]]; then 
     	residueType=aa 
     else
     	residueType=$2
@@ -242,12 +249,15 @@ filterSeqs2()	{
 	###########
    	# Function: filters sequences based on assessing sequence coverage length 
    	#           based on reference target length - specifically median length
-   	#           of all sequences in set.
+   	#           of all sequences in set. Also filter sequences from DNA
+    #			and codon alignments using the results of filtering the protein 
+    #			alignment, if a protein alignment has been selected.
    	#
    	# Input parameters:
    	# $1 = input alignment fasta file
-   	# $2 = residue type - required?????
-   	# $3 = output filtered alignment fasta file
+   	# $2 = residue type
+   	# $3 = percent minimum sequence length to tolerate
+   	# $4 = output filtered alignment fasta file
    	###########
 
    	# Create gene alignment summary file or empty an existing one:
@@ -263,10 +273,17 @@ filterSeqs2()	{
 	# Use the median length to find sequences that are >= $fractnAlnCovrg of the median length
 	# and create a list of them.
  	# NB - this code works because, luckily for this case, fastalength ignores dash characters!
- 	# NB - can pipe identifier list into seqtk subseq! Saves making an output file. 
+ 	# NB - can pipe identifier list into seqtk subseq! Saves making an output file, EXCEPT do need a list file to mirror output for DNA and codon below!
 	fastalength $1 2>/dev/null \
-	| awk -v LENG=$medianGeneLength -v FRACTN=$fractnAlnCovrg '{if( ($1/LENG) >= FRACTN) {print $2} }' \
-	| seqtk subseq -l 0 $1 /dev/fd/0 > "$3"
+	| awk -v LENG=$medianGeneLength -v minPercent=$filterSeqs2 '{if( (($1/LENG) * 100) >= minPercent) {print $2} }' \
+	| seqtk subseq -l 0 $1 /dev/fd/0 > "$4"
+
+
+	# Still need to get list file to mirror output for DNA and codon below, if selected:
+	fastalength $1 2>/dev/null \
+	| awk -v LENG=$medianGeneLength -v minPercent=$filterSeqs2 '{if( (($1/LENG) * 100) >= minPercent) {print $2} }' \
+	> ${gene}.${2}.aln.after_filter2.txt
+	
 
 	### UPTOHERE 29.9.2020
 	### Now think about the stats:
@@ -274,20 +291,37 @@ filterSeqs2()	{
 	###numbrSeqs=`cat  <fasta file>  | wc -l `
 	###echo numbrSeqs for tree = $numbrSeqs
 
-	### Think whether this filtering can be done again on DNA or whether it should be mirror 
-	### YES latter is better to fit with filterSeqs1 logic. 
+
+	# Extra steps here to do if DNA and/or codon is also selected.
+	# Prepare protein and codon alns using result of the filtering on the protein aln using this list: 
+	# ${gene}.${2}.aln.after_filter2.txt
+	echo "proteinSelected == 'yes' && dnaSelected == 'yes'": $proteinSelected $dnaSelected
+	if [[ $proteinSelected == 'yes' && $dnaSelected == 'yes' ]]; then
+		echo entered here for making trimmed dna aln
+		seqtk subseq -l 0 \
+		${gene}.dna.aln.fasta \
+		${gene}.${2}.aln.after_filter2.txt \
+		> ${gene}.dna.aln.after_filter2.fasta
+	fi
+	if [[ $codonSelected == 'yes' ]]; then
+		seqtk subseq -l $alnLength \
+		codonAln/${gene}.codon.aln.fasta \
+		${gene}.${2}.aln.after_filter2.txt \
+		> codonAln/${gene}.codon.aln.after_filter2.fasta
+		fi
 }
 
 
 trimAln1()	{
    	###########
-   	# Function: trims alignment columns to remove low occupancy sites with OpTrimAl.
-   	#			OptrimAl optimizes the gap threshold value in trimAl to obtain the 
+   	# Function: trims alignment columns to remove low occupancy sites with optrimAl
+   	#			(Shee et al ... Polkorny 2020 https://doi.org/10.3389/fpls.2020.00258).
+   	#			optrimAl optimizes the gap threshold value in trimAl to obtain the 
    	#			highest proportion of parsimony-informative characters.
-   	#			Optrimal scripts, PASTA_taster.sh and optrimAl.R are here:
+   	#			optrimAl scripts, PASTA_taster.sh and optrimAl.R are here:
    	#			https://github.com/keblat/bioinfo-utils/blob/master/docs/advice/scripts/optrimAl.txt
    	#			Altered the code to fit this pipeline - see scripts.
-   	# 			Could have transferred the code into this subroutine but didn't			 
+   	# 			Could have transferred the code into this subroutine but didn't.			 
    	#
    	# Input parameters:
    	# $1 = gene name
@@ -296,7 +330,6 @@ trimAln1()	{
    	# $4 = output file name
    	# $5 = $pathToScripts
    	###########
-   	echo "Under development"
    	$pathToScripts/PASTA_taster.sh $1 $2 $3 $4 $5
 }
 
@@ -309,14 +342,14 @@ trimAln2()	{
    	# Input parameters:
    	# $1 = input fasta file
    	# $2 = residue type for AMAS.py option -d: dna, aa  (NB - AMAS trim -d dna also seems to work with aa!)  
-   	# $3 = fraction to trim at (e.g. 0.003 = 0.3 % of residues - would remove very rare inserts)
+   	# $3 = maximum limit of fraction to trim at (e.g. 0.003 = 0.3 % of residues - would remove very rare inserts)
    	# $4 = output file name
 
    	# Note: There are many rare inserts when looking at lots of samples across the Angiosperms!
 	# 		Removing these columns is meant to speed up the phylogeny programs, as stated in Fasttree documentation.
 	# 		0.001 is equivalent to 1 residue in every 1000 seqs (0.1%) - could use 0.003 for this purpose. 
    	###########
-   	if [[ $2 -eq 'protein' ]]; then 
+   	if [[ $2 == 'protein' ]]; then 
     	residueType=aa 
     else
     	residueType=$2
@@ -327,7 +360,7 @@ trimAln2()	{
 	-i $1 \
 	-o $4
 	# Stats on the number of bases removed (it will be considerable for large trees with diverse taxa)
-	lenLongestGeneAfterTrim=`fastalength ${gene}.${2}.aln.for_tree.fasta | sort -n | tail -n 1 | awk '{print $1}' `
+	lenLongestGeneAfterTrim=`fastalength $1 | sort -n | tail -n 1 | awk '{print $1}' `
 	if [[ -s ${geneId}_aln_summary.log ]]; then
 		echo lenLongestGeneAfterTrim: $lenLongestGeneAfterTrim  >> ${geneId}_aln_summary.log
 	else
@@ -386,6 +419,7 @@ makeGeneTree()	{
 		--seed 2 \
 		--bs-metric fbp,tbe \
 		--bs-trees 100
+		# NB - it seems that the input file fasta header lines mustn't contain any space-separated fields, just an identfier next to the '>' char!
 		# NB --prefix is the output filename prefix; you can also add a path and the output files go into the specified directory
 		# --outgroup - can supply a list of outgroups
 		# --redo - overwrites files with the output prefix
@@ -627,6 +661,8 @@ fi
 
 
 
+
+
 echo ########################################################
 echo 'Options for filtering and/or trimming the alignments...'
 echo ########################################################
@@ -639,86 +675,73 @@ proteinAlnForTree=$proteinAlnToUse
 codonAlnForTree=$codonAlnToUse
 if [[ $proteinSelected == 'yes' || $codonSelected == 'yes' ]]; then
 	if [[ $filterSeqs1 != 'no' ]]; then 
-		echo "Filter sequences option 1 - assessing the protein aln for filtering (even if DNA has also been selected)."
+		echo "Filter sequences option 1 - assessing the protein aln for filtering (and the DNA aln if DNA has also been selected)."
 		# maxColOccThreshold is required in filterSeqs1 method and in tree making conditionals below.
 		# For protein need to divide by 3:
 		maxColOccThreshold=`echo $maxColOccThreshold | awk -v maxColOccThreshold=$maxColOccThreshold 'BEGIN{printf "%.0f", maxColOccThreshold/3}' `
 		echo maxColOccThreshold for protein: $maxColOccThreshold
 							# was 90, now testing 30; seq covrg across region was 84, now testing 28
 		# Function parameters: input_fasta_file, residue_type, maxColOccThreshold, minimum seq to tolerate (deprecated)
+### 7.10.2020 - I think now you coudl also use *AlnForTree here as well - more logical!!!! Ditto for filterSeqs2
     	filterSeqs1 $proteinAlnToUse protein $maxColOccThreshold 9	# NB - unlike the other functions below not specifying outfile here because we need 1 to 3 output files, protein and/or DNA and/or codon
-    	### Alternative for returning filename from function - to stdout (can only echo the filename though):
-    	### filteredSeqListToUse=$(filterSeqs1 ${gene}.dna.aln.fasta  dna 90 84)
-    	### OR submit the output filename to the function, then I have more control in this code here if I want to change filenames and variables
+    	# Alternative for returning filename from function - to stdout (can only echo the filename though):
+    	# filteredSeqListToUse=$(filterSeqs1 ${gene}.dna.aln.fasta  dna 90 84)
+    	# OR submit the output filename to the function, then I have more control in this code 
+    	# here if I want to change filenames and variables - now dong this in the other functions below
 
 		proteinAlnForTree=${gene}.protein.aln.after_filter1.fasta	# Filtered output file - NB - this file will not exist if it doesn't pass the $naxColOcc filtering - OK!
-### OLD ASSIGNMENT: proteinAlnForTree=${gene}.protein.aln.for_tree.fasta	# Filtered output file
     	echo maxColOcc: $maxColOcc
     	echo numbrSeqs: $numbrSeqs
 
     	if [[ $dnaSelected == 'yes' ]]; then
     		# Seqs already prepared in filterSeqs1 function when protein has been selected.
 			dnaAlnForTree=${gene}.dna.aln.after_filter1.fasta    		
-    		### WAS: dnaAlnForTree=${gene}.dna.aln.for_tree.fasta
     		echo  dnaAlnForTree: $dnaAlnForTree
     	fi
     	if [[ $codonSelected == 'yes' ]]; then
     		# Seqs already prepared in filterSeqs1 function when protein has been selected.
 			codonAlnForTree=codonAln/${gene}.codon.aln.after_filter1.fasta
-    		### WAS: codonAlnForTree=codonAln/${gene}.codon.aln.for_tree.fasta
     		echo  codonAlnForTree: $codonAlnForTree
    		fi
    	elif [[ $filterSeqs2 != 'no' ]]; then
-   		echo "Filter sequences option 2 - assessing the protein aln for filtering (even if DNA has also been selected)."
-   		# Function parameters: input_fasta_file, residue_type (REQUIRED HERE???????), outfile_name
-   		filterSeqs2 $proteinAlnToUse protein ${gene}.protein.aln.after_filter2.fasta
+   		echo "Filter sequences option 2 - assessing the protein aln for filtering (and the DNA and codon alns if they have also been selected)."
+   		# Function parameters: input_fasta_file, residue_type (REQUIRED HERE???????), percent minimum sequence length to tolerate, outfile_name
+   		filterSeqs2 $proteinAlnToUse protein  $filterSeqs2  ${gene}.protein.aln.after_filter2.fasta
    		proteinAlnForTree=${gene}.protein.aln.after_filter2.fasta # Filtered output file
-### NEED TO RECALCULATE numbrSeqs - E.G. numbrSeqs=`cat $dnaAlnToUse | grep '>' | wc -l`
-### ALSO NEED TO MIRROR OUTPUTS FOR DNA AND CODON AT SAME TIME
-	# Other filtering steps can go here. NB - need to register the output file in the 
-	# make_species_trees_pipeline.sh script to check whether the files need to be deleted 
-	# from a previous run - see line ~588
-    else # else clasue to be added...  ### I THINK THE ELSE CLAUSE CAN BE ADDED TO THE TRIM OPTIONS OR WHATEVER THE LAST CONDITIONAL IS- almost - needs to be added to the bottom of filterign and trimmign vlauses
+
+		if [[ $dnaSelected == 'yes' ]]; then
+    		# Seqs already prepared in filterSeqs2 function when protein has been selected.
+			dnaAlnForTree=${gene}.dna.aln.after_filter2.fasta    		
+    		echo  dnaAlnForTree: $dnaAlnForTree
+    	fi
+    	if [[ $codonSelected == 'yes' ]]; then
+    		# Seqs already prepared in filterSeqs2 function when protein has been selected.
+			codonAlnForTree=codonAln/${gene}.codon.aln.after_filter2.fasta
+    		echo  codonAlnForTree: $codonAlnForTree
+   		fi
+
+
+   	####################################
+	# Other filtering steps can go here.
+	# NB - need to register the output file in the make_species_trees_pipeline.sh script
+	#      to check whether the files need to be deleted from a previous run - see line ~588
+	####################################
+
+
+    else
 		echo "No filtering selected."
 		# NB - *AlnForTree variables contain the raw aln, ready for trimming 
 		#      if those options are selected, otherwise raw aln is ready for 
 		#      small seq filtering before tree building.
-
-#### 28.9.2020 - READY FOR DELETION:
-
-		# if no filtering or trimming has been selected assign filename to variable ready for tree building		(23.9.20220 - shoudl actually be for the next step)
-### ACTUALLY NOW USING UNTRIMMED ALN ANY WAY SO NO NEED TO ASSIGN - needs assigning tio the same varialbe as fopr filtetign above
-## Nop - NO NEEED TO DO ANY OF THIS NOW!!!!!!
-# 		proteinAlnForTree=$proteinAlnToUse
-# 		# Count $numbrSeqs in this file (already done for filtered file in filterSeqs1 function but not for the original aln):
-# ### Don't need this ANYMORE NUMSEQS IS CALCULATED IN THE FINAL FILTERSHORTSEQS FUNCTION!! SO CAN REMOVE THESE
-# 		numbrSeqs=`cat $proteinAlnToUse | grep '>' | wc -l`
-# 		echo numbrSeqs: $numbrSeqs
-
-# 		# Copy the alignment file to a name used for subsequent scripts (has to be a fixed name unfortunately I think).
-# 		# Also need to prepare the same for dna and codon alns if selected (same logic as above).
-# ### DON'T need to do this here now:
-# #		cp -p $proteinAlnToUse ${gene}.protein.aln.for_tree.fasta
-# 		if [[ $dnaSelected == 'yes' ]]; then
-
-# 			dnaAlnForTree=$dnaAlnToUse
-# ### ACTUALLY NOW DON"T NEED TO COPY TO THIS FILE, DONE LATER AFTER FILTERING V SHORT SEQS		
-# ###    		cp -p $dnaAlnToUse ${gene}.dna.aln.for_tree.fasta
-#     	fi
-#     	if [[ $codonSelected == 'yes' ]]; then
-#     		codonAlnForTree=$codonAlnToUse
-# ###    		cp -p $codonAlnToUse codonAln/${gene}.codon.aln.for_tree.fasta
-#    		fi	
     fi # End of filtering options
+
+
     ##################
     # Trimming options
-    ################## 
-	if [[ $trimAln1 != 'no' ]]; then
-### 29.9.2020 - ADD && $filterSeqs1 == 'no' || $filterSeqs2 == 'no' && treeshrink == no) - would need to bring in treeShrink flag!!!!
-
-
-
-   		echo "Trim sequences option 1 (opTrimAL) - assessing the protein aln for trimming (even if DNA has also been selected)."
+    ##################
+    # NB - conditionals below ensures that trimming is only done after a realignment step following Treeshrink and/or filtering.      
+	if [[ "$trimAln1" == 'yes' && "$filterSeqs1" == 'no' && "$filterSeqs2" == 'no' && "$treeshrink" == 'no' ]]; then
+   		echo "Trim sequences option 1 (opTrimAL) - assessing the protein aln for trimming (and the DNA and codon alns if they have also been selected)."
 ### NB - I think this trim option needs to be done before trimming low occupancy columns - but need to run opTrimAL first before I know this for certain
    		# Function parameters: gene_name input_aln_fasta_file, residue_type, outfile_name, $pathToScripts
    		trimAln1 $gene  $proteinAlnForTree  protein  ${gene}.protein.aln.after_trim1.fasta  $pathToScripts
@@ -740,65 +763,47 @@ if [[ $proteinSelected == 'yes' || $codonSelected == 'yes' ]]; then
     		echo  codonAlnForTree: $codonAlnForTree
    		fi
     fi
-    if [[ $trimAln2 != 'no' ]]; then
-
-   		echo "Trim sequences option 2 - assessing the protein aln for trimming (even if DNA has also been selected)."
-   		# Function parameters: input_fasta_file, residue_type_for_AMAS, fraction_to_trim_at, outfile_name
-#### Convert to 0.003 to a user input parameter
-##### NB - if $proteinAlnForTree is empty after filtering, AMAS will exit with an error - Ok I think for now- BUT
-##### COULD ADD A CONDITIOANL ROUDN THE FUNCTION ONLY AND STILL ASSIGN A NAME TO VARIABLE
-   		trimAln2 $proteinAlnForTree protein 0.003 ${gene}.protein.aln.after_trim2.fasta
+    if [[ "$trimAln2" != 'no' && "$filterSeqs1" == 'no' && "$filterSeqs2" == 'no' && "$treeshrink" == 'no' ]]; then
+   		echo "Trim sequences option 2 - assessing the protein aln for trimming (and the DNA and codon alns if they have also been selected)."
+   		# Function parameters: input_fasta_file, residue_type_for_AMAS, maximum_fraction_limit_to_trim  fraction_to_trim_at, outfile_name
+### NB - if $proteinAlnForTree is empty after filtering, AMAS will exit with an error - Ok I think for now - BUT
+### COULD ADD A CONDITIONAL ROUND THE FUNCTION To ONLY TRIM IF FILE IS > zero byte BUT STILL ASSIGN A NAME TO VARIABLE
+### Not that important as most datasets should still have at least one fasta record
+   		trimAln2 $proteinAlnForTree protein $trimAln2 ${gene}.protein.aln.after_trim2.fasta
    		proteinAlnForTree=${gene}.protein.aln.after_trim2.fasta
+   		echo  proteinAlnForTree: $proteinAlnForTree
 
 		if [[ $dnaSelected == 'yes' ]]; then
-			# Seqs already prepared in filterSeqs1 function when protein has been selected.
+			# Seqs already prepared in filterSeqs* functions when protein has been selected.
 			# Still need to trim them here:
-			trimAln2 $dnaAlnForTree dna 0.003 ${gene}.dna.aln.after_trim2.fasta
+			trimAln2 $dnaAlnForTree dna $trimAln2 ${gene}.dna.aln.after_trim2.fasta
 			dnaAlnForTree=${gene}.dna.aln.after_trim2.fasta		#### NB - coudl define variable and use it to call in function first!
     		echo  dnaAlnForTree: $dnaAlnForTree
     	fi
     	if [[ $codonSelected == 'yes' ]]; then
-    		# Seqs already prepared in filterSeqs1 function when protein has been selected.
+    		# Seqs already prepared in filterSeqs* functions when protein has been selected.
     		# Still need to trim them here:
 #### NBNB - need to check the format of codonAlnForTree is consistent i.e. has path or not!!! Have added the path above
 			codonAlnForTree=codonAln/${gene}.codon.aln.after_trim2.fasta
-			trimAln2 $codonAlnForTree dna 0.003 $codonAlnForTree
+			trimAln2 $codonAlnForTree dna $trimAln2 $codonAlnForTree
     		echo  codonAlnForTree: $codonAlnForTree
    		fi
-   	# Other filtering steps can go here. NB - need to register the output file in the 
-	# make_species_trees_pipeline.sh script to check whether the files need to be deleted 
-	# from a previous run - see line ~588
-	else # else clasue to be added...  ### I THINK THE ELSE CLAUSE CAN BE ADDED TO THE TRIM OPTIONS OR WHATEVER THE LAST CONDITIONAL IS- almost - needs to be added to the bottom of filterign and trimmign vlauses
-		echo "No trimming selected."
+
+
+   	###################################
+	# Other trimming steps can go here.
+	# NB - need to register the output file in the make_species_trees_pipeline.sh script
+	#      to check whether the files need to be deleted from a previous run - see line ~588
+	###################################
+
+
+	#else 
+		#echo "No trimming selected."  ### NB - misleading - may have done trim1 but not trimAln2 step!
 		# NB - *AlnForTree variables contain either the raw aln or filtered/trimmed aln file,
 		#	   ready for small seq filtering before tree building.
-
-
-#### 28.9.2020 - READY FOR DELETION:
-
-		# if no filtering or trimming has been selected assign filename to variable ready for tree building		(23.9.20220 - shoudl actually be for the next step)
-### ACTUALLY NOW USING UNTRIMMED ALN ANY WAY SO NO NEED TO ASSIGN - needs assigning tio the same varialbe as fopr filtetign above
-## Nop - NO NEEED TO DO ANY OF THIS NOW!!!!!!
-# 		proteinAlnForTree=$proteinAlnToUse
-# 		# Count $numbrSeqs in this file (already done for filtered file in filterSeqs1 function but not for the original aln):
-# ### Don't need this ANYMORE NUMSEQS IS CALCULATED IN THE FINAL FILTERSHORTSEQS FUNCTION!! SO CAN REMOVE THESE
-# 		numbrSeqs=`cat $proteinAlnToUse | grep '>' | wc -l`
-# 		echo numbrSeqs: $numbrSeqs
-
-# 		# Copy the alignment file to a name used for subsequent scripts (has to be a fixed name unfortunately I think).
-# 		# Also need to prepare the same for dna and codon alns if selected (same logic as above).
-# #		cp -p $proteinAlnToUse ${gene}.protein.aln.for_tree.fasta
-# 		if [[ $dnaSelected == 'yes' ]]; then
-# ### ACTUALLY NOW USING UNTRIMMED ALN ANY WAY SO NO NEED TO ASSIGN 			
-# 			dnaAlnForTree=$dnaAlnToUse
-# #    		cp -p $dnaAlnToUse ${gene}.dna.aln.for_tree.fasta
-#     	fi
-#     	if [[ $codonSelected == 'yes' ]]; then
-# ### ACTUALLY NOW USING UNTRIMMED ALN ANY WAY SO NO NEED TO ASSIGN 
-#     		codonAlnForTree=$codonAlnToUse
-# #    		cp -p $codonAlnToUse codonAln/${gene}.codon.aln.for_tree.fasta
-#    		fi
 	fi
+
+
 elif [[ $dnaSelected == 'yes' ]]; then
     if [[ $filterSeqs1 != 'no' ]]; then 
     	echo "Filter sequences option 1 - assessing the DNA aln for filtering"
@@ -809,16 +814,55 @@ elif [[ $dnaSelected == 'yes' ]]; then
     	echo maxColOcc: $maxColOcc
     	echo numbrSeqs: $numbrSeqs
 
-### COPY THE TRIMMING CLAUSES FROM THE PROTEIN CLAUSE ABOVE
+### COPYING THE TRIMMING CLAUSES FROM THE PROTEIN CLAUSE ABOVE
+### UPTOHERE 8.10.2020 transferring code to this clause
+	elif [[ $filterSeqs2 != 'no' ]]; then
+   		echo "Filter sequences option 2 - assessing the DNA aln for filtering"
+   		# Function parameters: input_fasta_file, residue_type (REQUIRED HERE???????), percent minimum sequence length to tolerate, outfile_name
+   		filterSeqs2 $dnaAlnToUse  dna  $filterSeqs2  ${gene}.dna.aln.after_filter2.fasta
+   		dnaAlnForTree=${gene}.dna.aln.after_filter2.fasta # Filtered output file
+
+
+   	####################################
+	# Other filtering steps can go here.
+	# NB - need to register the output file in the make_species_trees_pipeline.sh script
+	#      to check whether the files need to be deleted from a previous run - see line ~588
+	####################################
+
 
     else
-    	echo "No filtering selected."
-### ACTUALLY NOW USING UNTRIMMED ALN ANY WAY SO NO NEED TO ASSIGN, just copy to  .dna.aln.for_tree.fasta
-		dnaAlnForTree=$dnaAlnToUse
-		numbrSeqs=`cat $dnaAlnToUse | grep '>' | wc -l`
-		echo numbrSeqs: $numbrSeqs
-		cp -p $dnaAlnToUse ${gene}.dna.aln.for_tree.fasta
-	fi
+		echo "No filtering selected."
+		# NB - *AlnForTree variables contain the raw aln, ready for trimming 
+		#      if those options are selected, otherwise raw aln is ready for 
+		#      small seq filtering before tree building.
+    fi # End of filtering options
+
+
+    ##################
+    # Trimming options
+    ##################
+    # NB - conditionals below ensures that trimming is only done after a realignment step following Treeshrink and/or filtering.      
+	if [[ "$trimAln1" == 'yes' && "$filterSeqs1" == 'no' && "$filterSeqs2" == 'no' && "$treeshrink" == 'no' ]]; then
+   		echo "Trim sequences option 1 (opTrimAL) - assessing the protein aln for trimming"
+### NB - I think this trim option needs to be done before trimming low occupancy columns - but need to run opTrimAL first before I know this for certain
+   		# Function parameters: gene_name input_aln_fasta_file, residue_type, outfile_name, $pathToScripts
+   		trimAln1 $gene  $dnaAlnForTree  dna  ${gene}.dna.aln.after_trim1.fasta  $pathToScripts
+   		dnaAlnForTree=${gene}.dna.aln.after_trim1.fasta
+    fi
+    if [[ "$trimAln2" != 'no' && "$filterSeqs1" == 'no' && "$filterSeqs2" == 'no' && "$treeshrink" == 'no' ]]; then
+   		echo "Trim sequences option 2 - assessing the dna aln for trimming"
+   		# Function parameters: input_fasta_file, residue_type_for_AMAS, maximum_fraction_limit_to_trim  fraction_to_trim_at, outfile_name
+   		trimAln2 $dnaAlnForTree dna $trimAln2 ${gene}.dna.aln.after_trim2.fasta
+   		dnaAlnForTree=${gene}.dna.aln.after_trim2.fasta
+   		echo  dnaAlnForTree: $dnaAlnForTree
+   	fi
+
+
+   	###################################
+	# Other trimming steps can go here.
+	# NB - need to register the output file in the make_species_trees_pipeline.sh script
+	#      to check whether the files need to be deleted from a previous run - see line ~588
+	###################################
 fi
 
 
@@ -855,7 +899,7 @@ if [[ -s $dnaAlnForTree || -s $proteinAlnForTree ]]; then
 		if [[ $dnaSelected == 'yes' ]]; then
 			echo dnaAlnForTree: $dnaAlnForTree
 			# Function parameters: input_fasta_file, minimum_seq_length_to_tolerate, output_fasta_file_for_tree_building					
-			filterShortSeqs $dnaAlnForTree 84 ${gene}.dna.aln.for_tree.fasta
+			filterShortSeqs $dnaAlnForTree 84 ${gene}.dna.aln.for_tree.fasta	
 			echo numbrSeqs: $numbrSeqs
 			# Function parameters: residue_type, input_fasta_file, out_dir, raxmlng_model, iqtree2_seq_type, fasttree_flags (NB - this last flag needs to be last - it needs to be blank for protein analysis)
 ### Still need to confirm file/variable input

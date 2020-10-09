@@ -33,6 +33,10 @@ treeshrink="${17}"
 filterSeqs1="${18}"
 alnProgram="${19}"
 maxColOccThreshold="${20}"
+filterSeqs2="${21}"
+trimAln1="${22}"
+trimAln2="${23}"
+
 
 echo "$numbrSamples"
 echo "$phyloProgramDNA"
@@ -47,6 +51,11 @@ echo "$cpuGeneTree"
 echo "$partitionName"
 echo "$pathToScripts"
 echo maxColOccThreshold: $maxColOccThreshold
+echo "geneTreesOnly: $geneTreesOnly"
+echo "filterSeqs1: $filterSeqs1"
+echo "filterSeqs2: $filterSeqs2"
+echo "trimAln1: $trimAln1"
+echo "trimAln2: $trimAln2"
 
 # Convert $emptyMatchStateFractn to a percent for use in the output files:
 fractnAlnCovrg_pc=`awk -v FRACTN=$fractnAlnCovrg 'BEGIN{printf "%.0f", FRACTN * 100}' `
@@ -180,17 +189,24 @@ reAlignSeqs()   {
     # If user has selected to build gene trees ONLY, then add that option flag.
     iOption=''
     if [ $geneTreesOnly == 'yes' ]; then iOption='-i'; fi
+    
+### 29.9.2020 ADD TRIMMING OPTIONS == YES - WILL WORK WHEN FILTER OPTIONS ARE NO
+    trimAlnOption1=''
+    trimAlnOption2=''
+    if [ $trimAln1 != 'no' ]; then trimAlnOption1='-J'; fi
+    if [ $trimAln2 != 'no' ]; then trimAlnOption2="-K $trimAln2"; fi
+    echo trimAlnOption1: $trimAlnOption1  
+    echo trimAlnOption2: $trimAlnOption2  
+
     # Note the quotes around variables with spaces! BUT $2 must not be quoted!
     #echo " # For checking option values that need to be quoted (contain spaces)
-    $pathToScripts/make_species_trees_pipeline.sh $iOption \
+    $pathToScripts/make_species_trees_pipeline.sh $iOption $trimAlnOption1 $trimAlnOption2 \
     -G \
     -D "$1" \
     -A $alnProgram \
     -M "$mafftAlgorithm" \
     -t $sampleTableFileForReAln \
     -g $geneListFileForReAln \
-    -f $fractnAlnCovrg \
-    -s $fractnSamples \
     -m $fractnMaxColOcc \
     -O $maxColOccThreshold \
     $2 \
@@ -253,7 +269,7 @@ if [[ $treeshrink == 'yes' ]]; then
         reAlignSeqs "$seqType" "$phyloProgramsToUse" "after_treeshrink"
         cd ../
     fi  
-elif [[ $filterSeqs1 == 'yes' ]]; then
+elif [[ $filterSeqs1 != 'no' || $filterSeqs2 != 'no' ]]; then
     echo
     echo
     echo ##########################################################
@@ -278,8 +294,8 @@ elif [[ $filterSeqs1 == 'yes' ]]; then
         seqType="$seqType codon"
         phyloProgramsToUse="$phyloProgramsToUse -q $phyloProgramDNA"
     fi
-    echo seqType for filterSeqs1: $seqType
-    echo phyloProgramsToUse for filterSeqs1: $phyloProgramsToUse
+    echo seqType for filterSeqs option: $seqType
+    echo phyloProgramsToUse for filterSeqs option: $phyloProgramsToUse
     if [[ ! -d after_reAlnFilterSeqs_USE_THIS ]]; then mkdir after_reAlnFilterSeqs_USE_THIS; fi
     cd after_reAlnFilterSeqs_USE_THIS
     # Copy the (filtered) alignment DNA files to *_after_filterSeqs.fasta for each gene after unaligning them by removing all '-' gaps:
@@ -290,7 +306,7 @@ elif [[ $filterSeqs1 == 'yes' ]]; then
 ### 1. just need to know which dataset(s) exist: use protein if it exists, then codon, then DNA
 ###    Prioritizing protein if protein has been selected (should give better alns), then codon, then DNA.
 ### 2. Some trees may filter slightly differently between the residue types with filterSeqs1 but really need to choose one option
-###    here, otherwise it gets too complicated because I need to start with single of fasta files for next iteration of the script
+###    here, otherwise it gets too complicated because I need to start with single set of fasta files for next iteration of the script
 ###    So prioritizing protein if protein has been selected.
 ###    (should give better alns), then codon, then DNA.
 ###    If you want to use DNA no matter what, then can still set the -D option to 'dna' only.
