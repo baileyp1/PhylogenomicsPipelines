@@ -28,10 +28,18 @@ alignmentFile=$2
 residueType=$3      
 outAlnFile=$4
 pathToScripts=$5
+
+
+# NB - AMAS.py requires option -d to be 'aa' for protein!
+if [[ $3 == 'protein' ]]; then 
+    residueType=aa 
+else
+    residueType=$3
+fi
 #echo $gene  $alignmentFile  $residueType  
 
-if [[ ! -d ${gene}.${residueType}.aln.optrimal ]]; then mkdir ${gene}.${residueType}.aln.optrimal; fi
-cd ${gene}.${residueType}.aln.optrimal
+if [[ ! -d ${gene}.${3}.aln.optrimal ]]; then mkdir ${gene}.${3}.aln.optrimal; fi
+cd ${gene}.${3}.aln.optrimal
 
 # Create the cutoff_trim.txt file:
 echo "0
@@ -68,19 +76,19 @@ do
     do
         ls -l $alignment
         ###~/zq/bin/trimAl/source/trimal -in ${alignment}/output_alignment.fasta -out ${cutoff_trim}/${alignment}.aln -htmlout ${cutoff_trim}/${alignment}.htm -gt $cutoff_trim
-        trimal -in $alignment -out $cutoff_trim/${gene}.${residueType}.aln.optrimal.fasta -htmlout $cutoff_trim/${gene}.${residueType}.aln.optrimal.htm -gt $cutoff_trim
+        trimal -in $alignment -out $cutoff_trim/${gene}.${3}.aln.optrimal.fasta -htmlout $cutoff_trim/${gene}.${3}.aln.optrimal.htm -gt $cutoff_trim
 
         # check if alignment was trimmed to extinction by trimAl
         #if grep ' 0 bp' ${cutoff_trim}/${alignment}.aln
-        if grep ' 0 bp' $cutoff_trim/${gene}.${residueType}.aln.optrimal.fasta
+        if grep ' 0 bp' $cutoff_trim/${gene}.${3}.aln.optrimal.fasta
         then
             #rm -f ${cutoff_trim}/${alignment}.aln
-            rm -f $cutoff_trim/${gene}.${residueType}.aln.optrimal.fasta
+            rm -f $cutoff_trim/${gene}.${3}.aln.optrimal.fasta
         fi
     done
     #cd ~/zq/working/optrimal/${cutoff_trim}
     #python3 ~/zq/bin/AMAS-master/amas/AMAS.py summary -f fasta -d dna -i *.aln
-    AMAS.py summary -f fasta -d $residueType -i ${cutoff_trim}/${gene}.${residueType}.aln.optrimal.fasta -o summary_${cutoff_trim}.txt
+    AMAS.py summary -f fasta -d $residueType -i ${cutoff_trim}/${gene}.${3}.aln.optrimal.fasta -o summary_${cutoff_trim}.txt
     ####mv summary.txt ../summary_${cutoff_trim}.txt
 
 done < cutoff_trim.txt
@@ -89,9 +97,13 @@ done < cutoff_trim.txt
 Rscript $pathToScripts/optrimal.R
 
 # Paul B. - Moving chosen alignment file to pwd of main pipeline so it can be picked up there for next step:
-mv ${gene}.${residueType}.aln.optrimal.fasta ../${gene}.${residueType}.aln.after_trim1.fasta
+#mv ${gene}.${3}.aln.optrimal.fasta ../${gene}.${3}.aln.after_trim1.fasta
+# Paul B. - NB - trimAl places the length of the sequences on the fasta header but this makes raxml-ng (if selected) crash.
+# So removing 2nd field of fasta header at same time:
+cat ${gene}.${3}.aln.optrimal.fasta | awk '{if($1 ~ /^>/) {print $1} else {print $1}}' > ../${gene}.${3}.aln.after_trim1.fasta
 
-# Stats for chosen file from dldp_<gene_name>.dna.aln.optrimal.fasta.csv file:
+
+# Paul B - Stats for chosen file from dldp_<gene_name>.dna.aln.optrimal.fasta.csv file:
 ### Loop through csv, chop at , chars
 ### But then not sure how to work out which cut off file has been chosen!!!
 ### Once have info, print to log file
