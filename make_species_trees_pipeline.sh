@@ -845,7 +845,11 @@ elif [[ $os == 'Linux' && $speciesTreesOnly == 'no' ]]; then
 		$proteinSelected \
 		$codonSelected \
 		"$filterSeqs1" \
-		$maxColOccThreshold `
+		"$maxColOccThreshold" \
+		"$filterSeqs2" \
+		"$trimAln1" \
+		"$trimAln2" \
+		"$treeshrink" `
 
 		echo jobInfo: $jobInfo
 		jobId=`echo $jobInfo | cut -d ' ' -f 4 `
@@ -910,7 +914,10 @@ elif [[ $os == 'Linux' && $speciesTreesOnly == 'no' ]]; then
 			"$treeshrink" \
 			"$filterSeqs1" \
 			"$alnProgram" \
-			"$maxColOccThreshold" `
+			"$maxColOccThreshold" \
+			"$filterSeqs2" \
+			"$trimAln1" \
+			"$trimAln2" `
 			exit	# Species trees will be made after TreeShrink or re-alignment step(s) in nested call to this script, if requested.
 		fi
 	else
@@ -937,7 +944,11 @@ elif [[ $os == 'Linux' && $speciesTreesOnly == 'no' ]]; then
 			$codonSelected \
 			"$filterSeqs1" \
 			$pathToScripts \
-			$maxColOccThreshold
+			$maxColOccThreshold \
+			"$filterSeqs2" \
+			"$trimAln1" \
+			"$trimAln2" \
+			"$treeshrink"
 		done > make_gene_trees.log 2>&1
 
 		if [[ $filterSeqs1 != 'no' ]]; then
@@ -993,6 +1004,9 @@ elif [[ $os == 'Linux' && $speciesTreesOnly == 'no' ]]; then
 			"$filterSeqs1" \
 			"$alnProgram" \
 			"$maxColOccThreshold" \
+			"$filterSeqs2" \
+			"$trimAln1" \
+			"$trimAln2" \
 			> run_treeshrink_and_realign.log 2>&1
 			exit	# Species trees will be made after TreeShrink or re-alignment step(s) in nested call to this script, if requested.
 		fi
