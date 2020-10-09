@@ -197,7 +197,7 @@ if [[ $maxColOcc -ge $3 ]]; then
 		# ${gene}_${2}_aln_ovr${fractnAlnCovrg_pc}pc_aln_covrg.txt
 		echo "proteinSelected == 'yes' && dnaSelected == 'yes'": $proteinSelected $dnaSelected
 		if [[ $proteinSelected == 'yes' && $dnaSelected == 'yes' ]]; then
-			echo entered here for making trimmed dna aln
+			echo Also preparing the filtered dna aln...
 			seqtk subseq -l $alnLength \
 			${gene}.dna.aln.fasta \
 			${gene}_${2}_aln_ovr${fractnAlnCovrg_pc}pc_aln_covrg.txt \
@@ -216,6 +216,7 @@ if [[ $maxColOcc -ge $3 ]]; then
 			### if protein and DNA only, need to add above with a condtional for high occ columns
 		fi
 		if [[ $codonSelected == 'yes' ]]; then
+			echo Also preparing the filtered codon aln...
 			seqtk subseq -l $alnLength \
 			codonAln/${gene}.codon.aln.fasta \
 			${gene}_${2}_aln_ovr${fractnAlnCovrg_pc}pc_aln_covrg.txt \
@@ -297,13 +298,14 @@ filterSeqs2()	{
 	# ${gene}.${2}.aln.after_filter2.txt
 	echo "proteinSelected == 'yes' && dnaSelected == 'yes'": $proteinSelected $dnaSelected
 	if [[ $proteinSelected == 'yes' && $dnaSelected == 'yes' ]]; then
-		echo entered here for making trimmed dna aln
+		echo Also preparing the filtered dna aln...
 		seqtk subseq -l 0 \
 		${gene}.dna.aln.fasta \
 		${gene}.${2}.aln.after_filter2.txt \
 		> ${gene}.dna.aln.after_filter2.fasta
 	fi
 	if [[ $codonSelected == 'yes' ]]; then
+		echo Also preparing the filtered codon aln...
 		seqtk subseq -l $alnLength \
 		codonAln/${gene}.codon.aln.fasta \
 		${gene}.${2}.aln.after_filter2.txt \

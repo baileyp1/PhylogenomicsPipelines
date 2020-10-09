@@ -21,6 +21,10 @@ proteinSelected="${13}"
 codonSelected="${14}"
 filterSeqs1="${15}"
 maxColOccThreshold="${16}"
+filterSeqs2="${17}"
+trimAln1="${18}"
+trimAln2="${19}"
+treeshrink="${20}"
 
 echo Inside Slurm array script, listFile: $listFile
 echo Inside Slurm array script, fractnAlnCovrge: $fractnAlnCovrg
@@ -62,6 +66,10 @@ $proteinSelected \
 $codonSelected \
 "$filterSeqs1" \
 $pathToScripts \
-$maxColOccThreshold
+$maxColOccThreshold \
+"$filterSeqs2" \
+"$trimAln1" \
+"$trimAln2" \
+"$treeshrink"
 ### 16.3.2020 - could remove this $$exePrefix - but it might be useful to see whether sub-processes get added to the mem used for this script.
 ### 3.6.2020 - yes they do - the time and mem from this command is the total of tiem within script AND max mem used within the child processes - good
