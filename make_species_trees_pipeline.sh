@@ -55,7 +55,11 @@ fractnMaxColOcc=0.7
 slurmThrottle=50			# Was 1, set to 50 as now have two rounds of alignment 
 cpuGeneTree=1					# still keep this separate from the supermatrix tree; then I can specify loads more for the supermatrix.
 								# Maybe hava a comma separated list e.g. 4,30 for gene and species tree.
-speciesTreeMem=100000			# I think I need 500000 GB mem for the RAxML large tree (Slurm)
+geneTreeSlurmMemory=0		# option -R		 
+speciesTreeMem=100000		# option -U; I think I need 500000 GB mem for the RAxML large tree (Slurm)
+geneTreesSlurmTime=0		# SBATCH -t 0-36:00;  A time limit of zero requests that no time limit be imposed - like the mem option
+speciesTreesSlurmTime=0		# SBATCH -t 0-36:00
+
 ####-D  upload details to PAFTOL database (internal use only)   	
 
 
@@ -86,9 +90,9 @@ INPUT FILE OPTIONS:
     -u               add contig length info onto species tree tips (requires option -t)
                      Sample_name/identifier must be identical to the sample fasta file name (minus any [dot] ending suffix e.g. .fasta)
                      Not available in gene-wise mode (option -G)
-    -p <string>      prefix for the output filenames e.g. taxonomic group (default=tree_pipeline)	--> change to -o or O
+    -p <string>      prefix for the output filenames e.g. taxonomic group (default=tree_pipeline)
 ALIGNMENT OPTIONS:
-    -D               sequence type to use: dna, protein, codon (default=dna). N.B. use with multiple types must be quoted (e.g. 'dna protein')
+    -D <string>      sequence type to use: dna, protein, codon (default=dna). N.B. use with multiple types must be quoted (e.g. 'dna protein')
                      codon is input DNA aligned but guided by a protein alignment
     -A <string>      alignment program to use: mafft, UPP 	[ but for which residue type - make for all for now ]
     -M <string>      if using mafft, specify algorithm to use in quotes i.e. '--retree 1', '--retree 2', '--maxiterate 1000' etc (default='--retree 2')
@@ -107,11 +111,10 @@ FILTERING AND TRIMMING OPTIONS:
 PHYLOGENY OPTIONS:
     -i               make gene trees only
     -j               make species trees only. Gene trees must already exist in run directory
-    -q <string>      name of phylogeny program for gene trees from DNA sequences.		--> change to -d or D - use DNA sequence to build gene trees and name a phylogeny program
+    -q <string>      name of phylogeny program for gene trees from DNA sequences.
                    	 Options are, fastest to slowest: fasttree, iqtree2, raxml-ng (default=fasttree)	
-    -r <string>      name of phylogeny program for gene trees from protein sequences.	--> change to p or P - use amino acid sequence to build gene trees and name a phylogeny program
+    -r <string>      name of phylogeny program for gene trees from protein sequences.
                    	 If required, options are, fastest to slowest: fasttree, iqtree, raxml-ng (no default)
- 																						-->  use DNA codon sequence to build gene trees and name a phylogeny program
     -S <string>      name of phylogeny program for supermatrix approach (concatenated gene alignments).
                      If required, options are, fastest to slowest: fasttree, raxml-ng (no default)
     -T               use Treeshrink on gene trees (followed by re-alignment)
@@ -119,6 +122,10 @@ PHYLOGENY OPTIONS:
 OTHER OPTIONS: 
     -C <integer>     number of cpu to use for genetrees; NB - not convinced >1 cpu works robustly for raxml-ng with small datasets! (default=1)              	-
     -c <integer>     number of cpu to use for RAxML in supermatrix method (default=8)
+    -R <integer>     Slurm memory to use (in MB) for gene trees (default=0; means no limit is imposed)
+    -U <integer>     Slurm memory to use (in MB) for species trees (default=0; means no limit is imposed)
+	-V <string>      Slurm time limit to use. Format: <days>-<hours>:<minutes> e.g. 1-0:0 is 1 day (default=0; means no limit is imposed)
+	-W <string>      Slurm time limit to use. Format: <days>-<hours>:<minutes> e.g. 1-0:0 is 1 day (default=0; means no limit is imposed)
     -Q <string>      Slurm partition (queue) to use (default=medium) ]
     -H <integer>	 Slurm throttle - not available to change (default=50)
 
@@ -159,7 +166,7 @@ EOF
 
 
 #echo User inputs:    ### For testing only 
-while getopts "hvat:ug:ijGF:m:p:M:q:r:TC:c:d:Q:A:D:O:L:I:JK:"  OPTION; do	# Remaining options - try capital letters!
+while getopts "hvat:ug:ijGF:m:p:M:q:r:TC:c:d:Q:A:D:O:L:I:JK:R:U:"  OPTION; do	# Remaining options - try capital letters!
 
 	#echo -$OPTION $OPTARG	### For testing only - could try to run through options again below 
 	 
@@ -195,6 +202,10 @@ while getopts "hvat:ug:ijGF:m:p:M:q:r:TC:c:d:Q:A:D:O:L:I:JK:"  OPTION; do	# Rema
 		I) filterSeqs2=$OPTARG ;;
 		J) trimAln1=yes ;;
 		K) trimAln2=$OPTARG ;;
+		R) geneTreeSlurmMemory=$OPTARG ;;
+		U) speciesTreeMem=$OPTARG ;;
+		V) geneTreesSlurmTime=$OPTARG ;;
+		W) speciesTreesSlurmTime=$OPTARG ;;
 		?)  echo This option is not allowed. Read the usage summary below.
       	    echo
       	    usage; exit 1 ;;
@@ -829,7 +840,12 @@ elif [[ $os == 'Linux' && $speciesTreesOnly == 'no' ]]; then
       		slurmThrottle=$numbrGenes
     	fi
 
-        jobInfo=`sbatch -p $partitionName -c $cpuGeneTree -t 7-00:00 --mem 30000 --array=0-${numbrGenes}%$slurmThrottle  $pathToScripts/slurm_setup_array_to_make_gene_trees.sh \
+    			V) geneTreesSlurmTime=$OPTARG ;;
+		W) speciesTreesSlurmTime=$OPTARG ;;
+
+
+
+        jobInfo=`sbatch -p $partitionName -c $cpuGeneTree -t $geneTreesSlurmTime --mem $geneTreeSlurmMemory --array=0-${numbrGenes}%$slurmThrottle  $pathToScripts/slurm_setup_array_to_make_gene_trees.sh \
 		$geneFile \
 		$geneListFile \
 		$fractnAlnCovrg \
@@ -1048,7 +1064,7 @@ elif [ $os == 'Linux' ]; then
 		echo \$jobId: $jobId - should match previous Slurm step.
 		# NB - previous Slurm jobs have to have an exit code of zero to satisfy Slurm --dependancy afterok:$jobId parameter,
 		# otherwise would need to use --dependancy afterany:$jobId if exit code coudl be > 0.  
-        sbatch --dependency=afterok:$jobId -p long -c $cpu --mem=$speciesTreeMem -o ${fileNamePrefix}_make_species_trees.log -e ${fileNamePrefix}_make_species_trees.log  $pathToScripts/make_species_trees.sh \
+        sbatch --dependency=afterok:$jobId -p long -c $cpu -t $geneTreesSlurmTime --mem=$speciesTreeMem -o ${fileNamePrefix}_make_species_trees.log -e ${fileNamePrefix}_make_species_trees.log  $pathToScripts/make_species_trees.sh \
         $fractnAlnCovrg \
         $fractnSamples \
         $numbrSamples \
