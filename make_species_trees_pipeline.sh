@@ -55,10 +55,10 @@ fractnMaxColOcc=0.7
 slurmThrottle=50			# Was 1, set to 50 as now have two rounds of alignment 
 cpuGeneTree=1					# still keep this separate from the supermatrix tree; then I can specify loads more for the supermatrix.
 								# Maybe hava a comma separated list e.g. 4,30 for gene and species tree.
-geneTreeSlurmMemory=0		# option -R		 
-speciesTreeMem=100000		# option -U; I think I need 500000 GB mem for the RAxML large tree (Slurm)
-geneTreesSlurmTime=0		# SBATCH -t 0-36:00;  A time limit of zero requests that no time limit be imposed - like the mem option
-speciesTreesSlurmTime=0		# SBATCH -t 0-36:00
+geneTreeSlurmMem=0		# option -R		 
+speciesTreeSlurmMem=0			# option -U; I think I need 500000 GB mem for the RAxML large tree (Slurm)
+geneTreeSlurmTime=0		# SBATCH -t 0-36:00;  A time limit of zero requests that no time limit be imposed - like the mem option
+speciesTreeSlurmTime=0		# SBATCH -t 0-36:00
 
 ####-D  upload details to PAFTOL database (internal use only)   	
 
@@ -202,10 +202,10 @@ while getopts "hvat:ug:ijGF:m:p:M:q:r:TC:c:d:Q:A:D:O:L:I:JK:R:U:"  OPTION; do	# 
 		I) filterSeqs2=$OPTARG ;;
 		J) trimAln1=yes ;;
 		K) trimAln2=$OPTARG ;;
-		R) geneTreeSlurmMemory=$OPTARG ;;
-		U) speciesTreeMem=$OPTARG ;;
-		V) geneTreesSlurmTime=$OPTARG ;;
-		W) speciesTreesSlurmTime=$OPTARG ;;
+		R) geneTreeSlurmMem=$OPTARG ;;
+		U) speciesTreeSlurmMem=$OPTARG ;;
+		V) geneTreeSlurmTime=$OPTARG ;;
+		W) speciesTreeSlurmTime=$OPTARG ;;
 		?)  echo This option is not allowed. Read the usage summary below.
       	    echo
       	    usage; exit 1 ;;
@@ -668,10 +668,10 @@ echo 'trimAln1 (option -J): ' $trimAln1
 echo 'trimAln2 (option -K): ' $trimAln2
 echo 'treeshrink: ' $treeshrink
 echo 'filterSeqs1: ' $filterSeqs1
-echo 'geneTreeSlurmMemory: ' $geneTreeSlurmMemory
-echo 'speciesTreeMem: ' $speciesTreeMem
-echo 'geneTreesSlurmTime: ' $geneTreesSlurmTime
-echo 'speciesTreesSlurmTime: ' $speciesTreesSlurmTime
+echo 'geneTreeSlurmMem: ' $geneTreeSlurmMem
+echo 'speciesTreeSlurmMem: ' $speciesTreeSlurmMem
+echo 'geneTreeSlurmTime: ' $geneTreeSlurmTime
+echo 'speciesTreeSlurmTime: ' $speciesTreeSlurmTime
 echo
 #exit
 
@@ -849,7 +849,7 @@ elif [[ $os == 'Linux' && $speciesTreesOnly == 'no' ]]; then
       		slurmThrottle=$numbrGenes
     	fi
 
-        jobInfo=`sbatch -p $partitionName -c $cpuGeneTree -t $geneTreesSlurmTime --mem $geneTreeSlurmMemory --array=0-${numbrGenes}%$slurmThrottle  $pathToScripts/slurm_setup_array_to_make_gene_trees.sh \
+        jobInfo=`sbatch -p $partitionName -c $cpuGeneTree -t $geneTreeSlurmTime --mem $geneTreeSlurmMem --array=0-${numbrGenes}%$slurmThrottle  $pathToScripts/slurm_setup_array_to_make_gene_trees.sh \
 		$geneFile \
 		$geneListFile \
 		$fractnAlnCovrg \
@@ -1068,7 +1068,7 @@ elif [ $os == 'Linux' ]; then
 		echo \$jobId: $jobId - should match previous Slurm step.
 		# NB - previous Slurm jobs have to have an exit code of zero to satisfy Slurm --dependancy afterok:$jobId parameter,
 		# otherwise would need to use --dependancy afterany:$jobId if exit code coudl be > 0.  
-        sbatch --dependency=afterok:$jobId -p long -c $cpu -t $geneTreesSlurmTime --mem=$speciesTreeMem -o ${fileNamePrefix}_make_species_trees.log -e ${fileNamePrefix}_make_species_trees.log  $pathToScripts/make_species_trees.sh \
+        sbatch --dependency=afterok:$jobId -p long -c $cpu -t $speciesTreeSlurmTime --mem=$speciesTreeSlurmMem -o ${fileNamePrefix}_make_species_trees.log -e ${fileNamePrefix}_make_species_trees.log  $pathToScripts/make_species_trees.sh \
         $fractnAlnCovrg \
         $fractnSamples \
         $numbrSamples \
