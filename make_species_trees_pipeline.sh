@@ -652,17 +652,27 @@ if [[ $trimAln2 != 'no' ]]; then
 fi
 
 
-# Some parameters selected:
+# Some parameters selected for checking:
+echo "################"
+echo "Options selected"
+echo "################"
 echo dnaSelected: $dnaSelected
 echo proteinSelected: $proteinSelected
 
 echo 'filter sequence option 1 (option -F): ' $filterSeqs1
 echo 'filter sequence option 2 (option -I): ' $filterSeqs2
-echo '	fractnAlnCovrg: ' $fractnAlnCovrg
-echo '	fractnSamples: ' $fractnSamples
+#echo '	fractnAlnCovrg: ' $fractnAlnCovrg
+#echo '	fractnSamples: ' $fractnSamples
 echo 'collapseNodes (option -L): ' $collapseNodes
 echo 'trimAln1 (option -J): ' $trimAln1
 echo 'trimAln2 (option -K): ' $trimAln2
+echo 'treeshrink: ' $treeshrink
+echo 'filterSeqs1: ' $filterSeqs1
+echo 'geneTreeSlurmMemory: ' $geneTreeSlurmMemory
+echo 'speciesTreeMem: ' $speciesTreeMem
+echo 'geneTreesSlurmTime: ' $geneTreesSlurmTime
+echo 'speciesTreesSlurmTime: ' $speciesTreesSlurmTime
+echo
 #exit
 
 
@@ -784,8 +794,7 @@ if [[ $os == 'Darwin' && $speciesTreesOnly == 'no' ]]; then
 		$alnFileForTreeSuffix \
 		> assess_gene_alns.log 2>&1
 	fi
-	echo treeshrink: $treeshrink
-	echo filterSeqs1: $filterSeqs1
+
 	if [[ $treeshrink == 'yes' || $filterSeqs1 != 'no' || $filterSeqs2 != 'no' ]]; then
 		##########################################
 		echo 'Re-aligning gene alignments because TreeShrink option or filter sequences option 1 or 2 is on, then continuing analysis in the "after_treeshrink_USE_THIS" or "after_reAlnFilterSeqs_USE_THIS" directory...'
@@ -839,7 +848,7 @@ elif [[ $os == 'Linux' && $speciesTreesOnly == 'no' ]]; then
     	elif [ $numbrGenes -lt $slurmThrottle ]; then 
       		slurmThrottle=$numbrGenes
     	fi
-    	
+
         jobInfo=`sbatch -p $partitionName -c $cpuGeneTree -t $geneTreesSlurmTime --mem $geneTreeSlurmMemory --array=0-${numbrGenes}%$slurmThrottle  $pathToScripts/slurm_setup_array_to_make_gene_trees.sh \
 		$geneFile \
 		$geneListFile \
