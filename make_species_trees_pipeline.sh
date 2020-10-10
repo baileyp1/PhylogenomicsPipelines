@@ -124,8 +124,8 @@ OTHER OPTIONS:
     -c <integer>     number of cpu to use for RAxML in supermatrix method (default=8)
     -R <integer>     Slurm memory to use (in MB) for gene trees (default=0; means no limit is imposed)
     -U <integer>     Slurm memory to use (in MB) for species trees (default=0; means no limit is imposed)
-	-V <string>      Slurm time limit to use. Format: <days>-<hours>:<minutes> e.g. 1-0:0 is 1 day (default=0; means no limit is imposed)
-	-W <string>      Slurm time limit to use. Format: <days>-<hours>:<minutes> e.g. 1-0:0 is 1 day (default=0; means no limit is imposed)
+	-V <string>      Slurm time limit to use for gene trees. Format: <days>-<hours>:<minutes> e.g. 1-0:0 is 1 day (default=0; means no limit is imposed)
+	-W <string>      Slurm time limit to use for species trees. Format: <days>-<hours>:<minutes> e.g. 1-0:0 is 1 day (default=0; means no limit is imposed)
     -Q <string>      Slurm partition (queue) to use (default=medium) ]
     -H <integer>	 Slurm throttle - not available to change (default=50)
 
@@ -839,12 +839,7 @@ elif [[ $os == 'Linux' && $speciesTreesOnly == 'no' ]]; then
     	elif [ $numbrGenes -lt $slurmThrottle ]; then 
       		slurmThrottle=$numbrGenes
     	fi
-
-    			V) geneTreesSlurmTime=$OPTARG ;;
-		W) speciesTreesSlurmTime=$OPTARG ;;
-
-
-
+    	
         jobInfo=`sbatch -p $partitionName -c $cpuGeneTree -t $geneTreesSlurmTime --mem $geneTreeSlurmMemory --array=0-${numbrGenes}%$slurmThrottle  $pathToScripts/slurm_setup_array_to_make_gene_trees.sh \
 		$geneFile \
 		$geneListFile \
