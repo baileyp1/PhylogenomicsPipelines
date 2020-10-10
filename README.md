@@ -30,7 +30,9 @@ For phylogenetic analysis:
 * RAxML
 * Newick Utilities
 * [ASTRAL](https://github.com/smirarab/ASTRAL), exactly version 5.7.3 (or alter the version number in script make_species_trees.sh, line ~151)
-* AMAS.py and/or trimAl (if trimming options are selected)
+* AMAS.py and/or trimAl (for trimming if those options are selected)
+* treeshrink
+* R (used only by treeshrink and trimAl if )
 
 ## Further Details options, how to use and outputs  
 To finish
