@@ -43,9 +43,6 @@ phyloProgramDNA=fasttree
 phyloProgramPROT=no			# Work around to specify any program so software testing code will not crash! Ensures cmd parameter is always occupied which is critical
 treeshrink=no
 collapseNodes=no			# option -L
-cpu=8						# number of cpu to use for RAxML in supermatrix method
-partitionName=main   		# Values depend on the cluster being used so good to have a flagged option for this
-							# NB - make_species_tree.sh uses 'long' queue - need an extra variable for that 
 
 # OTHER OPTIONS:
 # Hidden options (i.e. not apparent from the help menu but they always have a value so can be and have to be used in downstream scripts).
@@ -53,14 +50,16 @@ partitionName=main   		# Values depend on the cluster being used so good to have
 fileNamePrefix=tree_pipeline
 fractnMaxColOcc=0.7
 slurmThrottle=50			# Was 1, set to 50 as now have two rounds of alignment 
-cpuGeneTree=1					# still keep this separate from the supermatrix tree; then I can specify loads more for the supermatrix.
-								# Maybe hava a comma separated list e.g. 4,30 for gene and species tree.
-geneTreeSlurmMem=0		# option -R		 
-speciesTreeSlurmMem=0			# option -U; I think I need 500000 GB mem for the RAxML large tree (Slurm)
-geneTreeSlurmTime=0		# SBATCH -t 0-36:00;  A time limit of zero requests that no time limit be imposed - like the mem option
+cpuGeneTree=1				# still keep this separate from the supermatrix tree; then I can specify loads more for the supermatrix.
+							# Maybe hava a comma separated list e.g. 4,30 for gene and species tree.
+cpu=8						# number of cpu to use for RAxML in supermatrix method
+partitionName=main   		# Values depend on the cluster being used so good to have a flagged option for this
+							# NB - make_species_tree.sh uses 'long' queue - need an extra variable for that 
+geneTreeSlurmMem=20000		# option -R		 
+speciesTreeSlurmMem=50000	# option -U; I think I need 500000 GB mem for the RAxML large tree (Slurm)
+geneTreeSlurmTime=1-00:00	# SBATCH -t 0-36:00;  A time limit of zero requests that no time limit be imposed - like the mem option
 speciesTreeSlurmTime=0		# SBATCH -t 0-36:00
-
-####-D  upload details to PAFTOL database (internal use only)   	
+####-D  upload details to PAFTOL database (internal use only) 	
 
 
 function usage	{
@@ -127,7 +126,7 @@ OTHER OPTIONS:
 	-V <string>      Slurm time limit to use for gene trees. Format: <days>-<hours>:<minutes> e.g. 1-0:0 is 1 day (default=0; means no limit is imposed)
 	-W <string>      Slurm time limit to use for species trees. Format: <days>-<hours>:<minutes> e.g. 1-0:0 is 1 day (default=0; means no limit is imposed)
     -Q <string>      Slurm partition (queue) to use (default=medium) ]
-    -H <integer>	 Slurm throttle - not available to change (default=50)
+    -H <integer>	 Slurm throttle - not available to change here (default=50)
 
 
 A basic example run is described below:
