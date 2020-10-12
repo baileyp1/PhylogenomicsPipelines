@@ -195,8 +195,8 @@ reAlignSeqs()   {
     trimAlnOption2=''
     if [ $trimAln1 != 'no' ]; then trimAlnOption1='-J'; fi
     if [ $trimAln2 != 'no' ]; then trimAlnOption2="-K $trimAln2"; fi
-    echo trimAlnOption1: $trimAlnOption1  
-    echo trimAlnOption2: $trimAlnOption2  
+    #echo trimAlnOption1: $trimAlnOption1  
+    #echo trimAlnOption2: $trimAlnOption2  
 
     # Note the quotes around variables with spaces! BUT $2 must not be quoted!
     #echo " # For checking option values that need to be quoted (contain spaces)
