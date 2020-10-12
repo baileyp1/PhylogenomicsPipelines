@@ -477,6 +477,12 @@ filterShortSeqs()	{
 
 
 
+
+
+
+
+
+
 ############
 # Main code:
 ############
@@ -901,7 +907,7 @@ if [[ -s $dnaAlnForTree || -s $proteinAlnForTree ]]; then
 		if [[ $dnaSelected == 'yes' ]]; then
 			echo dnaAlnForTree: $dnaAlnForTree
 			# Function parameters: input_fasta_file, minimum_seq_length_to_tolerate, output_fasta_file_for_tree_building					
-			filterShortSeqs $dnaAlnForTree 84 ${gene}.dna.aln.for_tree.fasta	
+			filterShortSeqs $dnaAlnForTree 80 ${gene}.dna.aln.for_tree.fasta	
 			echo numbrSeqs: $numbrSeqs
 			# Function parameters: residue_type, input_fasta_file, out_dir, raxmlng_model, iqtree2_seq_type, fasttree_flags (NB - this last flag needs to be last - it needs to be blank for protein analysis)
 ### Still need to confirm file/variable input
@@ -912,7 +918,7 @@ if [[ -s $dnaAlnForTree || -s $proteinAlnForTree ]]; then
 			fi
 		fi
 		if [[ $codonSelected == 'yes' ]]; then
-			filterShortSeqs $codonAlnForTree 84 ${gene}.codon.aln.for_tree.fasta
+			filterShortSeqs $codonAlnForTree 80 ${gene}.codon.aln.for_tree.fasta
 			echo numbrSeqs: $numbrSeqs
 ### Still need to confirm file/variable input
 			if [ "$numbrSeqs" -gt 3 ]; then
