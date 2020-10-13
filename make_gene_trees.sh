@@ -593,8 +593,8 @@ if [[ $dnaSelected == 'yes' ]]; then
 		# Ouput files:
 		# _pasta.fasta 	- backbone aln (?)
 		# _pasta.Fasttree - backbone tree (?)
-		# _alignment.fasta 	- main aln
-		# _alignment_masked.fasta - masked aln where non-homologous sites in the query set are removed
+		# _alignment.fasta 	- main aln but also contains regions outside the HMM columns which remain unaligned (so do not use!!)
+		# _alignment_masked.fasta - masked aln where non-homologous sites in the query set are removed (This is the file to use!!)
 
 		# NB - UPP might not be able to align small gene sets (e.g. from the test data set) - will report this and skip this gene.
 		#      UPP doesn’t seem to align two seqs but it does align three seqs!
@@ -603,7 +603,7 @@ if [[ $dnaSelected == 'yes' ]]; then
 			echo "ERROR: UPP was not able to align this gene set - skipping alignment of $dnaFastaFileForAln"
 			exit 0	# zero allows Slurm to continue with the dependancies
 		fi
-		mv ${gene}.dna.upp_alignment.fasta ${gene}.dna.aln.fasta 
+		mv ${gene}.dna.upp_alignment_masked.fasta ${gene}.dna.aln.fasta 
        	dnaAlnToUse=${gene}.dna.aln.fasta
     fi
 fi
