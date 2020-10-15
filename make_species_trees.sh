@@ -183,6 +183,11 @@ if [[ $collapseNodes != 'no' ]]; then
         # Remove clades with low bootstrap values from the protein trees:
         nw_ed  ${fileNamePrefix}_protein_gene_trees_for_coelescence_phylo.nwk "i & (b < $collapseNodes)" o > ${fileNamePrefix}_protein_gene_trees_for_coelescence_phylo_bs_less_${collapseNodes}_rmed.nwk
     fi
+else
+    ### NB - 15.10.2020 - need to set these new variables for the rest of the code if collapse nodes is not set!!!
+    ### The outfile name is not ideal if collspe node is not set - best to set a variable to deal with this
+    collapseNodesD=$collapseNodes    # Required later for remembering the actual value for DNA (It might get changed for prtoein!!!)
+    numbrLowSupportNodesThresholdD=numbrLowSupportNodesThreshold    # Same for this var
 fi
 
 
