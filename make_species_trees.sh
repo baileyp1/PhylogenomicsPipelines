@@ -247,7 +247,7 @@ if [[ "$phyloProgramPROT" == 'fasttree' ||  "$phyloProgramPROT" == 'raxml-ng'  |
 
     # Extract the pp1 scores from the main Astral tree:
     cat ${fileNamePrefix}.protein.species_tree.astral_-t2.nwk \
-    | sed "s/'\[[fq=.\;0-9']\{1,\}pp1=//g" \
+    | sed "s/'\[[fqEaN=.\;0-9'-]\{1,\}pp1=//g" \
     | sed "s/;[QCENp=.\;0-9-]\{1,\}\]':/:/g" \
     > ${fileNamePrefix}.protein.species_tree.astral_pp1_value.nwk
 
