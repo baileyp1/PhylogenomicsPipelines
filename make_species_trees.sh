@@ -65,14 +65,18 @@ getTreeStats () {
     ###########
 
     newickTree=$1
+    bootstrapThreshold=$2
 
     # Count number of low support nodes:
-    numbrLowSupportNodes=`nw_ed -r $newickTree  "i & b < $2" s | wc -l | sed 's/ //g' `
+    numbrLowSupportNodes=`nw_ed -r $newickTree  "i & b < $bootstrapThreshold" s | wc -l | sed 's/ //g' `
+### NBNB - 15.10.2020 - this gives '1' even though the file might be empty!!!
     # Count the total number of support nodes with support values: 
     totalNumbrSupportNodes=`nw_ed -r $newickTree  "i & b > 0" s | wc -l | sed 's/ //g' `
     # Write summary stats:
     echo >> ${fileNamePrefix}_summary_tree_stats.txt
-    echo "$newickTree - number of internal nodes with low support values (total number of internal nodes): ${numbrLowSupportNodes} (${totalNumbrSupportNodes})" >> ${fileNamePrefix}_summary_tree_stats.txt 
+    if [[ $totalNumbrSupportNodes > 0 ]]; then
+        echo "$newickTree - number of internal nodes with low support values (total number of internal nodes): ${numbrLowSupportNodes} (${totalNumbrSupportNodes})" >> ${fileNamePrefix}_summary_tree_stats.txt 
+    fi
 
     outFilePrefix=`basename $newickTree .nwk`
 
@@ -211,7 +215,7 @@ $exePrefix java -jar $pathToAstral -t 2 \
 
 # Extract the pp1 scores from the main Astral tree:
 cat ${fileNamePrefix}.dna.species_tree.astral_-t2.nwk \
-| sed "s/'\[[fq=.\;0-9']\{1,\}pp1=//g" \
+| sed "s/'\[[fqEaN=.\;0-9'-]\{1,\}pp1=//g" \
 | sed "s/;[QCENp=.\;0-9-]\{1,\}\]':/:/g" \
 > ${fileNamePrefix}.dna.species_tree.astral_pp1_value.nwk
 ### NB - 9.10.2020 - might want to remove all *.nwk files at the start of this script so they can't be used by a previous run.
