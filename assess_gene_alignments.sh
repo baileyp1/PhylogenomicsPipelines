@@ -80,32 +80,36 @@ if [[ $geneFile != 'use_genewise_files' ]]; then
 		### 27.5.2020 - copy not move for now to check outputs
 	fi
 	#exit
-
+ 
 	maxSumOfContigLengths=`tail -n+2 ${fileNamePrefix}_summary_of_sample_quality.txt | sort -k3n | tail -n 1 | awk '{print $3 " (sample " $1 ")" }' `
-
-
 	minSumOfContigLengthsToTolerate=`echo $maxSumOfContigLengths | awk '{printf "%.0f", 0.20 * $1}' `
+
+	# Now using median length to determine the 20% cut off values for poor quality samples to remove:
+	medianPoint=`tail -n+2 ${fileNamePrefix}_summary_of_sample_quality.txt | sort -k3n | awk 'END {printf "%.0f" , NR/2}' `
+    medianGeneLength=`tail -n+2 ${fileNamePrefix}_summary_of_sample_quality.txt | sort -k3n | awk '{print $3}' | head -n $medianPoint | tail -n 1 `
+    minSumOfMedianGeneLengthsToTolerate=`echo $medianGeneLength | awk '{printf "%.0f", 0.20 * $1}' `
+    # Now inserting above minSum into code just below.
 
 
 	poorQualitySamples=`tail -n+2 ${fileNamePrefix}_summary_of_sample_quality.txt \
-	| awk -v minSumOfContigLengthsToTolerate=$minSumOfContigLengthsToTolerate '$3 <= minSumOfContigLengthsToTolerate {print $0}' \
+	| awk -v minSumOfContigLengthsToTolerate=$minSumOfMedianGeneLengthsToTolerate '$3 <= minSumOfContigLengthsToTolerate {print $0}' \
 	| sort -k3n | wc -l | sed 's/ //g' `		# NB - Macbook Darwin wc -l print 7 space characters infront of the number. Just tidying up print with sed 's/ //g' in this script
 
 	okQualitySamples=`tail -n+2 ${fileNamePrefix}_summary_of_sample_quality.txt \
-	| awk -v minSumOfContigLengthsToTolerate=$minSumOfContigLengthsToTolerate '$3 > minSumOfContigLengthsToTolerate {print $0}' \
+	| awk -v minSumOfContigLengthsToTolerate=$minSumOfMedianGeneLengthsToTolerate '$3 > minSumOfContigLengthsToTolerate {print $0}' \
 	| sort -k3n | wc -l | sed 's/ //g' `
 
 
 	# If there are any poor quality samples, print their ids to a file (to be used for further investigation):
 	if [ $poorQualitySamples -ge 1 ]; then
 		tail -n+2 ${fileNamePrefix}_summary_of_sample_quality.txt \
-		| awk -v minSumOfContigLengthsToTolerate=$minSumOfContigLengthsToTolerate '$3 <= minSumOfContigLengthsToTolerate {print $1}' \
+		| awk -v minSumOfContigLengthsToTolerate=$minSumOfMedianGeneLengthsToTolerate '$3 <= minSumOfContigLengthsToTolerate {print $1}' \
 		> ${fileNamePrefix}_poor_quality_samples.txt
 	fi
 
 	# Now print a list of ok/good quality samples (to be used for repeating the species trees):
 	tail -n+2 ${fileNamePrefix}_summary_of_sample_quality.txt \
-	| awk -v minSumOfContigLengthsToTolerate=$minSumOfContigLengthsToTolerate '$3 > minSumOfContigLengthsToTolerate {print $1}' \
+	| awk -v minSumOfContigLengthsToTolerate=$minSumOfMedianGeneLengthsToTolerate '$3 > minSumOfContigLengthsToTolerate {print $1}' \
 	> ${fileNamePrefix}_ok_quality_samples.txt
 fi
 
@@ -175,6 +179,7 @@ for file in *.$alnFileForTreeSuffix; do
 	### 27.8.2020 - I think this is sometiems divisible by zero which is fatal!!!!
     echo "$gene $lenLongestGene $lenLongestGeneAfterTrim $medianGeneLength $maxColOcc $maxColOccP $ratio $numbrSamples"| column -t
 done | sort -k5n| column -t >> ${fileNamePrefix}_summary_gene_recovery.txt
+### NB - 12.10.2020 - the lenLongestGeneAfterTrim is now same as lenLongestGene!!!! Can get lenLongestGene from the summary.log file which is before trimming!
 
 
 
@@ -199,7 +204,8 @@ numbrOverlapColsForSpeciesTree=`for file in *.$alnFileForTreeSuffix; do
     ####echo 2000  "test" $maxColOcc
 done \
 | awk -v numbrSamplesThreshold=$numbrSamplesThreshold  '$1 >= numbrSamplesThreshold {sum+=$2} END {print sum}' `
-
+### NBNB - 11.10.2020 - I think I DON'T also need to filter by maxColOcc because these alignment files 
+###        only exist if they pass maxColOcc filtering! Keeping checking logic though
 
 
 
@@ -224,12 +230,13 @@ cat mafft_dna_alns_fasta_file_list.txt | sed 's/dna/protein/' > mafft_protein_al
 
 
 # Count the number of samples in the gene trees being used and place a sorted list into a file:
-### 6.9.2020 - if i now do this on the aln_for_tree.fasta file, then I don't need to generate the file list here!!!!!!
+### 6.9.2020 - if i now do this on the aln_for_tree.fasta file, then I don't need to generate the file list above here!!!!!!
 numbrSamplesInTrees=`cat mafft_dna_alns_fasta_file_list.txt | xargs cat | grep '>' | sort -u | wc -l | sed 's/ //g'`
 cat mafft_dna_alns_fasta_file_list.txt | xargs cat | grep '>' | sed 's/>//' | sort -u > mafft_dna_alns_fasta_samples_in_tree.txt
+### NB - 11.10.2020 - what happens if this is protein trees or if dna is not beign used?!!
 
 
-# Print out a list of all samples submitted to this tool:
+# Print out a list of all samples submitted to the whole workflow:
 #cat $geneFile | awk '{print $2}' | grep -v  '^$'| sort -u > samples_submitted.txt
 # Altered above line to now use a set of files that is common to both species-wise and dna-wise datasets, i.e. *_dna.fasta:
 cat *_dna.fasta | grep '>' | sed 's/^>//' | sort -u > samples_submitted.txt
@@ -256,8 +263,9 @@ Total number of samples: $totalNumbrSamples" > ${fileNamePrefix}_summary_stats.t
 if [[ $geneFile != 'use_genewise_files' ]]; then 
 	echo "
 Largest sum length of all genes in bases for a sample found (that sample in brackets): $maxSumOfContigLengths
-Number of poor quality samples (<= 20% of the largest sum length of all genes per sample): $poorQualitySamples
-Number of ok/good quality samples (> 20% of the largest sum length of all genes per sample): $okQualitySamples" >> ${fileNamePrefix}_summary_stats.txt
+Median sum length of all genes in bases: $medianGeneLength
+Number of poor quality samples (<= 20 % of the median sum length of all genes per sample): $poorQualitySamples
+Number of ok/good quality samples (> 20 % of the median sum length of all genes per sample): $okQualitySamples" >> ${fileNamePrefix}_summary_stats.txt
 fi
 
 echo "
