@@ -451,6 +451,8 @@ makeGeneTree()	{
 	fi
 
 	### Other gene tree programs could go here
+	### NB - will need to confirm whether program outputs the gene tree node support values as a fraction or a percent
+	### So far, FASTTREE=fraction,0-1; raxml-ng=integer(0-100); iqtree=integer(0-100)
 
 } # End of makeDnaGeneTree function
 
@@ -579,7 +581,7 @@ if [[ $dnaSelected == 'yes' ]]; then
    		### If it happens again (UPP will complain about overwriting files) can use this conditional instead to check all the files in the set at once:
    		### if ls *.dna.upp* 2>&1 >/dev/null; then echo exists; ls -l *.dna.upp* ; fi
    		if [[ -f ${gene}.dna.upp_pasta.fasta ]]; then
-   			rm ${gene}.dna.upp_pasta.fasta  ${gene}.dna.upp_pasta.fasttree  ${gene}.dna.upp_alignment_masked.fasta
+   			rm ${gene}.dna.upp_pasta.fasta  ${gene}.dna.upp_pasta.fasttree  ${gene}.dna.upp_alignment.fasta
    			# Don't think this file always exists (for very small datasets):
    			if [[ -f ${gene}.dna.upp_insertion_columns.txt ]]; then rm ${gene}.dna.upp_insertion_columns.txt; fi
    		fi
@@ -637,7 +639,7 @@ if [[ $proteinSelected == 'yes' || $codonSelected == 'yes' ]]; then
 		echo
    		echo Creating a protein alignment with UPP...
    		if [[ -f ${gene}.protein.upp_pasta.fasta ]]; then
-   			rm ${gene}.protein.upp_pasta.fasta ${gene}.protein.upp_pasta.fasttree ${gene}.protein.upp_alignment_masked.fasta
+   			rm ${gene}.protein.upp_pasta.fasta ${gene}.protein.upp_pasta.fasttree ${gene}.protein.upp_alignment.fasta
    			if [[ -f ${gene}.protein.upp_insertion_columns.txt ]]; then rm ${gene}.protein.upp_insertion_columns.txt; fi
    		fi
 		run_upp.py -x $cpuGeneTree -M -1 -m amino -s ${gene}.protein.fasta -o ${gene}.protein.upp
@@ -645,7 +647,7 @@ if [[ $proteinSelected == 'yes' || $codonSelected == 'yes' ]]; then
 			echo "ERROR: UPP was not able to align this gene set - skipping alignment of ${gene}.protein.fasta"
 			exit 0
 		fi
-		mv ${gene}.protein.upp_alignment.fasta ${gene}.protein.aln.fasta
+		mv ${gene}.protein.upp_alignment_masked.fasta ${gene}.protein.aln.fasta
 		proteinAlnToUse=${gene}.protein.aln.fasta
 	fi
 
@@ -771,7 +773,10 @@ if [[ $proteinSelected == 'yes' || $codonSelected == 'yes' ]]; then
     		echo  codonAlnForTree: $codonAlnForTree
    		fi
     fi
-    if [[ "$trimAln2" != 'no' && "$filterSeqs1" == 'no' && "$filterSeqs2" == 'no' && "$treeshrink" == 'no' ]]; then
+    #if [[ "$trimAln2" != 'no' && "$filterSeqs1" == 'no' && "$filterSeqs2" == 'no' && "$treeshrink" == 'no' ]]; then
+    # 13.10.2020 - the above conditional would ensure that trimAln2 would only operate after the second re-alignment step,
+    # but need now to use it before building the gene tree (should be much faster to build tree without them):
+    if [[ "$trimAln2" != 'no' ]]; then
    		echo "Trim sequences option 2 - assessing the protein aln for trimming (and the DNA and codon alns if they have also been selected)."
    		# Function parameters: input_fasta_file, residue_type_for_AMAS, maximum_fraction_limit_to_trim  fraction_to_trim_at, outfile_name
 ### NB - if $proteinAlnForTree is empty after filtering, AMAS will exit with an error - Ok I think for now - BUT
@@ -813,6 +818,7 @@ if [[ $proteinSelected == 'yes' || $codonSelected == 'yes' ]]; then
 
 
 elif [[ $dnaSelected == 'yes' ]]; then
+	# NB - most explanations of the workflow logic are presented in the above protein conditional (it's the same)
     if [[ $filterSeqs1 != 'no' ]]; then 
     	echo "Filter sequences option 1 - assessing the DNA aln for filtering"
     	###############maxColOccThreshold=15	# was 90, now testing 30, then 15; seq covrg across region was 84, now testing 27, then 14
@@ -851,14 +857,15 @@ elif [[ $dnaSelected == 'yes' ]]; then
     ##################
     # NB - conditionals below ensures that trimming is only done after a realignment step following Treeshrink and/or filtering.      
 	if [[ "$trimAln1" == 'yes' && "$filterSeqs1" == 'no' && "$filterSeqs2" == 'no' && "$treeshrink" == 'no' ]]; then
-   		echo "Trim sequences option 1 (opTrimAL) - assessing the protein aln for trimming"
+   		echo "Trim sequences option 1 (opTrimAL) - assessing the DNA aln for trimming"
 ### NB - I think this trim option needs to be done before trimming low occupancy columns - but need to run opTrimAL first before I know this for certain
    		# Function parameters: gene_name input_aln_fasta_file, residue_type, outfile_name, $pathToScripts
    		trimAln1 $gene  $dnaAlnForTree  dna  ${gene}.dna.aln.after_trim1.fasta  $pathToScripts
    		dnaAlnForTree=${gene}.dna.aln.after_trim1.fasta
     fi
-    if [[ "$trimAln2" != 'no' && "$filterSeqs1" == 'no' && "$filterSeqs2" == 'no' && "$treeshrink" == 'no' ]]; then
-   		echo "Trim sequences option 2 - assessing the dna aln for trimming"
+    #if [[ "$trimAln2" != 'no' && "$filterSeqs1" == 'no' && "$filterSeqs2" == 'no' && "$treeshrink" == 'no' ]]; then
+    if [[ "$trimAln2" != 'no' ]]; then
+   		echo "Trim sequences option 2 - assessing the DNA aln for trimming"
    		# Function parameters: input_fasta_file, residue_type_for_AMAS, maximum_fraction_limit_to_trim  fraction_to_trim_at, outfile_name
    		trimAln2 $dnaAlnForTree dna $trimAln2 ${gene}.dna.aln.after_trim2.fasta
    		dnaAlnForTree=${gene}.dna.aln.after_trim2.fasta
