@@ -146,7 +146,9 @@ echo
 
 # Before running Astral, collapse clades with low bootstrap values (less than $collapseNodes) from all trees at once, if requested.
 # NB - this step collapses nodes whose certainty is not clear by creating multifurcations with a parent node that is well supported.
-# No taxa are removed! 
+# No taxa are removed!
+dnaAstralInFile=${fileNamePrefix}_dna_gene_trees_for_coelescence_phylo.nwk
+proteinAstralInfile=${fileNamePrefix}_protein_gene_trees_for_coelescence_phylo.nwk
 if [[ $collapseNodes != 'no' ]]; then
     
 ### 15.10.2020 - need a conditional for the DNA programs as for protein
@@ -165,7 +167,7 @@ if [[ $collapseNodes != 'no' ]]; then
    
 
     nw_ed  ${fileNamePrefix}_dna_gene_trees_for_coelescence_phylo.nwk "i & (b < $collapseNodesD)" o > ${fileNamePrefix}_dna_gene_trees_for_coelescence_phylo_bs_less_${collapseNodesD}_rmed.nwk
-    
+    dnaAstralInFile=${fileNamePrefix}_dna_gene_trees_for_coelescence_phylo_bs_less_${collapseNodesD}_rmed.nwk
    
     if [[ "$phyloProgramPROT" == 'fasttree' ||  "$phyloProgramPROT" == 'raxml-ng' || "$phyloProgramPROT" == 'iqtree2' ]]; then
 
@@ -182,6 +184,7 @@ if [[ $collapseNodes != 'no' ]]; then
 
         # Remove clades with low bootstrap values from the protein trees:
         nw_ed  ${fileNamePrefix}_protein_gene_trees_for_coelescence_phylo.nwk "i & (b < $collapseNodes)" o > ${fileNamePrefix}_protein_gene_trees_for_coelescence_phylo_bs_less_${collapseNodes}_rmed.nwk
+        proteinAstralInfile=${fileNamePrefix}_protein_gene_trees_for_coelescence_phylo_bs_less_${collapseNodes}_rmed.nwk
     fi
 else
     ### NB - 15.10.2020 - need to set these new variables for the rest of the code if collapse nodes is not set!!!
@@ -195,10 +198,11 @@ fi
 # Need to find the location of ASTRAL and supply the absolute path to the jar file.
 # This assumes that the ASTRAL directory is already in $PATH. 
 ### NB - iqtree11.12.2019 - could always set up an alias! e.g. astral='java -jar $PATH/astral.5.6.3.jar' 
+echo dnaAstralInFile: $dnaAstralInFile
 pathToAstral=`which astral.5.7.3.jar `
 echo Running Astral on the DNA gene trees...
 $exePrefix java -jar $pathToAstral -t 2 \
--i ${fileNamePrefix}_dna_gene_trees_for_coelescence_phylo_bs_less_${collapseNodesD}_rmed.nwk \
+-i $dnaAstralInFile \
 -o ${fileNamePrefix}.dna.species_tree.astral_-t2.nwk
 ### Old name: -o ${fileNamePrefix}_astral_-t2_dna_species_tree.nwk
 # Astral commands:
@@ -224,7 +228,7 @@ fi
 
 # Also running with -t option set to 16:
 $exePrefix java -jar $pathToAstral -t 16 \
--i ${fileNamePrefix}_dna_gene_trees_for_coelescence_phylo_bs_less_${collapseNodesD}_rmed.nwk \
+-i $dnaAstralInFile \
 -o ${fileNamePrefix}.dna.species_tree.astral_-t16.nwk
 mv freqQuad.csv ${fileNamePrefix}.dna.species_tree.astral_-t16_freqQuad.txt
 
@@ -232,8 +236,9 @@ mv freqQuad.csv ${fileNamePrefix}.dna.species_tree.astral_-t16_freqQuad.txt
 
 if [[ "$phyloProgramPROT" == 'fasttree' ||  "$phyloProgramPROT" == 'raxml-ng'  || "$phyloProgramPROT" == 'iqtree2' ]]; then
     echo Running Astral on the protein gene trees...
+    echo proteinAstralInFile: $proteinAstralInFile
     $exePrefix java -jar $pathToAstral -t 2 \
-    -i ${fileNamePrefix}_protein_gene_trees_for_coelescence_phylo_bs_less_${collapseNodes}_rmed.nwk \
+    -i $proteinAstralInFile \
     -o ${fileNamePrefix}.protein.species_tree.astral_-t2.nwk
 
     # Extract the pp1 scores from the main Astral tree:
@@ -253,7 +258,7 @@ if [[ "$phyloProgramPROT" == 'fasttree' ||  "$phyloProgramPROT" == 'raxml-ng'  |
 
     # Also running with -t option set to 16:
     $exePrefix java -jar $pathToAstral -t 16 \
-    -i ${fileNamePrefix}_protein_gene_trees_for_coelescence_phylo_bs_less_${collapseNodes}_rmed.nwk \
+    -i $proteinAstralInFile \
     -o ${fileNamePrefix}.protein.species_tree.astral_-t16.nwk
     mv freqQuad.csv ${fileNamePrefix}.protein.species_tree.astral_-t16_freqQuad.txt
 fi
