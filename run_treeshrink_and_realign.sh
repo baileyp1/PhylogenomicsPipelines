@@ -36,6 +36,7 @@ maxColOccThreshold="${20}"
 filterSeqs2="${21}"
 trimAln1="${22}"
 trimAln2="${23}"
+collapseNodes="${24}"
 
 
 echo "$numbrSamples"
@@ -56,6 +57,8 @@ echo "filterSeqs1: $filterSeqs1"
 echo "filterSeqs2: $filterSeqs2"
 echo "trimAln1: $trimAln1"
 echo "trimAln2: $trimAln2"
+echo "collapseNodes: $collapseNodes"
+
 
 # Convert $emptyMatchStateFractn to a percent for use in the output files:
 fractnAlnCovrg_pc=`awk -v FRACTN=$fractnAlnCovrg 'BEGIN{printf "%.0f", FRACTN * 100}' `
@@ -190,17 +193,19 @@ reAlignSeqs()   {
     iOption=''
     if [ $geneTreesOnly == 'yes' ]; then iOption='-i'; fi
     
-### 29.9.2020 ADD TRIMMING OPTIONS == YES - WILL WORK WHEN FILTER OPTIONS ARE NO
     trimAlnOption1=''
     trimAlnOption2=''
     if [ $trimAln1 != 'no' ]; then trimAlnOption1='-J'; fi
     if [ $trimAln2 != 'no' ]; then trimAlnOption2="-K $trimAln2"; fi
     #echo trimAlnOption1: $trimAlnOption1  
-    #echo trimAlnOption2: $trimAlnOption2  
+    #echo trimAlnOption2: $trimAlnOption2
+    echo collapseNodes: $collapseNodes
+    collapseNodesOption=''
+    if [ $collapseNodes != 'no' ]; then collapseNodesOption="-L $collapseNodes"; fi
 
     # Note the quotes around variables with spaces! BUT $2 must not be quoted!
     #echo " # For checking option values that need to be quoted (contain spaces)
-    $pathToScripts/make_species_trees_pipeline.sh $iOption $trimAlnOption1 $trimAlnOption2 \
+    $pathToScripts/make_species_trees_pipeline.sh $iOption $trimAlnOption1 $trimAlnOption2 $collapseNodesOption \
     -G \
     -D "$1" \
     -A $alnProgram \

@@ -12,7 +12,9 @@ shopt -s failglob
 # Set up commandline parameters and fetch their values using getopts
 ####################################################################
 
-# Variables for any command line flags needing a default value:
+# Variables for any command line flags needing a default value.
+# NB - it is absolutely critical that options requiring a value have a value when passed
+#      to a child script, even though the option hasn't been selected!  
 # INPUT FILE OPTIONS:
 useGenewiseFiles=no
 addSampleName=no
@@ -93,7 +95,7 @@ INPUT FILE OPTIONS:
 ALIGNMENT OPTIONS:
     -D <string>      sequence type to use: dna, protein, codon (default=dna). N.B. use with multiple types must be quoted (e.g. 'dna protein')
                      codon is input DNA aligned but guided by a protein alignment
-    -A <string>      alignment program to use: mafft, UPP 	[ but for which residue type - make for all for now ]
+    -A <string>      alignment program to use: mafft, upp (default=mafft)
     -M <string>      if using mafft, specify algorithm to use in quotes i.e. '--retree 1', '--retree 2', '--maxiterate 1000' etc (default='--retree 2')
 FILTERING AND TRIMMING OPTIONS:
     -F <2 integers>  filter sequences option 1. Format: '<1> <2>' (no default; N.B. values must be quoted)
@@ -125,7 +127,7 @@ OTHER OPTIONS:
     -U <integer>     Slurm memory to use (in MB) for species trees (default=0; means no limit is imposed)
 	-V <string>      Slurm time limit to use for gene trees. Format: <days>-<hours>:<minutes> e.g. 1-0:0 is 1 day (default=0; means no limit is imposed)
 	-W <string>      Slurm time limit to use for species trees. Format: <days>-<hours>:<minutes> e.g. 1-0:0 is 1 day (default=0; means no limit is imposed)
-    -Q <string>      Slurm partition (queue) to use (default=medium) ]
+    -Q <string>      Slurm partition (queue) to use (default=medium; select more than one queue with a comma delimited list e.g. medium,long)
     -H <integer>	 Slurm throttle - not available to change here (default=50)
 
 
@@ -822,6 +824,7 @@ if [[ $os == 'Darwin' && $speciesTreesOnly == 'no' ]]; then
 		"$filterSeqs2" \
 		"$trimAln1" \
 		"$trimAln2" \
+		"$collapseNodes" \
 		> run_treeshrink_and_realign.log 2>&1
 		exit	# Species trees will be made after TreeShrink or re-alignment step(s) in nested call to this script, if requested.
 	fi
@@ -936,7 +939,8 @@ elif [[ $os == 'Linux' && $speciesTreesOnly == 'no' ]]; then
 			"$maxColOccThreshold" \
 			"$filterSeqs2" \
 			"$trimAln1" \
-			"$trimAln2" `
+			"$trimAln2" \
+			"$collapseNodes" `
 			exit	# Species trees will be made after TreeShrink or re-alignment step(s) in nested call to this script, if requested.
 		fi
 	else
@@ -1026,6 +1030,7 @@ elif [[ $os == 'Linux' && $speciesTreesOnly == 'no' ]]; then
 			"$filterSeqs2" \
 			"$trimAln1" \
 			"$trimAln2" \
+			"$collapseNodes" \
 			> run_treeshrink_and_realign.log 2>&1
 			exit	# Species trees will be made after TreeShrink or re-alignment step(s) in nested call to this script, if requested.
 		fi
@@ -1056,6 +1061,7 @@ if [ $os == 'Darwin' ]; then
 	$dnaSelected \
 	$proteinSelected \
 	$codonSelected \
+	$collapseNodes \
 	aln.for_tree.fasta \
 	> ${fileNamePrefix}_make_species_trees.log 2>&1
 elif [ $os == 'Linux' ]; then
@@ -1081,6 +1087,7 @@ elif [ $os == 'Linux' ]; then
         $dnaSelected \
 		$proteinSelected \
 		$codonSelected \
+		$collapseNodes \
 		aln.for_tree.fasta
 	else
 		$pathToScripts/make_species_trees.sh \
@@ -1097,6 +1104,7 @@ elif [ $os == 'Linux' ]; then
 		$dnaSelected \
 		$proteinSelected \
 		$codonSelected \
+		$collapseNodes \
 		aln.for_tree.fasta \
 		> ${fileNamePrefix}_make_species_trees.log 2>&1
 	fi
