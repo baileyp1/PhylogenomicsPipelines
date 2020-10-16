@@ -141,9 +141,13 @@ sumMaxColOcc=`cat *_aln_summary.log | grep '^maxColOcc:' | awk '{sum+=$2} END {p
 sumMaxParsCols=`cat *_aln_summary.log | grep '^maxParsCols:' | awk -v sumMaxColOcc=$sumMaxColOcc '{sum+=$2} END {print sum}' `
   
 
-# Total number of bases in the maxColOcc area for all samples:
-totalBasesInMaxColOccRegion=`for file in *.$alnFileForTreeSuffix; do fastalength $file 2>/dev/null ; done | awk '{sum+=$1} END {print sum}' `
-										 ### 20.8.2020 - was file before trim 0.003 
+# Total number of residues in the maxColOcc area for all samples (prior to any filtering):
+totalResiduesInMaxColOccRegion=`cat *_aln_summary.log | grep '^totalResiduesInMaxColOccRegion:' | awk '{sum+=$2} END {print sum}' `
+
+
+# Total number of ALL residues in the aln for tree (i.e. after filtering):
+totalBasesInAlnForTree=`for file in *.$alnFileForTreeSuffix; do fastalength $file 2>/dev/null ; done | awk '{sum+=$1} END {print sum}' `
+
 
 if [[ $seqType == 'protein' ]]; then
 	totalNumbrSeqs=`cat  *.protein.fasta | grep '>' | wc -l `
@@ -275,7 +279,7 @@ Sum Length of the longest gene sequence in each alignment after trimming rare in
 Sum Length of the median gene sequence in each alignment: $sumMedianGeneLength
 Total number of homologous columns occupied by >= $fractnMaxColOcc_pc % of samples: $sumMaxColOcc (area of common overlap)
 Total number of homologous + parsimonious columns occupied by >= $fractnMaxColOcc_pc % of samples: $sumMaxParsCols
-Total number of residues in area of common overlap: $totalBasesInMaxColOccRegion " >> ${fileNamePrefix}_summary_stats.txt
+Total number of residues in area of common overlap: $totalResiduesInMaxColOccRegion " >> ${fileNamePrefix}_summary_stats.txt
 
 if [[ $seqType == 'protein' ]]; then
 	echo " 
@@ -285,6 +289,7 @@ fi
 echo "
 Number of gene alignments containing >= $fractnSpecies_pc % of the samples after filtering by coverage (will be used in the species tree): $numbrGeneAlnsForSpeciesTree
 Total number of alignment columns in the area of common overlap for these genes: $numbrOverlapColsForSpeciesTree
+Total number of residues in all these genes: $totalBasesInAlnForTree
 
 After filtering genes by coverage AND/OR by number of samples in each gene tree:
 Number of samples that will be present in final ASTRAL and RaxML trees (total samples submitted): $numbrSamplesInTrees ($totalNumbrSamples)
