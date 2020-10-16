@@ -150,6 +150,9 @@ if [[ $maxColOcc -ge $3 ]]; then
 	maxParsCols=`fastalength ${gene}_${2}_aln_AMAS_trim_-p_${fractnMaxColOcc}.fasta 2>/dev/null | sort -k1n | tail -n 1 | awk '{print $1}' `
 	echo maxParsCols: $maxParsCols  >> ${geneId}_aln_summary.log
 
+	# Count total number of residues in the MCOT region here:
+	totalResiduesInMaxColOccRegion=`fastalength ${gene}_${2}_aln_AMAS_trim_${fractnMaxColOcc}.fasta 2>/dev/null | awk '{sum+=$1} END {print sum}' `
+	echo totalResiduesInMaxColOccRegion: $totalResiduesInMaxColOccRegion >> ${geneId}_aln_summary.log
 
 	# Now find the lengths of each sequence in bases only (not dashes!)
 	# and create a list of sequences that are >= $fractnAlnCovrg across $maxColOcc region
@@ -345,7 +348,7 @@ trimAln2()	{
    	# $1 = input fasta file
    	# $2 = residue type for AMAS.py option -d: dna, aa  (NB - AMAS trim -d dna also seems to work with aa!)  
    	# $3 = maximum limit of fraction to trim at (e.g. 0.003 = 0.3 % of residues - would remove very rare inserts)
-   	# $4 = output file name
+   	# $4 = output file name AFTER trimming.
 
    	# Note: There are many rare inserts when looking at lots of samples across the Angiosperms!
 	# 		Removing these columns is meant to speed up the phylogeny programs, as stated in Fasttree documentation.
@@ -362,7 +365,7 @@ trimAln2()	{
 	-i $1 \
 	-o $4
 	# Stats on the number of bases removed (it will be considerable for large trees with diverse taxa)
-	lenLongestGeneAfterTrim=`fastalength $1 | sort -n | tail -n 1 | awk '{print $1}' `
+	lenLongestGeneAfterTrim=`fastalength $4 | sort -n | tail -n 1 | awk '{print $1}' `
 	if [[ -s ${geneId}_aln_summary.log ]]; then
 		echo lenLongestGeneAfterTrim: $lenLongestGeneAfterTrim  >> ${geneId}_aln_summary.log
 	else
@@ -439,6 +442,8 @@ makeGeneTree()	{
 		-s $2 \
 		--prefix ${3}/${gene}.${1}.aln_iqtree \
 		-B 1000
+		# -B 	ultrafast bootstrap option
+		# -b	standard nonparametric bootstrap  
 		### 9.6.2020 - removign this option for the moment incase it taeks up time: -alrt 100
 		# --prefix - you can also add a path and the output files go into the specified directory
 
