@@ -128,7 +128,7 @@ OTHER OPTIONS:
 	-V <string>      Slurm time limit to use for gene trees. Format: <days>-<hours>:<minutes> e.g. 1-0:0 is 1 day (default=0; means no limit is imposed)
 	-W <string>      Slurm time limit to use for species trees. Format: <days>-<hours>:<minutes> e.g. 1-0:0 is 1 day (default=0; means no limit is imposed)
     -Q <string>      Slurm partition (queue) to use (default=medium; select more than one queue with a comma delimited list e.g. medium,long)
-    -H <integer>	 Slurm throttle - not available to change here (default=50)
+    -H <integer>	 Slurm array throttle - not available to change here (default=50)
 
 
 A basic example run is described below:
@@ -167,7 +167,7 @@ EOF
 
 
 #echo User inputs:    ### For testing only 
-while getopts "hvat:ug:ijGF:m:p:M:q:r:TC:c:d:Q:A:D:O:L:I:JK:R:U:V:W:"  OPTION; do	# Remaining options - try capital letters!
+while getopts "hvat:ug:ijGF:m:p:M:q:r:TC:c:d:Q:A:D:O:L:I:JK:R:U:V:W:H:"  OPTION; do	# Remaining options - try capital letters!
 
 	#echo -$OPTION $OPTARG	### For testing only - could try to run through options again below 
 	 
@@ -207,6 +207,7 @@ while getopts "hvat:ug:ijGF:m:p:M:q:r:TC:c:d:Q:A:D:O:L:I:JK:R:U:V:W:"  OPTION; d
 		U) speciesTreeSlurmMem=$OPTARG ;;
 		V) geneTreeSlurmTime=$OPTARG ;;
 		W) speciesTreeSlurmTime=$OPTARG ;;
+		H) slurmThrottle=$OPTARG ;;
 		?)  echo This option is not allowed. Read the usage summary below.
       	    echo
       	    usage; exit 1 ;;
