@@ -203,7 +203,7 @@ fi
 # This assumes that the ASTRAL directory is already in $PATH. 
 ### NB - iqtree11.12.2019 - could always set up an alias! e.g. astral='java -jar $PATH/astral.5.6.3.jar' 
 echo dnaAstralInFile: $dnaAstralInFile
-pathToAstral=`which astral.5.7.3.jar `
+pathToAstral=`which astral.5.7.4.jar `
 echo Running Astral on the DNA gene trees...
 $exePrefix java -jar $pathToAstral -t 2 \
 -i $dnaAstralInFile \
