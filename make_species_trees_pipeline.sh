@@ -239,7 +239,7 @@ if [ "$#" -lt 1 ]; then usage; exit 1; fi
 ###################################### 
 # Check required software dependancies
 ######################################
-softwareList=(seqtk fastatranslate fastalength $phyloProgramDNA $phyloProgramPROT nw_ed java astral.5.7.3.jar AMAS.py raxmlHPC-PTHREADS-SSE3)	# fasttree raxml-ng now tested in $phyloProgramDNA and $phyloProgramPROT 
+softwareList=(seqtk fastatranslate fastalength $phyloProgramDNA $phyloProgramPROT nw_ed java astral.5.7.4.jar AMAS.py raxmlHPC-PTHREADS-SSE3)	# fasttree raxml-ng now tested in $phyloProgramDNA and $phyloProgramPROT 
 ### Difficult to test the following softwares in this way in an array - could try to test separately: 'bc --help' 'est2genome --help' 'mafft --help'
 ###		28.1.2020 - try to double quote the array to keep these cmds with spaces together!
 ### NB - astral.5.6.3.jar also may not be straight forward to check!!!! Also fasttreeMP not on Macbook - fasttree is the minimum.
