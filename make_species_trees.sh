@@ -9,7 +9,7 @@
 shopt -s failglob 
 
 
-echo Inside slurm_make_gene_trees.sh script:
+echo Inside slurm_make_species_trees.sh script:
 echo SLURM_ARRAY_JOB_ID: $SLURM_ARRAY_JOB_ID
 
 
@@ -48,7 +48,7 @@ echo collapseNodes: $collapseNodes
 
 numbrLowSupportNodesThreshold=70    # For use with getTreeStats() - if using a program like fasttree that
                                     # outputs support values as fractions, need to convert percent value
-                                    # beforehand then import into function.
+                                    # beforehand then import into function - 23.10.2020 - changed logic slightly - too complicated to use this value
 
 > ${fileNamePrefix}_summary_tree_stats.txt  # Wiping out file contents from any previous run 
 
@@ -59,28 +59,46 @@ getTreeStats () {
 
     # Input parameters:
     # $1 = NewickFile
-    # $2 = numbrLowSupportNodesThreshold    - current set to bootstrap value of 0.7 or 70 depending on program used
+    # $2 = numbrLowSupportNodesThreshold    - value is global so doesn't need importing - clearer though
+    # $3 = tree type e.g. astral, fasttree
 
     # NB - pretty sure that the Newick file must only hae a single value at each node i.e. not the Astral -t 2 outputs
     ###########
 
     newickTree=$1
     bootstrapThreshold=$2
+    treeType=$3
+    echo bootstrapThreshold: $bootstrapThreshold
+
+
+### NB - 23.10.2020 - the logic of $bootstrapThreshold (and possiby collapseNodes) is wrong and doesn't work for anythign other than fasttree gene trees i think 
+### Better to just ask here whether tree is astral or fastatree then preapre bootstrapThreshold as a fraction
+    if [[ $treeType == 'astral' || $treeType == 'fasttree' ]]; then 
+       # Convert $numbrLowSupportNodesThreshold to a fraction:
+        bootstrapThreshold=`echo $bootstrapThreshold | awk 'fractn=$1/100 {print fractn}' `
+        echo "\$numbrLowSupportNodesThreshold should now be a fraction for FASTTREE and ASTRAL (internal value): $bootstrapThreshold"  
+    fi
 
     # Count number of low support nodes:
     numbrLowSupportNodes=`nw_ed -r $newickTree  "i & b < $bootstrapThreshold" s | wc -l | sed 's/ //g' `
-### NBNB - 15.10.2020 - this gives '1' even though the file might be empty!!!
-    # Count the total number of support nodes with support values: 
-    totalNumbrSupportNodes=`nw_ed -r $newickTree  "i & b > 0" s | wc -l | sed 's/ //g' `
+### NBNB - 15.10.2020 - this gives '1' even when the file is empty!!!
+    # Count the total number of support nodes with support values:
+    ### 23.10.2020 - Astral tree seems to have two root nodes which get printed by "i" (i.e. get 2 more nodes than expected, only can notice with v small trees)
+    ### and can't be ignored by "!r".
+    ### Could remove them by: "i & (b != 0)" s | wc -l
+    ### But it might also remove internal nodes with a zero bootstrap - small point. 
+    ### Just changing to use "i" only
+    #totalNumbrSupportNodes=`nw_ed -r $newickTree  "i & b > 0" s | wc -l | sed 's/ //g' `
+    totalNumbrSupportNodes=`nw_ed -r $newickTree  "i" s | wc -l | sed 's/ //g' `
     # Write summary stats:
     echo >> ${fileNamePrefix}_summary_tree_stats.txt
     if [[ $totalNumbrSupportNodes > 0 ]]; then
-        echo "$newickTree - number of internal nodes with low support values (total number of internal nodes): ${numbrLowSupportNodes} (${totalNumbrSupportNodes})" >> ${fileNamePrefix}_summary_tree_stats.txt 
+        echo "$newickTree - number of internal nodes with low support values < $bootstrapThreshold (total number of internal nodes): ${numbrLowSupportNodes} (${totalNumbrSupportNodes})" >> ${fileNamePrefix}_summary_tree_stats.txt 
     fi
 
     outFilePrefix=`basename $newickTree .nwk`
 
-    # Also prepare a list of sorted clades for comparing with other trees: 
+    # Also prepare a list of sorted clades for comparing with other trees:
     nw_ed $newickTree  "i & b >0" s | nw_topology -I - | \
     while read clade; do 
     echo $clade | sed 's/[)(;]//g' | tr ',' '\n' | sort |tr '\n' ' '; echo
@@ -103,7 +121,7 @@ getTreeStats () {
 echo dnaSelected: $dnaSelected
 if [[ $dnaSelected == 'yes' ]]; then    ### TEMP SET UP - this doesn't woerk!!!!
     seqType=dna     ### Still to finish implementation
-    echo Listing required files:
+    echo Listing required gene set:
     ls *.${seqType}.$alnFileForTreeSuffix       # This gives the whole set
     for file in *.${seqType}.$alnFileForTreeSuffix; do
  	  gene=`echo $file | sed "s/.${seqType}.$alnFileForTreeSuffix//" `
@@ -126,7 +144,7 @@ fi
 ### the outcome of next run if run in same directory - better solution i think 
 
 
-if [[ "$phyloProgramPROT" == 'fasttree' ||  "$phyloProgramPROT" == 'raxml-ng' || "$phyloProgramPROT" == 'iqtree2' ]]; then
+if [[ "$phyloProgramPROT" == 'fasttree' ||  "$phyloProgramPROT" == 'raxml-ng' || "$phyloProgramPROT" == 'iqtree2'* ]]; then
     seqType=protein
     # Concatenate the protein gene trees as well (almost repeat of the above code):
     for file in *.${seqType}.$alnFileForTreeSuffix; do
@@ -155,46 +173,50 @@ dnaAstralInFile=${fileNamePrefix}_dna_gene_trees_for_coelescence_phylo.nwk
 proteinAstralInfile=${fileNamePrefix}_protein_gene_trees_for_coelescence_phylo.nwk
 if [[ $collapseNodes != 'no' ]]; then
     
-### 15.10.2020 - need a conditional for the DNA programs as for protein
+### 15.10.2020 - need a conditional for the DNA programs as for protein- don't forget to add all iqtree options for DNA with: if [[ $phyloProgramPROT == iqtree2* ]] will work
 
     if [[ $phyloProgramDNA == 'fasttree' ]]; then
         # For fasttree (only, so far), need to convert $collapseNodes percent value to a fraction and use that in nw_ed. 
         collapseNodes=`echo $collapseNodes | awk 'fractn=$1/100 {print fractn}' `
         echo "\$CollapseNodes should now be a fraction for FASTTREE (option -L): $collapseNodes"
 
-        # Also convert $numbrLowSupportNodesThreshold to a fraction for FASTTREE for use in getTreeStats function:
-        numbrLowSupportNodesThreshold=`echo $numbrLowSupportNodesThreshold | awk 'fractn=$1/100 {print fractn}' `
-        echo "\$numbrLowSupportNodesThreshold should now be a fraction for FASTTREE (internal value): $numbrLowSupportNodesThreshold"
+        # # Also convert $numbrLowSupportNodesThreshold to a fraction for FASTTREE for use in getTreeStats function:
+        # numbrLowSupportNodesThreshold=`echo $numbrLowSupportNodesThreshold | awk 'fractn=$1/100 {print fractn}' `
+        # echo "\$numbrLowSupportNodesThreshold should now be a fraction for FASTTREE (internal value): $numbrLowSupportNodesThreshold"
     fi
     collapseNodesD=$collapseNodes    # Required later for remembering the actual value for DNA (It might get changed for prtoein!!!)
-    numbrLowSupportNodesThresholdD=numbrLowSupportNodesThreshold    # Same for this var
+    #numbrLowSupportNodesThresholdD=$numbrLowSupportNodesThreshold    # Same for this var
    
 
     nw_ed  ${fileNamePrefix}_dna_gene_trees_for_coelescence_phylo.nwk "i & (b < $collapseNodesD)" o > ${fileNamePrefix}_dna_gene_trees_for_coelescence_phylo_bs_less_${collapseNodesD}_rmed.nwk
     dnaAstralInFile=${fileNamePrefix}_dna_gene_trees_for_coelescence_phylo_bs_less_${collapseNodesD}_rmed.nwk
    
-    if [[ "$phyloProgramPROT" == 'fasttree' ||  "$phyloProgramPROT" == 'raxml-ng' || "$phyloProgramPROT" == 'iqtree2' ]]; then
+    if [[ "$phyloProgramPROT" == 'fasttree' ||  "$phyloProgramPROT" == 'raxml-ng' || "$phyloProgramPROT" == 'iqtree2'* ]]; then
 
         ### Not tested logic for this conditional yet - I think I need a separate varialbe for DNA and protein - done
-        if [[ $phyloProgramDNA == 'fasttree' ]]; then
+        if [[ $phyloProgramPROT == 'fasttree' ]]; then
             # For fasttree (only, so far), need to convert $collapseNodes percent value to a fraction and use that in nw_ed. 
             collapseNodes=`echo $collapseNodes | awk 'fractn=$1/100 {print fractn}' `
             echo "\$CollapseNodes should now be a fraction for FASTTREE (option -L): $collapseNodes"
 
-            # Also convert $numbrLowSupportNodesThreshold to a fraction for FASTTREE for use in getTreeStats function:
-            numbrLowSupportNodesThreshold=`echo $numbrLowSupportNodesThreshold | awk 'fractn=$1/100 {print fractn}' `
-         echo "\$numbrLowSupportNodesThreshold should now be a fraction for FASTTREE (internal value): $numbrLowSupportNodesThreshold"
+         #    # Also convert $numbrLowSupportNodesThreshold to a fraction for FASTTREE for use in getTreeStats function:
+         #    numbrLowSupportNodesThreshold=`echo $numbrLowSupportNodesThreshold | awk 'fractn=$1/100 {print fractn}' `
+         # echo "\$numbrLowSupportNodesThreshold should now be a fraction for FASTTREE (internal value): $numbrLowSupportNodesThreshold"
         fi 
 
         # Remove clades with low bootstrap values from the protein trees:
         nw_ed  ${fileNamePrefix}_protein_gene_trees_for_coelescence_phylo.nwk "i & (b < $collapseNodes)" o > ${fileNamePrefix}_protein_gene_trees_for_coelescence_phylo_bs_less_${collapseNodes}_rmed.nwk
         proteinAstralInfile=${fileNamePrefix}_protein_gene_trees_for_coelescence_phylo_bs_less_${collapseNodes}_rmed.nwk
     fi
-else
-    ### NB - 15.10.2020 - need to set these new variables for the rest of the code if collapse nodes is not set!!!
-    ### The outfile name is not ideal if collspe node is not set - best to set a variable to deal with this
-    collapseNodesD=$collapseNodes    # Required later for remembering the actual value for DNA (It might get changed for prtoein!!!)
-    numbrLowSupportNodesThresholdD=numbrLowSupportNodesThreshold    # Same for this var
+# else
+#     ### NB - 15.10.2020 - need to set these new variables for the rest of the code if collapse nodes is not set!!!
+#     ### The outfile name is not ideal if collspe node is not set - best to set a variable to deal with this
+#     collapseNodesD=$collapseNodes    # Var not used/needed !!
+#     # Need to mirror what's happening above; required later for remembering the actual value for DNA (It might get changed for protein!!!)
+#     if [[ $phyloProgramDNA == 'fasttree' ]]; then
+#         numbrLowSupportNodesThresholdD=`echo $numbrLowSupportNodesThreshold | awk 'fractn=$1/100 {print fractn}' `
+#         echo "\$numbrLowSupportNodesThreshold should now be a fraction for FASTTREE (internal value): $numbrLowSupportNodesThreshold"
+#     fi
 fi
 
 
@@ -205,7 +227,8 @@ fi
 echo dnaAstralInFile: $dnaAstralInFile
 pathToAstral=`which astral.5.7.4.jar `
 echo Running Astral on the DNA gene trees...
-$exePrefix java -jar $pathToAstral -t 2 \
+# NB - 22.10.2020 - added the -Xmx12000m (12G memory) to try and increase speed of ASTRAL. OK for 353 gene trees and 3500 samples, may need to increase for larger data sets
+$exePrefix java -Xmx12000m -jar $pathToAstral -t 2 \
 -i $dnaAstralInFile \
 -o ${fileNamePrefix}.dna.species_tree.astral_-t2.nwk
 ### Old name: -o ${fileNamePrefix}_astral_-t2_dna_species_tree.nwk
@@ -220,7 +243,7 @@ cat ${fileNamePrefix}.dna.species_tree.astral_-t2.nwk \
 > ${fileNamePrefix}.dna.species_tree.astral_pp1_value.nwk
 ### NB - 9.10.2020 - might want to remove all *.nwk files at the start of this script so they can't be used by a previous run.
 
-getTreeStats ${fileNamePrefix}.dna.species_tree.astral_pp1_value.nwk $numbrLowSupportNodesThresholdD
+getTreeStats ${fileNamePrefix}.dna.species_tree.astral_pp1_value.nwk $numbrLowSupportNodesThreshold astral
 
 # Add tree tip info.
 # NB - for this option, the $treeTipInfoMapFile must have been submitted BUT I'm re-formatting it --> 'tree_tip_info_mapfile.txt'!):
@@ -231,17 +254,17 @@ if [ -s $treeTipInfoMapFile ]; then
 fi
 
 # Also running with -t option set to 16:
-$exePrefix java -jar $pathToAstral -t 16 \
+$exePrefix java -Xmx12000m -jar $pathToAstral -t 16 \
 -i $dnaAstralInFile \
 -o ${fileNamePrefix}.dna.species_tree.astral_-t16.nwk
 mv freqQuad.csv ${fileNamePrefix}.dna.species_tree.astral_-t16_freqQuad.txt
 
 
 
-if [[ "$phyloProgramPROT" == 'fasttree' ||  "$phyloProgramPROT" == 'raxml-ng'  || "$phyloProgramPROT" == 'iqtree2' ]]; then
+if [[ "$phyloProgramPROT" == 'fasttree' ||  "$phyloProgramPROT" == 'raxml-ng'  || "$phyloProgramPROT" == 'iqtree2'* ]]; then
     echo Running Astral on the protein gene trees...
     echo proteinAstralInFile: $proteinAstralInFile
-    $exePrefix java -jar $pathToAstral -t 2 \
+    $exePrefix java -Xmx12000m -jar $pathToAstral -t 2 \
     -i $proteinAstralInFile \
     -o ${fileNamePrefix}.protein.species_tree.astral_-t2.nwk
 
@@ -251,7 +274,7 @@ if [[ "$phyloProgramPROT" == 'fasttree' ||  "$phyloProgramPROT" == 'raxml-ng'  |
     | sed "s/;[QCENp=.\;0-9-]\{1,\}\]':/:/g" \
     > ${fileNamePrefix}.protein.species_tree.astral_pp1_value.nwk
 
-    getTreeStats ${fileNamePrefix}.protein.species_tree.astral_pp1_value.nwk $numbrLowSupportNodesThreshold
+    getTreeStats ${fileNamePrefix}.protein.species_tree.astral_pp1_value.nwk $numbrLowSupportNodesThreshold astral
 
     # Add tree tip info:
     if [[ -s $treeTipInfoMapFile ]]; then
@@ -261,7 +284,7 @@ if [[ "$phyloProgramPROT" == 'fasttree' ||  "$phyloProgramPROT" == 'raxml-ng'  |
     fi
 
     # Also running with -t option set to 16:
-    $exePrefix java -jar $pathToAstral -t 16 \
+    $exePrefix java -Xmx12000m -jar $pathToAstral -t 16 \
     -i $proteinAstralInFile \
     -o ${fileNamePrefix}.protein.species_tree.astral_-t16.nwk
     mv freqQuad.csv ${fileNamePrefix}.protein.species_tree.astral_-t16_freqQuad.txt
@@ -298,7 +321,7 @@ AMAS.py concat  -c 1 \
 # NB- also creates a partitions file with coords for each gene which could be used to set different models.
 
 
-if [[ "$phyloProgramPROT" == 'fasttree' ||  "$phyloProgramPROT" == 'raxml-ng' || "$phyloProgramPROT" == 'iqtree2' ]]; then
+if [[ "$phyloProgramPROT" == 'fasttree' ||  "$phyloProgramPROT" == 'raxml-ng' || "$phyloProgramPROT" == 'iqtree2'* ]]; then
     # Also concatenate protein alns:
     AMAS.py concat  -c 1 \
     -i `cat mafft_protein_alns_fasta_file_list.txt` \
@@ -329,7 +352,7 @@ $exePrefix fasttree -nt \
 ${fileNamePrefix}__mafft_dna_alns__ovr${fractnAlnCovrg_pc}pc_acpg_ovr${fractnSpecies_pc}pc_spgt__concatenated.fasta \
 > ${fileNamePrefix}_fasttree_dna_species_tree.nwk
 
-getTreeStats ${fileNamePrefix}_fasttree_dna_species_tree.nwk $numbrLowSupportNodesThresholdD
+getTreeStats ${fileNamePrefix}_fasttree_dna_species_tree.nwk $numbrLowSupportNodesThreshold fasttree
 
 # Add tree tip info:
 if [[ -s $treeTipInfoMapFile ]]; then 
@@ -339,13 +362,13 @@ if [[ -s $treeTipInfoMapFile ]]; then
 fi
 
  
-if [[ "$phyloProgramPROT" == 'fasttree' ||  "$phyloProgramPROT" == 'raxml-ng'  || "$phyloProgramPROT" == 'iqtree2' ]]; then
+if [[ "$phyloProgramPROT" == 'fasttree' ||  "$phyloProgramPROT" == 'raxml-ng'  || "$phyloProgramPROT" == 'iqtree2'* ]]; then
     echo Running fasttree on the protein supermatrix...
     $exePrefix fasttree \
     ${fileNamePrefix}__mafft_protein_alns__ovr${fractnAlnCovrg_pc}pc_acpg_ovr${fractnSpecies_pc}pc_spgt__concatenated.fasta \
     > ${fileNamePrefix}_fasttree_protein_species_tree.nwk
 
-    getTreeStats ${fileNamePrefix}_fasttree_protein_species_tree.nwk $numbrLowSupportNodesThreshold
+    getTreeStats ${fileNamePrefix}_fasttree_protein_species_tree.nwk 0.7 fasttree
 
     # Add tree tip info:
     if [[ -s $treeTipInfoMapFile ]]; then 
@@ -386,7 +409,7 @@ $exePrefix raxmlHPC-PTHREADS-SSE3 -T $cpu \
 # This is the Newick  output file compatible with NewickTools):
 # RAxML_bipartitions.${fileNamePrefix}__raxmlHPC-PTHREADS-SSE
 
-getTreeStats RAxML_bipartitions.${fileNamePrefix}__raxmlHPC-PTHREADS-SSE $numbrLowSupportNodesThresholdD
+getTreeStats RAxML_bipartitions.${fileNamePrefix}__raxmlHPC-PTHREADS-SSE $numbrLowSupportNodesThreshold raxml
 
 # Add tree tip info:
 if [[ -s $treeTipInfoMapFile ]]; then 
@@ -396,7 +419,7 @@ if [[ -s $treeTipInfoMapFile ]]; then
 fi
 
 
-if [[ "$phyloProgramPROT" == 'fasttree' ||  "$phyloProgramPROT" == 'raxml-ng'  || "$phyloProgramPROT" == 'iqtree2' ]]; then
+if [[ "$phyloProgramPROT" == 'fasttree' ||  "$phyloProgramPROT" == 'raxml-ng'  || "$phyloProgramPROT" == 'iqtree2'* ]]; then
      echo Running RAxML on the protein supermatrix...
     # RAxML won't run if files already exists from a previous run so remove them here: 
     ### Could look for a --force option
@@ -418,7 +441,7 @@ if [[ "$phyloProgramPROT" == 'fasttree' ||  "$phyloProgramPROT" == 'raxml-ng'  |
     # This is the Newick  output file compatible with NewickTools):
     # RAxML_bipartitions.${fileNamePrefix}__raxmlHPC-PTHREADS-SSE
 
-    getTreeStats RAxML_bipartitions.${fileNamePrefix}__raxmlHPC-PTHREADS-SSE $numbrLowSupportNodesThreshold
+    getTreeStats RAxML_bipartitions.${fileNamePrefix}__raxmlHPC-PTHREADS-SSE $numbrLowSupportNodesThreshold raxml
 
     # Add tree tip info:
     if [[ -s $treeTipInfoMapFile ]]; then 
