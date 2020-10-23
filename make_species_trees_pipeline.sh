@@ -113,9 +113,9 @@ PHYLOGENY OPTIONS:
     -i               make gene trees only
     -j               make species trees only. Gene trees must already exist in run directory
     -q <string>      name of phylogeny program for gene trees from DNA sequences.
-                   	 Options are, fastest to slowest: fasttree, iqtree2, raxml-ng (default=fasttree)	
+                   	 Options are, fastest to slowest: fasttree, iqtree2-B1000-nstep40-nm50, iqtree2-alrt, iqtree2-fast-b100, iqtree2, raxml-ng (default=fasttree)
     -r <string>      name of phylogeny program for gene trees from protein sequences.
-                   	 If required, options are, fastest to slowest: fasttree, iqtree, raxml-ng (no default)
+                   	 If required, options are, fastest to slowest: fasttree, iqtree2-B1000-nstep40-nm50, iqtree2-alrt, iqtree2-fast-b100, iqtree2, raxml-ng (no default)
     -S <string>      name of phylogeny program for supermatrix approach (concatenated gene alignments).
                      If required, options are, fastest to slowest: fasttree, raxml-ng (no default)
     -T               use Treeshrink on gene trees (followed by re-alignment)
@@ -239,7 +239,17 @@ if [ "$#" -lt 1 ]; then usage; exit 1; fi
 ###################################### 
 # Check required software dependancies
 ######################################
-softwareList=(seqtk fastatranslate fastalength $phyloProgramDNA $phyloProgramPROT nw_ed java astral.5.7.4.jar AMAS.py raxmlHPC-PTHREADS-SSE3)	# fasttree raxml-ng now tested in $phyloProgramDNA and $phyloProgramPROT 
+phyloProgramDNA_Test=''
+phyloProgramPROT_Test=''
+if [[ $phyloProgramDNA == 'iqtree2-fast-b100' || $phyloProgramDNA == 'iqtree2-alrt' ]]; then
+	phyloProgramDNA_Test='iqtree2'
+fi
+if [[ $phyloProgramPROT == 'iqtree2-fast-b100' || $phyloProgramPROT == 'iqtree2-alrt' ]]; then
+	phyloProgramPROT_Test='iqtree2'
+fi
+
+
+softwareList=(seqtk fastatranslate fastalength $phyloProgramDNA_Test $phyloProgramPROT_Test nw_ed java astral.5.7.4.jar AMAS.py raxmlHPC-PTHREADS-SSE3)	# fasttree raxml-ng now tested in $phyloProgramDNA and $phyloProgramPROT 
 ### Difficult to test the following softwares in this way in an array - could try to test separately: 'bc --help' 'est2genome --help' 'mafft --help'
 ###		28.1.2020 - try to double quote the array to keep these cmds with spaces together!
 ### NB - astral.5.6.3.jar also may not be straight forward to check!!!! Also fasttreeMP not on Macbook - fasttree is the minimum.
@@ -826,6 +836,7 @@ if [[ $os == 'Darwin' && $speciesTreesOnly == 'no' ]]; then
 		"$trimAln1" \
 		"$trimAln2" \
 		"$collapseNodes" \
+		"$fileNamePrefix" \
 		> run_treeshrink_and_realign.log 2>&1
 		exit	# Species trees will be made after TreeShrink or re-alignment step(s) in nested call to this script, if requested.
 	fi
@@ -893,7 +904,7 @@ elif [[ $os == 'Linux' && $speciesTreesOnly == 'no' ]]; then
 			echo seqType: $seqType
 			echo alnFileForTreeSuffix: $alnFileForTreeSuffix
 
-			jobInfo1=`sbatch -J assess_gene_alns  --dependency=afterok:$jobId -p $partitionName -c 1 -n 1 -o assess_gene_alns.log -e assess_gene_alns.err  $pathToScripts/assess_gene_alignments.sh \
+			jobInfo1=`sbatch -J assess_gene_alns  --dependency=afterok:$jobId -p $partitionName -c 1 -n 1 --mem $geneTreeSlurmMem -o assess_gene_alns.log -e assess_gene_alns.err  $pathToScripts/assess_gene_alignments.sh \
 			$fractnAlnCovrg \
 			$fractnMaxColOcc \
 			$fractnSamples \
@@ -941,7 +952,8 @@ elif [[ $os == 'Linux' && $speciesTreesOnly == 'no' ]]; then
 			"$filterSeqs2" \
 			"$trimAln1" \
 			"$trimAln2" \
-			"$collapseNodes" `
+			"$collapseNodes" \
+			"$fileNamePrefix" `
 			exit	# Species trees will be made after TreeShrink or re-alignment step(s) in nested call to this script, if requested.
 		fi
 	else
@@ -1032,6 +1044,7 @@ elif [[ $os == 'Linux' && $speciesTreesOnly == 'no' ]]; then
 			"$trimAln1" \
 			"$trimAln2" \
 			"$collapseNodes" \
+			"$fileNamePrefix" \
 			> run_treeshrink_and_realign.log 2>&1
 			exit	# Species trees will be made after TreeShrink or re-alignment step(s) in nested call to this script, if requested.
 		fi

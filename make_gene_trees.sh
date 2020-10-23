@@ -415,6 +415,8 @@ makeGeneTree()	{
 		echo
 		echo Running raxml-ng on the DNA alignment...
 		cpuGeneTree=1		# NB - at the moment keeping cpu to 1 because very small trees can crash if # cpu is higher - can do ||elisation other ways with RAxML though 
+		### 22.10.2020 - was --threads auto{$cpuGeneTree} \; now testing --threads auto{MAX} \ - doesn't work! Says ERROR: Invalid number of threads: %s auto{1}, please provide a positive integer number! but I was!
+		### Also the --workers auto option doesn't exist!!!! \
 		$exePrefix raxml-ng --threads $cpuGeneTree \
 		--redo \
 		--all \
@@ -424,6 +426,7 @@ makeGeneTree()	{
 		--seed 2 \
 		--bs-metric fbp,tbe \
 		--bs-trees 100
+### NB - changed to bs of 10 - also try: --bs-trees     autoMRE{N} default N=1000
 		# NB - it seems that the input file fasta header lines mustn't contain any space-separated fields, just an identfier next to the '>' char!
 		# NB --prefix is the output filename prefix; you can also add a path and the output files go into the specified directory
 		# --outgroup - can supply a list of outgroups
@@ -435,22 +438,97 @@ makeGeneTree()	{
 		rm ${3}/${gene}.${1}l.aln.raxml.supportFBP
 	elif [[ "$phyloProgramDNA" == 'iqtree2' || "$phyloProgramPROT" == 'iqtree2' ]]; then
 		echo
-		echo Running IQ-Tree on the DNA alignment...
+		echo Running IQ-Tree on the DNA alignment with these options: -B 1000 ... 
 		$exePrefix iqtree2 -T AUTO -ntmax $cpuGeneTree \
 		-redo \
 		--seqtype $iqTree2SeqType \
 		-s $2 \
 		--prefix ${3}/${gene}.${1}.aln_iqtree \
 		-B 1000
-		# -B 	ultrafast bootstrap option
-		# -b	standard nonparametric bootstrap  
-		### 9.6.2020 - removign this option for the moment incase it taeks up time: -alrt 100
-		# --prefix - you can also add a path and the output files go into the specified directory
+		# Command notes:
+		# --prefix		you can also add a path and the output files go into the specified directory
+		# -B 			ultrafast bootstrap option (NB - the minimum number you can set is 1000!)
+		# -alrt 		Removed -alrt 1000 option but it is very fast to compute so no real need - BUT it does add an extra value at the node I think
+		# -b			standard nonparametric bootstrap
+		# -fast			builds just 2 starting trees and there is no iteration with NNI to try and find higher likelihoods 
 
 		# Rename final tree file to a clearer name:
 		cp -p ${3}/${gene}.${1}.aln_iqtree.contree \
 		${3}/${gene}_${1}_gene_tree_USE_THIS.nwk
 		rm  ${3}/${gene}.${1}.aln_iqtree.contree
+	elif [[ "$phyloProgramDNA" == 'iqtree2-fast-b100' || "$phyloProgramPROT" == 'iqtree2-fast-b100' ]]; then
+		echo
+		echo Running IQ-Tree on the DNA alignment with these options: -fast, -b 100, -m GTR+F+G7 ...
+		$exePrefix iqtree2 -T AUTO -ntmax $cpuGeneTree \
+		-redo \
+		--seqtype $iqTree2SeqType \
+		-s $2 \
+		--prefix ${3}/${gene}.${1}.aln_iqtree \
+		-b 100 \
+		-fast \
+		-m GTR+F+G7
+		
+		# Rename final tree file to a clearer name:
+		cp -p ${3}/${gene}.${1}.aln_iqtree.contree \
+		${3}/${gene}_${1}_gene_tree_USE_THIS.nwk
+		rm  ${3}/${gene}.${1}.aln_iqtree.contree
+	elif [[ "$phyloProgramDNA" == 'iqtree2-alrt' || "$phyloProgramPROT" == 'iqtree2-alrt' ]]; then
+		echo
+		echo Running IQ-Tree on the DNA alignment with these options: -alrt, -m GTR+F+G7 ...
+		$exePrefix iqtree2 -T AUTO -ntmax $cpuGeneTree \
+		-redo \
+		--seqtype $iqTree2SeqType \
+		-s $2 \
+		--prefix ${3}/${gene}.${1}.aln_iqtree \
+		-alrt \
+		-m GTR+F+G7
+		
+		# Rename final tree file to a clearer name:
+		cp -p ${3}/${gene}.${1}.aln_iqtree.contree \
+		${3}/${gene}_${1}_gene_tree_USE_THIS.nwk
+		rm  ${3}/${gene}.${1}.aln_iqtree.contree
+	elif [[ "$phyloProgramDNA" == 'iqtree2-B1000-nstep40-nm50' || "$phyloProgramPROT" == 'iqtree2-B1000-nstep40-nm50' ]]; then
+		echo
+		echo Running IQ-Tree on the DNA alignment with these options: -B 1000, -nstep 40, -nm 50, -m GTR+F+G7 ...
+		$exePrefix iqtree2 -T AUTO -ntmax $cpuGeneTree \
+		-redo \
+		--seqtype $iqTree2SeqType \
+		-s $2 \
+		--prefix ${3}/${gene}.${1}.aln_iqtree \
+		-B 1000 \
+		-nstep 40 \
+		-nm 50 \
+		-m GTR+F+G7
+		
+		# Rename final tree file to a clearer name:			
+		cp -p ${3}/${gene}.${1}.aln_iqtree.contree \
+		${3}/${gene}_${1}_gene_tree_USE_THIS.nwk
+		rm  ${3}/${gene}.${1}.aln_iqtree.contree
+
+#### 17.10.2020 -testing fast bootstraps with raxml!!!!
+
+	# if [[ "$phyloProgramPROT" == 'fasttree' ||  "$phyloProgramPROT" == 'raxml-ng'  || "$phyloProgramPROT" == 'iqtree2' ]]; then
+ #     echo Running RAxML on the protein supermatrix...
+ #    # RAxML won't run if files already exists from a previous run so remove them here: 
+ #    ### Could look for a --force option
+ #    if [ -a RAxML_bootstrap.${fileNamePrefix}__raxmlHPC-PTHREADS-SSE ]; then rm RAxML_bootstrap.${fileNamePrefix}__raxmlHPC-PTHREADS-SSE; fi
+ #    if [ -a RAxML_bestTree.${fileNamePrefix}__raxmlHPC-PTHREADS-SSE ]; then rm RAxML_bestTree.${fileNamePrefix}__raxmlHPC-PTHREADS-SSE; fi
+ #    if [ -a RAxML_bipartitions.${fileNamePrefix}__raxmlHPC-PTHREADS-SSE ]; then rm RAxML_bipartitions.${fileNamePrefix}__raxmlHPC-PTHREADS-SSE; fi
+ #    if [ -a RAxML_bipartitionsBranchLabels.${fileNamePrefix}__raxmlHPC-PTHREADS-SSE ]; then rm RAxML_bipartitionsBranchLabels.${fileNamePrefix}__raxmlHPC-PTHREADS-SSE; fi
+ #    if [ -a RAxML_info.${fileNamePrefix}__raxmlHPC-PTHREADS-SSE ]; then rm RAxML_info.${fileNamePrefix}__raxmlHPC-PTHREADS-SSE; fi
+ #    if [ -a ${fileNamePrefix}__mafft_protein_alns__ovr${fractnAlnCovrg_pc}pc_acpg_ovr${fractnSpecies_pc}pc_spgt__concatenated.fasta.reduced ]; then rm ${fileNamePrefix}__mafft_protein_alns__ovr${fractnAlnCovrg_pc}pc_acpg_ovr${fractnSpecies_pc}pc_spgt__concatenated.fasta.reduced; fi
+
+ #    $exePrefix raxmlHPC-PTHREADS-SSE3 -T $cpu \
+ #    -f a \
+ #    -x 12345 \
+ #    -p 12345 \
+ #    -# 100 \
+ #    -m PROTCATJTT \
+ #    -s ${fileNamePrefix}__mafft_protein_alns__ovr${fractnAlnCovrg_pc}pc_acpg_ovr${fractnSpecies_pc}pc_spgt__concatenated.fasta \
+ #    -n ${fileNamePrefix}__raxmlHPC-PTHREADS-SSE
+
+
+
 	else 
 		echo "Phylogeny program for gene trees from $1 sequences not detected - will not make gene trees from $1 sequence."
 	fi

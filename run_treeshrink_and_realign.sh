@@ -37,6 +37,7 @@ filterSeqs2="${21}"
 trimAln1="${22}"
 trimAln2="${23}"
 collapseNodes="${24}"
+fileNamePrefix="${25}"
 
 
 echo "$numbrSamples"
@@ -58,7 +59,7 @@ echo "filterSeqs2: $filterSeqs2"
 echo "trimAln1: $trimAln1"
 echo "trimAln2: $trimAln2"
 echo "collapseNodes: $collapseNodes"
-
+echo "fileNamePrefix: $fileNamePrefix"
 
 # Convert $emptyMatchStateFractn to a percent for use in the output files:
 fractnAlnCovrg_pc=`awk -v FRACTN=$fractnAlnCovrg 'BEGIN{printf "%.0f", FRACTN * 100}' `
@@ -106,26 +107,27 @@ runTreeShrink() {
     #         i.e. at -b 20 the species would have to have a higher distance before being considered for removal
 
     # Output filenames:
-    # 1. dna_gene_tree_RS_shrunk_0.05.txt   - contains a list of sequence names removed (NB - doesn't appear to be a return at the end of the file - OK?
+    # 1. dna_gene_tree_RS_shrunk_0.05.txt   - contains a tab-separated list of sample names removed
+    #                                       - I think the 0.05 refers to option -q = 0.05 by default - can't confirm until I change this option
     ### NB - there is also another file dna_gene_tree_USE_THIS_shrunk_RS_0.05.txt - don't know what this is - empty so far.
     # 2. dna_gene_tree_tree_shrunk_0.05.nwk  -  NB - these trees don't have bootstrap values so file size appears smaller
     # 3. dna_gene_tree_aln_shrunk_0.05.fasta
 
     # TreeShrink results
-    # Count how many times any sample was removed:
-    numbrSeqsRemoved=`cat treeshrink_${1}_gene_trees/*/${1}_gene_tree_RS_shrunk_0.05.txt | sort -u | wc -l`
+    # Count number of samples removed from any tree:
+    numbrSeqsRemoved=`cat treeshrink_${1}_gene_trees/*/${1}_gene_tree_RS_shrunk_0.05.txt | sed 's/\t/\n/g' | sort -u | wc -l`
     echo "TreeShrink results
 ==================
 -b parameter = $bParameter
-Total number of sequences before TreeShrink: $numbrSamples
-Total number of sequences removed by TreeShrink: $numbrSeqsRemoved " > treeshrink_results.txt
+Number of samples in data set before TreeShrink: $numbrSamples
+Number of samples removed from any gene tree: $numbrSeqsRemoved " > ${fileNamePrefix}_treeshrink_results.txt
     # Only print if > 0 samples have been removed:
-    if [[ numbrSeqsRemoved -ge 1 ]]; then
-        echo "NumberOfGeneTrees RemovedSequence
-`cat treeshrink_${1}_gene_trees/*/${1}_gene_tree_RS_shrunk_0.05.txt | grep -v '^$' | sort | uniq -c` " >> treeshrink_results.txt
+    if [[ $numbrSeqsRemoved -ge 1 ]]; then
+        echo "NumberOfGeneTrees RemovedSampleFrom
+`cat treeshrink_${1}_gene_trees/*/${1}_gene_tree_RS_shrunk_0.05.txt | sed 's/\t/\n/g' | grep -v '^$' | sort | uniq -c | sort -k1nr` " >> ${fileNamePrefix}_treeshrink_results.txt
     fi
 
-
+ 
     # Move the TreeShrunk alignment files to *_dna.fasta for each gene after unaligning them by removing all '-' gaps:
     ### NB - will treeshrink always produce a file even if it has no contents? - look at code
     # Using .nwk file as a guide i.e. you only create alignments again for existing gene trees (i.e. ignoring any gene trees that have been filtered for whatever reason)
@@ -138,17 +140,20 @@ Total number of sequences removed by TreeShrink: $numbrSeqsRemoved " > treeshrin
     # 21.8.2020 - Now having to use an alternative approach to obtain the gene-wise DNA sequence file.
     # Still using the Newick file to obtain a list of seq names but then extract sequences from
     # the original genewise file.
-    # (This approach is now necessary after TreeShrink with protein!)
+    # (This approach is now necessary after TreeShrink with protein because we need to start again from DNA but the above code
+    # has removed gaps from a protein aln - no good! Could go looking for the DNA aln but 'dna' might not have been seelected.)
     ### NBNB - this means that there is no point in using Treeshrink -a flag, but could just leave as is.
     for file in  ../*_${1}_gene_tree_USE_THIS.nwk; do
-             gene=`echo $file | sed "s/_${1}_gene_tree_USE_THIS.nwk//" | sed "s/^\.\.\///" `
-             # Get the leaf labels and extract from the unliagned starting DNA file:
-             nw_labels -I $file > ${gene}_${1}_tree_leaf_labels.txt
-             seqtk subseq -l 0 \
-             ../${gene}_dna.fasta \
-             ${gene}_${1}_tree_leaf_labels.txt \
-             > ${gene}_after_treeshrink.fasta
-         done
+        gene=`echo $file | sed "s/_${1}_gene_tree_USE_THIS.nwk//" | sed "s/^\.\.\///" `
+        # Get the leaf labels from the TreeShrunk Newick file (could also use the equivalent aln file) then extract from the unaligned starting DNA file:
+        ### NB - 21.10.2020 - just realised I have this wrong - need to use the TS output to get the retained labels:
+        ### nw_labels -I $file > ${gene}_${1}_tree_leaf_labels.txt
+        nw_labels -I treeshrink_${1}_gene_trees/$gene/${1}_gene_tree_tree_shrunk_0.05.nwk > ${gene}_${1}_tree_leaf_labels.txt
+        seqtk subseq -l 0 \
+        ../${gene}_dna.fasta \
+        ${gene}_${1}_tree_leaf_labels.txt \
+        > ${gene}_after_treeshrink.fasta
+    done
 }
 
 
@@ -218,6 +223,7 @@ reAlignSeqs()   {
     -C $cpuGeneTree \
     -c 10 \
     -Q $partitionName \
+    -p $fileNamePrefix \
     *_${3}.fasta \
     > make_species_trees_pipeline_${3}.log 2>&1 #"
 }
