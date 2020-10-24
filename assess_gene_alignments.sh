@@ -267,7 +267,7 @@ Total number of samples: $totalNumbrSamples" > ${fileNamePrefix}_summary_stats.t
 if [[ $geneFile != 'use_genewise_files' ]]; then 
 	echo "
 Largest sum length of all genes in bases for a sample found (that sample in brackets): $maxSumOfContigLengths
-Median sum length of all genes in bases: $medianGeneLength
+Median sum length of all genes per sample in bases: $medianGeneLength
 Number of poor quality samples (<= 20 % of the median sum length of all genes per sample): $poorQualitySamples
 Number of ok/good quality samples (> 20 % of the median sum length of all genes per sample): $okQualitySamples" >> ${fileNamePrefix}_summary_stats.txt
 fi

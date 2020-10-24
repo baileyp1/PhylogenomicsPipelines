@@ -80,8 +80,9 @@ getTreeStats () {
     fi
 
     # Count number of low support nodes:
+### not sure why I'm using -r!!
     numbrLowSupportNodes=`nw_ed -r $newickTree  "i & b < $bootstrapThreshold" s | wc -l | sed 's/ //g' `
-### NBNB - 15.10.2020 - this gives '1' even when the file is empty!!!
+### NBNB - 15.10.2020 - this gives '1' even when the file is empty!!!#
     # Count the total number of support nodes with support values:
     ### 23.10.2020 - Astral tree seems to have two root nodes which get printed by "i" (i.e. get 2 more nodes than expected, only can notice with v small trees)
     ### and can't be ignored by "!r".
