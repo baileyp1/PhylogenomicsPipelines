@@ -25,19 +25,19 @@ For phylogenetic analysis:
 * seqtk
 * bc, a Linux command line utility
 * exonerate
-* MAFFT
-* fasttree, raxml-ng or [IQ-TREE version 2](http://www.iqtree.org)
-* RAxML
-* Newick Utilities
-* [ASTRAL](https://github.com/smirarab/ASTRAL), exactly version 5.7.3 (or alter the version number in script make_species_trees.sh, line ~151)
-* AMAS.py and/or trimAl (for trimming if those options are selected)
-* treeshrink
-* R (used only by treeshrink and trimAl if )
+* MAFFT or UPP (UPP requires SEPP or PASTA)
+* [FastTree](http://www.microbesonline.org/fasttree/), [raxml-ng](https://github.com/amkozlov/raxml-ng) or [IQ-TREE version 2](http://www.iqtree.org)
+* RAxML (for species tree using a concatenated alignment)
+* [Newick Utilities](http://cegg.unige.ch/newick_utils)
+* [ASTRAL](https://github.com/smirarab/ASTRAL), exactly version 5.7.5 (or alter the version number in script make_species_trees.sh, line ~151)
+* [AMAS.py](https://github.com/marekborowiec/AMAS) and/or [trimAl](http://trimal.cgenomics.org/) (for trimming if those options are selected)
+* [TreeShrink](http://trimal.cgenomics.org/)
+* R (used only by treeshrink and trimAl)
 
 ## Further Details options, how to use and outputs  
-To finish
+## 
+## recover_genes_from_all_samples.sh
 <!--
-### recover_genes_from_all_samples.sh
 All options (NB - problem with presenting all options is what happens if they change - have to update here as well -OK?)
 ```
 -s   add sample name and fastq file names via a csv table file (must have a header line);
@@ -89,57 +89,30 @@ Can either specify the full path to the bash script or set the path in your bash
 Show commandline and typical usage with explantion
 e.g. throttle set to 1
 
+-->
+
+## make_species_trees_pipeline.sh  
+
+### Example
+[see commandline help ]
+
+### Outputs
+The main output files are listed below. Some files will only exist where relevant options have been selected    [ turn list below into a table ]
+* \<geneNameId\>.dna.fasta<br>
+  Gene-wise raw DNA sequence file, one gene from (all) samples in the sample set
+* \<geneNameId\>.protein.fasta<br>
+  Gene-wise raw protein sequence file, one gene from (all) samples in the sample set (optional)	
+|	|		|-- <geneNameId>.dna.aln.for_tree.fasta					Gene DNA sequence alignment file
+|	|		|-- <geneNameId>.protein.aln.for_tree.fasta				Gene protein sequence alignment file
+|	|		|-- <geneNameId>.dna.gene_tree_USE_THIS.nwk				Gene tree file in Newick format				
+|	|		|-- run<species_tree_runId>.summary_gene_recovery.txt		
+|	|		|-- run<species_tree_runId>.summary_stats.txt
+|	|		|-- run<species_tree_runId>.dna.<method>.species_tree_USE_THIS.nwk	Species tree
+|	|		|-- new directoriues made
 
 
-### make_species_trees_pipeline.sh  
-Options
-```  don't really need this one here
-	-h             shows this message
-```
-```
-	-v             program version
-```
-The version number is taken from the GitHub tag
-CHANGE program to pipeline.
-	-a             add sample name onto the fasta header from the input fasta file name.
-	               Expected gene identifier format in the fasta header: >geneId (no hyphen '-' characters)
-	               NB - the files with the modified fasta headers are written to files with name ending \_modified.fasta_
-```
-	-t <csv file>  add sample name and other info from a comma separated value (csv) table file into the tree leaf labels.
-	               Format of table row: sample_name/identifier, followed by any species information as required. 
-	               Sample_name/identifier must match the sample fasta file name (minus any [dot] ending suffix e.g. .fasta)
-```
-Table can have a header line or not as desired.
 
-	-u             add contig length info onto species tree tips (requires option -t)
-	-g <file>      file (including path to it) containing list of gene names (required option)
-	-i             make gene trees only
-	-j             make species trees only
-	-f <float>     fraction of [well conserved regions in] the alignment covered by a sample sequence.
-	               Minimum to tolerate (default=0.6; 0 would mean no filtering, i.e. include sequence of any length)
-	-s <float>     fraction of samples in each gene tree.
-	               Minumum to tolerate (default=0.6; 0 would mean no filtering, include all available samples in each gene tree)
-	-p <string>    prefix for the output filenames e.g. taxonomic group (default=tree_pipeline)
-	-q <string>    name of phylogeny program for gene trees from DNA sequences.
-                   	Options are, fastest to slowest: fasttree, raxml-ng (default=fasttree)
-	-r <string>    name of phylogeny program for gene trees from protein sequences.
-                   	If required, options are, fastest to slowest: fasttree, raxml-ng (no default)
-	-c <integer>   number of cpu to use for RAxML in supermatrix method (default=8)
-
-
-A typical example:
-<path to>/make_species_trees_pipeline.sh \\
--g <geneListFile> \\
--t <sampleTreeTipInfoFile> \\
--f 0.6 \\
--s 0.3 \\
--q fasttree \\
--c 8 \\
-<path_to_recovered_genes_from_samples>/*.fasta \\
-> make_species_trees_pipeline.log 2>&1 &
-
-
-## Further advice on software dependencies
+## Further info on software dependencies
 Disucss it workd on different OS - developed specifically on Linux x 2 and the Darwin on macbook  HighSierra Howver I hope the pipelinces can run on other closely related OS. I coudl spend lotso tim developin and checking other OS but instead but instead it's more effficient to just curl up quietly and disappear into /dev/null. 
 e.g. adding to $PATH
 NB - using AMAS.py the trim option needs to exist for pipleiene to work - if it is not, you may have an older version so download the latest Github repo 

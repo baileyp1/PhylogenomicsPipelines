@@ -966,7 +966,7 @@ elif [[ $os == 'Linux' && $speciesTreesOnly == 'no' ]]; then
 			"$trimAln1" \
 			"$trimAln2" \
 			"$collapseNodes" \
-			"$fileNamePrefix"
+			"$fileNamePrefix" \
 			"$cpu" \
 			"$geneTreeSlurmMem" \
 			"$speciesTreeSlurmMem" \
