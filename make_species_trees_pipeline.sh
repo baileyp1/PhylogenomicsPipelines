@@ -128,7 +128,7 @@ OTHER OPTIONS:
 	-V <string>      Slurm time limit to use for gene trees. Format: <days>-<hours>:<minutes> e.g. 1-0:0 is 1 day (default=0; means no limit is imposed)
 	-W <string>      Slurm time limit to use for species trees. Format: <days>-<hours>:<minutes> e.g. 1-0:0 is 1 day (default=0; means no limit is imposed)
     -Q <string>      Slurm partition (queue) to use (default=medium; select more than one queue with a comma delimited list e.g. medium,long)
-    -H <integer>	 Slurm array throttle - not available to change here (default=50)
+    -H <integer>	 Slurm array throttle (default=50; best to set to 1, then increase once happy with run with: scontrol update arraytaskthrottle=<integer> job=<jobId>)
 
 
 A basic example run is described below:
@@ -904,7 +904,7 @@ elif [[ $os == 'Linux' && $speciesTreesOnly == 'no' ]]; then
 			echo seqType: $seqType
 			echo alnFileForTreeSuffix: $alnFileForTreeSuffix
 
-			jobInfo1=`sbatch -J assess_gene_alns  --dependency=afterok:$jobId -p $partitionName -c 1 -n 1 --mem $geneTreeSlurmMem -o assess_gene_alns.log -e assess_gene_alns.err  $pathToScripts/assess_gene_alignments.sh \
+			jobInfo1=`sbatch -J assess_gene_alns  --dependency=afterok:$jobId -p $partitionName -c 1 -n 1 -o assess_gene_alns.log -e assess_gene_alns.err  $pathToScripts/assess_gene_alignments.sh \
 			$fractnAlnCovrg \
 			$fractnMaxColOcc \
 			$fractnSamples \
@@ -928,7 +928,7 @@ elif [[ $os == 'Linux' && $speciesTreesOnly == 'no' ]]; then
 			##########################################
 			echo 'Re-aligning gene alignments because TreeShrink option or filterSeqs1 option is on, then continuing analysis in the "after_treeshrink_USE_THIS" or "after_reAlnFilterSeqs_USE_THIS" directory...'
 			##########################################
-			jobInfo2=`sbatch -J trShrnk_realgn  --dependency=afterok:$jobId -p $partitionName -c 1 -n 1 -o run_treeshrink_and_realign.log  -e run_treeshrink_and_realign.err  $pathToScripts/run_treeshrink_and_realign.sh \
+			jobInfo2=`sbatch -J trShrnk_realgn  --dependency=afterok:$jobId -p $partitionName -c 1 -n 1 --mem $geneTreeSlurmMem -o run_treeshrink_and_realign.log  -e run_treeshrink_and_realign.err  $pathToScripts/run_treeshrink_and_realign.sh \
 			"$numbrSamples" \
 			"$phyloProgramDNA" \
 			"$phyloProgramPROT" \
