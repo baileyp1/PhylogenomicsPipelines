@@ -52,11 +52,11 @@ collapseNodes=no			# option -L
 fileNamePrefix=tree_pipeline
 fractnMaxColOcc=0.7
 slurmThrottle=50			# Was 1, set to 50 as now have two rounds of alignment 
+partitionName=main   		# Values depend on the cluster being used so good to have a flagged option for this
+							# NB - make_species_tree.sh uses 'long' queue - need an extra variable for that 
 cpuGeneTree=1				# still keep this separate from the supermatrix tree; then I can specify loads more for the supermatrix.
 							# Maybe hava a comma separated list e.g. 4,30 for gene and species tree.
 cpu=8						# number of cpu to use for RAxML in supermatrix method
-partitionName=main   		# Values depend on the cluster being used so good to have a flagged option for this
-							# NB - make_species_tree.sh uses 'long' queue - need an extra variable for that 
 geneTreeSlurmMem=20000		# option -R		 
 speciesTreeSlurmMem=50000	# option -U; I think I need 500000 GB mem for the RAxML large tree (Slurm)
 geneTreeSlurmTime=1-00:00	# SBATCH -t 0-36:00;  A time limit of zero requests that no time limit be imposed - like the mem option
@@ -112,23 +112,23 @@ FILTERING AND TRIMMING OPTIONS:
 PHYLOGENY OPTIONS:
     -i               make gene trees only
     -j               make species trees only. Gene trees must already exist in run directory
-    -q <string>      name of phylogeny program for gene trees from DNA sequences.
-                   	 Options are, fastest to slowest: fasttree, iqtree2-B1000-nstep40-nm50, iqtree2-alrt, iqtree2-fast-b100, iqtree2, raxml-ng (default=fasttree)
-    -r <string>      name of phylogeny program for gene trees from protein sequences.
+    -q <string>      name of phylogeny program[-option(s)] for gene trees from DNA sequences.
+                     Options are, fastest to slowest: fasttree, iqtree2-B1000-nstep40-nm50, iqtree2-alrt, iqtree2-fast-b100, iqtree2, raxml-ng (default=fasttree)
+    -r <string>      name of phylogeny program[-option(s)] for gene trees from protein sequences.
                    	 If required, options are, fastest to slowest: fasttree, iqtree2-B1000-nstep40-nm50, iqtree2-alrt, iqtree2-fast-b100, iqtree2, raxml-ng (no default)
-    -S <string>      name of phylogeny program for supermatrix approach (concatenated gene alignments).
+    -S <string>      name of phylogeny programs to use for the species tree(s) for supermatrix approach (concatenated gene alignments).
                      If required, options are, fastest to slowest: fasttree, raxml-ng (no default)
     -T               use Treeshrink on gene trees (followed by re-alignment)
     -L <integer>     collapse gene tree nodes with bootstrap support less than <integer> percent (no default)
 OTHER OPTIONS: 
-    -C <integer>     number of cpu to use for genetrees; NB - not convinced >1 cpu works robustly for raxml-ng with small datasets! (default=1)              	-
+    -C <integer>     number of cpu to use for genetrees; NB - not convinced >1 cpu works robustly for raxml-ng with small datasets! (default=1)
     -c <integer>     number of cpu to use for RAxML in supermatrix method (default=8)
     -R <integer>     Slurm memory to use (in MB) for gene trees (default=0; means no limit is imposed)
     -U <integer>     Slurm memory to use (in MB) for species trees (default=0; means no limit is imposed)
-	-V <string>      Slurm time limit to use for gene trees. Format: <days>-<hours>:<minutes> e.g. 1-0:0 is 1 day (default=0; means no limit is imposed)
-	-W <string>      Slurm time limit to use for species trees. Format: <days>-<hours>:<minutes> e.g. 1-0:0 is 1 day (default=0; means no limit is imposed)
+    -V <string>      Slurm time limit to use for gene trees. Format: <days>-<hours>:<minutes> e.g. 1-0:0 is 1 day (default=0; means no limit is imposed)
+    -W <string>      Slurm time limit to use for species trees. Format: <days>-<hours>:<minutes> e.g. 1-0:0 is 1 day (default=0; means no limit is imposed)
     -Q <string>      Slurm partition (queue) to use (default=medium; select more than one queue with a comma delimited list e.g. medium,long)
-    -H <integer>	 Slurm array throttle (default=50; best to set to 1, then increase once happy with run with: scontrol update arraytaskthrottle=<integer> job=<jobId>)
+    -H <integer>     Slurm array throttle (default=50; best to set to 1, then increase once happy with run with: scontrol update arraytaskthrottle=<integer> job=<jobId>)
 
 
 A basic example run is described below:
@@ -615,7 +615,7 @@ if [[ "$alnProgram" != 'mafft' && "$alnProgram" != 'upp' ]];then
 fi
 
 
-# Check ilter sequence options (option -F):
+# Check filter sequence options (option -F):
 if [[ $filterSeqs1 != 'no' ]]; then
 	numbrFields=`echo $filterSeqs1 | awk '{print NF}' `
 	if [[ $numbrFields -eq 2 ]]; then
@@ -637,6 +637,14 @@ if [[ $filterSeqs1 != 'no' ]]; then
 		echo "ERROR: Filter sequences option (option -F) was selected but should contain two values."; exit
 	fi
 fi
+
+
+### Eventaully put this here followign hte above logic and stop using bc
+# if (( $(bc <<< "$fractnMaxColOcc < 0") || $(bc <<< "$fractnMaxColOcc > 1") )); then 
+# 	echo "ERROR: -m option needs to be a fraction between 0 and 1 - exiting"
+# 	exit
+# fi
+
 
 
 # Check option to collapse gene tree nodes (option -L):
@@ -837,6 +845,11 @@ if [[ $os == 'Darwin' && $speciesTreesOnly == 'no' ]]; then
 		"$trimAln2" \
 		"$collapseNodes" \
 		"$fileNamePrefix" \
+		"$cpu" \
+		"$geneTreeSlurmMem" \
+		"$speciesTreeSlurmMem" \
+		"$geneTreeSlurmTime" \
+		"$speciesTreeSlurmTime" \
 		> run_treeshrink_and_realign.log 2>&1
 		exit	# Species trees will be made after TreeShrink or re-alignment step(s) in nested call to this script, if requested.
 	fi
@@ -928,7 +941,7 @@ elif [[ $os == 'Linux' && $speciesTreesOnly == 'no' ]]; then
 			##########################################
 			echo 'Re-aligning gene alignments because TreeShrink option or filterSeqs1 option is on, then continuing analysis in the "after_treeshrink_USE_THIS" or "after_reAlnFilterSeqs_USE_THIS" directory...'
 			##########################################
-			jobInfo2=`sbatch -J trShrnk_realgn  --dependency=afterok:$jobId -p $partitionName -c 1 -n 1 --mem $geneTreeSlurmMem -o run_treeshrink_and_realign.log  -e run_treeshrink_and_realign.err  $pathToScripts/run_treeshrink_and_realign.sh \
+			jobInfo2=`sbatch -J trShrnk_filtr_realgn  --dependency=afterok:$jobId -p $partitionName -c 1 -n 1 --mem $geneTreeSlurmMem -o run_treeshrink_and_realign.log  -e run_treeshrink_and_realign.err  $pathToScripts/run_treeshrink_and_realign.sh \
 			"$numbrSamples" \
 			"$phyloProgramDNA" \
 			"$phyloProgramPROT" \
@@ -953,7 +966,12 @@ elif [[ $os == 'Linux' && $speciesTreesOnly == 'no' ]]; then
 			"$trimAln1" \
 			"$trimAln2" \
 			"$collapseNodes" \
-			"$fileNamePrefix" `
+			"$fileNamePrefix"
+			"$cpu" \
+			"$geneTreeSlurmMem" \
+			"$speciesTreeSlurmMem" \
+			"$geneTreeSlurmTime" \
+			"$speciesTreeSlurmTime" `
 			exit	# Species trees will be made after TreeShrink or re-alignment step(s) in nested call to this script, if requested.
 		fi
 	else
@@ -1045,6 +1063,11 @@ elif [[ $os == 'Linux' && $speciesTreesOnly == 'no' ]]; then
 			"$trimAln2" \
 			"$collapseNodes" \
 			"$fileNamePrefix" \
+			"$cpu" \
+			"$geneTreeSlurmMem" \
+			"$speciesTreeSlurmMem" \
+			"$geneTreeSlurmTime" \
+			"$speciesTreeSlurmTime" \
 			> run_treeshrink_and_realign.log 2>&1
 			exit	# Species trees will be made after TreeShrink or re-alignment step(s) in nested call to this script, if requested.
 		fi

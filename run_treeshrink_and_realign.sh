@@ -38,6 +38,11 @@ trimAln1="${22}"
 trimAln2="${23}"
 collapseNodes="${24}"
 fileNamePrefix="${25}"
+cpu="${26}"
+geneTreeSlurmMem="${27}"
+speciesTreeSlurmMem="${28}"
+geneTreeSlurmTime="${29}"
+speciesTreeSlurmTime="${30}"
 
 
 echo "$numbrSamples"
@@ -60,6 +65,11 @@ echo "trimAln1: $trimAln1"
 echo "trimAln2: $trimAln2"
 echo "collapseNodes: $collapseNodes"
 echo "fileNamePrefix: $fileNamePrefix"
+echo "cpu: $cpu"
+echo "geneTreeSlurmMem: $geneTreeSlurmMem"
+echo "speciesTreeSlurmMem: $speciesTreeSlurmMem"
+echo "geneTreeSlurmTime: $geneTreeSlurmTime"
+echo "speciesTreeSlurmTime: $speciesTreeSlurmTime"
 
 # Convert $emptyMatchStateFractn to a percent for use in the output files:
 fractnAlnCovrg_pc=`awk -v FRACTN=$fractnAlnCovrg 'BEGIN{printf "%.0f", FRACTN * 100}' `
@@ -211,6 +221,7 @@ reAlignSeqs()   {
     # Note the quotes around variables with spaces! BUT $2 must not be quoted!
     #echo " # For checking option values that need to be quoted (contain spaces)
     $pathToScripts/make_species_trees_pipeline.sh $iOption $trimAlnOption1 $trimAlnOption2 $collapseNodesOption \
+    -p $fileNamePrefix \
     -G \
     -D "$1" \
     -A $alnProgram \
@@ -221,9 +232,12 @@ reAlignSeqs()   {
     -O $maxColOccThreshold \
     $2 \
     -C $cpuGeneTree \
-    -c 10 \
+    -c $cpu \
     -Q $partitionName \
-    -p $fileNamePrefix \
+    -R $geneTreeSlurmMem \
+    -U $speciesTreeSlurmMem \
+    -V $geneTreeSlurmTime \
+    -W $speciesTreeSlurmTime \
     *_${3}.fasta \
     > make_species_trees_pipeline_${3}.log 2>&1 #"
 }
