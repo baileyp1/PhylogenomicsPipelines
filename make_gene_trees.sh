@@ -458,7 +458,7 @@ makeGeneTree()	{
 		rm  ${3}/${gene}.${1}.aln_iqtree.contree
 	elif [[ "$phyloProgramDNA" == 'iqtree2-fast-b100' || "$phyloProgramPROT" == 'iqtree2-fast-b100' ]]; then
 		echo
-		echo Running IQ-Tree on the DNA alignment with these options: -fast, -b 100, -m GTR+F+G7 ...
+		echo Running IQ-Tree on the DNA alignment with these options: -fast, -b 100, -m GTR+F+G ...
 		$exePrefix iqtree2 -T AUTO -ntmax $cpuGeneTree \
 		-redo \
 		--seqtype $iqTree2SeqType \
@@ -475,7 +475,7 @@ makeGeneTree()	{
 		rm  ${3}/${gene}.${1}.aln_iqtree.contree
 	elif [[ "$phyloProgramDNA" == 'iqtree2-alrt' || "$phyloProgramPROT" == 'iqtree2-alrt' ]]; then
 		echo
-		echo Running IQ-Tree on the DNA alignment with these options: -alrt, -m GTR+F+G7 ...
+		echo Running IQ-Tree on the DNA alignment with these options: -alrt, -m GTR+F+G ...
 		$exePrefix iqtree2 -T AUTO -ntmax $cpuGeneTree \
 		-redo \
 		--seqtype $iqTree2SeqType \
@@ -490,7 +490,7 @@ makeGeneTree()	{
 		rm  ${3}/${gene}.${1}.aln_iqtree.contree
 	elif [[ "$phyloProgramDNA" == 'iqtree2-B1000-nstep40-nm50' || "$phyloProgramPROT" == 'iqtree2-B1000-nstep40-nm50' ]]; then
 		echo
-		echo Running IQ-Tree on the DNA alignment with these options: -B 1000, -nstep 40, -nm 50, -m GTR+F+G7 ...
+		echo Running IQ-Tree on the DNA alignment with these options: -B 1000, -nstep 40, -nm 50, -m GTR+F+G ...
 		$exePrefix iqtree2 -T AUTO -ntmax $cpuGeneTree \
 		-redo \
 		--seqtype $iqTree2SeqType \
@@ -505,9 +505,9 @@ makeGeneTree()	{
 		cp -p ${3}/${gene}.${1}.aln_iqtree.contree \
 		${3}/${gene}_${1}_gene_tree_USE_THIS.nwk
 		rm  ${3}/${gene}.${1}.aln_iqtree.contree
-	elif [[ "$phyloProgramDNA" == 'iqtree2-B1000-nstep100-nm110' || "$phyloProgramPROT" == 'iqtree2-B1000-nstep100-nm110' ]]; then
+	elif [[ "$phyloProgramDNA" == 'iqtree2-B1000-nstep100-nm100' || "$phyloProgramPROT" == 'iqtree2-B1000-nstep100-nm100' ]]; then
 		echo
-		echo Running IQ-Tree on the DNA alignment with these options: -B 1000, -nstep 100, -nm 110, -m GTR+F+G7 ...
+		echo Running IQ-Tree on the DNA alignment with these options: -B 1000, -nstep 100, -nm 110, -m GTR+F+G ...
 		$exePrefix iqtree2 -T AUTO -ntmax $cpuGeneTree \
 		-redo \
 		--seqtype $iqTree2SeqType \
@@ -622,6 +622,7 @@ if [[ $geneFile != 'use_genewise_files' ]]; then
 	### a gene the pipeline will exit - this is probablsbly a good thing to happen, no?
 	### he decision is to print an error ONLY or also to exit - I'm just ignoring the gene if # seqs < 3 so should do that here as well 
 	### -OK this is easy!!!   Also for lien 195 if [ "$numbrSeqs" -gt 3 ]; then --> need a WARNING in an else clause!!!!!!!!!
+	echo "...done"
 
 
 
