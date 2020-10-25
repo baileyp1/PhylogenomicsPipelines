@@ -450,7 +450,8 @@ makeGeneTree()	{
 		# -B 			ultrafast bootstrap option (NB - the minimum number you can set is 1000!)
 		# -alrt 		Removed -alrt 1000 option but it is very fast to compute so no real need - BUT it does add an extra value at the node I think
 		# -b			standard nonparametric bootstrap
-		# -fast			builds just 2 starting trees and there is no iteration with NNI to try and find higher likelihoods 
+		# -fast			builds just 2 starting trees and there is no iteration with NNI to try and find higher likelihoods
+		# -nm 			max # iterations - must be > nstep (min iteration) 
 
 		# Rename final tree file to a clearer name:
 		cp -p ${3}/${gene}.${1}.aln_iqtree.contree \
@@ -506,8 +507,8 @@ makeGeneTree()	{
 		${3}/${gene}_${1}_gene_tree_USE_THIS.nwk
 		rm  ${3}/${gene}.${1}.aln_iqtree.contree
 	elif [[ "$phyloProgramDNA" == 'iqtree2-B1000-nstep100-nm100' || "$phyloProgramPROT" == 'iqtree2-B1000-nstep100-nm100' ]]; then
-		echo
-		echo Running IQ-Tree on the DNA alignment with these options: -B 1000, -nstep 100, -nm 100, -m GTR+F+G ...
+		echo																   # NB max iteration must be > min iteration! 
+		echo Running IQ-Tree on the DNA alignment with these options: -B 1000, -nstep 100, -nm 110, -m GTR+F+G ...
 		$exePrefix iqtree2 -T AUTO -ntmax $cpuGeneTree \
 		-redo \
 		--seqtype $iqTree2SeqType \
