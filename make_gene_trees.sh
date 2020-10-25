@@ -451,7 +451,7 @@ makeGeneTree()	{
 		# -alrt 		Removed -alrt 1000 option but it is very fast to compute so no real need - BUT it does add an extra value at the node I think
 		# -b			standard nonparametric bootstrap
 		# -fast			builds just 2 starting trees and there is no iteration with NNI to try and find higher likelihoods
-		# -nm 			max # iterations - must be > nstep (min iteration) 
+		# -nm 			max # iterations - must be > nstep (min iteration)  
 
 		# Rename final tree file to a clearer name:
 		cp -p ${3}/${gene}.${1}.aln_iqtree.contree \
