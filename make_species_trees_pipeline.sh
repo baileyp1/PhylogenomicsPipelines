@@ -916,8 +916,8 @@ elif [[ $os == 'Linux' && $speciesTreesOnly == 'no' ]]; then
 			fi
 			echo seqType: $seqType
 			echo alnFileForTreeSuffix: $alnFileForTreeSuffix
-
-			jobInfo1=`sbatch -J assess_gene_alns  --dependency=afterok:$jobId -p $partitionName -c 1 -n 1 -o assess_gene_alns.log -e assess_gene_alns.err  $pathToScripts/assess_gene_alignments.sh \
+												  # Changed dependancy to 'afterany' so if a single gene fails it will not stop the pipeline; was using 'afterok' but this requires an exit code of zero.
+			jobInfo1=`sbatch -J assess_gene_alns  --dependency=afterany:$jobId -p $partitionName -c 1 -n 1 -o assess_gene_alns.log -e assess_gene_alns.err  $pathToScripts/assess_gene_alignments.sh \
 			$fractnAlnCovrg \
 			$fractnMaxColOcc \
 			$fractnSamples \
