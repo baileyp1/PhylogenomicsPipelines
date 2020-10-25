@@ -507,7 +507,7 @@ makeGeneTree()	{
 		rm  ${3}/${gene}.${1}.aln_iqtree.contree
 	elif [[ "$phyloProgramDNA" == 'iqtree2-B1000-nstep100-nm100' || "$phyloProgramPROT" == 'iqtree2-B1000-nstep100-nm100' ]]; then
 		echo
-		echo Running IQ-Tree on the DNA alignment with these options: -B 1000, -nstep 100, -nm 110, -m GTR+F+G ...
+		echo Running IQ-Tree on the DNA alignment with these options: -B 1000, -nstep 100, -nm 100, -m GTR+F+G ...
 		$exePrefix iqtree2 -T AUTO -ntmax $cpuGeneTree \
 		-redo \
 		--seqtype $iqTree2SeqType \
@@ -515,7 +515,7 @@ makeGeneTree()	{
 		--prefix ${3}/${gene}.${1}.aln_iqtree \
 		-B 1000 \
 		-nstep 100 \
-		-nm 110 \
+		-nm 100 \
 		-m GTR+F+R
 		
 		# Rename final tree file to a clearer name:			
