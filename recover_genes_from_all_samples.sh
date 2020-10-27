@@ -115,7 +115,7 @@ if [ "$#" -lt 1 ]; then usage; exit 1; fi
 # Only two programs to check currently (Paftools and HybPiper; can use -h and --help, both give a zero exit code)
 ### 29.3.2020 - addpaftolfastqmaybe do this after all other checks so the print out doesn't appear if there is an issue with input parameters
 ### 12.5.2020 - also Trimmomatic is required. Others e.g. fastqc are dependancies of Paftools
-if [ $hybSeqProgram == 'hybpiper' ]; then
+if [[ $hybSeqProgram == 'hybpiper'* ]]; then
     echo 'Testing HybPiper is installed, will exit with a 127 error if not found.' 
     reads_first.py -h >/dev/null 2>&1    # Will exit here if not found!
     echo 'hybpiper found.'

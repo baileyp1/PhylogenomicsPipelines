@@ -179,13 +179,19 @@ if [ $hybSeqProgram == 'paftools' ]; then
 
 		### 15.4.2020 - also remove ${sampleId}_R1_trimmomatic.fastq and ${sampleId}_R2_trimmomatic.fastq 7167_R1_trimmomatic_unpaired.fastq.gz 7167_R2_trimmomatic_unpaired.fastq.gz if they exist
 	fi
-elif [ $hybSeqProgram == 'hybpiper' ]; then
+elif [[ $hybSeqProgram == 'hybpiper'* ]]; then
+
+	bwa=''
+	if [[ $hybSeqProgram == 'hybpiper-bwa' ]];then 
+		bwa='--bwa'
+		echo Using HybPiper with the --bwa option...
+	fi
 
 	# First combine unpaired reads (both single end reads should have unique ids) - but won't I have the same problem as above?!
 	gunzip -fc ${sampleId}_R1_trimmomatic_unpaired.fastq.gz ${sampleId}_R2_trimmomatic_unpaired.fastq.gz \
 	> ${sampleId}_R1_R2_trimmomatic_unpaired.fastq
 
-	$exePrefix reads_first.py --cpu $cpu \
+	$exePrefix reads_first.py --cpu $cpu $bwa \
 	-b $targetsFile \
 	-r ${sampleId}_R*_trimmomatic.fastq  \
 	--cov_cutoff 4 \
