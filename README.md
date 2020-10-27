@@ -21,22 +21,23 @@ For gene recovery:
 * If using HybPiper, seqtk
 
 For phylogenetic analysis:
-* python 2.7
-* seqtk
+* Python 2.7
+* [seqtk](https://github.com/lh3/seqtk)
 * bc, a Linux command line utility
-* exonerate
-* MAFFT or UPP (UPP requires SEPP or PASTA)
+* [Exonerate](https://www.ebi.ac.uk/about/vertebrate-genomics/software/exonerate)
+* [MAFFT ](https://mafft.cbrc.jp/alignment/software/) or [UPP](https://github.com/smirarab/sepp/blob/master/README.UPP.md) (UPP requires SEPP and PASTA as explained in the link)
 * [FastTree](http://www.microbesonline.org/fasttree/), [raxml-ng](https://github.com/amkozlov/raxml-ng) or [IQ-TREE version 2](http://www.iqtree.org)
-* RAxML (for species tree using a concatenated alignment)
+* [RAxML](https://github.com/stamatak/standard-RAxML) (used for building a species tree using a concatenated alignment)
 * [Newick Utilities](http://cegg.unige.ch/newick_utils)
-* [ASTRAL](https://github.com/smirarab/ASTRAL), exactly version 5.7.5 (or alter the version number in script make_species_trees.sh, line ~151)
+* [ASTRAL](https://github.com/smirarab/ASTRAL), exactly version 5.7.4 (or alter the version number in script make_species_trees.sh, line ~151)
 * [AMAS.py](https://github.com/marekborowiec/AMAS) and/or [trimAl](http://trimal.cgenomics.org/) (for trimming if those options are selected)
 * [TreeShrink](http://trimal.cgenomics.org/)
 * R (used only by treeshrink and trimAl)
+ 
 
-## Further Details options, how to use and outputs  
+## How to use, outputs and further details  
 ## 
-## recover_genes_from_all_samples.sh
+### recover_genes_from_all_samples.sh
 <!--
 All options (NB - problem with presenting all options is what happens if they change - have to update here as well -OK?)
 ```
@@ -91,11 +92,37 @@ e.g. throttle set to 1
 
 -->
 
-## make_species_trees_pipeline.sh  
-
+### make_species_trees_pipeline.sh  
 ### Example
-[see commandline help ]
+A basic example is shown at the bottom of the command line help. A more extensive analysis is presented below.
 
+Build genes trees from sample fasta files, formatted as described for option -a, by aligning the input DNA sequence for each gene with UPP (option -A),  filtering out genes with low sequence coverage across the alignment (option -F), removing very rare insertions (option -K), building each gene tree with IQTREE-2 using the Ultrafast bootstrap option (option -q), using TreeShrink to identify usually long branches in the gene trees (option -T), then collapsing nodes with bootstrap values < 10% before building a species tree with ASTRAL (option -L). Finally, FASTTREE and RAxML are then used to reconstruct a supermatrix tree build from a concatenated set of the UPP gene alignments:
+```
+make_species_trees_pipeline.sh \
+-a \
+-D 'dna' \
+-A upp \
+-M '--retree 2' \
+-t <path_to>/taxon_info_for_tree_labels.csv \
+-u \
+-g <path_to>/<file_with_target_geneIds_ONLY.txt> \
+-F '60 30' \
+-K 0.003 \
+-q iqtree2 \
+-T \
+-L 30 \
+-c 8 \
+-C 6 \
+-Q long \
+-R 15000 \
+-U 12000 \
+-V 0 \
+-W 0 \
+-H 1 \
+*.fasta \
+> make_species_trees_pipeline.log 2>&1 &
+```
+<!--
 ### Outputs
 The main output files are listed below. Some files will only exist where relevant options have been selected    [ turn list below into a table ]
 * \<geneNameId\>.dna.fasta<br>
