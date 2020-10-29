@@ -1,6 +1,6 @@
 # PhylogenomicsPipelines
 
-This repository contains two pipelines to perform phylogenomics analysis. One pipeline recovers genes from sample Illumina read data and the second pipeline performs phylogenetic analysis on the recovered genes to obtain a species tree. They can run on Linux (with the Slurm job manager, if installed) and MacOS.
+This repository contains two pipelines to perform phylogenomics analysis. One pipeline recovers genes from sample Illumina read data and the second pipeline performs phylogenetic analysis on the recovered genes to obtain a species tree. They will run on Linux (and with the [Slurm](https://slurm.schedmd.com/) job manager, if installed) and MacOS.
 
 For gene recovery use
 ```
@@ -10,15 +10,15 @@ For phylogenetic analysis use
 ```
 make_species_trees_pipeline.sh
 ```
-On the command line type the name of the program for brief instructions on its use. For the phylogenetic analysis pipeline you should start in a fresh directory.
+On the command line type the name of the program for brief instructions on its use. For the phylogenetic analysis pipeline it is best to start in a fresh directory.
  
 ## Required software dependencies
 The following programs need to be installed and available from the command line by typing the native program name. Some but not all of them are easily available from software installers (e.g. bioconda, brew, apt, yum)
 
 For gene recovery:
 * Trimmomatic, exactly version 0.39 (or alter the version number in script recover_genes_from_one_sample.sh, line ~50)
-* Paftools or HybPiper
-* If using HybPiper, seqtk
+* [Paftools](https://github.com/RBGKew/pypaftol) or [HybPiper](https://github.com/mossmatters/HybPiper)
+* If using HybPiper, [seqtk](https://github.com/lh3/seqtk)
 
 For phylogenetic analysis:
 * Python 2.7
@@ -26,7 +26,7 @@ For phylogenetic analysis:
 * bc, a Linux command line utility
 * [Exonerate](https://www.ebi.ac.uk/about/vertebrate-genomics/software/exonerate)
 * [MAFFT ](https://mafft.cbrc.jp/alignment/software/) or [UPP](https://github.com/smirarab/sepp/blob/master/README.UPP.md) (UPP requires SEPP and PASTA as explained in the link)
-* [FastTree](http://www.microbesonline.org/fasttree/), [raxml-ng](https://github.com/amkozlov/raxml-ng) or [IQ-TREE version 2](http://www.iqtree.org)
+* [FastTree](http://www.microbesonline.org/fasttree/), [RAxML-NG](https://github.com/amkozlov/raxml-ng) or [IQ-TREE version 2](http://www.iqtree.org)
 * [RAxML](https://github.com/stamatak/standard-RAxML) (used for building a species tree using a concatenated alignment)
 * [Newick Utilities](http://cegg.unige.ch/newick_utils)
 * [ASTRAL](https://github.com/smirarab/ASTRAL), exactly version 5.7.4 (or alter the version number in script make_species_trees.sh, line ~151)
@@ -35,7 +35,13 @@ For phylogenetic analysis:
 * R (used only by treeshrink and trimAl)
  
 ## How to use, outputs and further details  
-### recover_genes_from_all_samples.sh
+## recover_genes_from_all_samples.sh
+### Example
+A typical example is shown at the bottom of the command line help. 
+<!--  NB - TAKEN FROM OTHER PIPELINE - TAYLIR
+Note that in the above command there must not be a space character after the back slash, there must be a space before the back slash and any option values that contain spaces need to be quoted e.g. option -M. 
+
+The Slurm options, -Q, -V and -W, will need to be altered depending on how Slurm is set up. Slurm memory options, -R and -U, will need to be altered depending on the size of the data set. The values set in the above example were appropriate for building gene trees containing up to 3,200 samples. 
 <!--
 All options (NB - problem with presenting all options is what happens if they change - have to update here as well -OK?)
 ```
@@ -90,11 +96,11 @@ e.g. throttle set to 1
 
 -->
 
-### make_species_trees_pipeline.sh 
+## make_species_trees_pipeline.sh 
 ### Example
-A basic example is shown at the bottom of the command line help. A more extensive analysis is presented below.
+A basic example is shown at the bottom of the command line help. A more extensive analysis is presented below (options for this pipeline in brackets).
 
-Build genes trees from sample fasta files, formatted as described for option -a, by aligning the input DNA sequence for each gene with UPP (option -A),  filtering out genes with low sequence coverage across the alignment (option -F), removing very rare insertions (option -K), building each gene tree with IQTREE-2 using the Ultrafast bootstrap option (option -q), using TreeShrink to identify usually long branches in the gene trees (option -T), then collapsing nodes with bootstrap values < 10% before building a species tree with ASTRAL (option -L). Finally, FASTTREE and RAxML are then used to reconstruct a supermatrix tree build from a concatenated set of the UPP gene alignments:
+Build genes trees from sample fasta files, formatted as described for option -a, by aligning the input DNA sequence for each gene with UPP (option -A),  filtering out genes with low sequence coverage across the alignment (option -F), removing very rare insertions (option -K), building each gene tree with IQTREE-2 using the Ultrafast bootstrap option (option -q), using TreeShrink to identify usually long branches in the gene trees (option -T), then collapsing nodes with bootstrap values < 10 % (option -L) before building a species tree with ASTRAL. Finally, FASTTREE and RAxML are then used to reconstruct a supermatrix tree built from a concatenated set of the UPP gene alignments:
 ```
 make_species_trees_pipeline.sh \
 -a \
@@ -118,11 +124,13 @@ make_species_trees_pipeline.sh \
 *.fasta \
 > make_species_trees_pipeline.log 2>&1 &
 ```
-Note that in the above command there must not be a space character after the back slash, there must be a space before the back slash and any option values that contain spaces need to be quoted e.g. option -M. The Slurm options, -Q, -R, -U, -V and -W) will need to be altered depending on 
+Note that in the above command there must not be a space character after the back slash, there must be a space before the back slash and any option values that contain spaces need to be quoted e.g. option -M. 
 
+The Slurm options, -Q, -V and -W, will need to be altered depending on how Slurm is set up. Slurm memory options, -R and -U, will need to be altered depending on the size of the data set. The values set in the above example were appropriate for building gene trees containing up to 3,200 samples. 
+<!-- 
+## Outputs
 
-<!--
-### Outputs
+<!-- 
 The main output files are listed below. Some files will only exist where relevant options have been selected    [ turn list below into a table ]
 * \<geneNameId\>.dna.fasta<br>
   Gene-wise raw DNA sequence file, one gene from (all) samples in the sample set
@@ -138,7 +146,7 @@ The main output files are listed below. Some files will only exist where relevan
 
 
 
-## Further info on software dependencies
+### Further info on software dependencies
 Disucss it workd on different OS - developed specifically on Linux x 2 and the Darwin on macbook  HighSierra Howver I hope the pipelinces can run on other closely related OS. I coudl spend lotso tim developin and checking other OS but instead but instead it's more effficient to just curl up quietly and disappear into /dev/null. 
 e.g. adding to $PATH
 NB - using AMAS.py the trim option needs to exist for pipleiene to work - if it is not, you may have an older version so download the latest Github repo 
