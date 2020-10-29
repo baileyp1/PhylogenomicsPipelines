@@ -1,6 +1,6 @@
 # PhylogenomicsPipelines
 
-This repository contains two pipelines to perform phylogenomics analysis. One pipeline recovers genes from sample Illumina read data and the second pipeline performs phylogenetic analysis on the recovered genes to obtain a species tree. They run on Linux (with the Slurm job manager, if installed) and MacOS.
+This repository contains two pipelines to perform phylogenomics analysis. One pipeline recovers genes from sample Illumina read data and the second pipeline performs phylogenetic analysis on the recovered genes to obtain a species tree. They can run on Linux (with the Slurm job manager, if installed) and MacOS.
 
 For gene recovery use
 ```
@@ -10,7 +10,7 @@ For phylogenetic analysis use
 ```
 make_species_trees_pipeline.sh
 ```
-On the command line type the name of the program for brief instructions on its use. For the phylogenetic analysis pipeline you should start with a new directory.
+On the command line type the name of the program for brief instructions on its use. For the phylogenetic analysis pipeline you should start in a fresh directory.
  
 ## Required software dependencies
 The following programs need to be installed and available from the command line by typing the native program name. Some but not all of them are easily available from software installers (e.g. bioconda, brew, apt, yum)
@@ -34,9 +34,7 @@ For phylogenetic analysis:
 * [TreeShrink](http://trimal.cgenomics.org/)
 * R (used only by treeshrink and trimAl)
  
-
 ## How to use, outputs and further details  
-## 
 ### recover_genes_from_all_samples.sh
 <!--
 All options (NB - problem with presenting all options is what happens if they change - have to update here as well -OK?)
@@ -92,7 +90,7 @@ e.g. throttle set to 1
 
 -->
 
-### make_species_trees_pipeline.sh  
+### make_species_trees_pipeline.sh 
 ### Example
 A basic example is shown at the bottom of the command line help. A more extensive analysis is presented below.
 
@@ -104,9 +102,7 @@ make_species_trees_pipeline.sh \
 -A upp \
 -M '--retree 2' \
 -t <path_to>/taxon_info_for_tree_labels.csv \
--u \
--g <path_to>/<file_with_target_geneIds_ONLY.txt> \
--F '60 30' \
+-g <path_to>/<file_with_target_geneIds_ONLY.txt> -F '60 30' \
 -K 0.003 \
 -q iqtree2 \
 -T \
@@ -122,6 +118,9 @@ make_species_trees_pipeline.sh \
 *.fasta \
 > make_species_trees_pipeline.log 2>&1 &
 ```
+Note that in the above command there must not be a space character after the back slash, there must be a space before the back slash and any option values that contain spaces need to be quoted e.g. option -M. The Slurm options, -Q, -R, -U, -V and -W) will need to be altered depending on 
+
+
 <!--
 ### Outputs
 The main output files are listed below. Some files will only exist where relevant options have been selected    [ turn list below into a table ]
