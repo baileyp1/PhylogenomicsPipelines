@@ -16,7 +16,7 @@ On the command line type the name of the program for brief instructions on its u
 The following programs need to be installed and available from the command line by typing the native program name. Some but not all of them are easily available from software installers (e.g. bioconda, brew, apt, yum)
 
 For gene recovery:
-* Trimmomatic, exactly version 0.39 (or alter the version number in script recover_genes_from_one_sample.sh, line ~50)
+* [Trimmomatic](http://www.usadellab.org/cms/?page=trimmomatic), exactly version 0.39 (or alter the version number in script recover_genes_from_one_sample.sh, line ~50)
 * [Paftools](https://github.com/RBGKew/pypaftol) or [HybPiper](https://github.com/mossmatters/HybPiper)
 * If using HybPiper, [seqtk](https://github.com/lh3/seqtk)
 
