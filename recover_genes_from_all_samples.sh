@@ -43,19 +43,34 @@ Program description: recovers genes from fastq files of multiple samples. Paftoo
                      target genes, then assemble the reads for each target gene. If Slurm is available samples will be run in parallel
 
 Usage: recover_genes_from_all_samples.sh
-  [ -s   add sample name and fastq file names via a csv table file (must have a header line);
-         format: SampleName,R1FastqName,R2FastqName (required option) ]
-  [ -f   FULL path to all samples(required); N.B. no filenames, just the full path to them, not a relative path and no wild cards! ]
-  [ -t   file name of target genes in fasta format (required option) ]
-  [ -a   file name of adaptors in fasta format (required option) ]
-  [ -y   Hyb-Seq program; options are 'paftools' or 'hybpiper' (default=paftools) ]
-  [ -p   directory prefix for each sample (default=Sample) ]
-  [ -c   number of cpu to use (default=4) ]
-  [ -m   Slurm memory to use (in MB); Paftools requires >> 20000, HybPiper requires << 20000 (default=0; means no limit is set) ]
-  [ -T   Slurm time limit, format <days>-<hours>:<minutes> (default=0-36:00 (36 hours) ]
-  [ -Q   Slurm partition (queue) to use (default=medium) ]
-  [ -h   prints usage and description ]
-  [ -v   program version]
+
+OPTIONS <value>:
+  -h   
+                 prints usage and description
+  -v             
+  program version
+  -s <csv file>  
+                 add sample name and fastq file names via a csv table file (must have a header line);
+                 format: SampleName,R1FastqName,R2FastqName (required option)
+  -f <string>    
+                 FULL path to all samples; N.B. no filenames, just the full path to them, not a relative path and no wild cards! (required option)
+  -t <string>    
+                 file name of target genes in fasta format (required option)
+  -a <string>    
+                 file name of adaptors in fasta format (required option)
+  -y <string>    
+                 Hyb-Seq program; options are: paftools, hybpiper, hybpiper-bwa (default=paftools)
+  -p <string>    
+                 directory prefix for each sample (default=Sample)
+  -c <integer>   
+                 number of cpu to use (default=4)
+  -m <integer>   
+                 Slurm memory to use (in MB); Paftools requires >> 20000, HybPiper requires << 20000 (default=0, means no limit is imposed in Slurm default mode)
+  -T <string>    
+                 Slurm time limit, format <days>-<hours>:<minutes> (default=0-36:00 (36 hours)
+  -Q <string>    
+                 Slurm partition (queue) to use (default=medium)
+ 
 
 A typical example:
 <path to>/recover_genes_from_all_samples.sh \\
