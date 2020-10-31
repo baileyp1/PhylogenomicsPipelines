@@ -264,8 +264,9 @@ pathToScripts=`dirname $fullPathToWrapperScript `
 if [ "$#" -lt 1 ]; then usage; exit 1; fi
 
 
-echo $0 was called with these parameters:
-echo $@
+echo
+echo "$0 was called with these parameters (but without 'free' parameters): "
+echo $# 
 echo 
 
 
