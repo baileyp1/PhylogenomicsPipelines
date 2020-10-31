@@ -523,8 +523,28 @@ makeGeneTree()	{
 		cp -p ${3}/${gene}.${1}.aln_iqtree.contree \
 		${3}/${gene}_${1}_gene_tree_USE_THIS.nwk
 		rm  ${3}/${gene}.${1}.aln_iqtree.contree
+elif [[ "$phyloProgramDNA" == 'iqtree2-B1000-nstep200-nm210' || "$phyloProgramPROT" == 'iqtree2-B1000-nstep200-nm210' ]]; then
+		echo																   # NB max iteration must be > min iteration! 
+		echo Running IQ-Tree on the DNA alignment with these options: -B 1000, -nstep 200, -nm 210, -m GTR+F+G ...
+		$exePrefix iqtree2 -T AUTO -ntmax $cpuGeneTree \
+		-redo \
+		--seqtype $iqTree2SeqType \
+		-s $2 \
+		--prefix ${3}/${gene}.${1}.aln_iqtree \
+		-B 1000 \
+		-nstep 200 \
+		-nm 210 \
+		-m GTR+F+R
+		
+		# Rename final tree file to a clearer name:			
+		cp -p ${3}/${gene}.${1}.aln_iqtree.contree \
+		${3}/${gene}_${1}_gene_tree_USE_THIS.nwk
+		rm  ${3}/${gene}.${1}.aln_iqtree.contree
 
-#### 17.10.2020 -testing fast bootstraps with raxml!!!!
+
+
+
+#### 17.10.2020 - could fast bootstraps with raxml
 
 	# if [[ "$phyloProgramPROT" == 'fasttree' ||  "$phyloProgramPROT" == 'raxml-ng'  || "$phyloProgramPROT" == 'iqtree2' ]]; then
  #     echo Running RAxML on the protein supermatrix...
