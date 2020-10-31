@@ -266,7 +266,7 @@ if [ "$#" -lt 1 ]; then usage; exit 1; fi
 
 echo
 echo "$0 was called with these parameters (but without 'free' parameters): "
-echo $# 
+echo $@
 echo 
 
 
@@ -309,7 +309,7 @@ done
 echo '$# == ' $#										# Total number of all parameters (excludes script name, includes flags and their values, excludes free parameters (ones with no flags)) 
 echo \$OPTIND == $OPTIND								# Position of the first free parameter after any options - free parameters must come after any optional parameters.
 #echo 'Value of first free parameter: ' ${@:$OPTIND:1}	# Lists the value of the first free parameter from the $@ variable; ${@:$OPTIND:2} will access the first two free parameters.
-echo 'Values of all free parameters: '${@:$OPTIND:$#}	# Therefore ${@:$OPTIND:$#} will access all the free parameters
+#echo 'Values of all free parameters: '${@:$OPTIND:$#}	# Therefore ${@:$OPTIND:$#} will access all the free parameters
 echo $(( $# - $OPTIND + 1 ))							# Number of free parameters, in this case the number of samples
 numbrSamples=$(( $# - $OPTIND + 1 ))
 #echo $numbrSamples
