@@ -413,7 +413,7 @@ makeGeneTree()	{
 		### RAXML-NG will crash if there is not enough data to ||elize so need to use 1 cpu for small # seqs,
 		### and also aln length - keep an eye on this - test larger dataet with 2, 4 cpu
 		echo
-		echo Running raxml-ng on the DNA alignment...
+		echo Running raxml-ng on the gene alignment...
 		cpuGeneTree=1		# NB - at the moment keeping cpu to 1 because very small trees can crash if # cpu is higher - can do ||elisation other ways with RAxML though 
 		### 22.10.2020 - was --threads auto{$cpuGeneTree} \; now testing --threads auto{MAX} \ - doesn't work! Says ERROR: Invalid number of threads: %s auto{1}, please provide a positive integer number! but I was!
 		### Also the --workers auto option doesn't exist!!!! \
@@ -438,7 +438,7 @@ makeGeneTree()	{
 		rm ${3}/${gene}.${1}l.aln.raxml.supportFBP
 	elif [[ "$phyloProgramDNA" == 'iqtree2' || "$phyloProgramPROT" == 'iqtree2' ]]; then
 		echo
-		echo Running IQ-Tree on the DNA alignment with these options: -B 1000 ... 
+		echo Running IQ-Tree on the gene alignment with these options: -B 1000 ... 
 		$exePrefix iqtree2 -T AUTO -ntmax $cpuGeneTree \
 		-redo \
 		--seqtype $iqTree2SeqType \
@@ -451,7 +451,8 @@ makeGeneTree()	{
 		# -alrt 		Removed -alrt 1000 option but it is very fast to compute so no real need - BUT it does add an extra value at the node I think
 		# -b			standard nonparametric bootstrap
 		# -fast			builds just 2 starting trees and there is no iteration with NNI to try and find higher likelihoods
-		# -nm 			max # iterations - must be > nstep (min iteration)  
+		# -nm 			max # iterations (Ultrafast bootstrap method) - must be > nstep (min iteration)
+		# -nstep 		number of iterations to call it a day at (Ultrafast bootstrap method)
 
 		# Rename final tree file to a clearer name:
 		cp -p ${3}/${gene}.${1}.aln_iqtree.contree \
@@ -459,7 +460,7 @@ makeGeneTree()	{
 		rm  ${3}/${gene}.${1}.aln_iqtree.contree
 	elif [[ "$phyloProgramDNA" == 'iqtree2-fast-b100' || "$phyloProgramPROT" == 'iqtree2-fast-b100' ]]; then
 		echo
-		echo Running IQ-Tree on the DNA alignment with these options: -fast, -b 100, -m GTR+F+G ...
+		echo Running IQ-Tree on the gene alignment with these options: -fast, -b 100, -m GTR+F+G ...
 		$exePrefix iqtree2 -T AUTO -ntmax $cpuGeneTree \
 		-redo \
 		--seqtype $iqTree2SeqType \
@@ -476,7 +477,7 @@ makeGeneTree()	{
 		rm  ${3}/${gene}.${1}.aln_iqtree.contree
 	elif [[ "$phyloProgramDNA" == 'iqtree2-alrt' || "$phyloProgramPROT" == 'iqtree2-alrt' ]]; then
 		echo
-		echo Running IQ-Tree on the DNA alignment with these options: -alrt, -m GTR+F+G ...
+		echo Running IQ-Tree on the gene alignment with these options: -alrt, -m GTR+F+G ...
 		$exePrefix iqtree2 -T AUTO -ntmax $cpuGeneTree \
 		-redo \
 		--seqtype $iqTree2SeqType \
@@ -491,7 +492,7 @@ makeGeneTree()	{
 		rm  ${3}/${gene}.${1}.aln_iqtree.contree
 	elif [[ "$phyloProgramDNA" == 'iqtree2-B1000-nstep40-nm50' || "$phyloProgramPROT" == 'iqtree2-B1000-nstep40-nm50' ]]; then
 		echo
-		echo Running IQ-Tree on the DNA alignment with these options: -B 1000, -nstep 40, -nm 50, -m GTR+F+G ...
+		echo Running IQ-Tree on the gene alignment with these options: -B 1000, -nstep 40, -nm 50, -m GTR+F+G ...
 		$exePrefix iqtree2 -T AUTO -ntmax $cpuGeneTree \
 		-redo \
 		--seqtype $iqTree2SeqType \
@@ -507,8 +508,8 @@ makeGeneTree()	{
 		${3}/${gene}_${1}_gene_tree_USE_THIS.nwk
 		rm  ${3}/${gene}.${1}.aln_iqtree.contree
 	elif [[ "$phyloProgramDNA" == 'iqtree2-B1000-nstep100-nm110' || "$phyloProgramPROT" == 'iqtree2-B1000-nstep100-nm110' ]]; then
-		echo																   # NB max iteration must be > min iteration! 
-		echo Running IQ-Tree on the DNA alignment with these options: -B 1000, -nstep 100, -nm 110, -m GTR+F+G ...
+		echo																    # NB max iteration must be > min iteration! 
+		echo Running IQ-Tree on the gene alignment with these options: -B 1000, -nstep 100, -nm 110, -m GTR+F+G ...
 		$exePrefix iqtree2 -T AUTO -ntmax $cpuGeneTree \
 		-redo \
 		--seqtype $iqTree2SeqType \
@@ -523,9 +524,9 @@ makeGeneTree()	{
 		cp -p ${3}/${gene}.${1}.aln_iqtree.contree \
 		${3}/${gene}_${1}_gene_tree_USE_THIS.nwk
 		rm  ${3}/${gene}.${1}.aln_iqtree.contree
-elif [[ "$phyloProgramDNA" == 'iqtree2-B1000-nstep100-nm210' || "$phyloProgramPROT" == 'iqtree2-B1000-nstep100-nm210' ]]; then
-		echo																   # NB max iteration must be > min iteration! 
-		echo Running IQ-Tree on the DNA alignment with these options: -B 1000, -nstep 100, -nm 210, -m GTR+F+G ...
+	elif [[ "$phyloProgramDNA" == 'iqtree2-B1000-nstep100-nm210' || "$phyloProgramPROT" == 'iqtree2-B1000-nstep100-nm210' ]]; then
+		echo																    # NB max iteration must be > min iteration! 
+		echo Running IQ-Tree on the gene alignment with these options: -B 1000, -nstep 100, -nm 210, -m GTR+F+G ...
 		$exePrefix iqtree2 -T AUTO -ntmax $cpuGeneTree \
 		-redo \
 		--seqtype $iqTree2SeqType \
@@ -540,8 +541,74 @@ elif [[ "$phyloProgramDNA" == 'iqtree2-B1000-nstep100-nm210' || "$phyloProgramPR
 		cp -p ${3}/${gene}.${1}.aln_iqtree.contree \
 		${3}/${gene}_${1}_gene_tree_USE_THIS.nwk
 		rm  ${3}/${gene}.${1}.aln_iqtree.contree
-
-
+	elif [[ "$phyloProgramDNA" == 'iqtree2-B1000-nm210-MT' ]]; then
+		echo																   		# NB max iteration must be > min iteration! 
+		echo Running IQ-Tree on the DNA gene alignment with these options: -B 1000, -nstep 100, -nm 210, -mset HKY,TIM2,TVM,GTR
+		$exePrefix iqtree2 -T AUTO -ntmax $cpuGeneTree \
+		-redo \
+		--seqtype $iqTree2SeqType \
+		-s $2 \
+		--prefix ${3}/${gene}.${1}.aln_iqtree \
+		-B 1000 \
+		-nstep 100 \
+		-nm 210 \
+		-mset HKY,TIM2,TVM,GTR
+		
+		# Rename final tree file to a clearer name:			
+		cp -p ${3}/${gene}.${1}.aln_iqtree.contree \
+		${3}/${gene}_${1}_gene_tree_USE_THIS.nwk
+		rm  ${3}/${gene}.${1}.aln_iqtree.contree
+	elif [[ "$phyloProgramPROT" == 'iqtree2-B1000-nm210-MT' ]]; then
+		echo																   			# NB max iteration must be > min iteration! 
+		echo Running IQ-Tree on the protein gene alignment with these options: -B 1000, -nstep 100, -nm 210, -mset HKY,TIM2,TVM,GTR ...
+		$exePrefix iqtree2 -T AUTO -ntmax $cpuGeneTree \
+		-redo \
+		--seqtype $iqTree2SeqType \
+		-s $2 \
+		--prefix ${3}/${gene}.${1}.aln_iqtree \
+		-B 1000 \
+		-nstep 100 \
+		-nm 210 \
+		-mset JTT,WAG,LG,cpREV
+		
+		# Rename final tree file to a clearer name:			
+		cp -p ${3}/${gene}.${1}.aln_iqtree.contree \
+		${3}/${gene}_${1}_gene_tree_USE_THIS.nwk
+		rm  ${3}/${gene}.${1}.aln_iqtree.contree
+	elif [[ "$phyloProgramDNA" == 'iqtree2-B1000-nm2010-MT' ]]; then
+		echo																   		# NB max iteration must be > min iteration! 
+		echo Running IQ-Tree on the DNA gene alignment with these options: -B 1000, -nstep 100, -nm 2010, -mset HKY,TIM2,TVM,GTR
+		$exePrefix iqtree2 -T AUTO -ntmax $cpuGeneTree \
+		-redo \
+		--seqtype $iqTree2SeqType \
+		-s $2 \
+		--prefix ${3}/${gene}.${1}.aln_iqtree \
+		-B 1000 \
+		-nstep 100 \
+		-nm 2010 \
+		-mset HKY,TIM2,TVM,GTR
+		
+		# Rename final tree file to a clearer name:			
+		cp -p ${3}/${gene}.${1}.aln_iqtree.contree \
+		${3}/${gene}_${1}_gene_tree_USE_THIS.nwk
+		rm  ${3}/${gene}.${1}.aln_iqtree.contree
+	elif [[ "$phyloProgramPROT" == 'iqtree2-B1000-nm2010-MT' ]]; then
+		echo																   			# NB max iteration must be > min iteration! 
+		echo Running IQ-Tree on the protein gene alignment with these options: -B 1000, -nstep 100, -nm 2010, -mset HKY,TIM2,TVM,GTR ...
+		$exePrefix iqtree2 -T AUTO -ntmax $cpuGeneTree \
+		-redo \
+		--seqtype $iqTree2SeqType \
+		-s $2 \
+		--prefix ${3}/${gene}.${1}.aln_iqtree \
+		-B 1000 \
+		-nstep 100 \
+		-nm 2010 \
+		-mset JTT,WAG,LG,cpREV
+		
+		# Rename final tree file to a clearer name:			
+		cp -p ${3}/${gene}.${1}.aln_iqtree.contree \
+		${3}/${gene}_${1}_gene_tree_USE_THIS.nwk
+		rm  ${3}/${gene}.${1}.aln_iqtree.contree
 
 
 #### 17.10.2020 - could fast bootstraps with raxml
