@@ -265,8 +265,8 @@ if [ "$#" -lt 1 ]; then usage; exit 1; fi
 
 
 echo
-echo "$0 was called with these parameters (but without 'free' parameters): "
-echo $@
+echo "Program: $0"
+echo "Command: $@"
 echo 
 
 
