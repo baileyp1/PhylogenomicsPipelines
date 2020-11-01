@@ -12,8 +12,10 @@ make_species_trees_pipeline.sh
 ```
 On the command line type the name of the program for brief instructions on its use. For the phylogenetic analysis pipeline it is best to start in a fresh directory.
  
-## Required software dependencies
-The following programs need to be installed and available from the command line by typing the native program name. Some but not all of them are easily available from software installers (e.g. bioconda, brew, apt, yum)
+##  Additional software required :(
+The following programs need to be installed and available from the command line by typing the native program name. Some but not all of them are easily available from software installers (e.g. bioconda, brew, apt, yum). 
+<!--
+For the Java programs (Trimmomatic, ASTRAL) it is best to set up an alias, named as described below -->
 
 For gene recovery:
 * [Trimmomatic](http://www.usadellab.org/cms/?page=trimmomatic), exactly version 0.39 (or alter the version number in script recover_genes_from_one_sample.sh, line ~50)
@@ -30,7 +32,7 @@ For phylogenetic analysis:
 * [RAxML](https://github.com/stamatak/standard-RAxML) (used for building a species tree using a concatenated alignment)
 * [Newick Utilities](http://cegg.unige.ch/newick_utils)
 * [ASTRAL](https://github.com/smirarab/ASTRAL), exactly version 5.7.4 (or alter the version number in script make_species_trees.sh, line ~151)
-* [AMAS.py](https://github.com/marekborowiec/AMAS) and/or [trimAl](http://trimal.cgenomics.org/) (for trimming if those options are selected)
+* [AMAS.py] (check it has the 'trim' option) (https://github.com/marekborowiec/AMAS) and/or [trimAl](http://trimal.cgenomics.org/) (for trimming if those options are selected)
 * [TreeShrink](http://trimal.cgenomics.org/)
 * R (used only by treeshrink and trimAl)
  
@@ -39,6 +41,10 @@ For phylogenetic analysis:
 ### Example
 A typical example is shown at the bottom of the command line help. 
 <!--  NB - TAKEN FROM OTHER PIPELINE - TAYLIR
+UPTOHERE29.10.2020
+Add some of the info below for this pipeline
+Continue to add the outputs 
+
 Note that in the above command there must not be a space character after the back slash, there must be a space before the back slash and any option values that contain spaces need to be quoted e.g. option -M. 
 
 The Slurm options, -Q, -V and -W, will need to be altered depending on how Slurm is set up. Slurm memory options, -R and -U, will need to be altered depending on the size of the data set. The values set in the above example were appropriate for building gene trees containing up to 3,200 samples. 
@@ -106,17 +112,17 @@ make_species_trees_pipeline.sh \
 -a \
 -D 'dna' \
 -A upp \
--M '--retree 2' \
 -t <path_to>/taxon_info_for_tree_labels.csv \
--g <path_to>/<file_with_target_geneIds_ONLY.txt> -F '60 30' \
+-g <path_to>/<file_with_target_geneIds_ONLY.txt> \
+-F '60 30' \
 -K 0.003 \
 -q iqtree2 \
 -T \
--L 30 \
+-L 10 \
 -c 8 \
 -C 6 \
 -Q long \
--R 15000 \
+-R 16000 \
 -U 12000 \
 -V 0 \
 -W 0 \
@@ -124,9 +130,9 @@ make_species_trees_pipeline.sh \
 *.fasta \
 > make_species_trees_pipeline.log 2>&1 &
 ```
-Note that in the above command there must not be a space character after the back slash, there must be a space before the back slash and any option values that contain spaces need to be quoted e.g. option -M. 
+Note that in the above command there must not be a space character after the back slash, there must be a space before the back slash and any option values that contain spaces need to be quoted e.g. option -F. 
 
-The Slurm options, -Q, -V and -W, will need to be altered depending on how Slurm is set up. Slurm memory options, -R and -U, will need to be altered depending on the size of the data set. The values set in the above example were appropriate for building gene trees containing up to 3,200 samples. 
+The Slurm options, -Q, -V and -W, will need to be altered depending on how Slurm is set up. Slurm memory options, -R and -U, will need to be altered depending on the size of the data set. The values set in the above example were appropriate for building gene trees then a species tree with ASTRAL containing up to 3,200 samples. 
 <!-- 
 ## Outputs
 
@@ -146,13 +152,32 @@ The main output files are listed below. Some files will only exist where relevan
 
 
 
-### Further info on software dependencies
-Disucss it workd on different OS - developed specifically on Linux x 2 and the Darwin on macbook  HighSierra Howver I hope the pipelinces can run on other closely related OS. I coudl spend lotso tim developin and checking other OS but instead but instead it's more effficient to just curl up quietly and disappear into /dev/null. 
-e.g. adding to $PATH
-NB - using AMAS.py the trim option needs to exist for pipleiene to work - if it is not, you may have an older version so download the latest Github repo 
+## Further Details
 
-## Explanation of how pipelines work
-The aim here is to describe the main steps in detail and enough to trouble shoot certain errors.
+Software dependencies and setting up
+Pipeline(s) will run on Linux (or at least Ubuntu, Centos) and MacOS (or at least with Darwin in HighSierra)
+Adding software to .bash_profile - mention lmod
+Creating aliases for the java programs
+If using an existing computer set up many of these programs should already be installed, if so you just need to ensure you are using an up-to-date version that match close to the following versions. 
+
+## How make_species_trees_pipeline.sh works
+This section explains how the pipeline works, then it may be possible to understand how or why there is an error in the outputs or whether it might be a bug in the workflow. Just explain how each step works, then add summary code for the key steps
+
+First gene tree are made. Mention 2 modes possible - give exampels of the fasta header line. Posible to run program for a single gene as well, then pipelein coudl be used for gene family analysis as well.
+
+If Slurm is used in the pipeline, it is possible that one or more gene trees will fail to be built due memory running out for those genes. Rather than make the pipeline stop because of this, the Slurm --dependancy flag is set to 'afterany' rather than 'afterok' so that it will continue to build the species tree from the gene trees that have been created. Use the sacct command to check whether any of the 'make_gene_trees' have failed or check the line containing 'Maximum resident set size' in the 'make_gene_trees' log file.
+
+Mention main options for the gene trees areresisue type (option -D), alignemtn prgoram (option -A) and the phylogeny program (option-q and -r). 
+Discuss the paramters used for each option.
+At the edn say that you can alter the command line in the make_gene_tree.sh script if you want to alter any of the parameters, as logn as any changes don't alter the format of the output
+
+
+Once the gene trees are built, get stats on the gene aligment and calculate how many genes trees each sample will be in
+
+If sequence filtering options are on, poor quality sequences in each gene data set are removed then the remaining sequences are realigned and the tree rebuilt. If TreeShrink has been specified (option -T) the remaining sequences (i.e. minus the ones removed by filterign and TreeShrink) are realigned and the gene trees rebuilt.
+
+
+This has changed now so a smaller point:
 It is possible to re-run the script in the same directory but if there are files that you actually want to remove before re-running you shoudl start in a fresh direcotry. Wildcards are used to pick up the set fo fiel requried for a particualr step e.g. if you realise that you no longer need a fasta file you need to remove the modified.fasta file from the directory otherwise it will be included again. Second example: if you remove one or more genes from the analysis then existing files from the previous run will be picker up again
    -->
 
