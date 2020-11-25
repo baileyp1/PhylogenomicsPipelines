@@ -298,7 +298,7 @@ Number of samples that will NOT be in the species trees: $samplesNotInSpeciesTre
 
 
 if [ $numbrSamplesInTrees -ne $totalNumbrSamples ]; then
-	echo "These samples will not be present in final ASTRAL or RAxML trees: "  >> ${fileNamePrefix}_summary_stats.txt
+	echo "These samples will not be present in final species tree(s): "  >> ${fileNamePrefix}_summary_stats.txt
 	comm -23 samples_submitted.txt  mafft_dna_alns_fasta_samples_in_tree.txt >> ${fileNamePrefix}_summary_stats.txt
 	echo >> ${fileNamePrefix}_summary_stats.txt
 fi

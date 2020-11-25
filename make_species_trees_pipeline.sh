@@ -68,95 +68,98 @@ function usage	{
 
 cat << EOF
 
-Program description: makes species trees from fasta files, either of two types:
-                     1. recovered genes (DNA) from multiple samples, one fasta file per sample (default)
-                        By Default, the fasta header format MUST BE: >sampleId-geneId but one other option (-a) is available.
-                     2. gene-wise (DNA) fasta files, one fasta file per gene (option -G) 
+Program description:
+                makes species trees from fasta files, either of two types:
+                1. recovered genes (DNA) from multiple samples, one fasta file per sample (default)
+                   By Default, the fasta header format MUST BE: >sampleId-geneId but one other option (-a) is available.
+                2. gene-wise (DNA) fasta files, one fasta file per gene (option -G) 
 
-Usage:               make_species_trees_pipeline.sh [OPTIONS] fastafile1 fastafile2 fastafile3 ...
+Usage:          make_species_trees_pipeline.sh [OPTIONS] fastafile1 fastafile2 fastafile3 ...
 
 OPTIONS <value>:
-  -h               shows this message
-  -v               program version
+  -h            shows this message
+  -v            program version
 INPUT FILE OPTIONS:
   -G               
-                   make gene trees, starting from gene-wise fasta files rather than files containing all genes per sample
-                   Gene name/identifier must be identical to the sample fasta file name (minus any [dot] ending suffix e.g. .fasta),
-                   else change the gene name list in option -g so that it is.	
-                   Fasta header line format MUST BE: >sampleId
+                make gene trees, starting from gene-wise fasta files rather than files containing all genes per sample
+                ene name/identifier must be identical to the sample fasta file name (minus any [dot] ending suffix e.g. .fasta),
+                else change the gene name list in option -g so that it is.	
+                Fasta header line format MUST BE: >sampleId
   -g <file>        
-                   file (including path to it) containing list of gene names only (required option)        
+                file (including path to it) containing list of gene names only (required option)        
   -a               
-                   add sample name onto the fasta header from the input fasta file name.
-                   Expected gene identifier format in the input fasta header: >geneId (no hyphen '-' characters allowed)
+                add sample name onto the fasta header from the input fasta file name.
+                Expected gene identifier format in the input fasta header: >geneId (no hyphen '-' characters allowed)
   -t <csv file>    
-                   add sample name and other info from a comma separated value (csv) table file into the tree leaf labels.
-                   Format of table row: sample_name/identifier, followed by any species information (include sample_name/identifier again if required) 
+                add sample name and other info from a comma separated value (csv) table file into the tree leaf labels.
+                Format of table row: sample_name/identifier, followed by any species information (include sample_name/identifier again if required) 
   -u               
-                   add contig length info onto species tree tips (requires option -t)
-                   Sample_name/identifier must be identical to the sample fasta file name (minus any [dot] ending suffix e.g. .fasta)
-                   Not available in gene-wise mode (option -G)
+                add contig length info onto species tree tips (requires option -t)
+                Sample_name/identifier must be identical to the sample fasta file name (minus any [dot] ending suffix e.g. .fasta)
+                Not available in gene-wise mode (option -G)
   -p <string>      
-                   prefix for the output filenames e.g. taxonomic group (default=tree_pipeline)
+                prefix for the output filenames e.g. taxonomic group (default=tree_pipeline)
 ALIGNMENT OPTIONS:
   -D <string>      
-                   sequence type to use: dna, protein, codon (default=dna). N.B. use with multiple types must be quoted (e.g. 'dna protein')
-                   codon is input DNA aligned but guided by a protein alignment
+                sequence type to use: dna, protein, codon (default=dna). N.B. use with multiple types must be quoted (e.g. 'dna protein')
+                codon is input DNA aligned but guided by a protein alignment
   -A <string>      
-                   alignment program to use: mafft, upp (default=mafft)
+                alignment program to use: mafft, upp (default=mafft)
   -M <string>      
-                   if using mafft, specify algorithm to use in quotes i.e. '--retree 1', '--retree 2', '--maxiterate 1000' etc (default='--retree 2')
+                if using mafft, specify algorithm to use in quotes i.e. '--retree 1', '--retree 2', '--maxiterate 1000' etc (default='--retree 2')
 FILTERING AND TRIMMING OPTIONS:
   -F <2 integers> 
-                   filter sequences option 1. Format: '<1> <2>' (no default; N.B. values must be quoted)
-                   1. filters sequences in gene alignments by coverage, in this option by the percent of well conserved regions (columns) 
-                      in the alignment covered by a sample sequence. A well conserved column is one with > 70 % residue occupancy
-                      Minimum percent to tolerate (advised=60; 0 would mean no filtering, i.e. include sequence of any length)
-                   2. percent of samples in each gene tree.
-                      Minumum percent to tolerate (advised=30; 0 would mean no filtering, include all available samples in each gene tree)
-                   Don't use with option -I else option -F only will applied.
+                filter sequences option 1. Format: '<1> <2>' (no default; N.B. values must be quoted)
+                1. filters sequences in gene alignments by coverage, in this option by the percent of well conserved regions (columns) 
+                   in the alignment covered by a sample sequence. A well conserved column is one with > 70 % residue occupancy
+                   Minimum percent to tolerate (advised=60; 0 would mean no filtering, i.e. include sequence of any length)
+                2. percent of samples in each gene tree.
+                   Minumum percent to tolerate (advised=30; 0 would mean no filtering, include all available samples in each gene tree)
+                Don't use with option -I else option -F only will applied.
   -I <integer>     
-                   filter sequences option 2 (no default; advised=60). Filters sequences from the alignment based on their length as a 
-                   percent of the median length of all sequences in the data set. Don't use with option -F else option -F only will applied.
+                filter sequences option 2 (no default; advised=60). Filters sequences from the alignment based on their length as a 
+                percent of the median length of all sequences in the data set. Don't use with option -F else option -F only will applied.
   -J               
-                   trim alignment option 1. Filter columns with OpTrimAL (after Shee el al 2020, https://doi.org/10.3389/fpls.2020.00258)
+                trim alignment option 1. Filter columns with OpTrimAL (after Shee el al 2020, https://doi.org/10.3389/fpls.2020.00258)
   -K <fraction>    
-                   trim alignment option 2. Filter columns to remove rarer insertions (no default; example: 0.003 will remove columns with 0.3 % occupancy)
+                trim alignment option 2. Filter columns to remove rarer insertions (no default; example: 0.003 will remove columns with 0.3 % occupancy)
 PHYLOGENY OPTIONS:
   -i               
-                   make gene trees only
+                make gene trees only
   -j               
-                   make species trees only. Gene trees must already exist in run directory
+                make species trees only. Gene trees must already exist in run directory
   -q <string>      
-                   name of phylogeny program for gene trees from DNA sequences.
-                   Options are, fastest to slowest: fasttree, iqtree2-B1000-nstep100-nm100, iqtree2, raxml-ng (default=fasttree)
+                name of phylogeny program for gene trees from DNA sequences.
+                Options are, fastest to slowest: fasttree, iqtree2-B1000-nstep100-nm100, iqtree2, raxml-ng (default=fasttree)
   -r <string>      
-                   name of phylogeny program for gene trees from protein sequences.
-                   If required, options are, fastest to slowest: fasttree, iqtree2-B1000-nstep100-nm100, iqtree2, raxml-ng (no default)
+                name of phylogeny program for gene trees from protein sequences.
+                If required, options are, fastest to slowest: fasttree, iqtree2-B1000-nstep100-nm100, iqtree2, raxml-ng (no default)
   -S <string>      
-                   name of phylogeny programs to use for the species tree(s) for supermatrix approach (concatenated gene alignments).
-                   If required, options are, fastest to slowest: fasttree, raxml-ng (no default)
+                name of phylogeny programs to use for the species tree(s) for supermatrix approach (concatenated gene alignments).
+                If required, options are, fastest to slowest: fasttree, raxml-ng (no default)
   -T               
-                   use Treeshrink on gene trees (followed by re-alignment)
+                use Treeshrink on gene trees (followed by re-alignment)
   -L <integer>     
-                   collapse gene tree nodes with bootstrap support less than <integer> percent (no default)
+                collapse gene tree nodes with bootstrap support less than <integer> percent (no default)
 OTHER OPTIONS: 
   -C <integer>     
-                   number of cpu to use for genetrees; NB - not convinced >1 cpu works robustly for raxml-ng with small datasets! (default=1)
+                number of cpu to use for genetrees; NB - not convinced >1 cpu works robustly for raxml-ng with small datasets! (default=1)
   -c <integer>     
-                   number of cpu to use for RAxML in supermatrix method (default=8)
+                number of cpu to use for RAxML in supermatrix method (default=8)
   -R <integer>     
-                   Slurm memory to use (in MB) for gene trees (default=0; means no limit is imposed)
+                Slurm memory to use (in MB) for gene trees (default=0; means no limit is imposed)
   -U <integer>     
-                   Slurm memory to use (in MB) for species trees (default=0; means no limit is imposed)
+                Slurm memory to use (in MB) for species trees (default=0; means no limit is imposed)
   -V <string>      
-                   Slurm time limit to use for gene trees. Format: <days>-<hours>:<minutes> e.g. 1-0:0 is 1 day (default=0, means no limit is imposed in Slurm default mode)
+                Slurm time limit to use for gene trees. Format: <days>-<hours>:<minutes>
+                e.g. 1-0:0 is 1 day (default=0, means no limit is imposed in default Slurm set up)
   -W <string>      
-                   Slurm time limit to use for species trees. Format: <days>-<hours>:<minutes> e.g. 1-0:0 is 1 day (default=0, means no limit is imposed in Slurm default mode)
+                Slurm time limit to use for species trees. Format: <days>-<hours>:<minutes>
+                e.g. 1-0:0 is 1 day (default=0, means no limit is imposed in default Slurm set up)
   -Q <string>      
-                   Slurm partition (queue) to use (default=medium; select more than one queue with a comma delimited list e.g. medium,long)
+                Slurm partition (queue) to use (default=medium; select more than one queue with a comma delimited list e.g. medium,long)
   -H <integer>     
-                   Slurm array throttle (default=50; could set to 1, then increase once happy with run with: scontrol update arraytaskthrottle=<integer> job=<jobId>)
+                Slurm array throttle (default=50; could set to 1, then increase once happy with run with: scontrol update arraytaskthrottle=<integer> job=<jobId>)
 
 
 A basic example run is described below:
@@ -275,10 +278,10 @@ echo
 ######################################
 phyloProgramDNA_Test=''
 phyloProgramPROT_Test=''
-if [[ $phyloProgramDNA == 'iqtree2-fast-b100' || $phyloProgramDNA == 'iqtree2-alrt' ]]; then
+if [[ $phyloProgramDNA == 'iqtree2'* ]]; then
 	phyloProgramDNA_Test='iqtree2'
 fi
-if [[ $phyloProgramPROT == 'iqtree2-fast-b100' || $phyloProgramPROT == 'iqtree2-alrt' ]]; then
+if [[ $phyloProgramPROT == 'iqtree2'* ]]; then
 	phyloProgramPROT_Test='iqtree2'
 fi
 

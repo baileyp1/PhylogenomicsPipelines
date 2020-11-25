@@ -435,7 +435,7 @@ makeGeneTree()	{
 		# Rename final tree file to a clearer name:
 		cp -p ${3}/${gene}.${1}.aln.raxml.supportFBP \
 		${3}/${gene}_${1}_gene_tree_USE_THIS.nwk
-		rm ${3}/${gene}.${1}l.aln.raxml.supportFBP
+		rm ${3}/${gene}.${1}l.aln.raxml.supportFBP 					  # NB - these values below need to start with 'iqtree' so that software can be chacked in main parent script - see line ~ 274	
 	elif [[ "$phyloProgramDNA" == 'iqtree2' || "$phyloProgramPROT" == 'iqtree2' ]]; then
 		echo
 		echo Running IQ-Tree on the gene alignment with these options: -B 1000 ... 
@@ -775,7 +775,8 @@ if [[ $dnaSelected == 'yes' ]]; then
    			# Don't think this file always exists (for very small datasets):
    			if [[ -f ${gene}.dna.upp_insertion_columns.txt ]]; then rm ${gene}.dna.upp_insertion_columns.txt; fi
    		fi
-		run_upp.py -x $cpuGeneTree -M -1 -s $dnaFastaFileForAln -M -1 -o ${gene}.dna.upp
+		run_upp.py -x $cpuGeneTree -M -1 -s $dnaFastaFileForAln -o ${gene}.dna.upp
+### 16.11.2020 - noticed that I had two -M -1 flags typed into the command - OK? 
 		# Other options to consider:
 		# UPP(Fast): run_upp.py -s input.fas -B 100. - what's the -B option??!!
 		# -m [dna|rna|amino]
