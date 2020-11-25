@@ -2,6 +2,13 @@
 
 This repository contains two pipelines to perform phylogenomic analysis. One pipeline recovers genes from sample Illumina read data and the second pipeline performs phylogenetic analysis on the recovered genes to obtain a species tree. They will run on Linux (and with the [Slurm](https://slurm.schedmd.com/) job manager, if installed) and MacOS.
 
+<!--
+If you use this software and find it useful, please cite [this publication]():
+```
+Baker et al (2021) ....
+```
+-->
+
 For gene recovery use
 ```
 recover_genes_from_all_samples.sh
@@ -12,7 +19,7 @@ make_species_trees_pipeline.sh
 ```
 On the command line type the name of the program for brief instructions on its use. For the phylogenetic analysis pipeline it is best to start in a fresh directory.
  
-##  Additional software required :(
+##  Additional software required
 The following programs need to be installed and available from the command line by typing the native program name. Some but not all of them are easily available from software installers (e.g. bioconda, brew, apt, yum). 
 <!--
 For the Java programs (Trimmomatic, ASTRAL) it is best to set up an alias, named as described below -->
@@ -32,7 +39,7 @@ For phylogenetic analysis:
 * [RAxML](https://github.com/stamatak/standard-RAxML) (used for building a species tree using a concatenated alignment)
 * [Newick Utilities](http://cegg.unige.ch/newick_utils)
 * [ASTRAL](https://github.com/smirarab/ASTRAL), exactly version 5.7.4 (or alter the version number in script make_species_trees.sh, line ~151)
-* [AMAS.py] (check it has the 'trim' option) (https://github.com/marekborowiec/AMAS) and/or [trimAl](http://trimal.cgenomics.org/) (for trimming if those options are selected)
+* [AMAS.py](https://github.com/marekborowiec/AMAS) (check it has the 'trim' option) and/or [trimAl](http://trimal.cgenomics.org/) (for trimming if those options are selected)
 * [TreeShrink](http://trimal.cgenomics.org/)
 * R (used only by treeshrink and trimAl)
  
@@ -104,7 +111,7 @@ e.g. throttle set to 1
 
 ## make_species_trees_pipeline.sh 
 ### Example
-A basic example is shown at the bottom of the command line help. A more extensive analysis is presented below (options for this pipeline in brackets).
+A basic example is shown at the bottom of the command line help. A more extensive analysis is presented below (options for this pipeline in brackets) with jobs set to run vi8a Slurm job manager on a High Performance Computing (HPC) Linux cluster. 
 
 Build genes trees from sample fasta files, formatted as described for option -a, by aligning the input DNA sequence for each gene with UPP (option -A),  filtering out genes with low sequence coverage across the alignment (option -F), removing very rare insertions (option -K), building each gene tree with IQTREE-2 using the Ultrafast bootstrap option (option -q), using TreeShrink to identify usually long branches in the gene trees (option -T), then collapsing nodes with bootstrap values < 10 % (option -L) before building a species tree with ASTRAL. Finally, FASTTREE and RAxML are then used to reconstruct a supermatrix tree built from a concatenated set of the UPP gene alignments:
 ```
