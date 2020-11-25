@@ -88,8 +88,8 @@ runTreeShrink() {
 
 
     # To use Treeshrink, need to prepare a directory to hold each tree and alignment per gene.
-    # Current aln name: *_mafft_dna_aln_ovr${fractnAlnCovrg_pc}pc_aln_covrg_trimCols0.003.fasta
-    # Current tree name: *_dna_gene_tree_USE_THIS.nwk
+    # Current aln name: *.${1}.aln.for_tree.fasta
+    # Current tree name: *_${1}_gene_tree_USE_THIS.nwk
     if [[ ! -d treeshrink_${1}_gene_trees ]]; then mkdir treeshrink_${1}_gene_trees; fi
     for file in  ../*_${1}_gene_tree_USE_THIS.nwk; do
         # Also need to remove the relative path at the front!
