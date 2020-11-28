@@ -490,25 +490,25 @@ makeGeneTree()	{
 		cp -p ${3}/${gene}.${1}.aln_iqtree.contree \
 		${3}/${gene}_${1}_gene_tree_USE_THIS.nwk
 		rm  ${3}/${gene}.${1}.aln_iqtree.contree
-	elif [[ "$phyloProgramDNA" == 'iqtree2-B1000-nstep40-nm50' || "$phyloProgramPROT" == 'iqtree2-B1000-nstep40-nm50' ]]; then
-		echo
-		echo Running IQ-Tree on the gene alignment with these options: -B 1000, -nstep 40, -nm 50, -m GTR+F+G ...
-		$exePrefix iqtree2 -T AUTO -ntmax $cpuGeneTree \
-		-redo \
-		--seqtype $iqTree2SeqType \
-		-s $2 \
-		--prefix ${3}/${gene}.${1}.aln_iqtree \
-		-B 1000 \
-		-nstep 40 \
-		-nm 50 \
-		-m GTR+F+R
+	# elif [[ "$phyloProgramDNA" == 'iqtree2-B1000-nstep40-nm50' || "$phyloProgramPROT" == 'iqtree2-B1000-nstep40-nm50' ]]; then
+	# 	echo
+	# 	echo Running IQ-Tree on the gene alignment with these options: -B 1000, -nstep 40, -nm 50, -m GTR+F+G ...
+	# 	$exePrefix iqtree2 -T AUTO -ntmax $cpuGeneTree \
+	# 	-redo \
+	# 	--seqtype $iqTree2SeqType \
+	# 	-s $2 \
+	# 	--prefix ${3}/${gene}.${1}.aln_iqtree \
+	# 	-B 1000 \
+	# 	-nstep 40 \
+	# 	-nm 50 \
+	# 	-m GTR+F+R
 		
-		# Rename final tree file to a clearer name:			
-		cp -p ${3}/${gene}.${1}.aln_iqtree.contree \
-		${3}/${gene}_${1}_gene_tree_USE_THIS.nwk
-		rm  ${3}/${gene}.${1}.aln_iqtree.contree
-	elif [[ "$phyloProgramDNA" == 'iqtree2-B1000-nstep100-nm110' || "$phyloProgramPROT" == 'iqtree2-B1000-nstep100-nm110' ]]; then
-		echo																    # NB max iteration must be > min iteration! 
+	# 	# Rename final tree file to a clearer name:			
+	# 	cp -p ${3}/${gene}.${1}.aln_iqtree.contree \
+	# 	${3}/${gene}_${1}_gene_tree_USE_THIS.nwk
+	# 	rm  ${3}/${gene}.${1}.aln_iqtree.contree
+	elif [[ "$phyloProgramDNA" == 'iqtree2-B1000-nm110' || "$phyloProgramPROT" == 'iqtree2-B1000-nm110' ]]; then
+		echo																    # NB max iteration must be > min -nstep iteration! 
 		echo Running IQ-Tree on the gene alignment with these options: -B 1000, -nstep 100, -nm 110, -m GTR+F+G ...
 		$exePrefix iqtree2 -T AUTO -ntmax $cpuGeneTree \
 		-redo \
@@ -524,9 +524,9 @@ makeGeneTree()	{
 		cp -p ${3}/${gene}.${1}.aln_iqtree.contree \
 		${3}/${gene}_${1}_gene_tree_USE_THIS.nwk
 		rm  ${3}/${gene}.${1}.aln_iqtree.contree
-	elif [[ "$phyloProgramDNA" == 'iqtree2-B1000-nstep100-nm210' || "$phyloProgramPROT" == 'iqtree2-B1000-nstep100-nm210' ]]; then
-		echo																    # NB max iteration must be > min iteration! 
-		echo Running IQ-Tree on the gene alignment with these options: -B 1000, -nstep 100, -nm 210, -m GTR+F+G ...
+	elif [[ "$phyloProgramDNA" == 'iqtree2-B1000-nm200' || "$phyloProgramPROT" == 'iqtree2-B1000-nm200' ]]; then
+		echo																    # NB max iteration must be > min -nstep iteration! 
+		echo Running IQ-Tree on the gene alignment with these options: -B 1000, -nstep 100, -nm 200, -m GTR+F+G ...
 		$exePrefix iqtree2 -T AUTO -ntmax $cpuGeneTree \
 		-redo \
 		--seqtype $iqTree2SeqType \
@@ -534,7 +534,26 @@ makeGeneTree()	{
 		--prefix ${3}/${gene}.${1}.aln_iqtree \
 		-B 1000 \
 		-nstep 100 \
-		-nm 210 \
+		-nm 200 \
+		-m GTR+F+R
+		
+		# Rename final tree file to a clearer name:			
+		cp -p ${3}/${gene}.${1}.aln_iqtree.contree \
+		${3}/${gene}_${1}_gene_tree_USE_THIS.nwk
+		rm  ${3}/${gene}.${1}.aln_iqtree.contree
+
+
+	elif [[ "$phyloProgramDNA" == 'iqtree2-B1000-nm1000' || "$phyloProgramPROT" == 'iqtree2-B1000-nm1000' ]]; then
+		echo																   		# NB max iteration must be > min -nstep iteration! 
+		echo Running IQ-Tree on the DNA gene alignment with these options: -B 1000, -nstep 100, -nm 1000, -m GTR+F+G ...
+		$exePrefix iqtree2 -T AUTO -ntmax $cpuGeneTree \
+		-redo \
+		--seqtype $iqTree2SeqType \
+		-s $2 \
+		--prefix ${3}/${gene}.${1}.aln_iqtree \
+		-B 1000 \
+		-nstep 100 \
+		-nm 1000 \
 		-m GTR+F+R
 		
 		# Rename final tree file to a clearer name:			
@@ -569,40 +588,6 @@ makeGeneTree()	{
 		-B 1000 \
 		-nstep 100 \
 		-nm 210 \
-		-mset JTT,WAG,LG,cpREV
-		
-		# Rename final tree file to a clearer name:			
-		cp -p ${3}/${gene}.${1}.aln_iqtree.contree \
-		${3}/${gene}_${1}_gene_tree_USE_THIS.nwk
-		rm  ${3}/${gene}.${1}.aln_iqtree.contree
-	elif [[ "$phyloProgramDNA" == 'iqtree2-B1000-nm2010-MT' ]]; then
-		echo																   		# NB max iteration must be > min iteration! 
-		echo Running IQ-Tree on the DNA gene alignment with these options: -B 1000, -nstep 100, -nm 2010, -mset HKY,TIM2,TVM,GTR
-		$exePrefix iqtree2 -T AUTO -ntmax $cpuGeneTree \
-		-redo \
-		--seqtype $iqTree2SeqType \
-		-s $2 \
-		--prefix ${3}/${gene}.${1}.aln_iqtree \
-		-B 1000 \
-		-nstep 100 \
-		-nm 2010 \
-		-mset HKY,TIM2,TVM,GTR
-		
-		# Rename final tree file to a clearer name:			
-		cp -p ${3}/${gene}.${1}.aln_iqtree.contree \
-		${3}/${gene}_${1}_gene_tree_USE_THIS.nwk
-		rm  ${3}/${gene}.${1}.aln_iqtree.contree
-	elif [[ "$phyloProgramPROT" == 'iqtree2-B1000-nm2010-MT' ]]; then
-		echo																   			# NB max iteration must be > min iteration! 
-		echo Running IQ-Tree on the protein gene alignment with these options: -B 1000, -nstep 100, -nm 2010, -mset HKY,TIM2,TVM,GTR ...
-		$exePrefix iqtree2 -T AUTO -ntmax $cpuGeneTree \
-		-redo \
-		--seqtype $iqTree2SeqType \
-		-s $2 \
-		--prefix ${3}/${gene}.${1}.aln_iqtree \
-		-B 1000 \
-		-nstep 100 \
-		-nm 2010 \
 		-mset JTT,WAG,LG,cpREV
 		
 		# Rename final tree file to a clearer name:			
@@ -692,7 +677,7 @@ if [[ $geneFile != 'use_genewise_files' ]]; then
 	#    which is why this code can work - bash line length limit much much longer than required here)
 	#    NB - using ">" ensures that I don't also grep out a species id: grep -A1 ">$gene" \
 	#	 Improvement: current grep now matches whole words so can have gene identifiers
-	#                 e.g. 50, 506 and 5064 and they won't pick each other out (BUT these chars count as word endings: '.'  '/' )   
+	#                 e.g. 50, 506 and 5064 and they won't pick each other out (BUT these chars count as word endings: '.'  '/' ) - NB 26.11.2020 - therefore may want to recheck after this step for multiple seqs with the same gene ID   
 	# 2. print seqs for current gene to a separate file
 	# 3. reorganise the fasta header so that species info is next to '>' and the gene id is removed (required to run in coalescence)
 	###gene=`echo $geneId | tr -d '\n' `	# Need to remove line return, if present after the first field! Now moved furtehr up.
@@ -776,7 +761,7 @@ if [[ $dnaSelected == 'yes' ]]; then
    			if [[ -f ${gene}.dna.upp_insertion_columns.txt ]]; then rm ${gene}.dna.upp_insertion_columns.txt; fi
    		fi
 		run_upp.py -x $cpuGeneTree -M -1 -s $dnaFastaFileForAln -o ${gene}.dna.upp
-### 16.11.2020 - noticed that I had two -M -1 flags typed into the command - OK? 
+### 16.11.2020 - noticed that I had two -M -1 flags typed into the command! - OK?
 		# Other options to consider:
 		# UPP(Fast): run_upp.py -s input.fas -B 100. - what's the -B option??!!
 		# -m [dna|rna|amino]
