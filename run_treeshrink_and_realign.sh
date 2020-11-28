@@ -202,7 +202,7 @@ reAlignSeqs()   {
             # ../tree_tip_info_mapfile.txt \
             # ../${fileNamePrefix}_summary_of_sample_quality.txt \
     #### Actually just need to copy it across here
-            cp -p tree_tip_info_mapfile_plusL.txt .
+            cp -p ../tree_tip_info_mapfile_plusL.txt .
             # NB - still need to copy this file to 'tree_tip_info_mapfile.txt' in the species
             # script because it gets prepared again at start of the realn step.
         fi
