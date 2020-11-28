@@ -2,12 +2,10 @@
 
 This repository contains two pipelines to perform phylogenomic analysis. One pipeline recovers genes from sample Illumina read data and the second pipeline performs phylogenetic analysis on the recovered genes to obtain a species tree. They will run on Linux (and with the [Slurm](https://slurm.schedmd.com/) job manager, if installed) and MacOS.
 
-<!--
-If you use this software and find it useful, please cite [this publication]():
+This software has been used in the following work:
 ```
-Baker et al (2021) ....
-```
--->
+Baker et al (2021) A phylogenomic infrastructure for the flowering plants: comprehensive data and a dynamic tree of life (in preparation)
+``` 
 
 For gene recovery use
 ```
@@ -140,7 +138,18 @@ make_species_trees_pipeline.sh \
 Note that in the above command there must not be a space character after the back slash, there must be a space before the back slash and any option values that contain spaces need to be quoted e.g. option -F. 
 
 The Slurm options, -Q, -V and -W, will need to be altered depending on how Slurm is set up. Slurm memory options, -R and -U, will need to be altered depending on the size of the data set. The values set in the above example were appropriate for building gene trees then a species tree with ASTRAL containing up to 3,200 samples. 
+
 <!-- 
+To input a subset of samples in a directory, '*.fasta' should be replaced by the following example code and placed between back tick characters in the above command. It takes each identifier specified in the .txt file and creates the path to the file by adding whatever text is printed instead of '<path_to_files>':
+```
+cat ../<list_of_ids_matching_filename>.txt | awk '{print "<path_to_files>/" $1 ".fasta"}' `
+```
+Note that this command will only work if sample identifiers match the filenames. To check that the file paths actually exist, try to list them like so:
+```
+cat ../<list_of_ids_matching_filename>.txt | awk '{print "<path_to_files>/" $1 ".fasta"}' | xargs ls -l
+```
+
+
 ## Outputs
 
 <!-- 
