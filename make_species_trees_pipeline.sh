@@ -76,17 +76,18 @@ Program description:
 
 Usage:          make_species_trees_pipeline.sh [OPTIONS] fastafile1 fastafile2 fastafile3 ...
 
-OPTIONS <value>:
+OPTIONS <required_value>:
   -h            shows this message
   -v            program version
 INPUT FILE OPTIONS:
   -G               
-                make gene trees, starting from gene-wise fasta files rather than files containing all genes per sample
-                ene name/identifier must be identical to the sample fasta file name (minus any [dot] ending suffix e.g. .fasta),
+                make gene trees, starting from gene-wise fasta files rather than files containing all genes per sample.
+                Gene name/identifier must be identical to the sample fasta file name (minus any [dot] ending suffix e.g. .fasta),
                 else change the gene name list in option -g so that it is.	
                 Fasta header line format MUST BE: >sampleId
   -g <file>        
-                file (including path to it) containing list of gene names only (required option)        
+                file (including path to it) containing list of gene names only (required option)
+                NB - pretty sure that gene names must NOT have '.' characters in them if the suffix is what makes them unique.         
   -a               
                 add sample name onto the fasta header from the input fasta file name.
                 Expected gene identifier format in the input fasta header: >geneId (no hyphen '-' characters allowed)
@@ -130,10 +131,10 @@ PHYLOGENY OPTIONS:
                 make species trees only. Gene trees must already exist in run directory
   -q <string>      
                 name of phylogeny program for gene trees from DNA sequences.
-                Options are, fastest to slowest: fasttree, iqtree2-B1000-nstep100-nm100, iqtree2, raxml-ng (default=fasttree)
+                Options are, fastest to slowest: fasttree, iqtree2-B1000-nm110, iqtree2-B1000-nm200, iqtree2-B1000-nm1000, iqtree2, raxml-ng (default=fasttree)
   -r <string>      
                 name of phylogeny program for gene trees from protein sequences.
-                If required, options are, fastest to slowest: fasttree, iqtree2-B1000-nstep100-nm100, iqtree2, raxml-ng (no default)
+                If required, options are, fastest to slowest: fasttree, iqtree2-B1000-nm110, iqtree2-B1000-nm200, iqtree2-B1000-nm1000, iqtree2, raxml-ng (no default)
   -S <string>      
                 name of phylogeny programs to use for the species tree(s) for supermatrix approach (concatenated gene alignments).
                 If required, options are, fastest to slowest: fasttree, raxml-ng (no default)
@@ -179,7 +180,6 @@ make_species_trees_pipeline.sh \\
 -q fasttree \\
 -c 8 \\
 -C 1 \\
--Q medium \\
 <path_to_recovered_genes_from_samples>/*.fasta \\
 > make_species_trees_pipeline.log 2>&1 &
 
@@ -887,6 +887,7 @@ if [[ $os == 'Darwin' && $speciesTreesOnly == 'no' ]]; then
 		"$speciesTreeSlurmMem" \
 		"$geneTreeSlurmTime" \
 		"$speciesTreeSlurmTime" \
+		"$option_u" \
 		> run_treeshrink_and_realign.log 2>&1
 		exit	# Species trees will be made after TreeShrink or re-alignment step(s) in nested call to this script, if requested.
 	fi
@@ -978,6 +979,7 @@ elif [[ $os == 'Linux' && $speciesTreesOnly == 'no' ]]; then
 			##########################################
 			echo 'Re-aligning gene alignments because TreeShrink option or filterSeqs1 option is on, then continuing analysis in the "after_treeshrink_USE_THIS" or "after_reAlnFilterSeqs_USE_THIS" directory...'
 			##########################################
+			# TreeShrink step takes ~1h16mins + requires ~ 10 GB mem for ~353 gene trees and ~3500 samples
 			jobInfo2=`sbatch -J trShrnk_filtr_realgn  --dependency=afterok:$jobId -p $partitionName -c 1 -n 1 --mem $geneTreeSlurmMem -o run_treeshrink_and_realign.log  -e run_treeshrink_and_realign.err  $pathToScripts/run_treeshrink_and_realign.sh \
 			"$numbrSamples" \
 			"$phyloProgramDNA" \
@@ -1008,7 +1010,8 @@ elif [[ $os == 'Linux' && $speciesTreesOnly == 'no' ]]; then
 			"$geneTreeSlurmMem" \
 			"$speciesTreeSlurmMem" \
 			"$geneTreeSlurmTime" \
-			"$speciesTreeSlurmTime" `
+			"$speciesTreeSlurmTime" \
+			"$option_u" `
 			exit	# Species trees will be made after TreeShrink or re-alignment step(s) in nested call to this script, if requested.
 		fi
 	else
@@ -1105,6 +1108,7 @@ elif [[ $os == 'Linux' && $speciesTreesOnly == 'no' ]]; then
 			"$speciesTreeSlurmMem" \
 			"$geneTreeSlurmTime" \
 			"$speciesTreeSlurmTime" \
+			"$option_u" \
 			> run_treeshrink_and_realign.log 2>&1
 			exit	# Species trees will be made after TreeShrink or re-alignment step(s) in nested call to this script, if requested.
 		fi
@@ -1137,6 +1141,7 @@ if [ $os == 'Darwin' ]; then
 	$codonSelected \
 	$collapseNodes \
 	aln.for_tree.fasta \
+	$option_u \
 	> ${fileNamePrefix}_make_species_trees.log 2>&1
 elif [ $os == 'Linux' ]; then
 	exePrefix="/usr/bin/time -v"
@@ -1162,7 +1167,8 @@ elif [ $os == 'Linux' ]; then
 		$proteinSelected \
 		$codonSelected \
 		$collapseNodes \
-		aln.for_tree.fasta
+		aln.for_tree.fasta \
+		$option_u
 	else
 		$pathToScripts/make_species_trees.sh \
 		$fractnAlnCovrg \
@@ -1180,6 +1186,7 @@ elif [ $os == 'Linux' ]; then
 		$codonSelected \
 		$collapseNodes \
 		aln.for_tree.fasta \
+		$option_u \
 		> ${fileNamePrefix}_make_species_trees.log 2>&1
 	fi
 fi

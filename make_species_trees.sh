@@ -28,6 +28,7 @@ proteinSelected=${12}
 codonSelected=${13}
 collapseNodes=${14}
 alnFileForTreeSuffix=${15}      # Should be generic for dna, protein or codon filenames!  aln.for_tree.fasta
+option_u=${16}
 
 # Convert $emptyMatchStateFractn and $fractnSpecies to a percent for use in the output files:
 fractnAlnCovrg_pc=`awk -v FRACTN=$fractnAlnCovrg 'BEGIN{printf "%.0f", FRACTN * 100}' `
@@ -44,6 +45,11 @@ echo numbrSamplesThreshold: $numbrSamplesThreshold
 echo exePrefix: $exePrefix
 echo treeTipInfoMapFile: $treeTipInfoMapFile
 echo collapseNodes: $collapseNodes
+
+
+if [[ -s $treeTipInfoMapFile && $option_u == 'yes' ]]; then
+    cp -p tree_tip_info_mapfile_plusL.txt  tree_tip_info_mapfile.txt
+fi
 
 
 numbrLowSupportNodesThreshold=70    # For use with getTreeStats() - if using a program like fasttree that
@@ -248,7 +254,7 @@ getTreeStats ${fileNamePrefix}.dna.species_tree.astral_pp1_value.nwk $numbrLowSu
 
 # Add tree tip info.
 # NB - for this option, the $treeTipInfoMapFile must have been submitted BUT I'm re-formatting it --> 'tree_tip_info_mapfile.txt'!):
-if [ -s $treeTipInfoMapFile ]; then 
+if [ -s $treeTipInfoMapFile ]; then
     nw_rename -l  ${fileNamePrefix}.dna.species_tree.astral_pp1_value.nwk \
     tree_tip_info_mapfile.txt \
     > ${fileNamePrefix}.dna.species_tree.astral_USE_THIS.nwk
