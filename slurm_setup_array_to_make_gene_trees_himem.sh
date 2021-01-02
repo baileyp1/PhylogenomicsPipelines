@@ -1,5 +1,5 @@
 #!/bin/bash
-#SBATCH -J make_gene_trees
+#SBATCH -J make_gene_trees_himem
 #SBATCH -n 1
 #SBATCH -o make_gene_trees_himem-%a.log		# If this line is not set, default output name is slurm-%A_%a.out: %A = $SLURM_ARRAY_JOB_ID; %a = $SLURM_ARRAY_TASK_ID		 
 #SBATCH -e make_gene_trees_himem-%a.log 	# NB - if I just specify the %a, then I don't get an accumulation of ouput files for each run of the script
