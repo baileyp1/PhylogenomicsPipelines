@@ -23,7 +23,7 @@ with open(sampleTableFile, 'r') as csvfile:
 		treeTipInfo = '_'.join(row)
 		treeTipInfo = treeTipInfo.rstrip('_')
 
-		# Need  to strip all chars that interfere with Newick format i.e. ( ) : [ ] and ; - any others? Check in Newick definition - see K52.p5 note
+		# Need  to strip all chars that interfere with Newick format i.e. ( ) : [ ] and ; any others? Check in Newick definition - see K52.p5 note
 		# NB - spaces must also be converted to satisfy code in sister script, addTreeTipInfoFromTable_PlusL.py line 26
 		treeTipInfo = re.sub(r'[\]\[\)\(:; ]', '_', treeTipInfo)
 

@@ -713,10 +713,10 @@ elif [[ ! -s $dnaFastaFileForAln ]]; then
 	else
 		echo "WARNING: the input gene-wise fasta file for this gene does not exist or is empty: $gene - skipping alignment of this gene.
 (It indicates that there are no samples for this gene (possibly after a filtering step),
-or in gene-wise mode (option -G), the gene list is incompatible with the input gene-wise fasta files.)"
+or, the gene list is incompatible with the input fasta files.)"
 		# NB - acknowledged error above so OK to exit with zero.
 		# Anyway it has to be zero to satisfy Slurm --dependancy afterok:$jobId parameter;
-		# Only works if $jobId exit code is 0, otherwise would need to use --dependancy afterany:$jobId     
+		# Only works if $jobId exit code is 0, otherwise would need to use --dependancy afterany:$jobId (now doing this for other reasons!) 
 		exit 0
 	fi
 fi
@@ -1113,7 +1113,7 @@ if [[ -s $dnaAlnForTree || -s $proteinAlnForTree ]]; then
 		if [[ $proteinSelected == 'yes' ]]; then
 ### Still need to confirm file/variable input
 			echo proteinAlnForTree: $proteinAlnForTree
-			filterShortSeqs $proteinAlnForTree 28 ${gene}.protein.aln.for_tree.fasta
+			filterShortSeqs $proteinAlnForTree 27 ${gene}.protein.aln.for_tree.fasta
 			echo numbrSeqs: $numbrSeqs
 			if [ "$numbrSeqs" -gt 3 ]; then
 				makeGeneTree protein ${gene}.protein.aln.for_tree.fasta '.' 'JTT+G' 'AA' ''

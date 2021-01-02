@@ -92,7 +92,7 @@ if [ $hybSeqProgram == 'paftools' ]; then
 		gunzip -f -c $paftolDataSymlinksDir/$R2FastqFile > $unzippedR2FastqFile
 ### 6.11.2020 - still need to add a conditional for --sampleId - it can't be present but blank
 ### 			if $externalSequenceID is not null externalSequenceID='--sampleId $externalSequenceID'
-###				then  can juast put the variable in the command and it will be empy or not
+###				then  can juast put the variable in the command and it will be empy or not --> almost; need an else clause to aslo add paftol info ()
 ###				need an extra flag in the wrapper for sampleId e.g. -e, also -d flag needs to have a dataOrigin value.
 		export PYTHONPATH=$HOME/lib/python
 		paftools addPaftolFastq  $unzippedR1FastqFile  $unzippedR2FastqFile \
@@ -101,7 +101,7 @@ if [ $hybSeqProgram == 'paftools' ]; then
 		--sampleId $externalSequenceID
 		# NB - the file name must be of this format e.g. PAFTOL_005853_R1.fastq
 		# The fastqPath entered in the database consists of the path and filename e.g. $paftolDataSymlinksDir/$unzippedR1FastqFile
-		# --sampleId=$sampleId - must be included for all data types, except paftol (but there is no harm in always including it)
+		# --sampleId=$sampleId - must be included for all data types, but in the case of paftol it is ignored (but there is no harm in always including it)
 
 		### Add a new option to THIS program for uploading SRA e.g. -d PAFTOL, -d SRA
 
