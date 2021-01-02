@@ -261,7 +261,7 @@ reAlignSeqs()   {
     -C $cpuGeneTree \
     -c $cpu \
     -Q $partitionName \
-    -Y partitionForSpeciesTrees \
+    -Y $partitionForSpeciesTrees \
     -R $geneTreeSlurmMem \
     -U $speciesTreeSlurmMem \
     -V $geneTreeSlurmTime \
