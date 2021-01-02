@@ -1032,7 +1032,8 @@ elif [[ $os == 'Linux' && $speciesTreesOnly == 'no' ]]; then
 			jobIdX=`echo $jobInfoX | cut -d ' ' -f 4 `
 			echo \$jobIdX: $jobIdX - same id as \$SLURM_ARRAY_JOB_ID - from running slurm_setup_array_to_make_gene_trees.sh
 			# Now adding this jobIdX to $jobId variable so that ANY next step will wait for both gene lists to finish, main list and list for extra memory.
-			jobId="$jobId:$jobIdX"
+			# Slurm manual not clear whether ':' separator or ',' should be used to wait for both jobs but I think ',' separator is correct.'  
+			jobId="$jobId,$jobIdX"
 		fi
 
 		if [[ $filterSeqs1 != 'no' ]]; then
