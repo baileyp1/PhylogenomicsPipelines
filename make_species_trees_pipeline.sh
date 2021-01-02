@@ -996,10 +996,13 @@ elif [[ $os == 'Linux' && $speciesTreesOnly == 'no' ]]; then
 		echo \$jobId: $jobId - same id as \$SLURM_ARRAY_JOB_ID - from running slurm_setup_array_to_make_gene_trees.sh
 		# NB - If jobId variable is used after each call to Slurm then it doesn't matter if
 		# a Slurm step is missed out - the jobId last assigned will alway be used.
-		sleep 5		# Pausing to allow Slurm process and start previous submission (may not be necessary)
+		sleep 3		# Pausing to allow Slurm to process and start previous submission (may not be necessary)
 
 		if [[ -s $genesForExtraMem ]]; then
 			# Use extra memory here for specific genes specified in option -X.
+			# NBNB - it seems that you must use another script for this step 
+			# otherwise the same script with the same content as the above Slurm call gets used.
+			# Now not quite sure if this is true - can now investigate fully now setup is working.
 			# Set the size of the Slurm array:
 			numbrGenesForExtraMem=$(( $numbrGenesForExtraMem - 1 ))
 			jobInfoX=`sbatch -p $partitionName -c $genesForExtraMem_CpuToUse -t $geneTreeSlurmTime --mem $genesForExtraMem_MemToUse --array=0-${numbrGenesForExtraMem}%$slurmThrottle  $pathToScripts/slurm_setup_array_to_make_gene_trees_himem.sh \
