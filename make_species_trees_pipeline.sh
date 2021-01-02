@@ -994,6 +994,7 @@ elif [[ $os == 'Linux' && $speciesTreesOnly == 'no' ]]; then
 		echo \$jobId: $jobId - same id as \$SLURM_ARRAY_JOB_ID - from running slurm_setup_array_to_make_gene_trees.sh
 		# NB - If jobId variable is used after each call to Slurm then it doesn't matter if
 		# a Slurm step is missed out - the jobId last assigned will alway be used.
+		sleep 5		# Pausing to allow Slurm process and start previous submission (may not be necessary)
 
 		if [[ -s $genesForExtraMem ]]; then
 			# Use extra memory here for specific genes specified in option -X.
@@ -1023,7 +1024,7 @@ elif [[ $os == 'Linux' && $speciesTreesOnly == 'no' ]]; then
 			jobIdX=`echo $jobInfoX | cut -d ' ' -f 4 `
 			echo \$jobIdX: $jobIdX - same id as \$SLURM_ARRAY_JOB_ID - from running slurm_setup_array_to_make_gene_trees.sh
 			# Now adding this jobIdX to $jobId variable so that ANY next step will wait for both gene lists to finish, main list and list for extra memory.
-			jobId='$jobId:$jobIdX'
+			jobId="$jobId:$jobIdX"
 		fi
 
 		if [[ $filterSeqs1 != 'no' ]]; then
