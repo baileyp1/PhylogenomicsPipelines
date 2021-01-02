@@ -44,6 +44,7 @@ speciesTreeSlurmMem="${28}"
 geneTreeSlurmTime="${29}"
 speciesTreeSlurmTime="${30}"
 option_u="${31}"
+extraMem="${32}"
 
 
 echo "$numbrSamples"
@@ -71,7 +72,9 @@ echo "geneTreeSlurmMem: $geneTreeSlurmMem"
 echo "speciesTreeSlurmMem: $speciesTreeSlurmMem"
 echo "geneTreeSlurmTime: $geneTreeSlurmTime"
 echo "speciesTreeSlurmTime: $speciesTreeSlurmTime"
-echo "option_u: $speciesTreeSlurmTime"
+echo "option_u: $option_u"
+echo "extraMem: $extraMem"
+
 
 # Convert $emptyMatchStateFractn to a percent for use in the output files:
 fractnAlnCovrg_pc=`awk -v FRACTN=$fractnAlnCovrg 'BEGIN{printf "%.0f", FRACTN * 100}' `
@@ -196,14 +199,9 @@ reAlignSeqs()   {
 
         if [ $option_u == 'yes' ]; then
             uOption='-u'
-            # Prepare the mapfile again to add in the sum length values onto the tree tips, if requested
-            # For the realignment need to get this file into the new directory!
-            # addTreeTipInfoFromTable_PlusL.py \
-            # ../tree_tip_info_mapfile.txt \
-            # ../${fileNamePrefix}_summary_of_sample_quality.txt \
-    #### Actually just need to copy it across here
+            # For the realignment just need to copy this file into the new directory:           
             cp -p ../tree_tip_info_mapfile_plusL.txt .
-            # NB - still need to copy this file to 'tree_tip_info_mapfile.txt' in the species
+            # NB - then still need to copy this file to 'tree_tip_info_mapfile.txt' in the species
             # script because it gets prepared again at start of the realn step.
         fi
     fi
@@ -224,6 +222,7 @@ reAlignSeqs()   {
     iOption=''
     if [ $geneTreesOnly == 'yes' ]; then iOption='-i'; fi
     
+    # Also need to prepare other options flags:
     trimAlnOption1=''
     trimAlnOption2=''
     if [ $trimAln1 != 'no' ]; then trimAlnOption1='-J'; fi
@@ -234,6 +233,9 @@ reAlignSeqs()   {
     collapseNodesOption=''
     if [ $collapseNodes != 'no' ]; then collapseNodesOption="-L $collapseNodes"; fi
 
+    extraMemOptionX=''
+    if [ $extraMem != 'no' ]; then extraMemOptionX="-X $extraMem"; fi
+
 
     ### At the moment these files don't exist in /after_treeshrink_USE_THIS_dna/ dir
     ### which exists by this stage - but they do exist in the above dir so will copy 
@@ -243,7 +245,7 @@ reAlignSeqs()   {
 
     # Note the quotes around variables with spaces! BUT $2 must not be quoted!
     #echo " # For checking option values that need to be quoted (contain spaces)
-    $pathToScripts/make_species_trees_pipeline.sh $iOption $trimAlnOption1 $trimAlnOption2 $collapseNodesOption $uOption \
+    $pathToScripts/make_species_trees_pipeline.sh $iOption $trimAlnOption1 $trimAlnOption2 $collapseNodesOption $uOption $extraMemOptionX \
     -p $fileNamePrefix \
     -G \
     -D "$1" \

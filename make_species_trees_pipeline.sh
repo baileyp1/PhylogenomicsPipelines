@@ -52,13 +52,14 @@ collapseNodes=no			# option -L
 fileNamePrefix=tree_pipeline
 fractnMaxColOcc=0.7
 slurmThrottle=50			# Was 1, set to 50 as now have two rounds of alignment 
-partitionName=main   		# Values depend on the cluster being used so good to have a flagged option for this
-							# NB - make_species_tree.sh uses 'long' queue - need an extra variable for that 
+partitionName=longer   		# Values depend on the cluster being used so good to have a flagged option for this
+partitionForSpeciesTrees=long 	# NB - need an extra variable for species tree so I can use a different queue e.g. for a large memory node
 cpuGeneTree=1				# still keep this separate from the supermatrix tree; then I can specify loads more for the supermatrix.
 							# Maybe hava a comma separated list e.g. 4,30 for gene and species tree.
 cpu=8						# number of cpu to use for RAxML in supermatrix method
-geneTreeSlurmMem=20000		# option -R		 
-speciesTreeSlurmMem=50000	# option -U; I think I need 500000 GB mem for the RAxML large tree (Slurm)
+geneTreeSlurmMem=5000		# option -R; 1.1.2021 - change from 20000 to 5000
+extraMem=no					# option -X 
+speciesTreeSlurmMem=50000	# option -U; I think I need 500 GB mem for the RAxML large tree (Slurm)
 geneTreeSlurmTime=1-00:00	# SBATCH -t 0-36:00;  A time limit of zero requests that no time limit be imposed - like the mem option
 speciesTreeSlurmTime=0		# SBATCH -t 0-36:00
 ####-D  upload details to PAFTOL database (internal use only) 	
@@ -137,9 +138,9 @@ PHYLOGENY OPTIONS:
                 If required, options are, fastest to slowest: fasttree, iqtree2-B1000-nm110, iqtree2-B1000-nm200, iqtree2-B1000-nm1000, iqtree2, raxml-ng (no default)
   -S <string>      
                 name of phylogeny programs to use for the species tree(s) for supermatrix approach (concatenated gene alignments).
-                If required, options are, fastest to slowest: fasttree, raxml-ng (no default)
+                If required, options are, fastest to slowest: fasttree, RAxML - UNDER DEVELOPMENT - both programs run in series at the moment 
   -T               
-                use Treeshrink on gene trees (followed by re-alignment)
+                use TreeShrink on gene trees (followed by re-alignment)
   -L <integer>     
                 collapse gene tree nodes with bootstrap support less than <integer> percent (no default)
 OTHER OPTIONS: 
@@ -148,9 +149,13 @@ OTHER OPTIONS:
   -c <integer>     
                 number of cpu to use for RAxML in supermatrix method (default=8)
   -R <integer>     
-                Slurm memory to use (in MB) for gene trees (default=0; means no limit is imposed)
+                Slurm memory to use (in MB) for gene trees and TreeShrink (default=0; means no limit is imposed in default Slurm set up)
+
+  -X <string>	
+                Slurm extra memory to use (in MB) for specific gene trees named here: Format: <geneId1>,<geneId2>:<cpu>:<mem>
+                Real life examples: Angiosperms353 genes (5921, 5596)
   -U <integer>     
-                Slurm memory to use (in MB) for species trees (default=0; means no limit is imposed)
+                Slurm memory to use (in MB) for species trees (default=0; means no limit is imposed in default Slurm set up)
   -V <string>      
                 Slurm time limit to use for gene trees. Format: <days>-<hours>:<minutes>
                 e.g. 1-0:0 is 1 day (default=0, means no limit is imposed in default Slurm set up)
@@ -158,14 +163,15 @@ OTHER OPTIONS:
                 Slurm time limit to use for species trees. Format: <days>-<hours>:<minutes>
                 e.g. 1-0:0 is 1 day (default=0, means no limit is imposed in default Slurm set up)
   -Q <string>      
-                Slurm partition (queue) to use (default=medium; select more than one queue with a comma delimited list e.g. medium,long)
+                Slurm partition (queue) for gene trees (default=medium; select more than one queue with a comma delimited list e.g. medium,long)
+  -Y <string>
+                Slurm partition (queue) for species trees (default=medium)
   -H <integer>     
-                Slurm array throttle (default=50; could set to 1, then increase once happy with run with: scontrol update arraytaskthrottle=<integer> job=<jobId>)
-
+                Slurm array throttle for gene trees (default=50; could set to 1, then increase once happy with run with: scontrol update arraytaskthrottle=<integer> job=<jobId>)
 
 A basic example run is described below:
 build genes trees from sample fasta files, formatted as described for option -a, by aligning the input
-DNA sequence for each gene with the MAFFT --retree 2 algorithm , building each gene tree with FASTTREE, 
+DNA sequence for each gene with the MAFFT --retree 2 algorithm, building each gene tree with FASTTREE, 
 then reconstructing species trees with ASTRAL, FASTTREE and RAxML (last two program make a supermatrix tree from 
 concatenated gene alignments):
 
@@ -198,7 +204,7 @@ EOF
 
 
 #echo User inputs:    ### For testing only 
-while getopts "hvat:ug:ijGF:m:p:M:q:r:TC:c:d:Q:A:D:O:L:I:JK:R:U:V:W:H:"  OPTION; do	# Remaining options - try capital letters!
+while getopts "hvat:ug:ijGF:m:p:M:q:r:TC:c:d:Q:Y:A:D:O:L:I:JK:R:X:U:V:W:H:"  OPTION; do	# Remaining options - try capital letters!
 
 	#echo -$OPTION $OPTARG	### For testing only - could try to run through options again below 
 	 
@@ -229,12 +235,14 @@ while getopts "hvat:ug:ijGF:m:p:M:q:r:TC:c:d:Q:A:D:O:L:I:JK:R:U:V:W:H:"  OPTION;
 		C) cpuGeneTree=$OPTARG ;;
 		c) cpu=$OPTARG ;;
 		Q) partitionName=$OPTARG ;;
+		Y) partitionForSpeciesTrees=$OPTARG ;;
 		O) maxColOccThreshold=$OPTARG ;;
 		L) collapseNodes=$OPTARG ;;
 		I) filterSeqs2=$OPTARG ;;
 		J) trimAln1=yes ;;
 		K) trimAln2=$OPTARG ;;
 		R) geneTreeSlurmMem=$OPTARG ;;
+		X) extraMem=$OPTARG ;;
 		U) speciesTreeSlurmMem=$OPTARG ;;
 		V) geneTreeSlurmTime=$OPTARG ;;
 		W) speciesTreeSlurmTime=$OPTARG ;;
@@ -548,7 +556,7 @@ fi
 ####################
 # Code for option -t
 ####################
-# First need to determien whether option is even selected.
+# First need to determine whether option is even selected.
 if [[ $sampleTableFile != 'no' ]]; then
 	if [[ -s $sampleTableFile ]]; then
 		echo Will use this file containing text for the tree leaves: $sampleTableFile
@@ -709,6 +717,49 @@ if [[ $trimAln2 != 'no' ]]; then
 fi
 
 
+# Input parsing and checks for option -X (extra memory for specific genes)
+slurm=`sbatch -V | grep ^slurm | wc -l `	# Also testing if Slurm is present - important otherwise genes 
+										 	# will be missed out if Slurm is absent but -X is accidentally left ON.
+											# NB - this line also prints an error if sbatch is absent.   
+if [[ $extraMem != 'no' && $slurm -eq 1 ]]; then 
+
+	# Test the number of ':' delimited fields, then trust the user with field contents (for the moment):
+	numbrFields=`echo $extraMem | awk -F ':' '{print NF}' `
+	if [[ $numbrFields -ne 3 ]]; then echo "ERROR: option -X requires three fields - exiting "; exit; fi
+	### 1.1.2021 - might also be good to add further fields for adding multiple memory subsets e.g.
+	### <geneId1>,<geneId2>:<cpu>:<mem>;<geneId3>,<geneId4>:<cpu>:<mem> - need to create a ';' separated list
+
+	# Separate out the gene, cpu and memory fields:
+	genesForExtraMem=`echo $extraMem | cut -d ':' -f 1 `
+	genesForExtraMem_CpuToUse=`echo $extraMem | cut -d ':' -f 2 `
+	genesForExtraMem_MemToUse=`echo $extraMem | cut -d ':' -f 3 `
+
+	# First check that each field is occupied:
+	if [[ -z "$genesForExtraMem" ]]; then echo "ERROR: option -X gene field is empty - exiting "; exit; fi
+	if [[ -z "genesForExtraMem_CpuToUse" ]]; then echo "ERROR: option -X cpu field is empty - exiting "; exit; fi
+	if [[ -z "genesForExtraMem_MemToUse" ]]; then echo "ERROR: option -X memory field is empty - exiting "; exit; fi
+	# Not checking the alphanumerical nature of the values.
+	# I think script will let user know if gene is not found and Slurm will 
+	# give an error if it doesn't see something sensible for the cpu and mem values.
+
+	# Now remove specified gene(s) from the main gene file input by user:
+	echo $genesForExtraMem | awk -F ',' '{for(i=1;i<=NF;i++) {print $i} }' | sort > genesForExtraMemOption-X_sort.txt
+
+	sort $geneListFile > geneListFileForOption-X_sort.txt
+
+	comm -23 geneListFileForOption-X_sort.txt genesForExtraMemOption-X_sort.txt > genesForMainMemoryOption-X.txt
+	geneListFile=genesForMainMemoryOption-X.txt
+	genesForExtraMem=genesForExtraMemOption-X_sort.txt
+	rm geneListFileForOption-X_sort.txt
+	# Now use genesForMainMemoryOption-X.txt in first Slurm call
+	# and genesForExtraMemOption-X_sort.txt in the second call with more memory
+	echo genesForExtraMem file: $genesForExtraMem
+	echo genesForExtraMem_CpuToUse: $genesForExtraMem_CpuToUse
+	echo genesForExtraMem_MemToUse: $genesForExtraMem_MemToUse
+	echo Number of genes in main list after removing specified genes for extra mem: `cat  $geneListFile | wc -l`
+fi
+
+
 # Some parameters selected for checking:
 echo "################"
 echo "Options selected"
@@ -740,6 +791,7 @@ echo
 #### 29.9.2020 - still get an error message though!!!!!
 #### 1.10.2020 - hey why don't I just put all the other files under the umbrella of the first line, there will always be some *.aln.for_tree.fasta files!
 ### OH NO THAT WON'T WORK!!!!!!
+echo "Deleting output files if any exist from a previous run of the pipeline."
 if ls *.aln.for_tree.fasta >/dev/null 2>&1; then rm *.aln.for_tree.fasta *gene_tree_USE_THIS.nwk ; fi
 # Also, now I have added filterShortSeqs() function I need to check whether any of the filtered/trimmed fasta files need removing:
 if ls *.aln.after_filter1.fasta >/dev/null 2>&1; then rm *.aln.after_filter1.fasta ; fi
@@ -888,6 +940,7 @@ if [[ $os == 'Darwin' && $speciesTreesOnly == 'no' ]]; then
 		"$geneTreeSlurmTime" \
 		"$speciesTreeSlurmTime" \
 		"$option_u" \
+		"$extraMem" \
 		> run_treeshrink_and_realign.log 2>&1
 		exit	# Species trees will be made after TreeShrink or re-alignment step(s) in nested call to this script, if requested.
 	fi
@@ -940,7 +993,39 @@ elif [[ $os == 'Linux' && $speciesTreesOnly == 'no' ]]; then
 		jobId=`echo $jobInfo | cut -d ' ' -f 4 `
 		echo \$jobId: $jobId - same id as \$SLURM_ARRAY_JOB_ID - from running slurm_setup_array_to_make_gene_trees.sh
 		# NB - If jobId variable is used after each call to Slurm then it doesn't matter if
-		# a Slurm step is missed out - the jobId last assigned will alway be used
+		# a Slurm step is missed out - the jobId last assigned will alway be used.
+
+		if [[ -s $genesForExtraMem ]]; then
+			# Use extra memory here for specific genes specified in option -X.
+			jobInfoX=`sbatch -p $partitionName -c $genesForExtraMem_CpuToUse -t $geneTreeSlurmTime --mem $genesForExtraMem_MemToUse --array=0-${numbrGenes}%$slurmThrottle  $pathToScripts/slurm_setup_array_to_make_gene_trees.sh \
+			$geneFile \
+			$genesForExtraMem \
+			$fractnAlnCovrg \
+			$pathToScripts \
+			$phyloProgramDNA \
+			$phyloProgramPROT \
+			$fractnMaxColOcc \
+			$cpuGeneTree \
+			"$mafftAlgorithm" \
+			"$exePrefix" \
+			"$alnProgram" \
+			$dnaSelected \
+			$proteinSelected \
+			$codonSelected \
+			"$filterSeqs1" \
+			"$maxColOccThreshold" \
+			"$filterSeqs2" \
+			"$trimAln1" \
+			"$trimAln2" \
+			"$treeshrink" `
+
+			echo jobInfoX: $jobInfoX
+			jobIdX=`echo $jobInfoX | cut -d ' ' -f 4 `
+			echo \$jobIdX: $jobIdX - same id as \$SLURM_ARRAY_JOB_ID - from running slurm_setup_array_to_make_gene_trees.sh
+			# Now adding this jobIdX to $jobId variable so that ANY next step will wait for both gene lists to finish, main list and list for extra memory.
+			jobId='$jobId:$jobIdX'
+		fi
+
 		if [[ $filterSeqs1 != 'no' ]]; then
 			# Need to name the files to use in the assess script, depends on sequence type selected. 
 			if [[ $proteinSelected == 'yes' || $codonSelected == 'yes' ]]; then
@@ -979,8 +1064,9 @@ elif [[ $os == 'Linux' && $speciesTreesOnly == 'no' ]]; then
 			##########################################
 			echo 'Re-aligning gene alignments because TreeShrink option or filterSeqs1 option is on, then continuing analysis in the "after_treeshrink_USE_THIS" or "after_reAlnFilterSeqs_USE_THIS" directory...'
 			##########################################
-			# TreeShrink step takes ~1h16mins + requires ~ 10 GB mem for ~353 gene trees and ~3500 samples
-			jobInfo2=`sbatch -J trShrnk_filtr_realgn  --dependency=afterok:$jobId -p $partitionName -c 1 -n 1 --mem $geneTreeSlurmMem -o run_treeshrink_and_realign.log  -e run_treeshrink_and_realign.err  $pathToScripts/run_treeshrink_and_realign.sh \
+			# TreeShrink step takes ~1h16mins + requires ~ 10 GB mem for ~353 gene trees and ~3500 samples - so ensuring that this step has at least 10GB mem: 
+			let "treeshrinkSlurmMemory= $geneTreeSlurmMem + 10000"
+			jobInfo2=`sbatch -J trShrnk_filtr_realgn  --dependency=afterok:$jobId -p $partitionName -c 1 -n 1 --mem $treeshrinkSlurmMemory -o run_treeshrink_and_realign.log  -e run_treeshrink_and_realign.err  $pathToScripts/run_treeshrink_and_realign.sh \
 			"$numbrSamples" \
 			"$phyloProgramDNA" \
 			"$phyloProgramPROT" \
@@ -1011,7 +1097,8 @@ elif [[ $os == 'Linux' && $speciesTreesOnly == 'no' ]]; then
 			"$speciesTreeSlurmMem" \
 			"$geneTreeSlurmTime" \
 			"$speciesTreeSlurmTime" \
-			"$option_u" `
+			"$option_u" \
+			"$extraMem" `
 			exit	# Species trees will be made after TreeShrink or re-alignment step(s) in nested call to this script, if requested.
 		fi
 	else
@@ -1109,6 +1196,7 @@ elif [[ $os == 'Linux' && $speciesTreesOnly == 'no' ]]; then
 			"$geneTreeSlurmTime" \
 			"$speciesTreeSlurmTime" \
 			"$option_u" \
+			"$extraMem" \
 			> run_treeshrink_and_realign.log 2>&1
 			exit	# Species trees will be made after TreeShrink or re-alignment step(s) in nested call to this script, if requested.
 		fi
@@ -1151,8 +1239,9 @@ elif [ $os == 'Linux' ]; then
     	### I think this is the only way without changing the main script itself.
 		echo \$jobId: $jobId - should match previous Slurm step.
 		# NB - previous Slurm jobs have to have an exit code of zero to satisfy Slurm --dependancy afterok:$jobId parameter,
-		# otherwise would need to use --dependancy afterany:$jobId if exit code coudl be > 0.  
-        sbatch --dependency=afterok:$jobId -p long -c $cpu -t $speciesTreeSlurmTime --mem=$speciesTreeSlurmMem -o ${fileNamePrefix}_make_species_trees.log -e ${fileNamePrefix}_make_species_trees.log  $pathToScripts/make_species_trees.sh \
+		# otherwise would need to use --dependancy afterany:$jobId if exit code coudl be > 0.
+		#					12.1.2021 - i still think afterok is Ok here  
+        sbatch --dependency=afterok:$jobId -p $partitionForSpeciesTrees -c $cpu -t $speciesTreeSlurmTime --mem=$speciesTreeSlurmMem -o ${fileNamePrefix}_make_species_trees.log -e ${fileNamePrefix}_make_species_trees.log  $pathToScripts/make_species_trees.sh \
         $fractnAlnCovrg \
         $fractnSamples \
         $numbrSamples \
