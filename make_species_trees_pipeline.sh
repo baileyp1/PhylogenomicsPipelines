@@ -998,7 +998,7 @@ elif [[ $os == 'Linux' && $speciesTreesOnly == 'no' ]]; then
 
 		if [[ -s $genesForExtraMem ]]; then
 			# Use extra memory here for specific genes specified in option -X.
-			jobInfoX=`sbatch -p $partitionName -c $genesForExtraMem_CpuToUse -t $geneTreeSlurmTime --mem $genesForExtraMem_MemToUse --array=0-${numbrGenes}%$slurmThrottle  $pathToScripts/slurm_setup_array_to_make_gene_trees.sh \
+			jobInfoX=`sbatch -p $partitionName -c $genesForExtraMem_CpuToUse -t $geneTreeSlurmTime --mem $genesForExtraMem_MemToUse --array=0-${numbrGenes}%$slurmThrottle  $pathToScripts/slurm_setup_array_to_make_gene_trees_himem.sh \
 			$geneFile \
 			$genesForExtraMem \
 			$fractnAlnCovrg \
