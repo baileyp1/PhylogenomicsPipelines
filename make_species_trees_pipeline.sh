@@ -750,6 +750,7 @@ if [[ $extraMem != 'no' && $slurm -eq 1 ]]; then
 	comm -23 geneListFileForOption-X_sort.txt genesForExtraMemOption-X_sort.txt > genesForMainMemoryOption-X.txt
 	geneListFile=genesForMainMemoryOption-X.txt
 	genesForExtraMem=genesForExtraMemOption-X_sort.txt
+	numbrGenesForExtraMem=`cat genesForExtraMemOption-X_sort.txt | wc -l`
 	rm geneListFileForOption-X_sort.txt
 	# Now use genesForMainMemoryOption-X.txt in first Slurm call
 	# and genesForExtraMemOption-X_sort.txt in the second call with more memory
@@ -757,6 +758,7 @@ if [[ $extraMem != 'no' && $slurm -eq 1 ]]; then
 	echo genesForExtraMem_CpuToUse: $genesForExtraMem_CpuToUse
 	echo genesForExtraMem_MemToUse: $genesForExtraMem_MemToUse
 	echo Number of genes in main list after removing specified genes for extra mem: `cat  $geneListFile | wc -l`
+	echo Number of genes requiring extra menory: $numbrGenesForExtraMem
 fi
 
 
@@ -998,7 +1000,9 @@ elif [[ $os == 'Linux' && $speciesTreesOnly == 'no' ]]; then
 
 		if [[ -s $genesForExtraMem ]]; then
 			# Use extra memory here for specific genes specified in option -X.
-			jobInfoX=`sbatch -p $partitionName -c $genesForExtraMem_CpuToUse -t $geneTreeSlurmTime --mem $genesForExtraMem_MemToUse --array=0-${numbrGenes}%$slurmThrottle  $pathToScripts/slurm_setup_array_to_make_gene_trees_himem.sh \
+			# Set the size of the Slurm array:
+			numbrGenesForExtraMem=$(( $numbrGenesForExtraMem - 1 ))
+			jobInfoX=`sbatch -p $partitionName -c $genesForExtraMem_CpuToUse -t $geneTreeSlurmTime --mem $genesForExtraMem_MemToUse --array=0-${numbrGenesForExtraMem}%$slurmThrottle  $pathToScripts/slurm_setup_array_to_make_gene_trees_himem.sh \
 			$geneFile \
 			$genesForExtraMem \
 			$fractnAlnCovrg \
