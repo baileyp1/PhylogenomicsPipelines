@@ -298,6 +298,14 @@ if [[ "$phyloProgramPROT" == 'fasttree' ||  "$phyloProgramPROT" == 'raxml-ng'  |
 fi
 
 
+# Creating a zipped tarball for the gene alignments and trees files.
+# These archives can then be moved around easily and checked with a single checksum.
+tar -c -f dna.aln.for_tree.fasta.tar *dna.aln.for_tree.fasta
+gzip dna.aln.for_tree.fasta.tar
+tar -c -f dna_gene_tree_USE_THIS.nwk.tar *dna_gene_tree_USE_THIS.nwk
+gzip dna_gene_tree_USE_THIS.nwk.tar 
+
+
 # Step2a - tree rooting
 # Investigated outgroups - used NewickTools (there’s also GoTree and another tools I made a note of)
 # Re-rooting with the whole outgroup (just need to specify 2 leaf labels for a clade):
@@ -324,8 +332,12 @@ AMAS.py concat  -c 1 \
 --in-format  fasta \
 -d dna \
 --out-format fasta \
--t ${fileNamePrefix}__mafft_dna_alns__ovr${fractnAlnCovrg_pc}pc_acpg_ovr${fractnSpecies_pc}pc_spgt__concatenated.fasta
+-t dna.aln.ovr${fractnAlnCovrg_pc}pc_acpg_ovr${fractnSpecies_pc}pc_spgt__concatenated.fasta
 # NB- also creates a partitions file with coords for each gene which could be used to set different models.
+# Compressing file for easier transfer of large alignments:
+gzip -c dna.aln.ovr${fractnAlnCovrg_pc}pc_acpg_ovr${fractnSpecies_pc}pc_spgt__concatenated.fasta \
+> ${fileNamePrefix}.dna.aln.ovr${fractnAlnCovrg_pc}pc_acpg_ovr${fractnSpecies_pc}pc_spgt__concatenated.fasta.gz
+
 
 
 if [[ "$phyloProgramPROT" == 'fasttree' ||  "$phyloProgramPROT" == 'raxml-ng' || "$phyloProgramPROT" == 'iqtree2'* ]]; then
@@ -340,7 +352,7 @@ if [[ "$phyloProgramPROT" == 'fasttree' ||  "$phyloProgramPROT" == 'raxml-ng' ||
     ### then AMAS adds it onto the required fasta record name - so remove them here:
     cat ${fileNamePrefix}__mafft_protein_alns__ovr${fractnAlnCovrg_pc}pc_acpg_ovr${fractnSpecies_pc}pc_spgt__concatenated_temp.fasta \
     | sed 's/_\[translate(1)\]//' \
-    > ${fileNamePrefix}__mafft_protein_alns__ovr${fractnAlnCovrg_pc}pc_acpg_ovr${fractnSpecies_pc}pc_spgt__concatenated.fasta
+    > protein.aln.ovr${fractnAlnCovrg_pc}pc_acpg_ovr${fractnSpecies_pc}pc_spgt__concatenated.fasta
     rm ${fileNamePrefix}__mafft_protein_alns__ovr${fractnAlnCovrg_pc}pc_acpg_ovr${fractnSpecies_pc}pc_spgt__concatenated_temp.fasta
 fi
 
@@ -356,7 +368,7 @@ echo
 
 $exePrefix fasttree -nt \
 -gtr \
-${fileNamePrefix}__mafft_dna_alns__ovr${fractnAlnCovrg_pc}pc_acpg_ovr${fractnSpecies_pc}pc_spgt__concatenated.fasta \
+dna.aln.ovr${fractnAlnCovrg_pc}pc_acpg_ovr${fractnSpecies_pc}pc_spgt__concatenated.fasta \
 > ${fileNamePrefix}_fasttree_dna_species_tree.nwk
 
 getTreeStats ${fileNamePrefix}_fasttree_dna_species_tree.nwk $numbrLowSupportNodesThreshold fasttree
@@ -372,7 +384,7 @@ fi
 if [[ "$phyloProgramPROT" == 'fasttree' ||  "$phyloProgramPROT" == 'raxml-ng'  || "$phyloProgramPROT" == 'iqtree2'* ]]; then
     echo Running fasttree on the protein supermatrix...
     $exePrefix fasttree \
-    ${fileNamePrefix}__mafft_protein_alns__ovr${fractnAlnCovrg_pc}pc_acpg_ovr${fractnSpecies_pc}pc_spgt__concatenated.fasta \
+    protein.aln.ovr${fractnAlnCovrg_pc}pc_acpg_ovr${fractnSpecies_pc}pc_spgt__concatenated.fasta \
     > ${fileNamePrefix}_fasttree_protein_species_tree.nwk
 
     getTreeStats ${fileNamePrefix}_fasttree_protein_species_tree.nwk 0.7 fasttree
@@ -399,7 +411,7 @@ if [ -a RAxML_bestTree.${fileNamePrefix}__raxmlHPC-PTHREADS-SSE ]; then rm RAxML
 if [ -a RAxML_bipartitions.${fileNamePrefix}__raxmlHPC-PTHREADS-SSE ]; then rm RAxML_bipartitions.${fileNamePrefix}__raxmlHPC-PTHREADS-SSE; fi
 if [ -a RAxML_bipartitionsBranchLabels.${fileNamePrefix}__raxmlHPC-PTHREADS-SSE ]; then rm RAxML_bipartitionsBranchLabels.${fileNamePrefix}__raxmlHPC-PTHREADS-SSE; fi
 if [ -a RAxML_info.${fileNamePrefix}__raxmlHPC-PTHREADS-SSE ]; then rm RAxML_info.${fileNamePrefix}__raxmlHPC-PTHREADS-SSE; fi
-if [ -a ${fileNamePrefix}__mafft_dna_alns__ovr${fractnAlnCovrg_pc}pc_acpg_ovr${fractnSpecies_pc}pc_spgt__concatenated.fasta.reduced ]; then rm ${fileNamePrefix}__mafft_dna_alns__ovr${fractnAlnCovrg_pc}pc_acpg_ovr${fractnSpecies_pc}pc_spgt__concatenated.fasta.reduced; fi
+if [ -a dna.aln.ovr${fractnAlnCovrg_pc}pc_acpg_ovr${fractnSpecies_pc}pc_spgt__concatenated.fasta.reduced ]; then rm dna.aln.ovr${fractnAlnCovrg_pc}pc_acpg_ovr${fractnSpecies_pc}pc_spgt__concatenated.fasta.reduced; fi
 
 
 ### For Slurm, add: srun -J raxml
@@ -410,11 +422,12 @@ $exePrefix raxmlHPC-PTHREADS-SSE3 -T $cpu \
 -x 12345 \
 -p 12345 \
 -# 100 \
--m GTRGAMMA \
--s ${fileNamePrefix}__mafft_dna_alns__ovr${fractnAlnCovrg_pc}pc_acpg_ovr${fractnSpecies_pc}pc_spgt__concatenated.fasta \
+-m GTRCAT \
+-s dna.aln.ovr${fractnAlnCovrg_pc}pc_acpg_ovr${fractnSpecies_pc}pc_spgt__concatenated.fasta \
 -n ${fileNamePrefix}__raxmlHPC-PTHREADS-SSE
 # This is the Newick  output file compatible with NewickTools):
 # RAxML_bipartitions.${fileNamePrefix}__raxmlHPC-PTHREADS-SSE
+# -m - was using GTRGAMMA but GTRCAT is quicker - should not use it if have < 50 seqs in dataset.
 
 getTreeStats RAxML_bipartitions.${fileNamePrefix}__raxmlHPC-PTHREADS-SSE $numbrLowSupportNodesThreshold raxml
 
@@ -435,7 +448,7 @@ if [[ "$phyloProgramPROT" == 'fasttree' ||  "$phyloProgramPROT" == 'raxml-ng'  |
     if [ -a RAxML_bipartitions.${fileNamePrefix}__raxmlHPC-PTHREADS-SSE ]; then rm RAxML_bipartitions.${fileNamePrefix}__raxmlHPC-PTHREADS-SSE; fi
     if [ -a RAxML_bipartitionsBranchLabels.${fileNamePrefix}__raxmlHPC-PTHREADS-SSE ]; then rm RAxML_bipartitionsBranchLabels.${fileNamePrefix}__raxmlHPC-PTHREADS-SSE; fi
     if [ -a RAxML_info.${fileNamePrefix}__raxmlHPC-PTHREADS-SSE ]; then rm RAxML_info.${fileNamePrefix}__raxmlHPC-PTHREADS-SSE; fi
-    if [ -a ${fileNamePrefix}__mafft_protein_alns__ovr${fractnAlnCovrg_pc}pc_acpg_ovr${fractnSpecies_pc}pc_spgt__concatenated.fasta.reduced ]; then rm ${fileNamePrefix}__mafft_protein_alns__ovr${fractnAlnCovrg_pc}pc_acpg_ovr${fractnSpecies_pc}pc_spgt__concatenated.fasta.reduced; fi
+    if [ -a protein.aln.ovr${fractnAlnCovrg_pc}pc_acpg_ovr${fractnSpecies_pc}pc_spgt__concatenated.fasta.reduced ]; then rm protein.aln.ovr${fractnAlnCovrg_pc}pc_acpg_ovr${fractnSpecies_pc}pc_spgt__concatenated.fasta.reduced; fi
 
     $exePrefix raxmlHPC-PTHREADS-SSE3 -T $cpu \
     -f a \
@@ -443,7 +456,7 @@ if [[ "$phyloProgramPROT" == 'fasttree' ||  "$phyloProgramPROT" == 'raxml-ng'  |
     -p 12345 \
     -# 100 \
     -m PROTCATJTT \
-    -s ${fileNamePrefix}__mafft_protein_alns__ovr${fractnAlnCovrg_pc}pc_acpg_ovr${fractnSpecies_pc}pc_spgt__concatenated.fasta \
+    -s protein.aln.ovr${fractnAlnCovrg_pc}pc_acpg_ovr${fractnSpecies_pc}pc_spgt__concatenated.fasta \
     -n ${fileNamePrefix}__raxmlHPC-PTHREADS-SSE
     # This is the Newick  output file compatible with NewickTools):
     # RAxML_bipartitions.${fileNamePrefix}__raxmlHPC-PTHREADS-SSE
