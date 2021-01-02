@@ -45,6 +45,7 @@ geneTreeSlurmTime="${29}"
 speciesTreeSlurmTime="${30}"
 option_u="${31}"
 extraMem="${32}"
+partitionForSpeciesTrees="${33}"
 
 
 echo "$numbrSamples"
@@ -74,6 +75,7 @@ echo "geneTreeSlurmTime: $geneTreeSlurmTime"
 echo "speciesTreeSlurmTime: $speciesTreeSlurmTime"
 echo "option_u: $option_u"
 echo "extraMem: $extraMem"
+echo "partitionForSpeciesTrees: $partitionForSpeciesTrees"
 
 
 # Convert $emptyMatchStateFractn to a percent for use in the output files:
@@ -259,6 +261,7 @@ reAlignSeqs()   {
     -C $cpuGeneTree \
     -c $cpu \
     -Q $partitionName \
+    -Y partitionForSpeciesTrees \
     -R $geneTreeSlurmMem \
     -U $speciesTreeSlurmMem \
     -V $geneTreeSlurmTime \

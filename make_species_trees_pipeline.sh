@@ -52,7 +52,7 @@ collapseNodes=no			# option -L
 fileNamePrefix=tree_pipeline
 fractnMaxColOcc=0.7
 slurmThrottle=50			# Was 1, set to 50 as now have two rounds of alignment 
-partitionName=longer   		# Values depend on the cluster being used so good to have a flagged option for this
+partitionName=long   		# Values depend on the cluster being used so good to have a flagged option for this
 partitionForSpeciesTrees=long 	# NB - need an extra variable for species tree so I can use a different queue e.g. for a large memory node
 cpuGeneTree=1				# still keep this separate from the supermatrix tree; then I can specify loads more for the supermatrix.
 							# Maybe hava a comma separated list e.g. 4,30 for gene and species tree.
@@ -943,6 +943,7 @@ if [[ $os == 'Darwin' && $speciesTreesOnly == 'no' ]]; then
 		"$speciesTreeSlurmTime" \
 		"$option_u" \
 		"$extraMem" \
+		"$partitionForSpeciesTrees" \
 		> run_treeshrink_and_realign.log 2>&1
 		exit	# Species trees will be made after TreeShrink or re-alignment step(s) in nested call to this script, if requested.
 	fi
@@ -1106,7 +1107,8 @@ elif [[ $os == 'Linux' && $speciesTreesOnly == 'no' ]]; then
 			"$geneTreeSlurmTime" \
 			"$speciesTreeSlurmTime" \
 			"$option_u" \
-			"$extraMem" `
+			"$extraMem" \
+			"$partitionForSpeciesTrees" `
 			exit	# Species trees will be made after TreeShrink or re-alignment step(s) in nested call to this script, if requested.
 		fi
 	else
@@ -1205,6 +1207,7 @@ elif [[ $os == 'Linux' && $speciesTreesOnly == 'no' ]]; then
 			"$speciesTreeSlurmTime" \
 			"$option_u" \
 			"$extraMem" \
+			"$partitionForSpeciesTrees" \
 			> run_treeshrink_and_realign.log 2>&1
 			exit	# Species trees will be made after TreeShrink or re-alignment step(s) in nested call to this script, if requested.
 		fi
