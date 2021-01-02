@@ -301,9 +301,9 @@ fi
 # Creating a zipped tarball for the gene alignments and trees files.
 # These archives can then be moved around easily and checked with a single checksum.
 tar -c -f dna.aln.for_tree.fasta.tar *dna.aln.for_tree.fasta
-gzip dna.aln.for_tree.fasta.tar
+gzip -c dna.aln.for_tree.fasta.tar > dna.aln.for_tree.fasta.tar.gz
 tar -c -f dna_gene_tree_USE_THIS.nwk.tar *dna_gene_tree_USE_THIS.nwk
-gzip dna_gene_tree_USE_THIS.nwk.tar 
+gzip -c dna_gene_tree_USE_THIS.nwk.tar > dna_gene_tree_USE_THIS.nwk.tar.gz
 
 
 # Step2a - tree rooting
