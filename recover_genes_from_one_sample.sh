@@ -478,7 +478,7 @@ if [[ $stats != 'no' ]]; then
 	meanReadCovrg=`tail -n+2 ${sampleId}_bwa_mem_sort_st_covrg.txt | awk '{sum+=$6} END {printf "%.1f" , sum/NR}' `	# average
 	echo meanReadCovrg: $meanReadCovrg >> ${sampleId}_gene_recovery_stats.txt
 	# Median coverage per sample:
-	medianPoint=`tail -n+2 ${sampleId}_bwa_mem_sort_st_covrg.txt | awk 'END {printf "%.0f" , NR/2}' `
+	medianPoint=`tail -n+2 ${sampleId}_bwa_mem_sort_st_covrg.txt | awk 'END {printf "%.0f" , NR/2}' `	# Don't need to sort here!
 	medianReadCovrg=`tail -n+2 ${sampleId}_bwa_mem_sort_st_covrg.txt | sort -k6n | awk '{print $6}' | head -n $medianPoint | tail -n -1 `
 	echo medianReadCovrg: $medianReadCovrg >> ${sampleId}_gene_recovery_stats.txt
 
@@ -504,12 +504,15 @@ if [[ $stats != 'no' ]]; then
 	echo meanReadDepth_min1x: $meanReadDepth_min1x >> ${sampleId}_gene_recovery_stats.txt
 
 	echo HELLO1
-### SCRITP FAILS HERE!!!!!!!
 
 	# Median read depth for bases with >= 1x depth:
 	medianPoint2=`cat ${sampleId}_bwa_mem_sort_st_depth.txt | awk 'END {printf "%.0f" , NR/2}' `
 	echo HELLO3 $medianPoint2
-	medianReadDepth_min1x=`cat ${sampleId}_bwa_mem_sort_st_depth.txt | sort -k7n | awk '{print $3}' | head -n $medianPoint2 | tail -n -1 `
+	cat ${sampleId}_bwa_mem_sort_st_depth.txt | sort -k3n | awk '{print $3}' | head -n $medianPoint2 | tail -n -1
+	medianReadDepth_min1x=`cat ${sampleId}_bwa_mem_sort_st_depth.txt | sort -k3n | awk '{print $3}' | head -n $medianPoint2 | tail -n -1 `
+
+	exit
+### SCRIPT FAILS HERE
 	echo HELLO4
 	echo medianReadDepth_min1x: $medianReadDepth_min1x >> ${sampleId}_gene_recovery_stats.txt
 	echo HELLO5
@@ -521,7 +524,7 @@ if [[ $stats != 'no' ]]; then
 
 	# Median read depth for bases with >= 1x depth:
 	medianPoint3=`cat ${sampleId}_bwa_mem_sort_st_depth.txt | awk 'END {printf "%.0f" , NR/2}' `
-	medianReadDepth_min4x=`cat ${sampleId}_bwa_mem_sort_st_depth.txt | sort -k7n | awk '{print $3}' | head -n $medianPoint3 | tail -n -1 `
+	medianReadDepth_min4x=`cat ${sampleId}_bwa_mem_sort_st_depth.txt | sort -k3n | awk '{print $3}' | head -n $medianPoint3 | tail -n -1 `
 	echo medianReadDepth_min4x: $medianReadDepth_min4x >> ${sampleId}_gene_recovery_stats.txt
 
 
