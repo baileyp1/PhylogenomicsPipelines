@@ -5,8 +5,8 @@
 
 # Author: Paul Bailey
 ##################################
-#set -e
-#set -u
+set -e
+set -u
 set -o pipefail
 shopt -s failglob
 
