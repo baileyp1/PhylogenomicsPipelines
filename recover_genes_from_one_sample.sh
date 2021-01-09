@@ -6,7 +6,7 @@
 # Author: Paul Bailey
 ##################################
 set -e
-#set -u
+set -u
 set -o pipefail
 shopt -s failglob
 
@@ -460,6 +460,8 @@ if [[ $stats != 'no' ]]; then
 	###############################
 	# Read coverage and depth stats
 	###############################
+	set +e	# NB - had a problem with script exiting half way through making samtools depth stats. Haven't got to the bottom of it but turning OFF these options here works for now.  
+	set +u
 
 	###################
 	# samtools coverage - “meandepth” per gene (column 7 - includes positions with zero depth - see below)
