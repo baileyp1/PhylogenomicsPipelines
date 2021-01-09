@@ -5,8 +5,8 @@
 
 # Author: Paul Bailey
 ##################################
-set -e
-set -u
+#set -e
+#set -u
 set -o pipefail
 shopt -s failglob
 
@@ -510,6 +510,7 @@ if [[ $stats != 'no' ]]; then
 	echo "HELLO3 $medianPoint2"
 	cat ${sampleId}_bwa_mem_sort_st_depth.txt | sort -k3n | awk '{print $3}' | head -n 1
 ### SCRIPT FAILS HERE
+	medianReadDepth_min1x=''
 	echo "HELLO4"
 	echo medianReadDepth_min1x: $medianReadDepth_min1x >> ${sampleId}_gene_recovery_stats.txt
 	echo "HELLO5"
