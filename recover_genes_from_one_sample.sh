@@ -500,16 +500,17 @@ if [[ $stats != 'no' ]]; then
 	# samtools depth - to obtain depth for read depth >= Xx
 	################
 	# The aim here is to count useful depth i.e. >1x or >4x is more informative - need to use samtools depth
-	# The -a flag outputs all positions (including zero depth) but we already have this above from samtools coverage - column 7) but not for ALL genes together) 
+	# The -a flag outputs all positions (including zero depth) but we already have this above from samtools coverage - column 7) but not for ALL genes together)
+	# So include the -a flag then can assess from >=0x coverage and compare with samtools coverage - they are slightly different calculations.
 	samtools depth -q 20 -q 20 -a ${sampleId}_bwa_mem_sort.bam > ${sampleId}_bwa_mem_sort_st_depth.txt
 
 	# Mean read depth for bases with >= 0x depth across ALL genes:
 	meanReadDepth_min0x=`cat ${sampleId}_bwa_mem_sort_st_depth.txt | awk '$3 >= 0' | awk '{sum+=$3} END {if(sum > 0) {print sum/NR} else {print "0"}}' `	# average
 	echo "meanReadDepth_min0x_(samtools_depth): $meanReadDepth_min0x" >> ${sampleId}_gene_recovery_stats.txt
-#### Now fails here with set -u and - e ON	
+
 	# Median read depth for bases with >= 0x depth across ALL genes:
-	medianPoint2=`cat ${sampleId}_bwa_mem_sort_st_depth.txt | awk 'END {printf "%.0f" , NR/2}' `
-	medianReadDepth_min0x=`cat ${sampleId}_bwa_mem_sort_st_depth.txt | sort -k3n | awk '{print $3}' | head -n $medianPoint2 | tail -n 1 `
+	medianPoint2=`cat ${sampleId}_bwa_mem_sort_st_depth.txt | awk '$3 >= 0' | awk 'END {printf "%.0f" , NR/2}' `
+	medianReadDepth_min0x=`cat ${sampleId}_bwa_mem_sort_st_depth.txt | awk '$3 >= 0' | sort -k3n | awk '{print $3}' | head -n $medianPoint2 | tail -n 1 `
 	echo "medianReadDepth_min0x_(samtools_depth): $medianReadDepth_min0x" >> ${sampleId}_gene_recovery_stats.txt
 
 	# Mean read depth for bases with >= 1x depth across ALL genes:
@@ -517,21 +518,17 @@ if [[ $stats != 'no' ]]; then
 	echo "meanReadDepth_min1x_(samtools_depth): $meanReadDepth_min1x" >> ${sampleId}_gene_recovery_stats.txt
 
 	# Median read depth for bases with >= 1x depth across ALL genes:
-	medianPoint3=`cat ${sampleId}_bwa_mem_sort_st_depth.txt | awk 'END {printf "%.0f" , NR/2}' `
-	medianReadDepth_min1x=`cat ${sampleId}_bwa_mem_sort_st_depth.txt | sort -k3n | awk '{print $3}' | head -n $medianPoint3| tail -n 1 `
-### SCRIPT DID FAIL HERE
-	echo "HELLO4"
+	medianPoint3=`cat ${sampleId}_bwa_mem_sort_st_depth.txt | awk '$3 >= 1' | awk 'END {printf "%.0f" , NR/2}' `
+	medianReadDepth_min1x=`cat ${sampleId}_bwa_mem_sort_st_depth.txt | awk '$3 >= 1' | sort -k3n | awk '{print $3}' | head -n $medianPoint3| tail -n 1 `
 	echo "medianReadDepth_min1x_(samtools_depth): $medianReadDepth_min1x" >> ${sampleId}_gene_recovery_stats.txt
-	echo "HELLO5"
-
+	
 	# Mean read depth for bases with >= 4x depth  across ALL genes:
 	meanReadDepth_min4x=`cat ${sampleId}_bwa_mem_sort_st_depth.txt | awk '$3 >= 4' | awk '{sum+=$3} END {if(sum > 0) {print sum/NR} else {print "0"}}' `	# average
-	echo HELLO6
 	echo "meanReadDepth_min4x_(samtools_depth): $meanReadDepth_min4x" >> ${sampleId}_gene_recovery_stats.txt
 
 	# Median read depth for bases with >= 4x depth  across ALL genes:
-	medianPoint4=`cat ${sampleId}_bwa_mem_sort_st_depth.txt | awk 'END {printf "%.0f" , NR/2}' `
-	medianReadDepth_min4x=`cat ${sampleId}_bwa_mem_sort_st_depth.txt | sort -k3n | awk '{print $3}' | head -n $medianPoint4 | tail -n 1 `
+	medianPoint4=`cat ${sampleId}_bwa_mem_sort_st_depth.txt | awk '$3 >= 4' | awk 'END {printf "%.0f" , NR/2}' `
+	medianReadDepth_min4x=`cat ${sampleId}_bwa_mem_sort_st_depth.txt | awk '$3 >= 4' | sort -k3n | awk '{print $3}' | head -n $medianPoint4 | tail -n 1 `
 	echo "medianReadDepth_min4x_(samtools_depth): $medianReadDepth_min4x" >> ${sampleId}_gene_recovery_stats.txt
 
 
