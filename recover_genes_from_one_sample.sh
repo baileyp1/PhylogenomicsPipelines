@@ -509,13 +509,13 @@ if [[ $stats != 'no' ]]; then
 	medianPoint2=`cat ${sampleId}_bwa_mem_sort_st_depth.txt | awk 'END {printf "%.0f" , NR/2}' `
 	echo HELLO3 $medianPoint2
 	cat ${sampleId}_bwa_mem_sort_st_depth.txt | sort -k3n | awk '{print $3}' | head -n $medianPoint2 | tail -n -1
-	medianReadDepth_min1x=`cat ${sampleId}_bwa_mem_sort_st_depth.txt | sort -k3n | awk '{print $3}' | head -n $medianPoint2 | tail -n -1 `
+	#####medianReadDepth_min1x=`cat ${sampleId}_bwa_mem_sort_st_depth.txt | sort -k3n | awk '{print $3}' | head -n $medianPoint2 | tail -n -1 `
 
-	exit
 ### SCRIPT FAILS HERE
 	echo HELLO4
 	echo medianReadDepth_min1x: $medianReadDepth_min1x >> ${sampleId}_gene_recovery_stats.txt
 	echo HELLO5
+	exit
 
 	# Mean read depth for bases with >= 4x depth:
 	meanReadDepth_min4x=`cat ${sampleId}_bwa_mem_sort_st_depth.txt | awk '$3 >= 1' | awk '{sum+=$3} END {printf "%.1f" , sum/NR}' `	# average
