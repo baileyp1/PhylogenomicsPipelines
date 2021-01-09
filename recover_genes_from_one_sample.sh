@@ -6,7 +6,7 @@
 # Author: Paul Bailey
 ##################################
 set -e
-set -u
+#set -u
 set -o pipefail
 shopt -s failglob
 
@@ -504,7 +504,7 @@ if [[ $stats != 'no' ]]; then
 	# Mean read depth for bases with >= 0x depth across ALL genes:
 	meanReadDepth_min0x=`cat ${sampleId}_bwa_mem_sort_st_depth.txt | awk '$3 >= 0' | awk '{sum+=$3} END {if(sum > 0) {print sum/NR} else {print "0"}}' `	# average
 	echo "meanReadDepth_min0x_(samtools_depth): $meanReadDepth_min0x" >> ${sampleId}_gene_recovery_stats.txt
-	
+#### Now fails here with set -u and - e ON	
 	# Median read depth for bases with >= 0x depth across ALL genes:
 	medianPoint2=`cat ${sampleId}_bwa_mem_sort_st_depth.txt | awk 'END {printf "%.0f" , NR/2}' `
 	medianReadDepth_min0x=`cat ${sampleId}_bwa_mem_sort_st_depth.txt | sort -k3n | awk '{print $3}' | head -n $medianPoint2 | tail -n 1 `
