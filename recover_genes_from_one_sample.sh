@@ -491,6 +491,7 @@ if [[ $stats != 'no' ]]; then
 	medianReadDepth_min0x=`tail -n+2 ${sampleId}_bwa_mem_sort_st_covrg.txt | sort -k7n | awk '{print $7}' | head -n $medianPoint1 | tail -n -1 `
 	echo medianReadDepth_min0x: $medianReadDepth_min0x >> ${sampleId}_gene_recovery_stats.txt
 
+	echo HELLO
 	################
 	# samtools depth - to obtain depth for read depth >= Xx
 	################
@@ -502,18 +503,25 @@ if [[ $stats != 'no' ]]; then
 	meanReadDepth_min1x=`cat ${sampleId}_bwa_mem_sort_st_depth.txt | awk '$3 >= 1' | awk '{sum+=$3} END {printf "%.1f" , sum/NR}' `	# average
 	echo meanReadDepth_min1x: $meanReadDepth_min1x >> ${sampleId}_gene_recovery_stats.txt
 
+	echo HELLO1
+### SCRITP FAILS HERE!!!!!!!
+
 	# Median read depth for bases with >= 1x depth:
-	medianPoint2=`tail -n+2 ${sampleId}_bwa_mem_sort_st_depth.txt | awk 'END {printf "%.0f" , NR/2}' `
-	medianReadDepth_min1x=`tail -n+2 ${sampleId}_bwa_mem_sort_st_depth.txt | sort -k7n | awk '{print $3}' | head -n $medianPoint2 | tail -n -1 `
+	medianPoint2=`cat ${sampleId}_bwa_mem_sort_st_depth.txt | awk 'END {printf "%.0f" , NR/2}' `
+	echo HELLO3 $medianPoint2
+	medianReadDepth_min1x=`cat ${sampleId}_bwa_mem_sort_st_depth.txt | sort -k7n | awk '{print $3}' | head -n $medianPoint2 | tail -n -1 `
+	echo HELLO4
 	echo medianReadDepth_min1x: $medianReadDepth_min1x >> ${sampleId}_gene_recovery_stats.txt
+	echo HELLO5
 
 	# Mean read depth for bases with >= 4x depth:
 	meanReadDepth_min4x=`cat ${sampleId}_bwa_mem_sort_st_depth.txt | awk '$3 >= 1' | awk '{sum+=$3} END {printf "%.1f" , sum/NR}' `	# average
+	echo HELLO6
 	echo meanReadDepth_min4x: $meanReadDepth_min4x >> ${sampleId}_gene_recovery_stats.txt
 
 	# Median read depth for bases with >= 1x depth:
-	medianPoint3=`tail -n+2 ${sampleId}_bwa_mem_sort_st_depth.txt | awk 'END {printf "%.0f" , NR/2}' `
-	medianReadDepth_min4x=`tail -n+2 ${sampleId}_bwa_mem_sort_st_depth.txt | sort -k7n | awk '{print $3}' | head -n $medianPoint3 | tail -n -1 `
+	medianPoint3=`cat ${sampleId}_bwa_mem_sort_st_depth.txt | awk 'END {printf "%.0f" , NR/2}' `
+	medianReadDepth_min4x=`cat ${sampleId}_bwa_mem_sort_st_depth.txt | sort -k7n | awk '{print $3}' | head -n $medianPoint3 | tail -n -1 `
 	echo medianReadDepth_min4x: $medianReadDepth_min4x >> ${sampleId}_gene_recovery_stats.txt
 
 

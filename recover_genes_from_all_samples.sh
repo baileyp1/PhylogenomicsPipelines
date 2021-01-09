@@ -66,14 +66,17 @@ OPTIONS <value>:
   -y <string>    
                  Hyb-Seq program; options are: paftools, hybpiper, hybpiper-bwa (required option)
   -S    
-                 calculate statistics for gene recovery from Illumina read data (includes reads on-target, read coverage, read depth).
+                 calculate statistics for gene recovery from read data (includes reads on-target, read coverage, read depth).
                  This option can be used separately after the gene recoveries have run but the path to the gene recovery fasta 
                  files has to be specified with option -P, if not running in the same location as the original gene recovery run
   -P <string> 
                  Specify FULL path to the gene recovery fasta files (for option -S), but only the part common to all files.
                  This option looks for one of these two scenarios:
-                 1. For gene recovery samples in each of their own directory i.e. /<path>/<SampleDirPrefix>_<SampleName>/<SampleName>.fasta, type: /<path> (directory set up, as used by this pipeline) 
-                 2. For gene recovery samples all in the same directory i.e. /<path>/<SampleName>.fasta, type: /<path>
+                 1. For gene recovery samples in each of their own directory
+                    i.e. /<path>/<SampleDirPrefix>_<SampleName>/<SampleName>.fasta (directory set up, as used by this pipeline) 
+                 2. For gene recovery samples all in the same directory
+                    i.e. /<path>/<SampleName>.fasta, type: /<path>
+                 For either case, type /<path>
                  Note: 'SampleName' needs to match that provided by the sample list in option -s
   -p <string>    
                  directory prefix for each sample (default=Sample)
@@ -87,7 +90,7 @@ OPTIONS <value>:
                  Slurm partition (queue) to use (default=medium)
 
   -H <integer>
-                 Slurm array throttle (default=10; could set to 1, then increase once happy with run with: scontrol update arraytaskthrottle=<integer> job=<jobId>)
+                 Slurm array throttle (default=1; could set to 1, then increase once happy with run with: scontrol update arraytaskthrottle=<integer> job=<jobId>)
  
 
 A typical example:
@@ -250,7 +253,7 @@ if [ $os == 'Darwin' ]; then
 	while read line; do
   	### Keep an eye on whether the $line variable value can break up with any chars
     echo $line
-  	$pathToScripts/recover_genes_from_one_sample_test_with_stats.sh "$line"  $targetsFile  $paftolDataSymlinksDir  $adapterFasta  $samplePrefix  $cpu  "$exePrefix" $hybSeqProgram $usePaftolDb $stats $refFilePathForStats 
+  	$pathToScripts/recover_genes_from_one_sample.sh "$line"  $targetsFile  $paftolDataSymlinksDir  $adapterFasta  $samplePrefix  $cpu  "$exePrefix" $hybSeqProgram $usePaftolDb $stats $refFilePathForStats 
   done
 elif [ $os == 'Linux' ]; then
   exePrefix="/usr/bin/time -v"	# PYTHONPATH works on the Cluster, but on Macbook, it deosn't need to be set (only really need to alter the flag char!)
