@@ -389,31 +389,42 @@ if [[ $stats != 'no' ]]; then
 
 	echo "Found gene recovery fasta file: $refFileName"
 
+
 	# Prepare to map reads for getting stats:
 	bwa index ${sampleId}.fasta
 	bwa mem -t $cpu ${sampleId}.fasta \
 	${sampleId}_R1_trimmomatic.fastq \
 	${sampleId}_R2_trimmomatic.fastq \
-	> ${sampleId}_bwa_mem.sam
+	> ${sampleId}_bwa_mem_with_dups.sam
 ### NB - WHAT HAPPENS WHEN USING HYBPIPER? NEED TO ALSO MAP THE UNPAIRED READS
 ### Don’t forget to pipe in/out files as much as possible to save space
-	samtools view -bS ${sampleId}_bwa_mem.sam > ${sampleId}_bwa_mem.bam
+	samtools view -bS ${sampleId}_bwa_mem_with_dups.sam > ${sampleId}_bwa_mem_with_dups.bam
 	# Need to sort bam before indexing
-	samtools sort ${sampleId}_bwa_mem.bam > ${sampleId}_bwa_mem_sort.bam
-	samtools index  ${sampleId}_bwa_mem_sort.bam
+	samtools sort ${sampleId}_bwa_mem_with_dups.bam > ${sampleId}_bwa_mem_with_dups_sort.bam
+	samtools index  ${sampleId}_bwa_mem_with_dups_sort.bam
 
-
-### Add MarkDupd program here
-#$source_production_env; source jre-7.11; source picardtools-1.84
-#	mkdir tmp
-#	java -jar -Xmx${mem_gb}g -XX:ParallelGCThreads=$cpu -Djava.io.tmpdir=tmp /tgac/software/production/picardtools/1.84/x86_64/bin/MarkDuplicates.jar \
-#	INPUT=sampe_sort.bam \
-#	OUTPUT=sampe_sort_markdup_rm.bam \
-#	METRICS_FILE=sampe_sort_markdup_metrics \
-#	REMOVE_DUPLICATES=true \
-#	AS=TRUE VALIDATION_STRINGENCY=LENIENT \
-#	MAX_FILE_HANDLES_FOR_READ_ENDS_MAP=$maxFileHandles \
-#	TMP_DIR=tmp
+	# Before assessing read depth stats, remove duplicates from the mapped bam file:
+	if [[ ! -d tmp ]]; then mkdir tmp; fi 	# Not sure if this is vital - maybe sample size dependant
+	### Need to test whether the java -jar -Xmx${mem_gb}g flag is required - try to fix it independaqnt of settign memory in Slurm
+	java -jar  -XX:ParallelGCThreads=$cpu -Djava.io.tmpdir=tmp $PICARD MarkDuplicates \
+	-INPUT=${sampleId}_bwa_mem_with_dups_sort.bam \
+	-OUTPUT=${sampleId}_bwa_mem_sort.bam \
+	-METRICS_FILE=${sampleId}_bwa_mem_sort_markdup_metrics \
+	-REMOVE_DUPLICATES=true \
+	-ASSUME_SORT_ORDER=coordinate \
+	-VALIDATION_STRINGENCY=LENIENT \
+	-MAX_FILE_HANDLES_FOR_READ_ENDS_MAP=100 \
+	-TMP_DIR=tmp
+	# Using the new command syntax e.g. from INPUT to -INPUT
+	# MAX_FILE_HANDLES_FOR_READ_ENDS_MAP - ulimit -n=1024 on Kew hatta cluster, ulimit -n=256 on macbook so setting to 100 seems safe enough
+	# OPTICAL_DUPLICATE_PIXEL_DISTANCE - default=100 for unpatterned versions of the Illumina platform; for the patterned flow cell models, 
+	# 2500 is more appropriate. The patterned flow cell models are: iSeq™ 100, NextSeq™ 1000/NextSeq™ 2000, HiSeq™ 3000/HiSeq™ 4000, HiSeq™ X and NovaSeq™ 6000
+	# SORTING_COLLECTION_SIZE_RATIO - default=0.25 - not using for the moment: 
+    #                          This number, plus the maximum RAM available to the JVM, determine the memory footprint
+    #                          used by some of the sorting collections.  If you are running out of memory, try reducing
+    #                          this number.  Default value: 0.25.
+    # NB - removing duplicates after quality trimming. Duplicates are assessed at 5' end and trimming is more likely to be done towards the 3' end
+    #      so 5' read2 (and read1) coordinate should be preserved for duplicate assessment
 
 
 	> ${sampleId}_gene_recovery_stats.txt  # Wiping out file contents from any previous run
@@ -421,7 +432,12 @@ if [[ $stats != 'no' ]]; then
 	####################################
 	# General stats on the BWA alignment
 	####################################
-	# Count the number of reads in the bam file just after mapping:
+	# Count the number of reads in the bam file just after mapping but before removing read duplicates:
+	numbrTrimmedReadsWithDups=`samtools view -c ${sampleId}_bwa_mem_with_dups_sort.bam `
+	echo numbrTrimmedReadsWithDups: $numbrTrimmedReadsWithDups  >> ${sampleId}_gene_recovery_stats.txt
+
+	# Count the number of reads in the bam file just after mapping and removinf read duplicates.
+	# NB - doesn't quite count all reads in the file.
 	numbrTrimmedReads=`samtools view -c ${sampleId}_bwa_mem_sort.bam `
 	echo numbrTrimmedReads: $numbrTrimmedReads  >> ${sampleId}_gene_recovery_stats.txt
 
@@ -500,8 +516,8 @@ if [[ $stats != 'no' ]]; then
 	# samtools depth - to obtain depth for read depth >= Xx
 	################
 	# The aim here is to count useful depth i.e. >1x or >4x is more informative - need to use samtools depth
-	# The -a flag outputs all positions (including zero depth) but we already have this above from samtools coverage - column 7) but not for ALL genes together)
-	# So include the -a flag then can assess from >=0x coverage and compare with samtools coverage - they are slightly different calculations.
+	# The -a flag outputs all positions (including zero depth). We already have this above from samtools coverage - column 7) but not for ALL genes together.
+	# So including the -a flag here then can assess from >=0x coverage and compare with samtools coverage - they are slightly different calculations!
 	samtools depth -q 20 -q 20 -a ${sampleId}_bwa_mem_sort.bam > ${sampleId}_bwa_mem_sort_st_depth.txt
 
 	# Mean read depth for bases with >= 0x depth across ALL genes:
@@ -528,8 +544,29 @@ if [[ $stats != 'no' ]]; then
 
 	# Median read depth for bases with >= 4x depth  across ALL genes:
 	medianPoint4=`cat ${sampleId}_bwa_mem_sort_st_depth.txt | awk '$3 >= 4' | awk 'END {printf "%.0f" , NR/2}' `
-	medianReadDepth_min4x=`cat ${sampleId}_bwa_mem_sort_st_depth.txt | awk '$3 >= 4' | sort -k3n | awk '{print $3}' | head -n $medianPoint4 | tail -n 1 `
-	echo "medianReadDepth_min4x_(samtools_depth): $medianReadDepth_min4x" >> ${sampleId}_gene_recovery_stats.txt
+	if [[ $medianPoint4 -eq 0 ]]; then
+		echo "medianReadDepth_min4x_(samtools_depth): 0" >> ${sampleId}_gene_recovery_stats.txt
+		# head -n 0 gives error: head: illegal line count -- 0; only affects very poor quality samples, don't think it affects depth at >= 0 and >= 1.
+	else
+		medianReadDepth_min4x=`cat ${sampleId}_bwa_mem_sort_st_depth.txt | awk '$3 >= 4' | sort -k3n | awk '{print $3}' | head -n $medianPoint4 | tail -n 1 `
+		echo "medianReadDepth_min4x_(samtools_depth): $medianReadDepth_min4x" >> ${sampleId}_gene_recovery_stats.txt
+	fi
+
+
+	# Also comparing read depth at >=4x WITH duplicates NOT removed to read depth at >=4x without duplicates.
+	samtools depth -q 20 -q 20 -a ${sampleId}_bwa_mem_with_dups_sort.bam > ${sampleId}_bwa_mem_with_dups_sort_st_depth.txt
+	# Mean read depth for bases with >= 4x depth  across ALL genes:
+	meanReadDepthWithDups_min4x=`cat ${sampleId}_bwa_mem_with_dups_sort_st_depth.txt | awk '$3 >= 4' | awk '{sum+=$3} END {if(sum > 0) {print sum/NR} else {print "0"}}' `	# average
+	echo "meanReadDepthWithDups_min4x_(samtools_depth): $meanReadDepthWithDups_min4x" >> ${sampleId}_gene_recovery_stats.txt
+
+	# Median read depth for bases with >= 4x depth  across ALL genes:
+	medianPoint5=`cat ${sampleId}_bwa_mem_with_dups_sort_st_depth.txt | awk '$3 >= 4' | awk 'END {printf "%.0f" , NR/2}' `
+	if [[ $medianPoint4 -eq 0 ]]; then
+		echo "medianReadDepthWithDups_min4x_(samtools_depth): 0" >> ${sampleId}_gene_recovery_stats.txt
+	else
+		medianReadDepthWithDups_min4x=`cat ${sampleId}_bwa_mem_with_dups_sort_st_depth.txt | awk '$3 >= 4' | sort -k3n | awk '{print $3}' | head -n $medianPoint5 | tail -n 1 `
+		echo "medianReadDepthWithDups_min4x_(samtools_depth): $medianReadDepthWithDups_min4x" >> ${sampleId}_gene_recovery_stats.txt
+	fi
 
 
 	#########################################
