@@ -392,17 +392,17 @@ if [[ $stats != 'no' ]]; then
 
 
 	# Prepare to map reads for getting stats:
-# 	bwa index ${sampleId}.fasta
-# 	bwa mem -t $cpu ${sampleId}.fasta \
-# 	${sampleId}_R1_trimmomatic.fastq \
-# 	${sampleId}_R2_trimmomatic.fastq \
-# 	> ${sampleId}_bwa_mem_with_dups.sam
-# ### NB - WHAT HAPPENS WHEN USING HYBPIPER? NEED TO ALSO MAP THE UNPAIRED READS
-# ### Don’t forget to pipe in/out files as much as possible to save space
-# 	samtools view -bS ${sampleId}_bwa_mem_with_dups.sam > ${sampleId}_bwa_mem_with_dups.bam
-# 	# Need to sort bam before indexing
-# 	samtools sort ${sampleId}_bwa_mem_with_dups.bam > ${sampleId}_bwa_mem_with_dups_sort.bam
-# 	samtools index  ${sampleId}_bwa_mem_with_dups_sort.bam
+	bwa index ${sampleId}.fasta
+	bwa mem -t $cpu ${sampleId}.fasta \
+	${sampleId}_R1_trimmomatic.fastq \
+	${sampleId}_R2_trimmomatic.fastq \
+	> ${sampleId}_bwa_mem_with_dups.sam
+### NB - WHAT HAPPENS WHEN USING HYBPIPER? NEED TO ALSO MAP THE UNPAIRED READS
+### Don’t forget to pipe in/out files as much as possible to save space
+	samtools view -bS ${sampleId}_bwa_mem_with_dups.sam > ${sampleId}_bwa_mem_with_dups.bam
+	# Need to sort bam before indexing
+	samtools sort ${sampleId}_bwa_mem_with_dups.bam > ${sampleId}_bwa_mem_with_dups_sort.bam
+	samtools index  ${sampleId}_bwa_mem_with_dups_sort.bam
 
 	# Before assessing read depth stats, remove duplicates from the mapped bam file:
 	if [[ ! -d tmp ]]; then mkdir tmp; fi 	# Not sure if this is vital - maybe sample size dependant
