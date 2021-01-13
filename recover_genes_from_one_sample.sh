@@ -439,20 +439,20 @@ if [[ $stats != 'no' ]]; then
 	# General stats on the BWA alignment
 	####################################
 	# Count the number of reads in the bam file just after mapping but before removing read duplicates:
-	numbrTrimmedReadsWithDups=`samtools view -c ${sampleId}_bwa_mem_with_dups_sort.bam `
-	echo numbrTrimmedReadsWithDups: $numbrTrimmedReadsWithDups  >> ${sampleId}_gene_recovery_stats.txt
+	numbrTrimmedReadsInBamInclDups=`samtools view -c ${sampleId}_bwa_mem_with_dups_sort.bam `
+	echo numbrTrimmedReadsInBamInclDups: $numbrTrimmedReadsInBamInclDups  >> ${sampleId}_gene_recovery_stats.txt
 
 	# Count the number of reads in the bam file just after mapping and removing read duplicates.
 	# NB - doesn't quite count all reads in the file.
-	numbrTrimmedReads=`samtools view -c ${sampleId}_bwa_mem_sort.bam `
-	echo numbrTrimmedReads: $numbrTrimmedReads  >> ${sampleId}_gene_recovery_stats.txt
+	numbrTrimmedReadsInBam=`samtools view -c ${sampleId}_bwa_mem_sort.bam `
+	echo numbrTrimmedReadsInBam: $numbrTrimmedReadsInBam  >> ${sampleId}_gene_recovery_stats.txt
 
 	# Count the number of reads that are mapped to the reference with map quality >= 20:
 	numbrMappedReads=`samtools view -c -F4 -q 20 ${sampleId}_bwa_mem_sort.bam `
 	echo numbrMappedReads: $numbrMappedReads  >> ${sampleId}_gene_recovery_stats.txt
 
 	# Count the number of reads mapped in proper pairs:
-	numbrMappedReadsProperPairs=`samtools view -c -f2  ${sampleId}_bwa_mem_sort.bam `
+	numbrMappedReadsProperPairs=`samtools view -c -f2 -q20 ${sampleId}_bwa_mem_sort.bam `
 	echo numbrMappedReadsProperPairs: $numbrMappedReadsProperPairs  >> ${sampleId}_gene_recovery_stats.txt
 
 	# Count the number of reads with an XA:Z flag (alternative hits).
