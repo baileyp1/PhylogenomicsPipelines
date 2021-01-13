@@ -406,16 +406,17 @@ if [[ $stats != 'no' ]]; then
 
 	# Before assessing read depth stats, remove duplicates from the mapped bam file:
 	if [[ ! -d tmp ]]; then mkdir tmp; fi 	# Not sure if this is vital - maybe sample size dependant
-	### Need to test whether the java -jar -Xmx${mem_gb}g flag is required - try to fix it independaqnt of settign memory in Slurm
+	### Need to test whether the java -jar -Xmx${mem_gb}g flag is required - try to fix it independant of setting memory in Slurm
+	### Example in docs: for 8.6GB/20GB file, run with 2GB (-Xmx2g) and 10 GB hard memory
 	java -jar  -XX:ParallelGCThreads=$cpu -Djava.io.tmpdir=tmp $PICARD MarkDuplicates \
-	-INPUT=${sampleId}_bwa_mem_with_dups_sort.bam \
-	-OUTPUT=${sampleId}_bwa_mem_sort.bam \
-	-METRICS_FILE=${sampleId}_bwa_mem_sort_markdup_metrics \
-	-REMOVE_DUPLICATES=true \
-	-ASSUME_SORT_ORDER=coordinate \
-	-VALIDATION_STRINGENCY=LENIENT \
-	-MAX_FILE_HANDLES_FOR_READ_ENDS_MAP=100 \
-	-TMP_DIR=tmp
+	INPUT=${sampleId}_bwa_mem_with_dups_sort.bam \
+	OUTPUT=${sampleId}_bwa_mem_sort.bam \
+	METRICS_FILE=${sampleId}_bwa_mem_sort_markdup_metrics \
+	REMOVE_DUPLICATES=true \
+	ASSUME_SORT_ORDER=coordinate \
+	VALIDATION_STRINGENCY=LENIENT \
+	MAX_FILE_HANDLES_FOR_READ_ENDS_MAP=100 \
+	TMP_DIR=tmp
 	# Using the new command syntax e.g. from INPUT to -INPUT
 	# MAX_FILE_HANDLES_FOR_READ_ENDS_MAP - ulimit -n=1024 on Kew hatta cluster, ulimit -n=256 on macbook so setting to 100 seems safe enough
 	# OPTICAL_DUPLICATE_PIXEL_DISTANCE - default=100 for unpatterned versions of the Illumina platform; for the patterned flow cell models, 
@@ -427,6 +428,10 @@ if [[ $stats != 'no' ]]; then
     # NB - removing duplicates after quality trimming. Duplicates are assessed at 5' end and trimming is more likely to be done towards the 3' end
     #      so 5' read2 (and read1) coordinate should be preserved for duplicate assessment
 
+    if [[ ! -s ${sampleId}_bwa_mem_sort.bam ]]; then
+    	echo "ERROR: Picard markduplicates output file doesn't exist or is empty: ${sampleId}_bwa_mem_sort.bam"
+    	exit
+    fi
 
 	> ${sampleId}_gene_recovery_stats.txt  # Wiping out file contents from any previous run
 	
@@ -437,7 +442,7 @@ if [[ $stats != 'no' ]]; then
 	numbrTrimmedReadsWithDups=`samtools view -c ${sampleId}_bwa_mem_with_dups_sort.bam `
 	echo numbrTrimmedReadsWithDups: $numbrTrimmedReadsWithDups  >> ${sampleId}_gene_recovery_stats.txt
 
-	# Count the number of reads in the bam file just after mapping and removinf read duplicates.
+	# Count the number of reads in the bam file just after mapping and removing read duplicates.
 	# NB - doesn't quite count all reads in the file.
 	numbrTrimmedReads=`samtools view -c ${sampleId}_bwa_mem_sort.bam `
 	echo numbrTrimmedReads: $numbrTrimmedReads  >> ${sampleId}_gene_recovery_stats.txt
@@ -574,7 +579,7 @@ if [[ $stats != 'no' ]]; then
 	# Further stats to do outside this script
 	#########################################
 	# 1. Read depth per gene across all samples --> results for 353 genes
-	# 2. Read depth across all genes and samples - total mean and median values 
+	# 2. Read depth across all genes and samples - total mean and median values
 fi
 #####cd ../ # Back up to parent dir for next sample - 20.4.2020 - has no effect here now and not required anymore because looping through samples is done outside this script 
 echo
