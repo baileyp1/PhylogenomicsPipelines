@@ -452,7 +452,7 @@ if [[ $stats != 'no' ]]; then
 	echo numbrMappedReads: $numbrMappedReads  >> ${sampleId}_gene_recovery_stats.txt
 
 	# Count the number of reads mapped in proper pairs:
-	numbrMappedReadsProperPairs=`samtools view -c -f2 -q20 ${sampleId}_bwa_mem_sort.bam `
+	numbrMappedReadsProperPairs=`samtools view -c -f2 -q 20 ${sampleId}_bwa_mem_sort.bam `
 	echo numbrMappedReadsProperPairs: $numbrMappedReadsProperPairs  >> ${sampleId}_gene_recovery_stats.txt
 
 	# Count the number of reads with an XA:Z flag (alternative hits).
