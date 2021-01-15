@@ -408,6 +408,7 @@ if [[ $stats != 'no' ]]; then
 	if [[ ! -d tmp ]]; then mkdir tmp; fi 	# Not sure if this is vital - maybe sample size dependant
 	### Need to test whether the java -jar -Xmx${mem_gb}g flag is required - try to fix it independant of setting memory in Slurm
 	### Example in docs: for 8.6GB/20GB file, run with 2GB (-Xmx2g) and 10 GB hard memory
+	### So far not needed to set memory with PAFTOL data: ${sampleId}_largest _R1_trimmomatic.fastq file done to date = 4.9GB
 	java -jar  -XX:ParallelGCThreads=$cpu -Djava.io.tmpdir=tmp $PICARD MarkDuplicates \
 	INPUT=${sampleId}_bwa_mem_with_dups_sort.bam \
 	OUTPUT=${sampleId}_bwa_mem_sort.bam \
@@ -433,7 +434,15 @@ if [[ $stats != 'no' ]]; then
     	exit
     fi
 
-	> ${sampleId}_gene_recovery_stats.txt  # Wiping out file contents from any previous run
+	
+	# Number of recovered genes:
+	numbrRecoveredGenes=`cat ${sampleId}.fasta | grep '>' | wc -l `
+	# Sum length of genes :
+	sumLengthOfGenes=`fastalength ${sampleId}.fasta | awk '{sum+=$1} END {print sum}' `
+	echo "sampleId: $sampleId
+numbrRecoveredGenes: $numbrRecoveredGenes
+sumLengthOfGenes: $sumLengthOfGenes" >> ${sampleId}_gene_recovery_stats.txt  # Also wipes out file contents from any previous run
+
 	
 	####################################
 	# General stats on the BWA alignment
