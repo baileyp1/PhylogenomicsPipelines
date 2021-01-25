@@ -441,8 +441,12 @@ if [[ $stats != 'no' ]]; then
 	sumLengthOfGenes=`fastalength ${sampleId}.fasta | awk '{sum+=$1} END {print sum}' `
 	echo "sampleId: $sampleId
 numbrRecoveredGenes: $numbrRecoveredGenes
-sumLengthOfGenes: $sumLengthOfGenes" >> ${sampleId}_gene_recovery_stats.txt  # Also wipes out file contents from any previous run
+sumLengthOfGenes: $sumLengthOfGenes" > ${sampleId}_gene_recovery_stats.txt  # Also wipes out file contents from any previous run
 
+	# Count number of all ambiguity codes:
+	numbrAmbiguityCodesInGenes=`cat ${sampleId}.fasta | grep -v '>' | grep -o '[RYMKSWHBDN]' | wc -l `
+	echo "numbrAmbiguityCodesInGenes: $numbrAmbiguityCodesInGenes" >> ${sampleId}_gene_recovery_stats.txt
+	
 	
 	####################################
 	# General stats on the BWA alignment
@@ -570,6 +574,7 @@ sumLengthOfGenes: $sumLengthOfGenes" >> ${sampleId}_gene_recovery_stats.txt  # A
 
 	# Also comparing read depth at >=4x WITH duplicates NOT removed to read depth at >=4x without duplicates.
 	samtools depth -q 20 -q 20 -a ${sampleId}_bwa_mem_with_dups_sort.bam > ${sampleId}_bwa_mem_with_dups_sort_st_depth.txt
+
 	# Mean read depth for bases with >= 4x depth  across ALL genes:
 	meanReadDepthWithDups_min4x=`cat ${sampleId}_bwa_mem_with_dups_sort_st_depth.txt | awk '$3 >= 4' | awk '{sum+=$3} END {if(sum > 0) {print sum/NR} else {print "0"}}' `	# average
 	echo "meanReadDepthWithDups_min4x_(samtools_depth): $meanReadDepthWithDups_min4x" >> ${sampleId}_gene_recovery_stats.txt
@@ -582,6 +587,15 @@ sumLengthOfGenes: $sumLengthOfGenes" >> ${sampleId}_gene_recovery_stats.txt  # A
 		medianReadDepthWithDups_min4x=`cat ${sampleId}_bwa_mem_with_dups_sort_st_depth.txt | awk '$3 >= 4' | sort -k3n | awk '{print $3}' | head -n $medianPoint5 | tail -n 1 `
 		echo "medianReadDepthWithDups_min4x_(samtools_depth): $medianReadDepthWithDups_min4x" >> ${sampleId}_gene_recovery_stats.txt
 	fi
+
+
+	# Number of recovered bases in ALL genes with read depth >= 4:
+	# With duplicates removed:
+	numbrBasesInAllGenes_ReadDepth_min4x=`cat ${sampleId}_bwa_mem_sort_st_depth.txt | awk '$3 >= 4' | wc -l
+	echo "NumbrBasesInAllGenes_ReadDepth_min4x_(samtools_depth): $numbrBasesInAllGenes_ReadDepth_min4x" >> ${sampleId}_gene_recovery_stats.txt
+	# Without duplicates:
+	numbrBasesInAllGenes_ReadDepthWithDups_min4x=`cat ${sampleId}_bwa_mem_with_dups_sort_st_depth.txt | awk '$3 >= 4' | wc -l
+	echo "NumbrBasesInAllGenes_ReadDepthWithDups_min4x_(samtools_depth): $numbrBasesInAllGenes_ReadDepthWithDups_min4x" >> ${sampleId}_gene_recovery_stats.txt
 
 
 	#########################################
