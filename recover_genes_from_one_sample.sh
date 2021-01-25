@@ -429,6 +429,9 @@ if [[ $stats != 'no' ]]; then
     # NB - removing duplicates after quality trimming. Duplicates are assessed at 5' end and trimming is more likely to be done towards the 3' end
     #      so 5' read2 (and read1) coordinate should be preserved for duplicate assessment
 
+    ### NB - Picard commandline syntax is changing - new format would look like e.g.:
+    ### MarkDuplicates -INPUT 7210_bwa_mem_with_dups_sort.bam -OUTPUT 7210_bwa_mem_sort.bam -METRICS_FILE 7210_bwa_mem_sort_markdup_metrics -REMOVE_DUPLICATES true -ASSUME_SORT_ORDER coordinate -VALIDATION_STRINGENCY LENIENT -MAX_FILE_HANDLES_FOR_READ_ENDS_MAP 100 -TMP_DIR tmp
+
     if [[ ! -s ${sampleId}_bwa_mem_sort.bam ]]; then
     	echo "ERROR: Picard markduplicates output file doesn't exist or is empty: ${sampleId}_bwa_mem_sort.bam"
     	exit
@@ -447,7 +450,7 @@ sumLengthOfGenes: $sumLengthOfGenes" > ${sampleId}_gene_recovery_stats.txt  # Al
 	numbrAmbiguityCodesInGenes=`cat ${sampleId}.fasta | grep -v '>' | grep -o '[RYMKSWHBDN]' | wc -l `
 	echo "numbrAmbiguityCodesInGenes: $numbrAmbiguityCodesInGenes" >> ${sampleId}_gene_recovery_stats.txt
 	
-	
+
 	####################################
 	# General stats on the BWA alignment
 	####################################
