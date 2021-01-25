@@ -447,8 +447,9 @@ numbrRecoveredGenes: $numbrRecoveredGenes
 sumLengthOfGenes: $sumLengthOfGenes" > ${sampleId}_gene_recovery_stats.txt  # Also wipes out file contents from any previous run
 
 	# Count number of all ambiguity codes:
-	numbrAmbiguityCodesInGenes=`cat ${sampleId}.fasta | grep -v '>' | grep -o '[RYMKSWHBDN]' | wc -l `
-	echo "numbrAmbiguityCodesInGenes: $numbrAmbiguityCodesInGenes" >> ${sampleId}_gene_recovery_stats.txt
+	###numbrAmbiguityCodesInGenes=`cat ${sampleId}.fasta | grep -v '>' | grep -o '[RYMKSWHBDN]' | wc -l `
+	###echo "numbrAmbiguityCodesInGenes: $numbrAmbiguityCodesInGenes" >> ${sampleId}_gene_recovery_stats.txt
+	### For some reason doesn't work - may have to turn off set +u and +e - see below
 	
 
 	####################################
