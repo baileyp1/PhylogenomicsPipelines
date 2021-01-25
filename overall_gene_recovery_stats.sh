@@ -69,9 +69,9 @@ while read gene; do
 
     # Number of recovered bases in ALL genes with read depth >= 4:
     # Minus read duplicates:
-	numbrBasesInAllGenes_ReadDepth_min4x=`cat Sample_*/*_bwa_mem_sort_st_depth.txt | awk -v depth=$depth '$3 >= depth' | wc -l
+	numbrBasesInAllGenes_ReadDepth_min4x=`cat Sample_*/*_bwa_mem_sort_st_depth.txt | awk -v depth=$depth '$3 >= depth' | wc -l `
 	# Plus read duplicates:
-	numbrBasesInAllGenes_ReadDepthWithDups_min4x=`cat Sample_*/*_bwa_mem_sort_st_depth.txt | awk -v depth=$depth '$3 >= depth' | wc -l
+	numbrBasesInAllGenes_ReadDepthWithDups_min4x=`cat Sample_*/*_bwa_mem_sort_st_depth.txt | awk -v depth=$depth '$3 >= depth' | wc -l `
 	
 
 	# Count number of all ambiguity codes across all samples per gene:
