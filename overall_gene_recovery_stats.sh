@@ -67,8 +67,8 @@ while read gene; do
     medianValue3=`cat Sample_*/*_bwa_mem_sort_st_depth.txt | grep ^$gene | awk -v depth=$depth '$3 >= depth' | sort -k3n | awk '{print $3}' | head -n $medianPoint3 | tail -n 1 `
     # Read depth without removing duplicate reads:
     depth=4
-    # Mean read depth for bases with >= 4x depth  across ALL samples:
-	meanReadDepth4=`cat Sample_*/*_bwa_mem_sort_st_depth.txt | grep ^$gene |  awk -v depth=$depth '$3 >= depth' | awk '{sum+=$3} END {if(sum > 0) {print sum/NR} else {print "0"}}' `	# average
+    # Mean read depth for bases with >= 4x depth across ALL samples:
+	meanReadDepth4=`cat Sample_*/*_bwa_mem_with_dups_sort_st_depth.txt | grep ^$gene |  awk -v depth=$depth '$3 >= depth' | awk '{sum+=$3} END {if(sum > 0) {print sum/NR} else {print "0"}}' `	# average
 
     medianPoint4=`cat Sample_*/*_bwa_mem_with_dups_sort_st_depth.txt | grep ^$gene | awk -v depth=$depth '$3 >= depth' | awk 'END {printf "%.0f " , NR/2}' `
     medianValue4=`cat Sample_*/*_bwa_mem_with_dups_sort_st_depth.txt | grep ^$gene | awk -v depth=$depth '$3 >= depth' | sort -k3n | awk '{print $3}' | head -n $medianPoint4 | tail -n 1 `
