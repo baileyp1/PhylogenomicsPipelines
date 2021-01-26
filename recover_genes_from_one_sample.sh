@@ -350,7 +350,8 @@ if [[ $stats != 'no' ]]; then
 	if [[ $usePaftolDb != 'no' ]]; then
 
 		echo If using PaftolDB with Paftools, need to run Trimmomatic again as the previous run was only saved to /tmp/ - still to add
-		# NB - in all other case trimmomatic is beign run again
+		# NB - in all other case trimmomatic is being run again above
+		exit
 	fi	
 
 	
@@ -363,6 +364,9 @@ if [[ $stats != 'no' ]]; then
 			# Gene recovery file is in pwd.
 		elif [[ -s ${sampleId}_all_genes.fasta ]]; then
 			refFileName=${sampleId}_all_genes.fasta
+### 25.1.2021 - NBNB - but then I still need to copy this file to ${sampleId}.fasta
+### for the stats to recognise the file OR possibly better assign filename to use to
+### a variable in the program calls - same below in the else clause
 			# Gene recovery file is in pwd.
 		else
 			echo "ERROR: Option -S selected but gene recovery fasta file not found or is empty. May need to use option -P. Stats cannot be calculated for sample: ${sampleId}."
