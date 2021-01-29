@@ -2,9 +2,9 @@
 
 This repository contains two pipelines to perform phylogenomic analysis. One pipeline recovers genes from sample Illumina read data and the second pipeline performs phylogenetic analysis on the recovered genes to obtain a species tree. They will run on Linux (and with the [Slurm](https://slurm.schedmd.com/) job manager, if installed) and MacOS.
 
-This software has been used in the following work:
+This software has been used in the following work to construct and analyse the [Kew Tree of Life](https://treeoflife.kew.org/) ([PAFTOL](https://www.kew.org/science/our-science/projects/plant-and-fungal-trees-of-life) project):
 ```
-Baker et al (2021) A phylogenomic infrastructure for the flowering plants: comprehensive data and a dynamic tree of life (in preparation)
+Baker et al (2021) A comprehensive phylogenomic platform for exploring the angiosperm tree of life (in preparation)
 ``` 
 
 For gene recovery use
@@ -39,7 +39,7 @@ For phylogenetic analysis:
 * [ASTRAL](https://github.com/smirarab/ASTRAL), exactly version 5.7.4 (or alter the version number in script make_species_trees.sh, line ~235)
 * [AMAS.py](https://github.com/marekborowiec/AMAS) (check it has the 'trim' option) and/or [trimAl](http://trimal.cgenomics.org/) (for trimming if those options are selected)
 * [TreeShrink](http://trimal.cgenomics.org/)
-* [R](https://www.r-project.org/) v3.4.x or higher  (used only by TreeShrink and trimAl)
+* [R](https://www.r-project.org/) v3.4.x or higher  (used by TreeShrink and trimAl)
  
 ## How to use, outputs and further details  
 ## recover_genes_from_all_samples.sh
@@ -109,9 +109,9 @@ e.g. throttle set to 1
 
 ## make_species_trees_pipeline.sh 
 ### Example
-A basic example is shown at the bottom of the command line help. A more extensive analysis is presented below (options for this pipeline in brackets) with jobs set to run vi8a Slurm job manager on a High Performance Computing (HPC) Linux cluster. 
+A basic example is shown at the bottom of the command line help. A more extensive analysis is presented below (options for this pipeline in brackets) with jobs set to run via Slurm job manager on a High Performance Computing (HPC) Linux cluster. 
 
-Build genes trees from sample fasta files, formatted as described for option -a, by aligning the input DNA sequence for each gene with UPP (option -A),  filtering out genes with low sequence coverage across the alignment (option -F), removing very rare insertions (option -K), building each gene tree with IQTREE-2 using the Ultrafast bootstrap option (option -q), using TreeShrink to identify usually long branches in the gene trees (option -T), then collapsing nodes with bootstrap values < 10 % (option -L) before building a species tree with ASTRAL. Finally, FASTTREE and RAxML are then used to reconstruct a supermatrix tree built from a concatenated set of the UPP gene alignments:
+Build genes trees from sample fasta files, formatted as described for option -a, by aligning the input DNA sequence for each gene with UPP (option -A),  filtering out genes with low sequence coverage across the alignment (option -F), removing very rare insertions (option -K), building each gene tree with IQTREE-2 using the Ultrafast bootstrap option (option -q), using TreeShrink to identify usually long branches in the gene trees (option -T), then collapsing nodes with bootstrap values < 30 % (option -L) before building a species tree with ASTRAL. Finally, FASTTREE and RAxML are then used to reconstruct a supermatrix tree built from a concatenated set of the UPP gene alignments:
 ```
 make_species_trees_pipeline.sh \
 -a \
@@ -119,25 +119,27 @@ make_species_trees_pipeline.sh \
 -A upp \
 -t <path_to>/taxon_info_for_tree_labels.csv \
 -g <path_to>/<file_with_target_geneIds_ONLY.txt> \
--F '60 30' \
+-F '60 0' \
 -K 0.003 \
--q iqtree2 \
+-q iqtree2-B1000-nm1000 \
 -T \
--L 10 \
--c 8 \
--C 6 \
+-L 30 \
+-c 26 \
+-C 4 \
 -Q long \
--R 16000 \
+-Y long \
+-R 5500 \
 -U 12000 \
 -V 0 \
 -W 0 \
 -H 1 \
+-X 5921,5596:6:20000 \
 *.fasta \
 > make_species_trees_pipeline.log 2>&1 &
 ```
 Note that in the above command there must not be a space character after the back slash, there must be a space before the back slash and any option values that contain spaces need to be quoted e.g. option -F. 
 
-The Slurm options, -Q, -V and -W, will need to be altered depending on how Slurm is set up. Slurm memory options, -R and -U, will need to be altered depending on the size of the data set. The values set in the above example were appropriate for building gene trees then a species tree with ASTRAL containing up to 3,200 samples. 
+The Slurm options, -Q, -V and -W, will need to be altered depending on how Slurm is set up. Slurm memory options, -R and -U, will need to be altered depending on the size of the data set; also refer to option -X which helps with memory efficiency by  allowing the user to increase memory for specific genes that require significantly more memory. The values set in the above example were appropriate for building gene trees then a species tree with ASTRAL containing up to 3,200 samples (Refer to the citation above). 
 
 <!-- 
 To input a subset of samples in a directory, '*.fasta' should be replaced by the following example code and placed between back tick characters in the above command. It takes each identifier specified in the .txt file and creates the path to the file by adding whatever text is printed instead of '<path_to_files>':
