@@ -23,7 +23,7 @@ The following programs need to be installed and available from the command line 
 For the Java programs (Trimmomatic, ASTRAL) it is best to set up an alias, named as described below -->
 
 For gene recovery:
-* [Trimmomatic](http://www.usadellab.org/cms/?page=trimmomatic), exactly version 0.39 (or alter the version number in script recover_genes_from_one_sample.sh, line ~50)
+* [Trimmomatic](http://www.usadellab.org/cms/?page=trimmomatic), exactly version 0.39 (or alter the version number in script recover_genes_from_one_sample.sh, line ~54)
 * [Paftools](https://github.com/RBGKew/pypaftol) or [HybPiper](https://github.com/mossmatters/HybPiper)
 * If using HybPiper, [seqtk](https://github.com/lh3/seqtk)
 
@@ -36,10 +36,10 @@ For phylogenetic analysis:
 * [FastTree](http://www.microbesonline.org/fasttree/), [RAxML-NG](https://github.com/amkozlov/raxml-ng) or [IQ-TREE version 2](http://www.iqtree.org)
 * [RAxML](https://github.com/stamatak/standard-RAxML) (used for building a species tree using a concatenated alignment)
 * [Newick Utilities](http://cegg.unige.ch/newick_utils)
-* [ASTRAL](https://github.com/smirarab/ASTRAL), exactly version 5.7.4 (or alter the version number in script make_species_trees.sh, line ~151)
+* [ASTRAL](https://github.com/smirarab/ASTRAL), exactly version 5.7.4 (or alter the version number in script make_species_trees.sh, line ~235)
 * [AMAS.py](https://github.com/marekborowiec/AMAS) (check it has the 'trim' option) and/or [trimAl](http://trimal.cgenomics.org/) (for trimming if those options are selected)
 * [TreeShrink](http://trimal.cgenomics.org/)
-* R (used only by treeshrink and trimAl)
+* [R](https://www.r-project.org/) v3.4.x or higher  (used only by TreeShrink and trimAl)
  
 ## How to use, outputs and further details  
 ## recover_genes_from_all_samples.sh
