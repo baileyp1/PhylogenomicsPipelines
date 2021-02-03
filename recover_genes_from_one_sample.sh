@@ -93,15 +93,18 @@ if [ $hybSeqProgram == 'paftools' ]; then
 		# Need to uncompress raw fastq files to get FastQCStats and upload into the paftol_da database:
 		gunzip -f -c $paftolDataSymlinksDir/$R1FastqFile > $unzippedR1FastqFile
 		gunzip -f -c $paftolDataSymlinksDir/$R2FastqFile > $unzippedR2FastqFile
-### 6.11.2020 - still need to add a conditional for --sampleId - it can't be present but blank
-### 			if $externalSequenceID is not null externalSequenceID='--sampleId $externalSequenceID'
-###				then  can juast put the variable in the command and it will be empty or not --> almost; need an else clause to aslo add paftol info ()
-###				need an extra flag in the wrapper for sampleId e.g. -e, also -d flag needs to have a dataOrigin value.
+		
+ 		# Add sampleId flag and value to paftools command if present.
+ 		# NB - PAFTOL data doesn't require this flag.
+		if [ -n $externalSequenceID ]; then 
+			externalSequenceID='--sampleId $externalSequenceID'
+		fi
+
 		export PYTHONPATH=$HOME/lib/python
-		paftools addPaftolFastq  $unzippedR1FastqFile  $unzippedR2FastqFile \
+		paftools addPaftolFastq  $externalSequenceID \
+		$unzippedR1FastqFile  $unzippedR2FastqFile \
 		--fastqPath $paftolDataSymlinksDir \
-		--dataOrigin $usePaftolDb \
-		--sampleId $externalSequenceID
+		--dataOrigin $usePaftolDb
 		# NB - the file name must be of this format e.g. PAFTOL_005853_R1.fastq
 		# The fastqPath entered in the database consists of the path and filename e.g. $paftolDataSymlinksDir/$unzippedR1FastqFile
 		# --sampleId=$sampleId - must be included for all data types, but in the case of paftol it is ignored (but there is no harm in always including it)
