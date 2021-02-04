@@ -14,7 +14,7 @@
 shopt -s failglob
 
 
-#echo Inside slurm_make_gene_trees.sh script:
+#echo Inside slurm_make_gene_trees.sh script: 
 #echo SLURM_ARRAY_JOB_ID: $SLURM_ARRAY_JOB_ID
 
 fractnAlnCovrg=$1
@@ -41,6 +41,7 @@ fractnSpecies_pc=`awk -v FRACTN=$fractnSpecies 'BEGIN{printf "%.0f", FRACTN * 10
 fractnMaxColOcc_pc=`awk -v FRACTN=$fractnMaxColOcc 'BEGIN{printf "%.0f", FRACTN * 100}' `
 # Minimum number of samples to tolerate for including into Astral:
 numbrSamplesThreshold=`awk -v FRACTN=$fractnSpecies -v numbrSamples=$totalNumbrSamples 'BEGIN{printf "%.0f", FRACTN * numbrSamples}' `
+# Above awk code is zero proof - can have 0 * 100 - returns zero
 
 
 #echo fractnAlnCovrg to use: $fractnAlnCovrg
