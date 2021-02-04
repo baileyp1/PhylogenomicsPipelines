@@ -14,7 +14,7 @@
 shopt -s failglob
 
 
-#echo Inside slurm_make_gene_trees.sh script: 
+#echo Inside slurm_make_gene_trees.sh script:  
 #echo SLURM_ARRAY_JOB_ID: $SLURM_ARRAY_JOB_ID
 
 fractnAlnCovrg=$1
