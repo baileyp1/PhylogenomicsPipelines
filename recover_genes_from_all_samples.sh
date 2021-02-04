@@ -18,17 +18,22 @@ shopt -s failglob
 ####################################################################
 
 # Variables for any command line flags needing a default value:
-hybSeqProgram=paftools
+hybSeqProgram=no            # Removed the default for now: paftools
+targetsFile='no'
+adapterFasta='no'
 samplePrefix=Sample
 cpu=4
-slurmTime=0-36:00     # SBATCH -t 0-36:00 - was 24h but increased to 36 for the larger samples, then 3 days necessary for just a few PAFTOL samples 
-slurmMemory=0         # Using 80,000 MB for most samples and 130000 MB for very large samples - could use 130000 MB on all samples; only 0.3GB required for HybPiper it seems, use 20GB
-partitionName=medium  # Values depend on the cluster being used so good to have a flagged option for this
+slurmTime=0-36:00           # SBATCH -t 0-36:00 - was 24h but increased to 36 for the larger samples, then 3 days necessary for just a few PAFTOL samples 
+slurmMemory=0               # Using 80,000 MB for most samples and 130000 MB for very large samples - could use 130000 MB on all samples; only 0.3GB required for HybPiper it seems, use 20GB
+partitionName=medium        # Values depend on the cluster being used so good to have a flagged option for this
+slurmThrottle=1
+stats=no                    # stats flag for reporting read coverage and depth
+refFilePathForStats=default # gene recovery fasta file path for coverage stats - used for the BWA reference
 
 # Hidden options (i.e. not apparent from the help menu but they always have a value so can be used in downstream scripts):
-usePaftolDb=no  # d) usePaftolDb='--usePaftolDb' ;;
-slurmThrottle=1
-spadesCovCutoff=4   # Default=8, 4 might be OK too (currently set to 4); for reads_first.py --cov_cutoff flag - NOT IMPLEMENTED YET
+usePaftolDb=no              # d) usePaftolDb='--usePaftolDb' ;;
+spadesCovCutoff=4           # Default=8, 4 might be OK too (currently set to 4); for reads_first.py --cov_cutoff flag - NOT IMPLEMENTED YET
+
 
 
 
@@ -53,13 +58,26 @@ OPTIONS <value>:
                  add sample name and fastq file names via a csv table file (must have a header line);
                  format: SampleName,R1FastqName,R2FastqName (required option)
   -f <string>    
-                 FULL path to all samples; N.B. no filenames, just the full path to them, not a relative path and no wild cards! (required option)
+                 FULL path to all sample fastq files; N.B. no filenames, just the full path to them, not a relative path and no wild cards! (required option)
   -t <string>    
                  file name of target genes in fasta format (required option)
   -a <string>    
                  file name of adaptors in fasta format (required option)
   -y <string>    
-                 Hyb-Seq program; options are: paftools, hybpiper, hybpiper-bwa (default=paftools)
+                 Hyb-Seq program; options are: paftools, hybpiper, hybpiper-bwa (required option)
+  -S    
+                 calculate statistics for gene recovery from read data (includes reads on-target, read coverage, read depth).
+                 This option can be used separately after the gene recoveries have run but the path to the gene recovery fasta 
+                 files has to be specified with option -P, if not running in the same location as the original gene recovery run
+  -P <string> 
+                 Specify FULL path to the gene recovery fasta files (for option -S), but only the part common to all files.
+                 This option looks for one of these two scenarios:
+                 1. For gene recovery samples in each of their own directory
+                    i.e. /<path>/<SampleDirPrefix>_<SampleName>/<SampleName>.fasta (directory set up, as used by this pipeline) 
+                 2. For gene recovery samples all in the same directory
+                    i.e. /<path>/<SampleName>.fasta, type: /<path>
+                 For either case, type /<path>
+                 Note: 'SampleName' needs to match that provided by the sample list in option -s
   -p <string>    
                  directory prefix for each sample (default=Sample)
   -c <integer>   
@@ -70,6 +88,9 @@ OPTIONS <value>:
                  Slurm time limit, format <days>-<hours>:<minutes> (default=0-36:00 (36 hours)
   -Q <string>    
                  Slurm partition (queue) to use (default=medium)
+
+  -H <integer>
+                 Slurm array throttle (default=1; could set to 1, then increase once happy with run with: scontrol update arraytaskthrottle=<integer> job=<jobId>)
  
 
 A typical example:
@@ -89,7 +110,7 @@ EOF
 
 
 #echo User inputs:    ### For testing only 
-while getopts "hvs:t:f:a:y:p:c:d:e:m:T:Q:"  OPTION; do
+while getopts "hvs:t:f:a:y:p:c:d:H:m:T:Q:SP:"  OPTION; do
  
   #echo -$OPTION $OPTARG    ### For testing only - could try to run through options below 
    
@@ -105,10 +126,12 @@ while getopts "hvs:t:f:a:y:p:c:d:e:m:T:Q:"  OPTION; do
     p) samplePrefix=$OPTARG ;;
     c) cpu=$OPTARG ;;
     d) usePaftolDb=$OPTARG ;;
-    e) slurmThrottle=$OPTARG ;;
+    H) slurmThrottle=$OPTARG ;;
     m) slurmMemory=$OPTARG ;;
     T) slurmTime=$OPTARG ;;
-    Q) partitionName=$OPTARG ;;    
+    Q) partitionName=$OPTARG ;; 
+    S) stats=yes ;;
+    P) refFilePathForStats=$OPTARG ;;
     ?)  echo This option does not exist. Read the usage summary below.
             echo
             usage; exit 1 ;;
@@ -139,7 +162,7 @@ if [[ $hybSeqProgram == 'hybpiper'* ]]; then
     #seqtk >/dev/null 2>&1                # Will exit here if not found! NBNB - also exits here IF FOUND !!!!!!!! Need another solution!
                                           # Maybe run program via the $hybSeqProgram as this works in the trees script - maybe bash is unaware that it is runnign a program!?
                                           # NO - I thinks it's becuase of the set options - maybe should remove them !!!!
-else
+elif [[ $hybSeqProgram == 'paftools' ]]; then
     echo 'Testing paftools is installed, will exit with a 127 error if not found.' 
     $hybSeqProgram -h >/dev/null 2>&1   # Will exit here if not found!
     echo 'paftools found.'
@@ -159,11 +182,11 @@ fi
 
 if [ ! -s $sampleList ]; then usage; echo; echo "ERROR: the samples table file (option -s) does not exist or is empty: $sampleList"; exit; fi
 
-if [ ! -s $targetsFile ]; then usage; echo; echo "ERROR: the target genes file (option -t) does not exist or is empty: $targetsFile"; exit; fi
+if [[ ! -s "$targetsFile" && $hybSeqProgram != 'no' ]]; then usage; echo; echo "ERROR: the target genes file (option -t) does not exist or is empty: $targetsFile"; exit; fi
 ### 12.5.2020 - Just realsied that I can determine the full path to fiel here then the user just needs to supply relative path - ditto for paftoldataasymlinkdir
-###             NB - I have no test for the fastq dir exisitng! NB - I think this harder than i realised - how do you get the full path from a partial path
+###             NB - I have no test for the fastq dir exisitng! NB - I think this harder than i realised - how do you get the full path from a partial path - 8.1.2020 - I think I know this now - see species tree script 
 
-if [ ! -s $adapterFasta ]; then usage; echo; echo "ERROR: the adaptor file (option -a) does not exist or is empty: $adapterFasta"; exit; fi
+if [[ ! -s "$adapterFasta" && $hybSeqProgram != 'no' ]]; then usage; echo; echo "ERROR: the adaptor file (option -a) does not exist or is empty: $adapterFasta"; exit; fi
 
 if [ -z $samplePrefix ]; then echo ""
   usage; echo "ERROR: option -p used but an output file name prefix string was not supplied - exiting"
@@ -230,7 +253,7 @@ if [ $os == 'Darwin' ]; then
 	while read line; do
   	### Keep an eye on whether the $line variable value can break up with any chars
     echo $line
-  	$pathToScripts/recover_genes_from_one_sample.sh "$line"  $targetsFile  $paftolDataSymlinksDir  $adapterFasta  $samplePrefix  $cpu  "$exePrefix" $hybSeqProgram $usePaftolDb
+  	$pathToScripts/recover_genes_from_one_sample.sh "$line"  $targetsFile  $paftolDataSymlinksDir  $adapterFasta  $samplePrefix  $cpu  "$exePrefix" $hybSeqProgram $usePaftolDb $stats $refFilePathForStats 
   done
 elif [ $os == 'Linux' ]; then
   exePrefix="/usr/bin/time -v"	# PYTHONPATH works on the Cluster, but on Macbook, it deosn't need to be set (only really need to alter the flag char!)
@@ -255,9 +278,6 @@ elif [ $os == 'Linux' ]; then
       slurmThrottle=$numbrSamples
     fi
 
-    #SBATCH -t 0-36:00          # Was 24h but increased to 36 for the larger samples
-
-
     jobInfo=`sbatch -p $partitionName -c $cpu -t $slurmTime  --mem $slurmMemory  --array=1-${numbrSamples}%$slurmThrottle  $pathToScripts/slurm_setup_array_to_recover_genes.sh \
     $sampleList \
     $targetsFile \
@@ -268,7 +288,9 @@ elif [ $os == 'Linux' ]; then
     $pathToScripts \
     "$exePrefix" \
     $hybSeqProgram \
-    $usePaftolDb  `
+    $usePaftolDb \
+    $stats \
+    $refFilePathForStats `
    	echo jobInfo: $jobInfo			# NB - Don’t need to remember the jobId - unless want to merge with tree pipeline
     jobId=`echo $jobInfo | cut -d ' ' -f 4 `
     echo \$jobId: $jobId - same id as \$SLURM_ARRAY_JOB_ID 
@@ -276,8 +298,8 @@ elif [ $os == 'Linux' ]; then
   	exePrefix="/usr/bin/time -v"
     tail -n+2 $sampleList | \
 		while read line; do
-        ### Keep an eye on whether this variable value can break up with any chars
-  		$pathToScripts/recover_genes_from_one_sample.sh "$line"  $targetsFile  $paftolDataSymlinksDir  $adapterFasta  $samplePrefix  $cpu  "$exePrefix" $hybSeqProgram $usePaftolDb
+      ### Keep an eye on whether this variable value can break up with any chars
+  		$pathToScripts/recover_genes_from_one_sample.sh "$line"  $targetsFile  $paftolDataSymlinksDir  $adapterFasta  $samplePrefix  $cpu  "$exePrefix" $hybSeqProgram $usePaftolDb $stats $refFilePathForStats 
   	done
   fi
 fi

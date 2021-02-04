@@ -15,6 +15,8 @@ pathToScript=$7
 exePrefix="$8"
 hybSeqProgram=$9
 usePaftolDb=${10}
+stats=${11}
+refFilePathForStats=${12} 
 echo Inside Slurm array script, csvFile: $csvFile
 echo Inside Slurm array script, exePrefix: $exePrefix
 
@@ -38,5 +40,5 @@ echo
 
 # Finally input the line of current sample into the worker script.
 ### Confirm I don't need srun here - if I used it maybe I could get the memory used.
-$pathToScript/recover_genes_from_one_sample.sh "${SAMPLELIST[$SLURM_ARRAY_TASK_ID]}"  $targetsFile  $paftolDataSymlinksDir  $adapterFasta  $samplePrefix  $cpu  "$exePrefix"  $hybSeqProgram $usePaftolDb
+$pathToScript/recover_genes_from_one_sample.sh "${SAMPLELIST[$SLURM_ARRAY_TASK_ID]}"  $targetsFile  $paftolDataSymlinksDir  $adapterFasta  $samplePrefix  $cpu  "$exePrefix"  $hybSeqProgram $usePaftolDb $stats $refFilePathForStats 
 sleep 1		# Not yet sure whether sleep positioned here makes the script sleep between suubmitting samples

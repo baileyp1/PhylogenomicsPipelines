@@ -20,9 +20,12 @@ cpu=$6
 exePrefix="$7"
 hybSeqProgram=$8
 usePaftolDb=$9
+stats=${10}
+refFilePathForStats=${11} 
+
 #echo exePrefix: "$exePrefix"	# check that variable is not split on space
-
-
+echo stats: $stats
+echo refFilePathForStats: $refFilePathForStats
   
 
 sampleId=`echo $line | cut -d ',' -f 1 `    		# I think this will be the PAFTOL_xxxxxx id - same as in the read file names
@@ -90,15 +93,18 @@ if [ $hybSeqProgram == 'paftools' ]; then
 		# Need to uncompress raw fastq files to get FastQCStats and upload into the paftol_da database:
 		gunzip -f -c $paftolDataSymlinksDir/$R1FastqFile > $unzippedR1FastqFile
 		gunzip -f -c $paftolDataSymlinksDir/$R2FastqFile > $unzippedR2FastqFile
-### 6.11.2020 - still need to add a conditional for --sampleId - it can't be present but blank
-### 			if $externalSequenceID is not null externalSequenceID='--sampleId $externalSequenceID'
-###				then  can juast put the variable in the command and it will be empy or not --> almost; need an else clause to aslo add paftol info ()
-###				need an extra flag in the wrapper for sampleId e.g. -e, also -d flag needs to have a dataOrigin value.
+		
+ 		# Add sampleId flag and value to paftools command if present.
+ 		# NB - PAFTOL data doesn't require this flag.
+		if [ -n $externalSequenceID ]; then 
+			externalSequenceID='--sampleId $externalSequenceID'
+		fi
+
 		export PYTHONPATH=$HOME/lib/python
-		paftools addPaftolFastq  $unzippedR1FastqFile  $unzippedR2FastqFile \
+		paftools addPaftolFastq  $externalSequenceID \
+		$unzippedR1FastqFile  $unzippedR2FastqFile \
 		--fastqPath $paftolDataSymlinksDir \
-		--dataOrigin $usePaftolDb \
-		--sampleId $externalSequenceID
+		--dataOrigin $usePaftolDb
 		# NB - the file name must be of this format e.g. PAFTOL_005853_R1.fastq
 		# The fastqPath entered in the database consists of the path and filename e.g. $paftolDataSymlinksDir/$unzippedR1FastqFile
 		# --sampleId=$sampleId - must be included for all data types, but in the case of paftol it is ignored (but there is no harm in always including it)
@@ -335,10 +341,280 @@ elif [[ $hybSeqProgram == 'hybpiper'* ]]; then
         cleanup.py $sampleId
 	fi
 else
-	print "ERROR: the Hyb-Seq program was not recognised. The options are 'paftools' or 'hybpiper' (without the quotes)."
-	exit
+	echo "WARNING: the Hyb-Seq program was not recognised. The options are 'paftools' or 'hybpiper' (without the quotes)."
+	#exit
 fi
 
-cd ../ # Back up to parent dir for next sample - 20.4.2020 - has no effect here now and not required anymore because looping through samples is done outside this script 
+
+if [[ $stats != 'no' ]]; then
+
+	echo "Collecting gene recovery stats..."
+
+	if [[ $usePaftolDb != 'no' ]]; then
+
+		echo If using PaftolDB with Paftools, need to run Trimmomatic again as the previous run was only saved to /tmp/ - still to add
+		# NB - in all other case trimmomatic is being run again above
+		exit
+	fi	
+
+	
+	# Find the gene recovery file for indexing with BWA
+	refFileName=''
+	if [[ $refFilePathForStats == 'default' ]]; then
+		# Try to find file in pwd, as if recoveries have just been done:
+		if [[ -s ${sampleId}.fasta ]]; then 
+			refFileName=${sampleId}.fasta
+			# Gene recovery file is in pwd.
+		elif [[ -s ${sampleId}_all_genes.fasta ]]; then
+			refFileName=${sampleId}_all_genes.fasta
+### 25.1.2021 - NBNB - but then I still need to copy this file to ${sampleId}.fasta
+### for the stats to recognise the file OR possibly better assign filename to use to
+### a variable in the program calls - same below in the else clause
+			# Gene recovery file is in pwd.
+		else
+			echo "ERROR: Option -S selected but gene recovery fasta file not found or is empty. May need to use option -P. Stats cannot be calculated for sample: ${sampleId}."
+			echo
+			echo
+			exit
+		fi
+	else
+		# Try to use path given in option -P:
+		if [[ -s $refFilePathForStats/${samplePrefix}_${sampleId}/${sampleId}.fasta ]]; then 
+			refFileName=$refFilePathForStats/${samplePrefix}_${sampleId}/${sampleId}.fasta
+			# Copy the gene recovery file to pwd so that the BWA indices go to pwd:
+			cp -p  $refFileName ${sampleId}.fasta
+		elif [[ -s $refFilePathForStats/${sampleId}.fasta ]]; then
+			refFileName=$refFilePathForStats/${sampleId}.fasta
+			# Copy the gene recovery file to pwd so that the BWA indices go to pwd:
+			cp -p  $refFileName ${sampleId}.fasta
+		else 
+			echo "ERROR: option -P - can't find the correct path to the gene recovery fasta file or is empty. Stats cannot be calculated for sample: ${sampleId}."
+			echo 
+			echo
+			exit
+		fi
+	fi
+
+	echo "Found gene recovery fasta file: $refFileName"
+
+
+	# Prepare to map reads for getting stats:
+	bwa index ${sampleId}.fasta
+	bwa mem -t $cpu ${sampleId}.fasta \
+	${sampleId}_R1_trimmomatic.fastq \
+	${sampleId}_R2_trimmomatic.fastq \
+	> ${sampleId}_bwa_mem_with_dups.sam
+### NB - WHAT HAPPENS WHEN USING HYBPIPER? NEED TO ALSO MAP THE UNPAIRED READS
+### Don’t forget to pipe in/out files as much as possible to save space
+	samtools view -bS ${sampleId}_bwa_mem_with_dups.sam > ${sampleId}_bwa_mem_with_dups.bam
+	# Need to sort bam before indexing
+	samtools sort ${sampleId}_bwa_mem_with_dups.bam > ${sampleId}_bwa_mem_with_dups_sort.bam
+	samtools index  ${sampleId}_bwa_mem_with_dups_sort.bam
+
+	# Before assessing read depth stats, remove duplicates from the mapped bam file:
+	if [[ ! -d tmp ]]; then mkdir tmp; fi 	# Not sure if this is vital - maybe sample size dependant
+	### Need to test whether the java -jar -Xmx${mem_gb}g flag is required - try to fix it independant of setting memory in Slurm
+	### Example in docs: for 8.6GB/20GB file, run with 2GB (-Xmx2g) and 10 GB hard memory
+	### So far not needed to set memory with PAFTOL data: ${sampleId}_largest _R1_trimmomatic.fastq file done to date = 4.9GB
+	java -jar  -XX:ParallelGCThreads=$cpu -Djava.io.tmpdir=tmp $PICARD MarkDuplicates \
+	INPUT=${sampleId}_bwa_mem_with_dups_sort.bam \
+	OUTPUT=${sampleId}_bwa_mem_sort.bam \
+	METRICS_FILE=${sampleId}_bwa_mem_sort_markdup_metrics \
+	REMOVE_DUPLICATES=true \
+	ASSUME_SORT_ORDER=coordinate \
+	VALIDATION_STRINGENCY=LENIENT \
+	MAX_FILE_HANDLES_FOR_READ_ENDS_MAP=100 \
+	TMP_DIR=tmp
+	# Using the new command syntax e.g. from INPUT to -INPUT
+	# MAX_FILE_HANDLES_FOR_READ_ENDS_MAP - ulimit -n=1024 on Kew hatta cluster, ulimit -n=256 on macbook so setting to 100 seems safe enough
+	# OPTICAL_DUPLICATE_PIXEL_DISTANCE - default=100 for unpatterned versions of the Illumina platform; for the patterned flow cell models, 
+	# 2500 is more appropriate. The patterned flow cell models are: iSeq™ 100, NextSeq™ 1000/NextSeq™ 2000, HiSeq™ 3000/HiSeq™ 4000, HiSeq™ X and NovaSeq™ 6000
+	# SORTING_COLLECTION_SIZE_RATIO - default=0.25 - not using for the moment: 
+    #                          This number, plus the maximum RAM available to the JVM, determine the memory footprint
+    #                          used by some of the sorting collections.  If you are running out of memory, try reducing
+    #                          this number.  Default value: 0.25.
+    # NB - removing duplicates after quality trimming. Duplicates are assessed at 5' end and trimming is more likely to be done towards the 3' end
+    #      so 5' read2 (and read1) coordinate should be preserved for duplicate assessment
+
+    ### NB - Picard commandline syntax is changing - new format would look like e.g.:
+    ### MarkDuplicates -INPUT 7210_bwa_mem_with_dups_sort.bam -OUTPUT 7210_bwa_mem_sort.bam -METRICS_FILE 7210_bwa_mem_sort_markdup_metrics -REMOVE_DUPLICATES true -ASSUME_SORT_ORDER coordinate -VALIDATION_STRINGENCY LENIENT -MAX_FILE_HANDLES_FOR_READ_ENDS_MAP 100 -TMP_DIR tmp
+
+    if [[ ! -s ${sampleId}_bwa_mem_sort.bam ]]; then
+    	echo "ERROR: Picard markduplicates output file doesn't exist or is empty: ${sampleId}_bwa_mem_sort.bam"
+    	exit
+    fi
+
+	
+	# Number of recovered genes:
+	numbrRecoveredGenes=`cat ${sampleId}.fasta | grep '>' | wc -l `
+	# Sum length of genes :
+	sumLengthOfGenes=`fastalength ${sampleId}.fasta | awk '{sum+=$1} END {print sum}' `
+	echo "sampleId: $sampleId
+numbrRecoveredGenes: $numbrRecoveredGenes
+sumLengthOfGenes: $sumLengthOfGenes" > ${sampleId}_gene_recovery_stats.txt  # Also wipes out file contents from any previous run
+
+	# Count number of all ambiguity codes:
+	###numbrAmbiguityCodesInGenes=`cat ${sampleId}.fasta | grep -v '>' | grep -o '[RYMKSWHBDN]' | wc -l `
+	###echo "numbrAmbiguityCodesInGenes: $numbrAmbiguityCodesInGenes" >> ${sampleId}_gene_recovery_stats.txt
+	### For some reason doesn't work - may have to turn off set +u and +e - see below
+	
+
+	####################################
+	# General stats on the BWA alignment
+	####################################
+	# Count the number of reads in the bam file just after mapping but before removing read duplicates:
+	numbrTrimmedReadsInBamInclDups=`samtools view -c ${sampleId}_bwa_mem_with_dups_sort.bam `
+	echo numbrTrimmedReadsInBamInclDups: $numbrTrimmedReadsInBamInclDups  >> ${sampleId}_gene_recovery_stats.txt
+
+	# Count the number of reads in the bam file just after mapping and removing read duplicates.
+	# NB - doesn't quite count all reads in the file.
+	numbrTrimmedReadsInBam=`samtools view -c ${sampleId}_bwa_mem_sort.bam `
+	echo numbrTrimmedReadsInBam: $numbrTrimmedReadsInBam  >> ${sampleId}_gene_recovery_stats.txt
+
+	# Count the number of reads that are mapped to the reference with map quality >= 20:
+	numbrMappedReads=`samtools view -c -F4 -q 20 ${sampleId}_bwa_mem_sort.bam `
+	echo numbrMappedReads: $numbrMappedReads  >> ${sampleId}_gene_recovery_stats.txt
+
+	# Count the number of reads mapped in proper pairs:
+	numbrMappedReadsProperPairs=`samtools view -c -f2 -q 20 ${sampleId}_bwa_mem_sort.bam `
+	echo numbrMappedReadsProperPairs: $numbrMappedReadsProperPairs  >> ${sampleId}_gene_recovery_stats.txt
+
+	# Count the number of reads with an XA:Z flag (alternative hits).
+	# NB - normally this flag is in column 16 or column 17 but not always.
+	# 'XA:Z' might be in column 11 (quality) (?) so just check from 
+	# column 12 onwards:
+	numbrReadsWithAltHits=`samtools view -F4 -q 20 ${sampleId}_bwa_mem_sort.bam | cut -f12- | awk '$0 ~ /XA:Z/' | wc -l `
+	# NB for some reason | grep 'XA:Z' didn't work!
+	echo numbrReadsWithAltHits: $numbrReadsWithAltHits >> ${sampleId}_gene_recovery_stats.txt
+
+
+	#######################
+	# Reads on-target stats
+	#######################
+	# Reads per sample on-target with samtools view -L - need a bedfile:
+	fastalength ${sampleId}.fasta | awk '{print $2 " 0 " $1}'  > ${sampleId}.bed
+	# samtools view -F4 -L 10895.bed 10895_bwa_mem_sort.bam > 10895_bwa_mem_sort_st_-L.sam
+	# 2,030,124 - total # reads = 2,784,802 = 72.9 % on-target
+	numbrReadsOnTarget=`samtools view -c -F4 -q 20 -L ${sampleId}.bed ${sampleId}_bwa_mem_sort.bam `
+	# -c counts the number of reads
+	# -q mapping quality (NB -in other samtools program -Q is mapping quality!)
+	# -F4 = INT of 4 = unmapped read but -F prints reads that are not INT=4 i.e. mapped - definitely NOT the same as samtools -c.
+	# This value should be the same as $numbrMappedReads as there are no reference bases off target (?) - keep thinking the logic
+	echo numbrReadsOnTarget: $numbrReadsOnTarget >> ${sampleId}_gene_recovery_stats.txt
+	
+
+	###############################
+	# Read coverage and depth stats
+	###############################
+	set +e	# NB - had a problem with script exiting half way through making samtools depth stats. Haven't got to the bottom of it but turning OFF these options here works for now.  
+	set +u
+
+	###################
+	# samtools coverage - “meandepth” per gene (column 7 - includes positions with zero depth - see below)
+	####################
+	samtools coverage -q 20 -Q 20 ${sampleId}_bwa_mem_sort.bam > ${sampleId}_bwa_mem_sort_st_covrg.txt
+	# Removed --reference ${sampleId}.fasta - I don't think it is required - not sure why you need to supply it - same for samtools depth
+	# NB - It is necessary to implement a mapping quality threshold e.g. 20 would be OK - otherwise valeu a very high
+	# -q 20 base quality - NBNB - on closer inspection there is an error in the samtools view command line docs - -q and -Q could be the other way round - Ok for now if I use 20 for each.
+	# -Q 20 mapping quality
+
+	# Can also visualise coverage across each contig as a histogram: 
+	samtools coverage -q 20 -Q 20 -m ${sampleId}_bwa_mem_sort.bam > ${sampleId}_bwa_mem_sort_st_covrg_-m.txt 
+	# To pick out a plot for a specific contig add: grep -A 11 '^contigId
+
+	# Stats for all genes per sample:
+	# coverage (column 6) - % bases covered by one or more reads per gene - might be an interesting value.
+	# Mean coverage per sample:
+	meanReadCovrg=`tail -n+2 ${sampleId}_bwa_mem_sort_st_covrg.txt | awk '{sum+=$6} END {if(sum > 0) {print sum/NR} else {print "0"}}' `	# average
+	echo meanReadCovrg: $meanReadCovrg >> ${sampleId}_gene_recovery_stats.txt
+	# Median coverage per sample:
+	medianPoint=`tail -n+2 ${sampleId}_bwa_mem_sort_st_covrg.txt | awk 'END {printf "%.0f" , NR/2}' `	# Don't need to sort here!
+	medianReadCovrg=`tail -n+2 ${sampleId}_bwa_mem_sort_st_covrg.txt | sort -k6n | awk '{print $6}' | head -n $medianPoint | tail -n 1 `
+	echo medianReadCovrg: $medianReadCovrg >> ${sampleId}_gene_recovery_stats.txt
+
+	# 'meandepth' (column 7 -  includes positions with zero depth) per sample:
+	meanReadDepth_min0x=`tail -n+2 ${sampleId}_bwa_mem_sort_st_covrg.txt | awk '{sum+=$7} END {if(sum > 0) {print sum/NR} else {print "0"}}' `    # average
+	echo "meanReadDepth_min0x_(samtools_coverage): $meanReadDepth_min0x" >> ${sampleId}_gene_recovery_stats.txt
+
+	# Median “meandepth" per sample:
+	medianPoint1=`tail -n+2 ${sampleId}_bwa_mem_sort_st_covrg.txt | awk 'END {printf "%.0f", NR/2}' `
+	medianReadDepth_min0x=`tail -n+2 ${sampleId}_bwa_mem_sort_st_covrg.txt | sort -k7n | awk '{print $7}' | head -n $medianPoint1 | tail -n 1 `
+	echo "medianReadDepth_min0x_(samtools_coverage): $medianReadDepth_min0x" >> ${sampleId}_gene_recovery_stats.txt
+
+
+	################
+	# samtools depth - to obtain depth for read depth >= Xx
+	################
+	# The aim here is to count useful depth i.e. >1x or >4x is more informative - need to use samtools depth
+	# The -a flag outputs all positions (including zero depth). We already have this above from samtools coverage - column 7) but not for ALL genes together.
+	# So including the -a flag here then can assess from >=0x coverage and compare with samtools coverage - they are slightly different calculations!
+	samtools depth -q 20 -q 20 -a ${sampleId}_bwa_mem_sort.bam > ${sampleId}_bwa_mem_sort_st_depth.txt
+
+	# Mean read depth for bases with >= 0x depth across ALL genes:
+	meanReadDepth_min0x=`cat ${sampleId}_bwa_mem_sort_st_depth.txt | awk '$3 >= 0' | awk '{sum+=$3} END {if(sum > 0) {print sum/NR} else {print "0"}}' `	# average
+	echo "meanReadDepth_min0x_(samtools_depth): $meanReadDepth_min0x" >> ${sampleId}_gene_recovery_stats.txt
+
+	# Median read depth for bases with >= 0x depth across ALL genes:
+	medianPoint2=`cat ${sampleId}_bwa_mem_sort_st_depth.txt | awk '$3 >= 0' | awk 'END {printf "%.0f" , NR/2}' `
+	medianReadDepth_min0x=`cat ${sampleId}_bwa_mem_sort_st_depth.txt | awk '$3 >= 0' | sort -k3n | awk '{print $3}' | head -n $medianPoint2 | tail -n 1 `
+	echo "medianReadDepth_min0x_(samtools_depth): $medianReadDepth_min0x" >> ${sampleId}_gene_recovery_stats.txt
+
+	# Mean read depth for bases with >= 1x depth across ALL genes:
+	meanReadDepth_min1x=`cat ${sampleId}_bwa_mem_sort_st_depth.txt | awk '$3 >= 1' | awk '{sum+=$3} END {if(sum > 0) {print sum/NR} else {print "0"}}' `	# average
+	echo "meanReadDepth_min1x_(samtools_depth): $meanReadDepth_min1x" >> ${sampleId}_gene_recovery_stats.txt
+
+	# Median read depth for bases with >= 1x depth across ALL genes:
+	medianPoint3=`cat ${sampleId}_bwa_mem_sort_st_depth.txt | awk '$3 >= 1' | awk 'END {printf "%.0f" , NR/2}' `
+	medianReadDepth_min1x=`cat ${sampleId}_bwa_mem_sort_st_depth.txt | awk '$3 >= 1' | sort -k3n | awk '{print $3}' | head -n $medianPoint3| tail -n 1 `
+	echo "medianReadDepth_min1x_(samtools_depth): $medianReadDepth_min1x" >> ${sampleId}_gene_recovery_stats.txt
+	
+	# Mean read depth for bases with >= 4x depth  across ALL genes:
+	meanReadDepth_min4x=`cat ${sampleId}_bwa_mem_sort_st_depth.txt | awk '$3 >= 4' | awk '{sum+=$3} END {if(sum > 0) {print sum/NR} else {print "0"}}' `	# average
+	echo "meanReadDepth_min4x_(samtools_depth): $meanReadDepth_min4x" >> ${sampleId}_gene_recovery_stats.txt
+
+	# Median read depth for bases with >= 4x depth  across ALL genes:
+	medianPoint4=`cat ${sampleId}_bwa_mem_sort_st_depth.txt | awk '$3 >= 4' | awk 'END {printf "%.0f" , NR/2}' `
+	if [[ $medianPoint4 -eq 0 ]]; then
+		echo "medianReadDepth_min4x_(samtools_depth): 0" >> ${sampleId}_gene_recovery_stats.txt
+		# head -n 0 gives error: head: illegal line count -- 0; only affects very poor quality samples, don't think it affects depth at >= 0 and >= 1.
+	else
+		medianReadDepth_min4x=`cat ${sampleId}_bwa_mem_sort_st_depth.txt | awk '$3 >= 4' | sort -k3n | awk '{print $3}' | head -n $medianPoint4 | tail -n 1 `
+		echo "medianReadDepth_min4x_(samtools_depth): $medianReadDepth_min4x" >> ${sampleId}_gene_recovery_stats.txt
+	fi
+
+
+	# Also comparing read depth at >=4x WITH duplicates NOT removed to read depth at >=4x without duplicates.
+	samtools depth -q 20 -q 20 -a ${sampleId}_bwa_mem_with_dups_sort.bam > ${sampleId}_bwa_mem_with_dups_sort_st_depth.txt
+
+	# Mean read depth for bases with >= 4x depth  across ALL genes:
+	meanReadDepthWithDups_min4x=`cat ${sampleId}_bwa_mem_with_dups_sort_st_depth.txt | awk '$3 >= 4' | awk '{sum+=$3} END {if(sum > 0) {print sum/NR} else {print "0"}}' `	# average
+	echo "meanReadDepthWithDups_min4x_(samtools_depth): $meanReadDepthWithDups_min4x" >> ${sampleId}_gene_recovery_stats.txt
+
+	# Median read depth for bases with >= 4x depth  across ALL genes:
+	medianPoint5=`cat ${sampleId}_bwa_mem_with_dups_sort_st_depth.txt | awk '$3 >= 4' | awk 'END {printf "%.0f" , NR/2}' `
+	if [[ $medianPoint4 -eq 0 ]]; then
+		echo "medianReadDepthWithDups_min4x_(samtools_depth): 0" >> ${sampleId}_gene_recovery_stats.txt
+	else
+		medianReadDepthWithDups_min4x=`cat ${sampleId}_bwa_mem_with_dups_sort_st_depth.txt | awk '$3 >= 4' | sort -k3n | awk '{print $3}' | head -n $medianPoint5 | tail -n 1 `
+		echo "medianReadDepthWithDups_min4x_(samtools_depth): $medianReadDepthWithDups_min4x" >> ${sampleId}_gene_recovery_stats.txt
+	fi
+
+
+	# Number of recovered bases in ALL genes with read depth >= 4:
+	# With duplicates removed:
+	numbrBasesInAllGenes_ReadDepth_min4x=`cat ${sampleId}_bwa_mem_sort_st_depth.txt | awk '$3 >= 4' | wc -l `
+	echo "NumbrBasesInAllGenes_ReadDepth_min4x_(samtools_depth): $numbrBasesInAllGenes_ReadDepth_min4x" >> ${sampleId}_gene_recovery_stats.txt
+	# Without duplicates:
+	numbrBasesInAllGenes_ReadDepthWithDups_min4x=`cat ${sampleId}_bwa_mem_with_dups_sort_st_depth.txt | awk '$3 >= 4' | wc -l `
+	echo "NumbrBasesInAllGenes_ReadDepthWithDups_min4x_(samtools_depth): $numbrBasesInAllGenes_ReadDepthWithDups_min4x" >> ${sampleId}_gene_recovery_stats.txt
+
+
+	#########################################
+	# Further stats to do outside this script
+	#########################################
+	# 1. Read depth per gene across all samples --> results for 353 genes
+	# 2. Read depth across all genes and samples - total mean and median values
+fi
+#####cd ../ # Back up to parent dir for next sample - 20.4.2020 - has no effect here now and not required anymore because looping through samples is done outside this script 
 echo
 echo
