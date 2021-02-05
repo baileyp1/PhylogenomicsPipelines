@@ -64,18 +64,18 @@ OPTIONS <value>:
   -a <string>    
                  file name of adaptors in fasta format (required option)
   -y <string>    
-                 Hyb-Seq program; options are: paftools, hybpiper, hybpiper-bwa (required option)
+                 Hyb-Seq program; options are: paftools, hybpiper, hybpiper-bwa
   -S    
-                 calculate statistics for gene recovery from read data (includes reads on-target, read coverage, read depth).
+                 calculate statistics for gene recovery from read data (includes per sample reads on-target, read coverage, read depth).
                  This option can be used separately after the gene recoveries have run but the path to the gene recovery fasta 
                  files has to be specified with option -P, if not running in the same location as the original gene recovery run
   -P <string> 
                  Specify FULL path to the gene recovery fasta files (for option -S), but only the part common to all files.
-                 This option looks for one of these two scenarios:
-                 1. For gene recovery samples in each of their own directory
+                 This option looks for the first, then the second of these two cases:
+                 1. gene recovery samples in each of their own directory
                     i.e. /<path>/<SampleDirPrefix>_<SampleName>/<SampleName>.fasta (directory set up, as used by this pipeline) 
-                 2. For gene recovery samples all in the same directory
-                    i.e. /<path>/<SampleName>.fasta, type: /<path>
+                 2. gene recovery samples all in the same directory
+                    i.e. /<path>/<SampleName>.fasta
                  For either case, type /<path>
                  Note: 'SampleName' needs to match that provided by the sample list in option -s
   -p <string>    
@@ -186,7 +186,7 @@ if [[ ! -s "$targetsFile" && $hybSeqProgram != 'no' ]]; then usage; echo; echo "
 ### 12.5.2020 - Just realsied that I can determine the full path to fiel here then the user just needs to supply relative path - ditto for paftoldataasymlinkdir
 ###             NB - I have no test for the fastq dir exisitng! NB - I think this harder than i realised - how do you get the full path from a partial path - 8.1.2020 - I think I know this now - see species tree script 
 
-if [[ ! -s "$adapterFasta" && $hybSeqProgram != 'no' ]]; then usage; echo; echo "ERROR: the adaptor file (option -a) does not exist or is empty: $adapterFasta"; exit; fi
+if [[ ! -s "$adapterFasta" ]]; then usage; echo; echo "ERROR: the adaptor file (option -a) does not exist or is empty: $adapterFasta"; exit; fi
 
 if [ -z $samplePrefix ]; then echo ""
   usage; echo "ERROR: option -p used but an output file name prefix string was not supplied - exiting"

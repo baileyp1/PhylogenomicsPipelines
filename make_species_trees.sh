@@ -35,6 +35,7 @@ fractnAlnCovrg_pc=`awk -v FRACTN=$fractnAlnCovrg 'BEGIN{printf "%.0f", FRACTN * 
 fractnSpecies_pc=`awk -v FRACTN=$fractnSpecies 'BEGIN{printf "%.0f", FRACTN * 100}' `
 # Minimum number of samples to tolerate for including into Astral:
 numbrSamplesThreshold=`awk -v FRACTN=$fractnSpecies -v numbrSamples=$totalNumbrSamples 'BEGIN{printf "%.0f", FRACTN * numbrSamples}' `
+# Above awk code is zero proof - can have 0 * 100 - returns zero
 
 
 echo Preparing to run species trees...
@@ -139,6 +140,7 @@ if [[ $dnaSelected == 'yes' ]]; then    ### TEMP SET UP - this doesn't woerk!!!!
     '$2 >= numbrSamplesThreshold  {print $1 "_dna_gene_tree_USE_THIS.nwk"}' \
     | xargs cat > ${fileNamePrefix}_${seqType}_gene_trees_for_coelescence_phylo.nwk
 fi
+                                                            ### NBNB - 2nd -v fractnAlnCovrg_pc not used here!!!!! Huh? 
 
 ### 24.8.2020 - improving the above selection of tree files.
 ### make_species_trees.sh line ~84ff - have had an error with gene dna_gene_tree_USE_THIS.nwk files not existing
@@ -300,6 +302,7 @@ fi
 
 # Creating a zipped tarball for the gene alignments and trees files.
 # These archives can then be moved around easily and checked with a single checksum.
+### 20.1.2020 - would be good to 
 tar -c -f dna.aln.for_tree.fasta.tar *dna.aln.for_tree.fasta
 gzip -c dna.aln.for_tree.fasta.tar > dna.aln.for_tree.fasta.tar.gz
 tar -c -f dna_gene_tree_USE_THIS.nwk.tar *dna_gene_tree_USE_THIS.nwk

@@ -29,8 +29,9 @@ mafftAlgorithm='--retree 2'     # Hidden option - '--maxiterate 1000' #'--retree
 # FILTERING AND TRIMMING OPTIONS:
 filterSeqs1=no			# My filter sequencing option (option 1)
 filterSeqs2=no
-fractnAlnCovrg=0.6			# NB - variable is used via filterSeqs1, not used if filterSeqs1 is not used
-fractnSamples=0.3			# NB - variable is used via filterSeqs1, not used if filterSeqs1 is not used
+### NBNBNB - 12.1.2020 - need to change both these values - for when filtering not used at 2nd aln iteration!!!!!!
+fractnAlnCovrg=0.6			# NB - variable is used via filterSeqs1, this value is used when filterSeqs1 is not used and MUST be set to ZERO - needs to have a default value for passing in variable to scripts
+fractnSamples=0.1			# NB - variable is used via filterSeqs1, this value is used when filterSeqs1 is not used and MUST be set to ZERO - needs to have a default value for passing in variable to scripts
 trimAln1=no					# Filter alignment columns with optrimAl
 trimAln2=no					# Filter alignment columns to remove rarer insertions; maximum limit of percent occupancy to trim at
 
@@ -292,6 +293,7 @@ fi
 if [[ $phyloProgramPROT == 'iqtree2'* ]]; then
 	phyloProgramPROT_Test='iqtree2'
 fi
+### Other optional software to be tested here e.g. TreeShrink
 
 
 softwareList=(seqtk fastatranslate fastalength $phyloProgramDNA_Test $phyloProgramPROT_Test nw_ed java astral.5.7.4.jar AMAS.py raxmlHPC-PTHREADS-SSE3)	# fasttree raxml-ng now tested in $phyloProgramDNA and $phyloProgramPROT 
