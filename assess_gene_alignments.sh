@@ -7,6 +7,7 @@
 
 # Purpose: to calcualte stats from the collective outputs of make_gene_trees.sh script
 
+# Copyright © 2020 The Board of Trustees of the Royal Botanic Gardens, Kew
 ###########################
 #set -e 			# NB - issue with creating ${fileNamePrefix}_summary_of_sample_quality.txt when using any of these set commands; trying to do my own checks anyway
 #set -u

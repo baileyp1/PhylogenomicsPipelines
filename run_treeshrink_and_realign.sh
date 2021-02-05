@@ -1,7 +1,7 @@
 #!/bin/bash
 
-###################
-# run_treeshrink.sh
+###############################
+# run_treeshrink_and_realign.sh
 
 # Purpose: runs treeshrink on existing gene tree Newick files, then realigns surviving sequences 
 #          again in gene-wise mode via the master script, make_species_trees_pipeline.sh.
@@ -9,6 +9,8 @@
 # Usage: an internal pipeline script
 
 # Author: Paul Bailey
+
+# Copyright © 2020 The Board of Trustees of the Royal Botanic Gardens, Kew
 ###################
 
 shopt -s failglob

@@ -4,6 +4,8 @@
 # make_species_trees_pipeline.sh
 
 # Author:   Paul Bailey
+
+# Copyright © 2020 The Board of Trustees of the Royal Botanic Gardens, Kew
 ################################
 shopt -s failglob
 
@@ -73,7 +75,7 @@ cat << EOF
 Program description:
                 makes species trees from fasta files, either of two types:
                 1. recovered genes (DNA) from multiple samples, one fasta file per sample (default)
-                   By Default, the fasta header format MUST BE: >sampleId-geneId but one other option (-a) is available.
+                   The fasta header format must be: >sampleId-geneId but one other option (-a) is available.
                 2. gene-wise (DNA) fasta files, one fasta file per gene (option -G) 
 
 Usage:          make_species_trees_pipeline.sh [OPTIONS] fastafile1 fastafile2 fastafile3 ...
@@ -153,7 +155,7 @@ OTHER OPTIONS:
                 Slurm memory to use (in MB) for gene trees and TreeShrink (default=0; means no limit is imposed in default Slurm set up)
 
   -X <string>	
-                Slurm extra memory to use (in MB) for specific gene trees named here: Format: <geneId1>,<geneId2>:<cpu>:<mem>
+                Slurm extra memory (in MB) to use with large data sets for specific gene trees named here: Format: <geneId1>,<geneId2>:<cpu>:<mem>
                 Real life examples: Angiosperms353 genes (5921, 5596)
   -U <integer>     
                 Slurm memory to use (in MB) for species trees (default=0; means no limit is imposed in default Slurm set up)
@@ -386,7 +388,7 @@ echo lengthOfFreeParameters: $lengthOfFreeParameters
 systemARG_MAX=`getconf ARG_MAX `
 if [ $lengthOfFreeParameters -gt $systemARG_MAX ]; then
 	echo
-	echo 'ERROR: the length of the input fasta files an their paths has exceeded the system ARG_MAX variable.'
+	echo 'ERROR: the length of the input fasta files and their paths has exceeded the system ARG_MAX variable.'
 	echo 'Try to reduce the length of the path to the files or increase the system ARG_MAX value somehow.'
 	exit
 fi

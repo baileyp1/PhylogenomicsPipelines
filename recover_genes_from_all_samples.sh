@@ -1,12 +1,12 @@
 #!/bin/bash
 
-###############################
-# recover_genes_from_samples.sh
-
-# Based on 51.PAFTOL_gene_recovery_overlapRecover.sh 
+###################################
+# recover_genes_from_all_samples.sh
 
 # Author:   Paul Bailey
-###############################
+
+# Copyright © 2020 The Board of Trustees of the Royal Botanic Gardens, Kew
+###################################
 set -e
 set -u
 set -o pipefail

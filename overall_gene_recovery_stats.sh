@@ -4,6 +4,8 @@
 # recover_genes_from_one_sample.sh
 
 # Author: Paul Bailey
+
+# Copyright © 2020 The Board of Trustees of the Royal Botanic Gardens, Kew
 ##################################
 #set -e
 #set -u

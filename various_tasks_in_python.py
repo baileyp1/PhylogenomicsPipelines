@@ -12,6 +12,8 @@
 # Method 2: etc
 
 # Author: Paul Bailey
+
+# Copyright © 2020 The Board of Trustees of the Royal Botanic Gardens, Kew
 ############################
 import sys
 import os

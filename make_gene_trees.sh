@@ -4,6 +4,8 @@
 # make_gene_trees.sh
 
 # Author: Paul Bailey
+
+# Copyright © 2020 The Board of Trustees of the Royal Botanic Gardens, Kew
 ####################
 geneId=$1
 geneFile=$2
@@ -714,6 +716,7 @@ elif [[ ! -s $dnaFastaFileForAln ]]; then
 		echo "WARNING: the input gene-wise fasta file for this gene does not exist or is empty: $gene - skipping alignment of this gene.
 (It indicates that there are no samples for this gene (possibly after a filtering step),
 or, the gene list is incompatible with the input fasta files.)"
+###or in gene-wise mode (option -G), the gene list is incompatible with the input gene-wise fasta files.)"
 		# NB - acknowledged error above so OK to exit with zero.
 		# Anyway it has to be zero to satisfy Slurm --dependancy afterok:$jobId parameter;
 		# Only works if $jobId exit code is 0, otherwise would need to use --dependancy afterany:$jobId (now doing this for other reasons!) 

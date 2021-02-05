@@ -5,7 +5,13 @@
 ####SBATCH -e ${fileNamePrefix}_make_species_trees.log			# NB - if I just specify the %a, then I don't get an accumulation of ouput files for each run of the script
 												            ### Test whether you can specify redirection to .log file via 2>&
                                                             ### NBNB - moved the -o and -flags to the main script because you can't specify fileNamePrefix variable at this point in the script!
+#######################
+# make_species_trees.sh
 
+# Author: Paul Bailey
+
+# Copyright © 2020 The Board of Trustees of the Royal Botanic Gardens, Kew
+#######################
 shopt -s failglob 
 
 
