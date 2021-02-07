@@ -42,6 +42,8 @@ function usage  {
 
 cat << EOF
 
+Copyright © 2020 The Board of Trustees of the Royal Botanic Gardens, Kew
+
 Program: recover_genes_from_all_samples.sh
 
 Program description: recovers genes from fastq files of multiple samples. Paftools or HybPiper caqn be used to align the reads to a set of

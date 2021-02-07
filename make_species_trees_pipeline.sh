@@ -15,8 +15,16 @@ shopt -s failglob
 ####################################################################
 
 # Variables for any command line flags needing a default value.
-# NB - it is absolutely critical that options requiring a value have a value when passed
-#      to a child script, even though the option hasn't been selected!  
+# NB - it is absolutely critical that options requiring a value have 
+# a value when passed to a child script, even though the option hasn't 
+# been selected!
+# NB - for the second alignment iteration, options that are selected but 
+# also have default values need to be passed through to the script if 
+# they are still required or if they are not required, the default 
+# needs to behave as if the option is off - e.g. $fractnSamples was 
+# still being used in second aln iteration even though filtering option
+# is off.
+
 # INPUT FILE OPTIONS:
 useGenewiseFiles=no
 addSampleName=no
@@ -38,7 +46,7 @@ trimAln1=no					# Filter alignment columns with optrimAl
 trimAln2=no					# Filter alignment columns to remove rarer insertions; maximum limit of percent occupancy to trim at
 
 
-maxColOccThreshold=90		### 7.9.2020 - now testing lower values e.g. 30 and 15 - still need to check input value; also shoudl it be minColOccLenThreshold
+maxColOccThreshold=90		### 7.9.2020 - now testing lower values e.g. 30 and 15 - still need to check input value; also should it be minColOccLenThreshold
 							### Hidden variable - length unit in bases
 
 # PHYLOGENY OPTIONS:
@@ -71,6 +79,8 @@ speciesTreeSlurmTime=0		# SBATCH -t 0-36:00
 function usage	{
 
 cat << EOF
+
+Copyright © 2020 The Board of Trustees of the Royal Botanic Gardens, Kew
 
 Program description:
                 makes species trees from fasta files, either of two types:
@@ -155,7 +165,7 @@ OTHER OPTIONS:
                 Slurm memory to use (in MB) for gene trees and TreeShrink (default=0; means no limit is imposed in default Slurm set up)
 
   -X <string>	
-                Slurm extra memory (in MB) to use with large data sets for specific gene trees named here: Format: <geneId1>,<geneId2>:<cpu>:<mem>
+                Slurm extra memory (in MB) to use with large data sets for specific gene trees named here: Format: <geneId1>,<geneId2><etc>:<cpu>:<mem>
                 Real life examples: Angiosperms353 genes (5921, 5596)
   -U <integer>     
                 Slurm memory to use (in MB) for species trees (default=0; means no limit is imposed in default Slurm set up)
@@ -185,7 +195,7 @@ make_species_trees_pipeline.sh \\
 -M '--retree 2' \\
 -t <sampleTreeTipInfoFile> \\
 -g <geneListFile> \\
--F '60 30' \\
+-F '60 10' \\
 -q fasttree \\
 -c 8 \\
 -C 1 \\
