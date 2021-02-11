@@ -44,12 +44,8 @@ cat << EOF
 
 Copyright © 2020 The Board of Trustees of the Royal Botanic Gardens, Kew
 
-Program: recover_genes_from_all_samples.sh
-
-Program description: recovers genes from fastq files of multiple samples. Paftools or HybPiper caqn be used to align the reads to a set of
+Program description: recovers genes from pair-end fastq files of multiple samples. Paftools or HybPiper can be used to align the reads to a set of
                      target genes, then assemble the reads for each target gene. If Slurm is available samples will be run in parallel
-
-Usage: recover_genes_from_all_samples.sh
 
 OPTIONS <value>:
   -h   
@@ -97,13 +93,14 @@ OPTIONS <value>:
 
 A typical example:
 <path to>/recover_genes_from_all_samples.sh \\
+-y paftools \\
 -s <table_file.csv> \\
 -t <angiosperms353TargetsFile.fasta> \\
 -f <fastq_files_path> \\
 -a <illumina_adaptors.fasta> \\
 -p Sample \\
 -c 4 \\
--m 20000 \\
+-m 80000 \\
 -Q main \\
 > recover_genes_from_all_samples.log 2>&1 &
 
