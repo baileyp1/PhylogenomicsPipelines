@@ -240,10 +240,11 @@ fi
 # This assumes that the ASTRAL directory is already in $PATH. 
 ### NB - iqtree11.12.2019 - could always set up an alias! e.g. astral='java -jar $PATH/astral.5.6.3.jar' 
 echo dnaAstralInFile: $dnaAstralInFile
-pathToAstral=`which astral.5.7.4.jar `
+###pathToAstral=`which astral.5.7.4.jar `
 echo Running Astral on the DNA gene trees...
 # NB - 22.10.2020 - added the -Xmx12000m (12G memory) to try and increase speed of ASTRAL. OK for 353 gene trees and 3500 samples, may need to increase for larger data sets
-$exePrefix java -Xmx12000m -jar $pathToAstral -t 2 \
+###$exePrefix java -Xmx12000m -jar $pathToAstral -t 2 \     # 12.2.2021 - Changed the way java programs are called to using a global variable
+$exePrefix java -Xmx12000m -jar $ASTRAL -t 2 \
 -i $dnaAstralInFile \
 -o ${fileNamePrefix}.dna.species_tree.astral_-t2.nwk
 ### Old name: -o ${fileNamePrefix}_astral_-t2_dna_species_tree.nwk
@@ -269,7 +270,8 @@ if [ -s $treeTipInfoMapFile ]; then
 fi
 
 # Also running with -t option set to 16:
-$exePrefix java -Xmx12000m -jar $pathToAstral -t 16 \
+###$exePrefix java -Xmx12000m -jar $pathToAstral -t 16 \
+$exePrefix java -Xmx12000m -jar $ASTRAL -t 16 \
 -i $dnaAstralInFile \
 -o ${fileNamePrefix}.dna.species_tree.astral_-t16.nwk
 mv freqQuad.csv ${fileNamePrefix}.dna.species_tree.astral_-t16_freqQuad.txt
@@ -279,7 +281,8 @@ mv freqQuad.csv ${fileNamePrefix}.dna.species_tree.astral_-t16_freqQuad.txt
 if [[ "$phyloProgramPROT" == 'fasttree' ||  "$phyloProgramPROT" == 'raxml-ng'  || "$phyloProgramPROT" == 'iqtree2'* ]]; then
     echo Running Astral on the protein gene trees...
     echo proteinAstralInFile: $proteinAstralInFile
-    $exePrefix java -Xmx12000m -jar $pathToAstral -t 2 \
+    ###$exePrefix java -Xmx12000m -jar $pathToAstral -t 2 \
+    $exePrefix java -Xmx12000m -jar $ASTRAL -t 2 \
     -i $proteinAstralInFile \
     -o ${fileNamePrefix}.protein.species_tree.astral_-t2.nwk
 
@@ -299,7 +302,8 @@ if [[ "$phyloProgramPROT" == 'fasttree' ||  "$phyloProgramPROT" == 'raxml-ng'  |
     fi
 
     # Also running with -t option set to 16:
-    $exePrefix java -Xmx12000m -jar $pathToAstral -t 16 \
+    ###$exePrefix java -Xmx12000m -jar $pathToAstral -t 16 \
+    $exePrefix java -Xmx12000m -jar $ASTRAL -t 16 \
     -i $proteinAstralInFile \
     -o ${fileNamePrefix}.protein.species_tree.astral_-t16.nwk
     mv freqQuad.csv ${fileNamePrefix}.protein.species_tree.astral_-t16_freqQuad.txt

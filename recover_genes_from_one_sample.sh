@@ -53,8 +53,9 @@ if [[ $usePaftolDb == 'no' ]]; then
 	#          For 4 cpu, up to 24 mins; up to 12 GB mem.    - Total # samples to date: ~2500 - would take 14h using 176 cpu (1 node) 
 	#          For 2 cpu, up to 1h50', up to 10 GB mem (tested 40 samples)
 	#          Conclusion: the above stats seems to suggest that running this step separately might be the most efficient
-	pathToTrimmomatic=`which trimmomatic-0.39.jar `		# NB - 'which' requires the file to be executable!
-	$exePrefix  java -jar $pathToTrimmomatic PE \
+	###pathToTrimmomatic=`which trimmomatic-0.39.jar `		# NB - 'which' requires the file to be executable!
+	###$exePrefix  java -jar $pathToTrimmomatic PE \		# 12.2.2021 - Changed the way java programs are called to using a global variable
+	$exePrefix  java -jar $TRIMMOMATIC PE \
 	-threads $cpu \
 	-trimlog ${sampleId}_R1_R2_trimmomatic.log \
 	$paftolDataSymlinksDir/$R1FastqFile \
@@ -109,7 +110,7 @@ if [ $hybSeqProgram == 'paftools' ]; then
 		--dataOrigin $usePaftolDb
 		# NB - the file name must be of this format e.g. PAFTOL_005853_R1.fastq
 		# The fastqPath entered in the database consists of the path and filename e.g. $paftolDataSymlinksDir/$unzippedR1FastqFile
-		# --sampleId=$sampleId - must be included for all data types, but in the case of paftol it is ignored (but there is no harm in always including it)
+		# --sampleId=$sampleId - must be included for all data types, except in the case of paftol data it is ignored (but there is no harm in always including it)
 
 		### Add a new option to THIS program for uploading SRA e.g. -d PAFTOL, -d SRA
 
@@ -122,7 +123,8 @@ if [ $hybSeqProgram == 'paftools' ]; then
 		cp $targetsFile . 
 		targetsFile=`basename $targetsFile `
 
-		# Use of --usePaftolDb flag requires the use of the trimmomatic flag so have to have a separate paftoools recoverSeqs command here.
+		# NB - Use of --usePaftolDb flag requires the use of the Paftools trimmomatic flag so have to have a separate paftools recoverSeqs command here.
+		#      The Trimmomatic program name needs to be 
 		export PYTHONPATH=$HOME/lib/python 			# I had to add this for the cluster ONLY - need to. check it is OK on Macbook, it should be.
 		$exePrefix  paftools recoverSeqs \
 		$targetsFile \
