@@ -1,0 +1,2 @@
+A small accession containing plant transcriptome data for testing gene recovery
+of accessions from European Nucleotide Archive (ENA) or the Sequence Read Archive (SRA)
