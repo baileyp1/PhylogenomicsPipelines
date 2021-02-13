@@ -74,7 +74,7 @@ OPTIONS <value>:
                     i.e. /<path>/<SampleDirPrefix>_<SampleName>/<SampleName>.fasta (directory set up, as used by this pipeline) 
                  2. gene recovery samples all in the same directory
                     i.e. /<path>/<SampleName>.fasta
-                 For either case, type /<path>
+                 For either case, type '/<path>'
                  Note: 'SampleName' needs to match that provided by the sample list in option -s
   -p <string>    
                  directory prefix for each sample (default=Sample)
@@ -153,7 +153,7 @@ if [ "$#" -lt 1 ]; then usage; exit 1; fi
 ### 29.3.2020 - addpaftolfastqmaybe do this after all other checks so the print out doesn't appear if there is an issue with input parameters
 ### 12.5.2020 - also Trimmomatic is required. Others e.g. fastqc are dependancies of Paftools
 if [[ $hybSeqProgram == 'hybpiper'* ]]; then
-    echo 'Testing HybPiper is installed, will exit with a 127 error if not found.' 
+    echo 'Testing HybPiper is installed, will exit now if not found.' 
     reads_first.py -h >/dev/null 2>&1    # Will exit here if not found!
     echo 'hybpiper found.'
 
@@ -162,14 +162,16 @@ if [[ $hybSeqProgram == 'hybpiper'* ]]; then
                                           # Maybe run program via the $hybSeqProgram as this works in the trees script - maybe bash is unaware that it is runnign a program!?
                                           # NO - I thinks it's becuase of the set options - maybe should remove them !!!!
 elif [[ $hybSeqProgram == 'paftools' ]]; then
-    echo 'Testing paftools is installed, will exit with a 127 error if not found.' 
-    $hybSeqProgram -h >/dev/null 2>&1   # Will exit here if not found!
+    echo 'Testing paftools is installed, will exit now if not found.' 
+    export PYTHONPATH=$HOME/lib/python    # Python path required to link to paftools if it is installed in home directory
+    $hybSeqProgram -h >/dev/null 2>&1     # Will exit here if not found!
     echo 'paftools found.'
 fi
-if [[ $? == 127 ]]; then
+if [[ $? == 127 || $? == 1 ]]; then       # Also added 1 becasue Paftools can be in the path but set up still not correct.
     # Exit code 127 is for "command not found"
     ### 16.3.2020 - this doesn't work as script exits in the above conditional if program is not found!
     ### Readjusted above conditional instead.
+    ### 13.2.2021 - i think the solution is to turn off set set -e and set -u for this step then back on again.
     echo "ERROR: Not available: $hybSeqProgram"
     exit
 fi
