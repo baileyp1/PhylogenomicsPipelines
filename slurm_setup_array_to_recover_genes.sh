@@ -1,7 +1,7 @@
 #!/bin/bash
 #SBATCH -J recover_genes
 #SBATCH -n 1
-#SBATCH -o recover_genes-%a.log		# If this line is not set, default output name is slurm-%A_%a.out: %A = $SLURM_ARRAY_JOB_ID; %a = $SLURM_ARRAY_TASK_ID		 
+#SBATCH -o recover_genes_SP0110-%a.log		# If this line is not set, default output name is slurm-%A_%a.out: %A = $SLURM_ARRAY_JOB_ID; %a = $SLURM_ARRAY_TASK_ID		 
 #SBATCH -e recover_genes-%a.log 	# NB - if I just specify the %a, then I don't get an accumulation of ouput files for each run of the script
 									
 
