@@ -33,12 +33,13 @@ echo refFilePathForStats: $refFilePathForStats
 sampleId=`echo $line | cut -d ',' -f 1 `    		# I think this will be the PAFTOL_xxxxxx id - same as in the read file names
 R1FastqFile=`echo $line | cut -d ',' -f 2 `
 R2FastqFile=`echo $line | cut -d ',' -f 3 `
-externalSequenceID=`echo $line | cut -d ',' -f 4 `	# For adding the external sequence Id to the paftol_da
+externalSequenceID=`echo $line | cut -d ',' -f 4 `	# For adding the external sequence Id to the paftol_da db
 
   
 if [[ ! -d ${samplePrefix}_$sampleId ]]; then mkdir ${samplePrefix}_$sampleId; fi
 cd ${samplePrefix}_$sampleId
 echo sampleId: $sampleId
+echo externalSequenceID: $externalSequenceID
 ls $paftolDataSymlinksDir/$R1FastqFile
 ls $paftolDataSymlinksDir/$R2FastqFile
 pwd
@@ -99,20 +100,21 @@ if [ $hybSeqProgram == 'paftools' ]; then
 		
  		# Add sampleId flag and value to paftools command if present.
  		# NB - PAFTOL data doesn't require this flag.
-		if [ -n $externalSequenceID ]; then 
-			externalSequenceID='--sampleId $externalSequenceID'
+		if [ -n $externalSequenceID ]; then
+			externalSequenceID="--sampleId $externalSequenceID"
 		fi
+		#else - not required - $externalSequenceID variable should be blank if not used, therefore no --sampleId
+		# flag will be applied to command below.
 
 		export PYTHONPATH=$HOME/lib/python
-		paftools addPaftolFastq  $externalSequenceID \
+		paftools --loglevel INFO addPaftolFastq  $externalSequenceID \
 		$unzippedR1FastqFile  $unzippedR2FastqFile \
 		--fastqPath $paftolDataSymlinksDir \
 		--dataOrigin $usePaftolDb
-		# NB - the file name must be of this format e.g. PAFTOL_005853_R1.fastq
+		# NB - the file name must be of this format e.g. PAFTOL_005853_R1.fastq BUT now only for PAFTOL data
 		# The fastqPath entered in the database consists of the path and filename e.g. $paftolDataSymlinksDir/$unzippedR1FastqFile
-		# --sampleId=$sampleId - must be included for all data types, except in the case of paftol data it is ignored (but there is no harm in always including it)
-
-		### Add a new option to THIS program for uploading SRA e.g. -d PAFTOL, -d SRA
+		# --sampleId=$sampleId - must be included for all data types (there must be a value), except in the case of paftol data it is ignored (but there is no harm in always including it)
+		# --dataOrigin - dataset origin added via the -d flag of this script/pipeline e.g. -d PAFTOL, -d SRA
 
 		echo "Exit status of paftools addpaftolFastq:" $?
 		### NB - paftools recoverSeqs also runs FastQC stats against the raw reads but this is unnessary.
@@ -125,7 +127,7 @@ if [ $hybSeqProgram == 'paftools' ]; then
 
 		# NB - Use of --usePaftolDb flag requires the use of the Paftools trimmomatic flag so have to have a separate paftools recoverSeqs command here.
 		#      The Trimmomatic program name needs to be 
-		export PYTHONPATH=$HOME/lib/python 			# I had to add this for the cluster ONLY - need to. check it is OK on Macbook, it should be.
+		export PYTHONPATH=$HOME/lib/python 			# I had to add this for the cluster ONLY - need to. Check it is OK on Macbook, it should be.
 		$exePrefix  paftools recoverSeqs \
 		$targetsFile \
 		${sampleId}.fasta \
@@ -410,6 +412,7 @@ if [[ $stats != 'no' ]]; then
 	> ${sampleId}_bwa_mem_with_dups.sam
 ### NB - WHAT HAPPENS WHEN USING HYBPIPER? NEED TO ALSO MAP THE UNPAIRED READS
 ### Don’t forget to pipe in/out files as much as possible to save space
+### ALSO, uptodate samtools versions can output straight to bam - take a look - shoudl be able to go from bwa sam stright to samtools sort
 	samtools view -bS ${sampleId}_bwa_mem_with_dups.sam > ${sampleId}_bwa_mem_with_dups.bam
 	# Need to sort bam before indexing
 	samtools sort ${sampleId}_bwa_mem_with_dups.bam > ${sampleId}_bwa_mem_with_dups_sort.bam
