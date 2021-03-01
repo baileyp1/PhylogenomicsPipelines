@@ -4,9 +4,8 @@
 This repository contains two pipelines to perform phylogenomic analysis. One pipeline recovers genes from sample Illumina read data and the second pipeline performs phylogenetic analysis on the recovered genes to obtain a species tree. They will run on Linux (and with the [Slurm](https://slurm.schedmd.com/) job manager, if installed) and MacOS.
 
 This software has been used in the following work to construct and analyse the [Kew Tree of Life](https://treeoflife.kew.org/) ([PAFTOL](https://www.kew.org/science/our-science/projects/plant-and-fungal-trees-of-life) project):
-```
-Baker et al (2021) A comprehensive phylogenomic platform for exploring the angiosperm tree of life (in preparation)
-``` 
+
+Baker et al (2021) A comprehensive phylogenomic platform for exploring the angiosperm tree of life (submitted to [bioRxiv](https://doi.org/10.1101/2021.02.22.431589) and Systematic Biology)
 
 For gene recovery use
 ```
@@ -16,9 +15,11 @@ For phylogenetic analysis use
 ```
 make_species_trees_pipeline.sh
 ```
-To run the scripts correctly, they need to be made available from any directory on the command line. Do this by adding the path of the PhylogenomicsPipelines directory to the .bash_profile file or equivalent file in your home directory:
+
+
+To run the scripts correctly, they need to be made available from any directory on the command line. Do this by adding the path of the PhylogenomicsPipelines directory (wherever you want that to be) to the .bash_profile file or equivalent file in your home directory - e.g.:
 ```
-PATH=$PATH:<your_full_path_to>/PhylogenomicsPipelines
+PATH=$PATH:<full_path_to_your_home_directory>/ProgramFiles/PhylogenomicsPipelines
 ```
 Log back in to pick up the new addition to the path, then on the command line type the name of the programs shown above to see brief instructions on their use.
  
@@ -49,7 +50,7 @@ For phylogenetic analysis:
 * [ASTRAL](https://github.com/smirarab/ASTRAL)
 * [AMAS.py](https://github.com/marekborowiec/AMAS) (ensure the version has the 'trim' option) and/or [trimAl](http://trimal.cgenomics.org/) (for trimming if those options are selected)
 * [TreeShrink](http://trimal.cgenomics.org/) (if option is selected)
-* [R](https://www.r-project.org/) v3.4.x or higher  (used by TreeShrink and trimAl)
+* [R](https://www.r-project.org/) v3.4.x or higher  (if TreeShrink or trimAl are being used)
  
 ## How to use, outputs and further details  
 ## recover_genes_from_all_samples.sh
@@ -133,9 +134,8 @@ The main output files are listed below in output order. Additional files will ex
     summary of gene trees reported by AMAS.py
   * run3b_summary_tree_stats.txt<br>
     summary tree statistics
-
 ---
-Copyright © 2020 The Board of Trustees of the Royal Botanic Gardens, Kew
+<span style="font-size:small;">Copyright © 2020 The Board of Trustees of the Royal Botanic Gardens, Kew</span>
 
 
 
