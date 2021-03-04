@@ -44,12 +44,13 @@ For phylogenetic analysis:
 * bc, a Linux command line utility
 * [Exonerate](https://www.ebi.ac.uk/about/vertebrate-genomics/software/exonerate)
 * [MAFFT ](https://mafft.cbrc.jp/alignment/software/) or [UPP](https://github.com/smirarab/sepp/blob/master/README.UPP.md) (UPP requires SEPP and PASTA as explained in the link)
+* [PAL2NAL](http://www.bork.embl.de/pal2nal/) (if option '-D codon' is used)
 * [FastTree](http://www.microbesonline.org/fasttree/), [RAxML-NG](https://github.com/amkozlov/raxml-ng) or [IQ-TREE version 2](http://www.iqtree.org)
 * [RAxML](https://github.com/stamatak/standard-RAxML) (used for building a species tree using a concatenated alignment)
 * [Newick Utilities](http://cegg.unige.ch/newick_utils)
 * [ASTRAL](https://github.com/smirarab/ASTRAL)
-* [AMAS.py](https://github.com/marekborowiec/AMAS) (ensure the version has the 'trim' option) and/or [trimAl](http://trimal.cgenomics.org/) (for trimming if those options are selected)
-* [TreeShrink](https://github.com/uym2/TreeShrink) (if option is selected)
+* [AMAS.py](https://github.com/marekborowiec/AMAS) (ensure the version has the 'trim' option) and/or [trimAl](http://trimal.cgenomics.org/) (for trimming if those options are used)
+* [TreeShrink](https://github.com/uym2/TreeShrink) (if option is used)
 * [R](https://www.r-project.org/) v3.4.x or higher  (if TreeShrink or trimAl are being used)
  
 ## How to use, outputs and further details  
