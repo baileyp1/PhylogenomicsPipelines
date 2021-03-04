@@ -18,14 +18,14 @@ make_species_trees_pipeline.sh
 
 
 To run the scripts correctly, they need to be made available from any directory on the command line. Do this by adding the path of the PhylogenomicsPipelines directory (wherever you want that to be) to the .bash_profile file or equivalent file in your home directory - e.g.:
-```
+```bash
 PATH=$PATH:<full_path_to_your_home_directory>/ProgramFiles/PhylogenomicsPipelines
 ```
 Log back in to pick up the new addition to the path, then on the command line type the name of the programs shown above to see brief instructions on their use.
  
 ##  Additional software required
 The following programs need to be installed and available from the command line by typing the native program name. Some but not all of them are easily available from software installers (e.g. bioconda, brew, apt, yum). For the Java programs (e.g. Trimmomatic, ASTRAL) it is necessary to set up a global variable (also add to your .bash_profile or equivalent file) as follows:
-```
+```bash
 export TRIMMOMATIC=<path_to_executable>/Trimmomatic-0.39/trimmomatic-0.39.jar
 export ASTRAL=<path_to_executable>/astral/Astral/astral.5.7.4.jar
 ```
@@ -49,7 +49,7 @@ For phylogenetic analysis:
 * [Newick Utilities](http://cegg.unige.ch/newick_utils)
 * [ASTRAL](https://github.com/smirarab/ASTRAL)
 * [AMAS.py](https://github.com/marekborowiec/AMAS) (ensure the version has the 'trim' option) and/or [trimAl](http://trimal.cgenomics.org/) (for trimming if those options are selected)
-* [TreeShrink](http://trimal.cgenomics.org/) (if option is selected)
+* [TreeShrink](https://github.com/uym2/TreeShrink) (if option is selected)
 * [R](https://www.r-project.org/) v3.4.x or higher  (if TreeShrink or trimAl are being used)
  
 ## How to use, outputs and further details  
@@ -62,7 +62,7 @@ A typical example is shown at the bottom of the command line help.
 A basic example is shown at the bottom of the command line help. A more extensive analysis is presented below (options for this pipeline in brackets) with jobs set to run via Slurm job manager on a High Performance Computing (HPC) Linux cluster. 
 
 Build genes trees from sample fasta files, formatted as described for option -a, by aligning the input DNA sequence for each gene with UPP (option -A),  filtering out genes with low sequence coverage across the alignment (option -F), removing very rare insertions (option -K), building each gene tree with IQTREE-2 using the Ultrafast bootstrap option (option -q), using TreeShrink to identify usually long branches in the gene trees (option -T), then collapsing nodes with bootstrap values < 30 % (option -L) before building a species tree with ASTRAL. Finally, FastTree and RAxML are then used to reconstruct a supermatrix tree built from a concatenated set of the UPP gene alignments:
-```
+```bash
 make_species_trees_pipeline.sh \
 -a \
 -D 'dna' \
