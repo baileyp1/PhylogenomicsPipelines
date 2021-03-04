@@ -136,6 +136,7 @@ FILTERING AND TRIMMING OPTIONS:
                 percent of the median length of all sequences in the data set. Don't use with option -F else option -F only will applied.
   -J               
                 trim alignment option 1. Filter columns with OpTrimAL (after Shee el al 2020, https://doi.org/10.3389/fpls.2020.00258)
+                NB - this option is not ready yet and has been removed!
   -K <fraction>    
                 trim alignment option 2. Filter columns to remove rarer insertions (no default; example: 0.003 will remove columns with 0.3 % occupancy)
 PHYLOGENY OPTIONS:
@@ -252,7 +253,7 @@ while getopts "hvat:ug:ijGF:m:p:M:q:r:TC:c:d:Q:Y:A:D:O:L:I:JK:R:X:U:V:W:H:"  OPT
 		O) maxColOccThreshold=$OPTARG ;;
 		L) collapseNodes=$OPTARG ;;
 		I) filterSeqs2=$OPTARG ;;
-		J) trimAln1=yes ;;
+		###J) trimAln1=yes ;;
 		K) trimAln2=$OPTARG ;;
 		R) geneTreeSlurmMem=$OPTARG ;;
 		X) extraMem=$OPTARG ;;
