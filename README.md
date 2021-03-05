@@ -24,7 +24,7 @@ PATH=$PATH:<full_path_to_your_home_directory>/ProgramFiles/PhylogenomicsPipeline
 Log back in to pick up the new addition to the path, then on the command line type the name of the programs shown above to see brief instructions on their use.
  
 ##  Additional software required
-The following programs need to be installed and available from the command line by typing the native program name. Some but not all of them are easily available from software installers (e.g. bioconda, brew, apt, yum). For the Java programs (e.g. Trimmomatic, ASTRAL) it is necessary to set up a global variable (also add to your .bash_profile or equivalent file) as follows:
+The following programs need to be installed and available from the command line by typing the native program name. Some but not all of them are easily available from software installers (e.g. bioconda, brew, apt, yum). For the Java programs (e.g. Trimmomatic, ASTRAL) it is necessary to set up a global variable (add to your .bash_profile or equivalent file) as follows:
 ```bash
 export TRIMMOMATIC=<path_to_executable>/Trimmomatic-0.39/trimmomatic-0.39.jar
 export ASTRAL=<path_to_executable>/astral/Astral/astral.5.7.4.jar
