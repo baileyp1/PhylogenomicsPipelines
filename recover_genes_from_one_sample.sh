@@ -98,13 +98,13 @@ if [ $hybSeqProgram == 'paftools' ]; then
 		gunzip -f -c $paftolDataSymlinksDir/$R1FastqFile > $unzippedR1FastqFile
 		gunzip -f -c $paftolDataSymlinksDir/$R2FastqFile > $unzippedR2FastqFile
 		
- 		# Add sampleId flag and value to paftools command if present.
- 		# NB - PAFTOL data doesn't require this flag.
+ 		# Add sampleId flag and value to paftools command, depending on the data type, PAFTOL or external data.
+ 		# NB - PAFTOL data doesn't use this flag value but the falg is still required!
 		if [ -n $externalSequenceID ]; then
 			externalSequenceID="--sampleId $externalSequenceID"
-		fi
-		#else - not required - $externalSequenceID variable should be blank if not used, therefore no --sampleId
-		# flag will be applied to command below.
+		else
+			externalSequenceID="--sampleId $sampleId"
+
 
 		export PYTHONPATH=$HOME/lib/python
 		paftools --loglevel INFO addPaftolFastq  $externalSequenceID \
@@ -113,7 +113,7 @@ if [ $hybSeqProgram == 'paftools' ]; then
 		--dataOrigin $usePaftolDb
 		# NB - the file name must be of this format e.g. PAFTOL_005853_R1.fastq BUT now only for PAFTOL data
 		# The fastqPath entered in the database consists of the path and filename e.g. $paftolDataSymlinksDir/$unzippedR1FastqFile
-		# --sampleId=$sampleId - must be included for all data types (there must be a value), except in the case of paftol data it is ignored (but there is no harm in always including it)
+		# --sampleId=$sampleId - must be included for all data types (there must be a value), however in the case of paftol data it is ignored but the flag and a value is still required!
 		# --dataOrigin - dataset origin added via the -d flag of this script/pipeline e.g. -d PAFTOL, -d SRA
 
 		echo "Exit status of paftools addpaftolFastq:" $?
@@ -150,7 +150,7 @@ if [ $hybSeqProgram == 'paftools' ]; then
 		$usePaftolDbFlag \
 		> ${sampleId}_overlapSerial.log 2>&1
 
-		rm $targetsFile
+		rm $targetsFile	# If write to database fails, this fail doesn't get deleted (c.f. set cmds active), so presence of file is a useful 'marker' for failing to write to db
 		### 15.4.2020 - also remove PAFTOL_000948_R1.fastq and PAFTOL_000948_R2.fastq files to save space
 	else 
 
