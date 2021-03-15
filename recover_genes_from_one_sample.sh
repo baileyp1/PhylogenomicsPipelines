@@ -99,12 +99,12 @@ if [ $hybSeqProgram == 'paftools' ]; then
 		gunzip -f -c $paftolDataSymlinksDir/$R2FastqFile > $unzippedR2FastqFile
 		
  		# Add sampleId flag and value to paftools command, depending on the data type, PAFTOL or external data.
- 		# NB - PAFTOL data doesn't use this flag value but the falg is still required!
+ 		# NB - PAFTOL data doesn't use this flag value but the flag is still required!
 		if [[ -n $externalSequenceID ]]; then
 			externalSequenceID="--sampleId $externalSequenceID"
-		else
-			externalSequenceID="--sampleId $sampleId"
 		fi
+		# NB --sampleId flag is not now mandatory and paftools checks whether an externalSequenceID exists
+		#    and fails if one doesn't for a non-paftol sample.
 
 
 		export PYTHONPATH=$HOME/lib/python
