@@ -104,13 +104,14 @@ if [ $hybSeqProgram == 'paftools' ]; then
 			externalSequenceID="--sampleId $externalSequenceID"
 		else
 			externalSequenceID="--sampleId $sampleId"
+		fi
 
 
 		export PYTHONPATH=$HOME/lib/python
-		paftools --loglevel INFO addPaftolFastq  $externalSequenceID \
-		$unzippedR1FastqFile  $unzippedR2FastqFile \
+		paftools --loglevel INFO addPaftolFastq $externalSequenceID \
 		--fastqPath $paftolDataSymlinksDir \
-		--dataOrigin $usePaftolDb
+		--dataOrigin $usePaftolDb \
+		$unzippedR1FastqFile  $unzippedR2FastqFile
 		# NB - the file name must be of this format e.g. PAFTOL_005853_R1.fastq BUT now only for PAFTOL data
 		# The fastqPath entered in the database consists of the path and filename e.g. $paftolDataSymlinksDir/$unzippedR1FastqFile
 		# --sampleId=$sampleId - must be included for all data types (there must be a value), however in the case of paftol data it is ignored but the flag and a value is still required!
