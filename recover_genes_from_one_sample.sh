@@ -100,7 +100,7 @@ if [ $hybSeqProgram == 'paftools' ]; then
 		
  		# Add sampleId flag and value to paftools command, depending on the data type, PAFTOL or external data.
  		# NB - PAFTOL data doesn't use this flag value but the falg is still required!
-		if [ -n $externalSequenceID ]; then
+		if [[ -n $externalSequenceID ]]; then
 			externalSequenceID="--sampleId $externalSequenceID"
 		else
 			externalSequenceID="--sampleId $sampleId"
