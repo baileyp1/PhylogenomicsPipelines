@@ -665,9 +665,9 @@ createGeneAlignmentImage()	{
     #       e.g. have obtained a corrupt .png file with a long gene aln but only 12 seqs!
     ###########
 	if [[ -x $JALVIEW ]]; then
-		if [[ ! -d gene_alignment_images_$2 ]]; then mkdir gene_alignment_images_$2; fi
+		if [[ ! -d gene_alignment_images_$1 ]]; then mkdir gene_alignment_images_$1; fi
 		basenameNoSuffix=`basename -s .fasta $2 `
-		java -Djava.awt.headless=true -jar $JALVIEW \
+		$exePrefix java -Djava.awt.headless=true -jar $JALVIEW \
 		-open  $2 \
 		-colour BLOSUM62 \
 		-png gene_alignment_images_$1/${basenameNoSuffix}.png
