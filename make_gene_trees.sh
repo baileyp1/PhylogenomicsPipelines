@@ -653,9 +653,28 @@ filterShortSeqs()	{
 }
 
 
-
-
-
+createGeneAlignmentImage()	{
+	###########
+    # Function: creates an image with Jalview for the alignment file used to build the gene tree
+ 	#
+ 	# Input parameter:
+ 	# $1 = residue type: dna, aa or codon (required for specifying the right gene_alignment_images_* dir) 
+ 	# $2 = input fasta file
+    #
+    # Note: not established whether Jalview fail with large alignment files
+    #       e.g. have obtained a corrupt .png file with a long gene aln but only 12 seqs!
+    ###########
+	if [[ -x $JALVIEW ]]; then
+		if [[ ! -d gene_alignment_images_$2 ]]; then mkdir gene_alignment_images_$2; fi
+		basenameNoSuffix=`basename -s .fasta $2 `
+		java -Djava.awt.headless=true -jar $JALVIEW \
+		-open  $2 \
+		-colour BLOSUM62 \
+		-png gene_alignment_images_$1/${basenameNoSuffix}.png
+	else
+		echo "ERROR: Jalview not available: $JALVIEW "
+	fi
+}
 
 
 
@@ -1099,6 +1118,7 @@ if [[ -s $dnaAlnForTree || -s $proteinAlnForTree ]]; then
 ### Still need to confirm file/variable input
 			if [ "$numbrSeqs" -gt 3 ]; then 	# Check goes here after ALL filtering steps
 				makeGeneTree dna ${gene}.dna.aln.for_tree.fasta '.' 'GTR+G' 'DNA' '-nt -gtr'
+				createGeneAlignmentImage dna ${gene}.dna.aln.for_tree.fasta
 			else
 				echo "WARNING: Not able to build a tree for this gene: $gene (less than four sequences)"
 			fi
@@ -1109,6 +1129,7 @@ if [[ -s $dnaAlnForTree || -s $proteinAlnForTree ]]; then
 ### Still need to confirm file/variable input
 			if [ "$numbrSeqs" -gt 3 ]; then
 				makeGeneTree codon ${gene}.codon.aln.for_tree.fasta 'codonAln' 'GTR+G' 'DNA' '-nt -gtr'
+				createGeneAlignmentImage codon ${gene}.codon.aln.for_tree.fasta
 			else
 				echo "WARNING: Not able to build a tree for this gene: $gene (less than four sequences)"
 			fi
@@ -1120,6 +1141,7 @@ if [[ -s $dnaAlnForTree || -s $proteinAlnForTree ]]; then
 			echo numbrSeqs: $numbrSeqs
 			if [ "$numbrSeqs" -gt 3 ]; then
 				makeGeneTree protein ${gene}.protein.aln.for_tree.fasta '.' 'JTT+G' 'AA' ''
+				createGeneAlignmentImage protein ${gene}.protein.aln.for_tree.fasta
 			else
 				echo "WARNING: Not able to build a tree for this gene: $gene (less than four sequences)"
 			fi
@@ -1128,5 +1150,5 @@ if [[ -s $dnaAlnForTree || -s $proteinAlnForTree ]]; then
 	###	echo "WARNING: Not able to build a tree for this gene: $gene (less than four sequences)"
 	#####fi # end of block testing $numbrSeqs > 3
 
-fi # end of block testing $maxColOcc threshold
+fi
 sleep 3		# Helps slurm not to 'fall over' on the Cluster
