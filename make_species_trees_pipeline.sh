@@ -56,6 +56,7 @@ phyloProgramDNA=fasttree
 phyloProgramPROT=no			# Work around to specify any program so software testing code will not crash! Ensures cmd parameter is always occupied which is critical
 treeshrink=no
 collapseNodes=no			# option -L
+outgroupRoot=no				# option -o
 
 # OTHER OPTIONS:
 # Hidden options (i.e. not apparent from the help menu but they always have a value so can be and have to be used in downstream scripts).
@@ -86,7 +87,8 @@ Program description:
                 makes species trees from fasta files, either of two types:
                 1. recovered genes (DNA) from multiple samples, one fasta file per sample (default)
                    The fasta header format must be: >sampleId-geneId but one other option (-a) is available.
-                2. gene-wise (DNA) fasta files, one fasta file per gene (option -G) 
+                2. gene-wise (DNA) fasta files, one fasta file per gene (option -G)
+
 
 Usage:          make_species_trees_pipeline.sh [OPTIONS] fastafile1 fastafile2 fastafile3 ...
 
@@ -156,7 +158,9 @@ PHYLOGENY OPTIONS:
   -T               
                 use TreeShrink on gene trees (followed by re-alignment)
   -L <integer>     
-                collapse gene tree nodes with bootstrap support less than <integer> percent (no default)
+                collapse gene tree nodes with bootstrap support less than <integer> percent
+
+  -o <string>   list outgroup or root species. Format: 'species1 species2 species 3 etc' (N.B. values must be quoted)
 OTHER OPTIONS: 
   -C <integer>     
                 number of cpu to use for genetrees; NB - not convinced >1 cpu works robustly for raxml-ng with small datasets! (default=1)
@@ -218,7 +222,7 @@ EOF
 
 
 #echo User inputs:    ### For testing only 
-while getopts "hvat:ug:ijGF:m:p:M:q:r:TC:c:d:Q:Y:A:D:O:L:I:JK:R:X:U:V:W:H:"  OPTION; do	# Remaining options - try capital letters!
+while getopts "hvat:ug:ijGF:m:p:M:q:r:TC:c:d:Q:Y:A:D:O:L:I:JK:R:X:U:V:W:H:o:"  OPTION; do	# Remaining options - try capital letters!
 
 	#echo -$OPTION $OPTARG	### For testing only - could try to run through options again below 
 	 
@@ -261,6 +265,7 @@ while getopts "hvat:ug:ijGF:m:p:M:q:r:TC:c:d:Q:Y:A:D:O:L:I:JK:R:X:U:V:W:H:"  OPT
 		V) geneTreeSlurmTime=$OPTARG ;;
 		W) speciesTreeSlurmTime=$OPTARG ;;
 		H) slurmThrottle=$OPTARG ;;
+		o) outgroupRoot=$OPTARG ;;
 		?)  echo This option is not allowed. Read the usage summary below.
       	    echo
       	    usage; exit 1 ;;
@@ -890,7 +895,8 @@ if [[ $os == 'Darwin' && $speciesTreesOnly == 'no' ]]; then
 		$filterSeqs2 \
 		$trimAln1 \
 		$trimAln2 \
-		"$treeshrink"
+		"$treeshrink" \
+		"$outgroupRoot"
 	done > make_gene_trees.log 2>&1
 	#exit
 	if [[ $filterSeqs1 != 'no' ]]; then
@@ -1005,7 +1011,8 @@ elif [[ $os == 'Linux' && $speciesTreesOnly == 'no' ]]; then
 		"$filterSeqs2" \
 		"$trimAln1" \
 		"$trimAln2" \
-		"$treeshrink" `
+		"$treeshrink" \
+		"$outgroupRoot" `
 
 		echo jobInfo: $jobInfo
 		jobId=`echo $jobInfo | cut -d ' ' -f 4 `
@@ -1041,7 +1048,8 @@ elif [[ $os == 'Linux' && $speciesTreesOnly == 'no' ]]; then
 			"$filterSeqs2" \
 			"$trimAln1" \
 			"$trimAln2" \
-			"$treeshrink" `
+			"$treeshrink" \
+			"$outgroupRoot" `
 
 			echo jobInfoX: $jobInfoX
 			jobIdX=`echo $jobInfoX | cut -d ' ' -f 4 `
@@ -1155,7 +1163,8 @@ elif [[ $os == 'Linux' && $speciesTreesOnly == 'no' ]]; then
 			"$filterSeqs2" \
 			"$trimAln1" \
 			"$trimAln2" \
-			"$treeshrink"
+			"$treeshrink" \
+			"$outgroupRoot"
 		done > make_gene_trees.log 2>&1
 
 		if [[ $filterSeqs1 != 'no' ]]; then

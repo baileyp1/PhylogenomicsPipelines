@@ -27,6 +27,7 @@ filterSeqs2="${17}"
 trimAln1="${18}"
 trimAln2="${19}"
 treeshrink="${20}"
+outgroupRoot="${21}"
 
 # Convert $emptyMatchStateFractn to a percent for use in the output files:
 fractnAlnCovrg_pc=`awk -v FRACTN=$fractnAlnCovrg 'BEGIN{printf "%.0f", FRACTN * 100}' `
@@ -63,6 +64,7 @@ echo filterSeqs2: $filterSeqs2
 echo trimAln1: $trimAln1
 echo trimAln2: $trimAln2
 echo treeshrink: $treeshrink
+echo outgroupRoot: $outgroupRoot
 
 
 filterSeqs1()	{
@@ -659,7 +661,8 @@ createGeneAlignmentImage()	{
  	#
  	# Input parameter:
  	# $1 = residue type: dna, aa or codon (required for specifying the right gene_alignment_images_* dir) 
- 	# $2 = input fasta file
+ 	# $2 = input alignment fasta file
+ 	# $3 = input matching tree file
     #
     # Note: not established whether Jalview fail with large alignment files
     #       e.g. have obtained a corrupt .png file with a long gene aln but only 12 seqs!
@@ -668,7 +671,9 @@ createGeneAlignmentImage()	{
 		if [[ ! -d gene_alignment_images_$1 ]]; then mkdir gene_alignment_images_$1; fi
 		basenameNoSuffix=`basename -s .fasta $2 `
 		$exePrefix java -Djava.awt.headless=true -jar $JALVIEW \
-		-open  $2 \
+		-open $2 \
+		-tree $3 \
+		-sortbytree \
 		-colour BLOSUM62 \
 		-png gene_alignment_images_$1/${basenameNoSuffix}.png
 	else

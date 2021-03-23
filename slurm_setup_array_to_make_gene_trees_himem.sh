@@ -25,6 +25,7 @@ filterSeqs2="${17}"
 trimAln1="${18}"
 trimAln2="${19}"
 treeshrink="${20}"
+outgroupRoot="${21}"
 
 echo Inside Slurm array script, listFile: $listFile
 echo Inside Slurm array script, fractnAlnCovrge: $fractnAlnCovrg
@@ -70,6 +71,7 @@ $maxColOccThreshold \
 "$filterSeqs2" \
 "$trimAln1" \
 "$trimAln2" \
-"$treeshrink"
+"$treeshrink" \
+"$outgroupRoot"
 ### 16.3.2020 - could remove this $$exePrefix - but it might be useful to see whether sub-processes get added to the mem used for this script.
 ### 3.6.2020 - yes they do - the time and mem from this command is the total of tiem within script AND max mem used within the child processes - good
