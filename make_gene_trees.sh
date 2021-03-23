@@ -1123,7 +1123,7 @@ if [[ -s $dnaAlnForTree || -s $proteinAlnForTree ]]; then
 ### Still need to confirm file/variable input
 			if [ "$numbrSeqs" -gt 3 ]; then 	# Check goes here after ALL filtering steps
 				makeGeneTree dna ${gene}.dna.aln.for_tree.fasta '.' 'GTR+G' 'DNA' '-nt -gtr'
-				createGeneAlignmentImage dna ${gene}.dna.aln.for_tree.fasta
+				createGeneAlignmentImage dna ${gene}.dna.aln.for_tree.fasta ${gene}_dna_gene_tree_USE_THIS.nwk
 			else
 				echo "WARNING: Not able to build a tree for this gene: $gene (less than four sequences)"
 			fi
@@ -1134,7 +1134,7 @@ if [[ -s $dnaAlnForTree || -s $proteinAlnForTree ]]; then
 ### Still need to confirm file/variable input
 			if [ "$numbrSeqs" -gt 3 ]; then
 				makeGeneTree codon ${gene}.codon.aln.for_tree.fasta 'codonAln' 'GTR+G' 'DNA' '-nt -gtr'
-				createGeneAlignmentImage codon ${gene}.codon.aln.for_tree.fasta
+				createGeneAlignmentImage codon ${gene}.codon.aln.for_tree.fasta ${gene}_codon_gene_tree_USE_THIS.nwk
 			else
 				echo "WARNING: Not able to build a tree for this gene: $gene (less than four sequences)"
 			fi
@@ -1146,7 +1146,7 @@ if [[ -s $dnaAlnForTree || -s $proteinAlnForTree ]]; then
 			echo numbrSeqs: $numbrSeqs
 			if [ "$numbrSeqs" -gt 3 ]; then
 				makeGeneTree protein ${gene}.protein.aln.for_tree.fasta '.' 'JTT+G' 'AA' ''
-				createGeneAlignmentImage protein ${gene}.protein.aln.for_tree.fasta
+				createGeneAlignmentImage protein ${gene}.protein.aln.for_tree.fasta ${gene}_codon_gene_tree_USE_THIS.nwk
 			else
 				echo "WARNING: Not able to build a tree for this gene: $gene (less than four sequences)"
 			fi
