@@ -669,26 +669,25 @@ createGeneAlignmentImage()	{
     ###########
 	if [[ -x $JALVIEW ]]; then
 		if [[ ! -d gene_alignment_images_$1 ]]; then mkdir gene_alignment_images_$1; fi
-			treeFileToUse=$3
-			if [[ $outgroupRoot != 'no' ]]; then
-			 	# Root gene trees so that they can be more easily compared:
-			 	geneNwkFileNoSuffix=`basename -s .fasta $3`
-			 	echo "outgroupRoot: $outgroupRoot"
-			 	nw_reroot $3 $outgroupRoot | nw_order -c a /dev/fd/0 \
-			 	> gene_alignment_images_$1/${geneNwkFileNoSuffix}_rerooted.nwk
-				# nw_reroot -c a - orders tips alphabetically - may be easier for comparisons
-				treeFileToUse=gene_alignment_images_$1/${geneNwkFileNoSuffix}_rerooted.nwk
-			fi
-			geneAlnFileNoSuffix=`basename -s .fasta $2`
-			$exePrefix java -Djava.awt.headless=true -jar $JALVIEW \
-			-open $2 \
-			-tree $treeFileToUse \
-			-sortbytree \
-			-colour BLOSUM62 \
-			-png gene_alignment_images_$1/${geneAlnFileNoSuffix}.png
-		else
-			echo "ERROR: Jalview not available, gene alignment images will not be created: $JALVIEW "
+		treeFileToUse=$3
+		if [[ $outgroupRoot != 'no' ]]; then
+			 # Root gene trees so that they can be more easily compared:
+			 geneNwkFileNoSuffix=`basename -s .fasta $3`
+			 echo "outgroupRoot: $outgroupRoot"
+			 nw_reroot $3 $outgroupRoot | nw_order -c a /dev/fd/0 \
+			 > gene_alignment_images_$1/${geneNwkFileNoSuffix}_rerooted.nwk
+			# nw_reroot -c a - orders tips alphabetically - may be easier for comparisons
+			treeFileToUse=gene_alignment_images_$1/${geneNwkFileNoSuffix}_rerooted.nwk
 		fi
+		geneAlnFileNoSuffix=`basename -s .fasta $2`
+		$exePrefix java -Djava.awt.headless=true -jar $JALVIEW \
+		-open $2 \
+		-tree $treeFileToUse \
+		-sortbytree \
+		-colour BLOSUM62 \
+		-png gene_alignment_images_$1/${geneAlnFileNoSuffix}.png
+	else
+		echo "ERROR: Jalview not available, gene alignment images will not be created: $JALVIEW "
 	fi
 }
 
