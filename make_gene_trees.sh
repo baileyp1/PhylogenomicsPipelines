@@ -671,11 +671,11 @@ createGeneAlignmentImage()	{
 		if [[ ! -d gene_alignment_images_$1 ]]; then mkdir gene_alignment_images_$1; fi
 		treeFileToUse=$3
 		if [[ $outgroupRoot != 'no' ]]; then
-			 # Root gene trees so that they can be more easily compared:
-			 geneNwkFileNoSuffix=`basename -s .fasta $3`
-			 echo "outgroupRoot: $outgroupRoot"
-			 nw_reroot $3 $outgroupRoot | nw_order -c a /dev/fd/0 \
-			 > gene_alignment_images_$1/${geneNwkFileNoSuffix}_rerooted.nwk
+			# Root gene trees so that they can be more easily compared:
+			geneNwkFileNoSuffix=`basename -s .fasta $3`
+			echo "outgroup/root samples: $outgroupRoot"
+			nw_reroot $3 $outgroupRoot | nw_order -c a /dev/fd/0 \
+			> gene_alignment_images_$1/${geneNwkFileNoSuffix}_rerooted.nwk
 			# nw_reroot -c a - orders tips alphabetically - may be easier for comparisons
 			treeFileToUse=gene_alignment_images_$1/${geneNwkFileNoSuffix}_rerooted.nwk
 		fi
