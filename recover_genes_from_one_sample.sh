@@ -699,5 +699,4 @@ sumLengthOfGenes: $sumLengthOfGenes" > ${sampleId}_gene_recovery_stats.txt  # Al
 	# 2. Read depth across all genes and samples - total mean and median values
 fi
 #####cd ../ # Back up to parent dir for next sample - 20.4.2020 - has no effect here now and not required anymore because looping through samples is done outside this script 
-echo
-echo
+echo 
