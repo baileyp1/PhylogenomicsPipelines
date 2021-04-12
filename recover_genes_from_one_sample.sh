@@ -40,8 +40,15 @@ if [[ ! -d ${samplePrefix}_$sampleId ]]; then mkdir ${samplePrefix}_$sampleId; f
 cd ${samplePrefix}_$sampleId
 echo sampleId: $sampleId
 echo externalSequenceID: $externalSequenceID
-ls $paftolDataSymlinksDir/$R1FastqFile
-ls $paftolDataSymlinksDir/$R2FastqFile
+
+if [ -z "$R2FastqFile" ]; then
+	ls $paftolDataSymlinksDir/$R1FastqFile
+	echo "No R2FastqFile"
+else
+	ls $paftolDataSymlinksDir/$R2FastqFile
+fi
+
+
 pwd
 
 
@@ -56,20 +63,33 @@ if [[ $usePaftolDb == 'no' ]]; then
 	#          Conclusion: the above stats seems to suggest that running this step separately might be the most efficient
 	###pathToTrimmomatic=`which trimmomatic-0.39.jar `		# NB - 'which' requires the file to be executable!
 	###$exePrefix  java -jar $pathToTrimmomatic PE \		# 12.2.2021 - Changed the way java programs are called to using a global variable
-	$exePrefix  java -jar $TRIMMOMATIC PE \
-	-threads $cpu \
-	-trimlog ${sampleId}_R1_R2_trimmomatic.log \
-	$paftolDataSymlinksDir/$R1FastqFile \
-	$paftolDataSymlinksDir/$R2FastqFile \
-	${sampleId}_R1_trimmomatic.fastq.gz \
-	${sampleId}_R1_trimmomatic_unpaired.fastq.gz \
-	${sampleId}_R2_trimmomatic.fastq.gz \
-	${sampleId}_R2_trimmomatic_unpaired.fastq.gz \
-	ILLUMINACLIP:${adapterFasta}:2:30:10:2:true \
-	LEADING:10 \
-	TRAILING:10 \
-	SLIDINGWINDOW:4:20 \
-	MINLEN:40 > ${sampleId}_trimmomatic.log 2>&1
+	if [ -z "$R2FastqFile" ]; then
+		$exePrefix  java -jar $TRIMMOMATIC SE \
+		-threads $cpu \
+		-trimlog ${sampleId}_trimmomatic.log \
+		$paftolDataSymlinksDir/$R1FastqFile \
+		${sampleId}_R1_trimmomatic.fastq.gz \
+		ILLUMINACLIP:${adapterFasta}:2:30:10:2:true \
+		LEADING:10 \
+		TRAILING:10 \
+		SLIDINGWINDOW:4:20 \
+		MINLEN:40 > ${sampleId}_trimmomatic.log 2>&1
+	else
+		$exePrefix  java -jar $TRIMMOMATIC PE \
+		-threads $cpu \
+		-trimlog ${sampleId}_R1_R2_trimmomatic.log \
+		$paftolDataSymlinksDir/$R1FastqFile \
+		$paftolDataSymlinksDir/$R2FastqFile \
+		${sampleId}_R1_trimmomatic.fastq.gz \
+		${sampleId}_R1_trimmomatic_unpaired.fastq.gz \
+		${sampleId}_R2_trimmomatic.fastq.gz \
+		${sampleId}_R2_trimmomatic_unpaired.fastq.gz \
+		ILLUMINACLIP:${adapterFasta}:2:30:10:2:true \
+		LEADING:10 \
+		TRAILING:10 \
+		SLIDINGWINDOW:4:20 \
+		MINLEN:40 > ${sampleId}_trimmomatic.log 2>&1
+	fi
 	# 8.3.2020 - changed to palidromic mode - confirm that the extra two parameters is Ok still for normal mode
   
 
@@ -92,11 +112,16 @@ if [ $hybSeqProgram == 'paftools' ]; then
 
 		# Remove the .gz ending from the file name for adding to the pafto_da database
 		unzippedR1FastqFile=`basename -s .gz $paftolDataSymlinksDir/$R1FastqFile `
-		unzippedR2FastqFile=`basename -s .gz $paftolDataSymlinksDir/$R2FastqFile `
 
 		# Need to uncompress raw fastq files to get FastQCStats and upload into the paftol_da database:
 		gunzip -f -c $paftolDataSymlinksDir/$R1FastqFile > $unzippedR1FastqFile
-		gunzip -f -c $paftolDataSymlinksDir/$R2FastqFile > $unzippedR2FastqFile
+		if [ -z "$R2FastqFile" ]; then
+			echo "No R2FastqFile"
+		else
+			unzippedR2FastqFile=`basename -s .gz $paftolDataSymlinksDir/$R2FastqFile `
+			gunzip -f -c $paftolDataSymlinksDir/$R2FastqFile > $unzippedR2FastqFile
+		fi
+		
 		
  		# Add sampleId flag and value to paftools command, depending on the data type, PAFTOL or external data.
  		# NB - PAFTOL data doesn't use this flag value but the flag is still required!
@@ -108,10 +133,18 @@ if [ $hybSeqProgram == 'paftools' ]; then
 
 
 		export PYTHONPATH=$HOME/lib/python
-		paftools --loglevel INFO addPaftolFastq $externalSequenceID \
-		--fastqPath $paftolDataSymlinksDir \
-		--dataOrigin $usePaftolDb \
-		$unzippedR1FastqFile  $unzippedR2FastqFile
+		if [ -z "$R2FastqFile" ]; then
+			paftools --loglevel INFO addPaftolFastq $externalSequenceID \
+			--fastqPath $paftolDataSymlinksDir \
+			--dataOrigin $usePaftolDb \
+			$unzippedR1FastqFile
+		else
+			paftools --loglevel INFO addPaftolFastq $externalSequenceID \
+			--fastqPath $paftolDataSymlinksDir \
+			--dataOrigin $usePaftolDb \
+			$unzippedR1FastqFile  $unzippedR2FastqFile
+		fi
+		
 		# NB - the file name must be of this format e.g. PAFTOL_005853_R1.fastq BUT now only for PAFTOL data
 		# The fastqPath entered in the database consists of the path and filename e.g. $paftolDataSymlinksDir/$unzippedR1FastqFile
 		# --sampleId=$sampleId - must be included for all data types (there must be a value), however in the case of paftol data it is ignored but the flag and a value is still required!
@@ -129,28 +162,51 @@ if [ $hybSeqProgram == 'paftools' ]; then
 		# NB - Use of --usePaftolDb flag requires the use of the Paftools trimmomatic flag so have to have a separate paftools recoverSeqs command here.
 		#      The Trimmomatic program name needs to be 
 		export PYTHONPATH=$HOME/lib/python 			# I had to add this for the cluster ONLY - need to. Check it is OK on Macbook, it should be.
-		$exePrefix  paftools recoverSeqs \
-		$targetsFile \
-		${sampleId}.fasta \
-		-f $unzippedR1FastqFile \
-		-r $unzippedR2FastqFile \
-		--trimmer trimmomatic \
-		--trimmomaticLeadingQuality 10 --trimmomaticTrailingQuality 10 \
-		--trimmomaticMinLength 40 \
-		--trimmomaticSlidingWindowSize 4 --trimmomaticSlidingWindowQuality 20 \
-		--trimmomaticAdapterFname $adapterFasta  \
-		--mapper tblastn \
-		--assembler overlapSerial \
-		--blastNumThreads $cpu \
-		--allowInvalidBases \
-		--windowSizeReference 50 \
-		--relIdentityThresholdReference 0.7 \
-		--windowSizeReadOverlap 30 \
-		--relIdentityThresholdReadOverlap 0.9 \
-		--summaryCsv ${sampleId}_summary.csv \
-		$usePaftolDbFlag \
-		> ${sampleId}_overlapSerial.log 2>&1
-
+		if [ -z "$R2FastqFile" ]; then
+			$exePrefix  paftools recoverSeqs \
+			$targetsFile \
+			${sampleId}.fasta \
+			-f $unzippedR1FastqFile \
+			--trimmer trimmomatic \
+			--trimmomaticLeadingQuality 10 --trimmomaticTrailingQuality 10 \
+			--trimmomaticMinLength 40 \
+			--trimmomaticSlidingWindowSize 4 --trimmomaticSlidingWindowQuality 20 \
+			--trimmomaticAdapterFname $adapterFasta  \
+			--mapper tblastn \
+			--assembler overlapSerial \
+			--blastNumThreads $cpu \
+			--allowInvalidBases \
+			--windowSizeReference 50 \
+			--relIdentityThresholdReference 0.7 \
+			--windowSizeReadOverlap 30 \
+			--relIdentityThresholdReadOverlap 0.9 \
+			--summaryCsv ${sampleId}_summary.csv \
+			$usePaftolDbFlag \
+			> ${sampleId}_overlapSerial.log 2>&1
+		else
+			$exePrefix  paftools recoverSeqs \
+			$targetsFile \
+			${sampleId}.fasta \
+			-f $unzippedR1FastqFile \
+			-r $unzippedR2FastqFile \
+			--trimmer trimmomatic \
+			--trimmomaticLeadingQuality 10 --trimmomaticTrailingQuality 10 \
+			--trimmomaticMinLength 40 \
+			--trimmomaticSlidingWindowSize 4 --trimmomaticSlidingWindowQuality 20 \
+			--trimmomaticAdapterFname $adapterFasta  \
+			--mapper tblastn \
+			--assembler overlapSerial \
+			--blastNumThreads $cpu \
+			--allowInvalidBases \
+			--windowSizeReference 50 \
+			--relIdentityThresholdReference 0.7 \
+			--windowSizeReadOverlap 30 \
+			--relIdentityThresholdReadOverlap 0.9 \
+			--summaryCsv ${sampleId}_summary.csv \
+			$usePaftolDbFlag \
+			> ${sampleId}_overlapSerial.log 2>&1
+		fi
+		
 		rm $targetsFile	# If write to database fails, this fail doesn't get deleted (c.f. set cmds active), so presence of file is a useful 'marker' for failing to write to db
 		### 15.4.2020 - also remove PAFTOL_000948_R1.fastq and PAFTOL_000948_R2.fastq files to save space
 	else 
@@ -162,22 +218,41 @@ if [ $hybSeqProgram == 'paftools' ]; then
 		# Was using:
 		#srun -J ${sampleId}_overlapRecover -n 1  -o ${sampleId}_overlapRecover.log  -e ${sampleId}_overlapRecover.log_err \	- issue with srun
 		export PYTHONPATH=$HOME/lib/python 			# I had to add this for the cluster ONLY - need to. check it is OK on Macbook, it should be.
-		$exePrefix  paftools recoverSeqs \
-		$targetsFile \
-		${sampleId}.fasta \
-		-f ${sampleId}_R1_trimmomatic.fastq \
-		-r ${sampleId}_R2_trimmomatic.fastq \
-		--mapper tblastn \
-		--assembler overlapSerial \
-		--blastNumThreads $cpu \
-		--allowInvalidBases \
-		--windowSizeReference 50 \
-		--relIdentityThresholdReference 0.7 \
-		--windowSizeReadOverlap 30 \
-		--relIdentityThresholdReadOverlap 0.9 \
-		--summaryCsv ${sampleId}_summary.csv \
-		$usePaftolDbFlag \
-		> ${sampleId}_overlapSerial.log 2>&1
+		if [ -z "$R2FastqFile" ]; then
+			$exePrefix  paftools recoverSeqs \
+			$targetsFile \
+			${sampleId}.fasta \
+			-f ${sampleId}_R1_trimmomatic.fastq \
+			--mapper tblastn \
+			--assembler overlapSerial \
+			--blastNumThreads $cpu \
+			--allowInvalidBases \
+			--windowSizeReference 50 \
+			--relIdentityThresholdReference 0.7 \
+			--windowSizeReadOverlap 30 \
+			--relIdentityThresholdReadOverlap 0.9 \
+			--summaryCsv ${sampleId}_summary.csv \
+			$usePaftolDbFlag \
+			> ${sampleId}_overlapSerial.log 2>&1
+		else
+			$exePrefix  paftools recoverSeqs \
+			$targetsFile \
+			${sampleId}.fasta \
+			-f ${sampleId}_R1_trimmomatic.fastq \
+			-r ${sampleId}_R2_trimmomatic.fastq \
+			--mapper tblastn \
+			--assembler overlapSerial \
+			--blastNumThreads $cpu \
+			--allowInvalidBases \
+			--windowSizeReference 50 \
+			--relIdentityThresholdReference 0.7 \
+			--windowSizeReadOverlap 30 \
+			--relIdentityThresholdReadOverlap 0.9 \
+			--summaryCsv ${sampleId}_summary.csv \
+			$usePaftolDbFlag \
+			> ${sampleId}_overlapSerial.log 2>&1
+		fi
+		
 		# Note:
 		# Paftools overlapRecover and recoverSeqs programs (4.9.2019) both output fasta header geneId, not yet sampleId-geneId 
 		# --summaryCsv ${sampleId}_summary.csv - requires that the fastq file ends in .fasta not e.g. .fq
