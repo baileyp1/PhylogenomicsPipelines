@@ -98,18 +98,18 @@ OPTIONS <required_value>:
 INPUT FILE OPTIONS:
   -G               
                 make gene trees, starting from gene-wise fasta files rather than files containing all genes per sample.
-                Gene name/identifier must be identical to the sample fasta file name (minus any [dot] ending suffix e.g. .fasta),
+                Gene name/identifier must be identical to the fasta file name (minus any [dot] ending suffix e.g. .fasta),
                 else change the gene name list in option -g so that it is.	
                 Fasta header line format MUST BE: >sampleId
   -g <file>        
                 file (including path to it) containing list of gene names only (required option)
                 NB - pretty sure that gene names must NOT have '.' characters in them if the suffix is what makes them unique.         
   -a               
-                add sample name onto the fasta header from the input fasta file name.
+                add sample name/identifier onto the fasta header from the input fasta file name.
                 Expected gene identifier format in the input fasta header: >geneId (no hyphen '-' characters allowed)
   -t <csv file>    
-                add sample name and other info from a comma separated value (csv) table file into the tree leaf labels.
-                Format of table row: sample_name/identifier, followed by any species information (include sample_name/identifier again if required) 
+                add sample name/identifier and other info (e.g. taxonomy) from a comma separated value (csv) table file into the tree leaf labels.
+                Format of table row: sample_name/identifier, followed by any information (include sample_name/identifier again if required) 
   -u               
                 add contig length info onto species tree tips (requires option -t)
                 Sample_name/identifier must be identical to the sample fasta file name (minus any [dot] ending suffix e.g. .fasta)
@@ -123,7 +123,7 @@ ALIGNMENT OPTIONS:
   -A <string>      
                 alignment program to use: mafft, upp (default=mafft)
   -M <string>      
-                if using mafft, specify algorithm to use in quotes i.e. '--retree 1', '--retree 2', '--maxiterate 1000' etc (default='--retree 2')
+                if using mafft, specify alignment algorithm to use in quotes i.e. '--retree 1', '--retree 2', '--maxiterate 1000' etc (default='--retree 2')
 FILTERING AND TRIMMING OPTIONS:
   -F <2 integers> 
                 filter sequences option 1. Format: '<1> <2>' (no default; N.B. values must be quoted)
@@ -160,7 +160,8 @@ PHYLOGENY OPTIONS:
   -L <integer>     
                 collapse gene tree nodes with bootstrap support less than <integer> percent
 
-  -o <string>   list outgroup or root species. Format: 'species1 species2 species 3 etc' (N.B. values must be quoted)
+  -o <string>   list outgroup or root sample names/identifiers. Format: 'species1 species2 species3 etc' (N.B. values must be inside quote characters).
+                To mid-point root the trees, type 'mid-point root'
 OTHER OPTIONS: 
   -C <integer>     
                 number of cpu to use for genetrees; NB - not convinced >1 cpu works robustly for raxml-ng with small datasets! (default=1)
@@ -181,17 +182,17 @@ OTHER OPTIONS:
                 Slurm time limit to use for species trees. Format: <days>-<hours>:<minutes>
                 e.g. 1-0:0 is 1 day (default=0, means no limit is imposed in default Slurm set up)
   -Q <string>      
-                Slurm partition (queue) for gene trees (default=medium; select more than one queue with a comma delimited list e.g. medium,long)
+                Slurm partition (queue) for gene trees (default=long; select more than one queue with a comma delimited list e.g. medium,long)
   -Y <string>
-                Slurm partition (queue) for species trees (default=medium)
+                Slurm partition (queue) for species trees (default=long)
   -H <integer>     
                 Slurm array throttle for gene trees (default=50; could set to 1, then increase once happy with run with: scontrol update arraytaskthrottle=<integer> job=<jobId>)
 
 A basic example run is described below:
 build genes trees from sample fasta files, formatted as described for option -a, by aligning the input
 DNA sequence for each gene with the MAFFT --retree 2 algorithm, building each gene tree with FASTTREE, 
-then reconstructing species trees with ASTRAL, FASTTREE and RAxML (last two program make a supermatrix tree from 
-concatenated gene alignments):
+then reconstructing species trees with ASTRAL, FASTTREE and RAxML (The last two programs make a supermatrix 
+tree from concatenated gene alignments):
 
 make_species_trees_pipeline.sh \\
 -a \\
@@ -738,7 +739,7 @@ fi
 
 
 # Input parsing and checks for option -X (extra memory for specific genes)
-slurm=`sbatch -V | grep ^slurm | wc -l `	# Also testing if Slurm is present - important otherwise genes 
+slurm=`sbatch -V 2>/dev/null | grep ^slurm | wc -l `	# Also testing if Slurm is present - important otherwise genes 
 										 	# will be missed out if Slurm is absent but -X is accidentally left ON.
 											# NB - this line also prints an error if sbatch is absent.   
 if [[ $extraMem != 'no' && $slurm -eq 1 ]]; then 
@@ -811,8 +812,8 @@ echo
 # be used from a previous run, even if they have been filtered out in the current run. Probably is
 # only relevant for small datasets:
 #### 29.9.2020 - still get an error message though!!!!!
-#### 1.10.2020 - hey why don't I just put all the other files under the umbrella of the first line, there will always be some *.aln.for_tree.fasta files!
-### OH NO THAT WON'T WORK!!!!!!
+### 24.3.2021 - noticed that I also need to remove the *.modified.fasta files if the file names have changed
+### betwen runs, otherwise all the samples will enter the analysis twice!!
 echo "Deleting output files if any exist from a previous run of the pipeline."
 if ls *.aln.for_tree.fasta >/dev/null 2>&1; then rm *.aln.for_tree.fasta *gene_tree_USE_THIS.nwk ; fi
 # Also, now I have added filterShortSeqs() function I need to check whether any of the filtered/trimmed fasta files need removing:
@@ -965,6 +966,7 @@ if [[ $os == 'Darwin' && $speciesTreesOnly == 'no' ]]; then
 		"$option_u" \
 		"$extraMem" \
 		"$partitionForSpeciesTrees" \
+    "$outgroupRoot" \
 		> run_treeshrink_and_realign.log 2>&1
 		exit	# Species trees will be made after TreeShrink or re-alignment step(s) in nested call to this script, if requested.
 	fi
@@ -1132,7 +1134,8 @@ elif [[ $os == 'Linux' && $speciesTreesOnly == 'no' ]]; then
 			"$speciesTreeSlurmTime" \
 			"$option_u" \
 			"$extraMem" \
-			"$partitionForSpeciesTrees" `
+			"$partitionForSpeciesTrees" \
+      "$outgroupRoot" `
 			exit	# Species trees will be made after TreeShrink or re-alignment step(s) in nested call to this script, if requested.
 		fi
 	else
@@ -1233,6 +1236,7 @@ elif [[ $os == 'Linux' && $speciesTreesOnly == 'no' ]]; then
 			"$option_u" \
 			"$extraMem" \
 			"$partitionForSpeciesTrees" \
+      "$outgroupRoot" \
 			> run_treeshrink_and_realign.log 2>&1
 			exit	# Species trees will be made after TreeShrink or re-alignment step(s) in nested call to this script, if requested.
 		fi
