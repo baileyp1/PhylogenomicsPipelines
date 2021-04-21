@@ -662,14 +662,15 @@ createGeneAlignmentImage()	{
  	# Input parameter:
  	# $1 = residue type: dna, aa or codon (required for specifying the right gene_alignment_images_* dir) 
  	# $2 = input alignment fasta file
- 	# $3 = input matching tree file
+ 	# $3 = input tree file matching alignment
     #
-    # Note: not established whether Jalview fail with large alignment files
+    # Note: not established whether Jalview fails with large alignment files
     #       e.g. have obtained a corrupt .png file with a long gene aln but only 12 seqs!
     ###########
 	if [[ -x $JALVIEW ]]; then
 		if [[ ! -d gene_alignment_images_$1 ]]; then mkdir gene_alignment_images_$1; fi
 		treeFileToUse=$3
+		jalviewTreeFlags="-tree $treeFileToUse -sortbytree"
 		if [[ $outgroupRoot != 'no' ]]; then
 			# Root gene trees so that they can be more easily compared:
 			geneNwkFileNoSuffix=`basename -s .fasta $3`
@@ -677,15 +678,30 @@ createGeneAlignmentImage()	{
 			nw_reroot $3 $outgroupRoot | nw_order -c a /dev/fd/0 \
 			> gene_alignment_images_$1/${geneNwkFileNoSuffix}_rerooted.nwk
 			# nw_reroot -c a - orders tips alphabetically - may be easier for comparisons
+			# NB - 1.if none of the leaf labels is correct, then the tree is rerooted
+			#      on the longest branch - i.e. there is no error to trap
+			#      Also this action looks to be the same as mid-pointing rooting a tree.
+			#      2. If an incorrect sample Id has been added, a warning is printed to standard error, but tree still produced
+			#	   3. If an $outgroupRoot identifer is already in the root position, then rooting fails and file is zero byte.
+			#		  I think this issue will occur when >1 $outgroupRoot identifers are chosen but don't cluster together.
+			#		  Easiest thing to do is to just supply a single root sample or mid-point root instead, in the latter case, 
+			#		  supply a label that doesn't exist e.g. 'midpoint' 
 			treeFileToUse=gene_alignment_images_$1/${geneNwkFileNoSuffix}_rerooted.nwk
+			if [[ ! -s $treeFileToUse ]]; then
+				echo "WARNING: Outgroup(s) last common ancestor (LCA) is the tree's root - cannot reroot. Will mid-point root instead."
+				nw_reroot $3 | nw_order -c a /dev/fd/0 \
+				> gene_alignment_images_$1/${geneNwkFileNoSuffix}_rerooted.nwk
+				### OR alternatively, don't re-root but assign the original tree to $treeFileToUse so at least the alignment can be ordered.
+			fi
+			jalviewTreeFlags="-tree $treeFileToUse -sortbytree"
+
 		fi
 		geneAlnFileNoSuffix=`basename -s .fasta $2`
-		$exePrefix java -Djava.awt.headless=true -jar $JALVIEW \
+		$exePrefix java -Djava.awt.headless=true -jar $JALVIEW  $jalviewTreeFlags \
 		-open $2 \
-		-tree $treeFileToUse \
-		-sortbytree \
 		-colour BLOSUM62 \
 		-png gene_alignment_images_$1/${geneAlnFileNoSuffix}.png
+		# NBNB - always supplying $treeFileToUse, even if not being re-rooted
 	else
 		echo "ERROR: Jalview not available, gene alignment images will not be created: $JALVIEW "
 	fi
