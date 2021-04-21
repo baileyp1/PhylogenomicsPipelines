@@ -590,7 +590,7 @@ if [[ $sampleTableFile != 'no' ]]; then
 		### 29.1.2020 - not now using ${@:$OPTIND:$#}
 		# Check that tree_tip_info_mapfile.txt now exists, if not an identifier is not unique in the table:
 		if [[ ! -s tree_tip_info_mapfile.txt ]]; then
-			echo "The sample table (from option -t) contains a sample Id that is not unique in the table. Exiting..."
+			echo "ERROR: the sample table (from option -t) was not able to be prepared. Exiting..."
 			exit
 		fi
 	else

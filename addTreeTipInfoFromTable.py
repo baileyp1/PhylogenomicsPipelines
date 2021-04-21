@@ -1,10 +1,10 @@
 #!/usr/bin/env python
 
+from __future__ import print_function
 import sys
 import os
 import csv
 import re
-#import __future__ [as name]
 
 
 sampleTableFile = sys.argv[1]
@@ -28,7 +28,7 @@ with open(sampleTableFile, 'r') as csvfile:
 		treeTipInfo = re.sub(r'[\]\[\)\(:; ]', '_', treeTipInfo)
 
 		if uniqId in csvDict:
-			print 'ERROR: id in 1st column of csv file is not unique - it MUST be - offending id:', uniqId
+			print('ERROR: id in 1st column of csv file is not unique - it MUST be - offending id:', uniqId)
 			sys.exit()
 		else:
 			csvDict[ uniqId ] = treeTipInfo		# NB - don't need to remove the csv file header!
