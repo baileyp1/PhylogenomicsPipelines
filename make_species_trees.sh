@@ -338,7 +338,7 @@ echo ###########################################
 echo
 echo
 # Concatenate the alignment for 2 reasons:
-# 1.easy browsing in Jalview - yes this works OK.
+# 1.easy browsing in Jalview - yes this works OK, slow for very big trees though
 # 2.for running RAxML with a supermatrix tree.
 AMAS.py concat  -c 1 \
 -i `cat mafft_dna_alns_fasta_file_list.txt` \
@@ -346,7 +346,10 @@ AMAS.py concat  -c 1 \
 -d dna \
 --out-format fasta \
 -t dna.aln.ovr${fractnAlnCovrg_pc}pc_acpg_ovr${fractnSpecies_pc}pc_spgt__concatenated.fasta
-# NB- also creates a partitions file with coords for each gene which could be used to set different models.
+# NB - also creates a partitions.txt file with coords for each gene - preparing for use with RAxML:
+cat partitions.txt | awk -F '_' '{print "DNA, " $2}' > dna.aln.partitions.txt
+
+
 # Compressing file for easier transfer of large alignments:
 gzip -c dna.aln.ovr${fractnAlnCovrg_pc}pc_acpg_ovr${fractnSpecies_pc}pc_spgt__concatenated.fasta \
 > ${fileNamePrefix}.dna.aln.ovr${fractnAlnCovrg_pc}pc_acpg_ovr${fractnSpecies_pc}pc_spgt__concatenated.fasta.gz
@@ -361,6 +364,10 @@ if [[ "$phyloProgramPROT" == 'fasttree' ||  "$phyloProgramPROT" == 'raxml-ng' ||
     -d aa \
     --out-format fasta \
     -t ${fileNamePrefix}__mafft_protein_alns__ovr${fractnAlnCovrg_pc}pc_acpg_ovr${fractnSpecies_pc}pc_spgt__concatenated_temp.fasta
+    # NB - also creates a partitions.txt file with coords for each gene - preparing for use with RAxML:
+    cat partitions.txt | awk -F '_' '{print "JTT, " $2}' > protein.aln.partitions.txt
+    ### NB - model is hard coded at the moment
+
     ### On cluster the protein fasta headers now contain _\[translate(1)\] - fastatranslate (v2.4.x) adds this string to the header,
     ### then AMAS adds it onto the required fasta record name - so remove them here:
     cat ${fileNamePrefix}__mafft_protein_alns__ovr${fractnAlnCovrg_pc}pc_acpg_ovr${fractnSpecies_pc}pc_spgt__concatenated_temp.fasta \
@@ -426,21 +433,31 @@ if [ -a RAxML_bipartitionsBranchLabels.${fileNamePrefix}__raxmlHPC-PTHREADS-SSE 
 if [ -a RAxML_info.${fileNamePrefix}__raxmlHPC-PTHREADS-SSE ]; then rm RAxML_info.${fileNamePrefix}__raxmlHPC-PTHREADS-SSE; fi
 if [ -a dna.aln.ovr${fractnAlnCovrg_pc}pc_acpg_ovr${fractnSpecies_pc}pc_spgt__concatenated.fasta.reduced ]; then rm dna.aln.ovr${fractnAlnCovrg_pc}pc_acpg_ovr${fractnSpecies_pc}pc_spgt__concatenated.fasta.reduced; fi
 
-
+RAxML_ModelOfEvolution=GTRCAT
+if [[ $totalNumbrSamples -lt 200 ]]; then   # 21.4.2020 - set to 200, only really need speed up with larger trees 
+    RAxML_ModelOfEvolution=GTRGAMMA
+fi
+echo "Running RAxML on the DNA concatenated alignment using a partitioned analysis of each gene.
+Number of samples: ${totalNumbrSamples}; model of evolution: $RAxML_ModelOfEvolution"
 ### For Slurm, add: srun -J raxml
-# Runtime: took 1h8’, 283MB mem for Achariaceae aln
-echo Running RAxML on the DNA supermatrix...
 $exePrefix raxmlHPC-PTHREADS-SSE3 -T $cpu \
 -f a \
 -x 12345 \
 -p 12345 \
 -# 100 \
--m GTRCAT \
+-m $RAxML_ModelOfEvolution \
 -s dna.aln.ovr${fractnAlnCovrg_pc}pc_acpg_ovr${fractnSpecies_pc}pc_spgt__concatenated.fasta \
--n ${fileNamePrefix}__raxmlHPC-PTHREADS-SSE
+-n ${fileNamePrefix}__raxmlHPC-PTHREADS-SSE \
+-q dna.aln.partitions.txt
 # This is the Newick  output file compatible with NewickTools):
 # RAxML_bipartitions.${fileNamePrefix}__raxmlHPC-PTHREADS-SSE
-# -m - was using GTRGAMMA but GTRCAT is quicker - should not use it if have < 50 seqs in dataset.
+# -m - was using GTRGAMMA but GTRCAT is ~4x quicker - should not use it if have < 50 seqs in dataset.
+# -q Added -q option for partitioning genes:
+#    If, e.g.,-m GTRGAMMA is used, individual alpha-shape parameters, GTR rates, and empirical 
+#    base frequencies will be estimated and optimized for each partition. Note - RAxML doesn't have 
+#    other DNA models so can't specify them in the partitions file
+#    Also note - you can not assign different models of rate heterogeneity to different partitions,
+#    i.e., it will be either CAT , GAMMA , GAMMAI etc. for all partitions, as specified with -m.
 
 getTreeStats RAxML_bipartitions.${fileNamePrefix}__raxmlHPC-PTHREADS-SSE $numbrLowSupportNodesThreshold raxml
 
@@ -453,7 +470,6 @@ fi
 
 
 if [[ "$phyloProgramPROT" == 'fasttree' ||  "$phyloProgramPROT" == 'raxml-ng'  || "$phyloProgramPROT" == 'iqtree2'* ]]; then
-     echo Running RAxML on the protein supermatrix...
     # RAxML won't run if files already exists from a previous run so remove them here: 
     ### Could look for a --force option
     if [ -a RAxML_bootstrap.${fileNamePrefix}__raxmlHPC-PTHREADS-SSE ]; then rm RAxML_bootstrap.${fileNamePrefix}__raxmlHPC-PTHREADS-SSE; fi
@@ -463,14 +479,22 @@ if [[ "$phyloProgramPROT" == 'fasttree' ||  "$phyloProgramPROT" == 'raxml-ng'  |
     if [ -a RAxML_info.${fileNamePrefix}__raxmlHPC-PTHREADS-SSE ]; then rm RAxML_info.${fileNamePrefix}__raxmlHPC-PTHREADS-SSE; fi
     if [ -a protein.aln.ovr${fractnAlnCovrg_pc}pc_acpg_ovr${fractnSpecies_pc}pc_spgt__concatenated.fasta.reduced ]; then rm protein.aln.ovr${fractnAlnCovrg_pc}pc_acpg_ovr${fractnSpecies_pc}pc_spgt__concatenated.fasta.reduced; fi
 
+    RAxML_ModelOfEvolution=PROTCATJTT
+    if [[ $totalNumbrSamples -lt 50 ]]; then    # 21.4.2020 - set to 200, only really need speed up with larger trees 
+        RAxML_ModelOfEvolution=PROTGAMMAJTT
+    fi
+
+    echo "Running RAxML on the protein concatenated alignment using a partitioned analysis of each gene.
+Number of samples: ${totalNumbrSamples}; model of evolution: $RAxML_ModelOfEvolution"
     $exePrefix raxmlHPC-PTHREADS-SSE3 -T $cpu \
     -f a \
     -x 12345 \
     -p 12345 \
     -# 100 \
-    -m PROTCATJTT \
+    -m $RAxML_ModelOfEvolution \
     -s protein.aln.ovr${fractnAlnCovrg_pc}pc_acpg_ovr${fractnSpecies_pc}pc_spgt__concatenated.fasta \
-    -n ${fileNamePrefix}__raxmlHPC-PTHREADS-SSE
+    -n ${fileNamePrefix}__raxmlHPC-PTHREADS-SSE \
+    -q protein.aln.partitions.txt
     # This is the Newick  output file compatible with NewickTools):
     # RAxML_bipartitions.${fileNamePrefix}__raxmlHPC-PTHREADS-SSE
 

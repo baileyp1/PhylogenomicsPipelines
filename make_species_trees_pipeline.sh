@@ -733,9 +733,8 @@ fi
 
 
 # Input parsing and checks for option -X (extra memory for specific genes)
-slurm=`sbatch -V | grep ^slurm | wc -l `	# Also testing if Slurm is present - important otherwise genes 
-										 	# will be missed out if Slurm is absent but -X is accidentally left ON.
-											# NB - this line also prints an error if sbatch is absent.   
+slurm=`sbatch -V 2>/dev/null | grep ^slurm | wc -l `	# First testing if Slurm is present - important otherwise genes 
+										 	                                # will be missed out if Slurm is absent but -X is accidentally left ON.   
 if [[ $extraMem != 'no' && $slurm -eq 1 ]]; then 
 
 	# Test the number of ':' delimited fields, then trust the user with field contents (for the moment):
@@ -836,7 +835,7 @@ if [ $os == 'Darwin' ]; then
     echo 'Running as if on Mac OS (Darwin)...'
 elif [ $os == 'Linux' ]; then
 	echo 'Running as if on Linux...'
-    slurm=`sbatch -V | grep ^slurm | wc -l `
+    slurm=`sbatch -V 2>/dev/null | grep ^slurm | wc -l `   # Also done now above outside conditionals so redundant
     if [ $slurm -eq 1 ]; then 
         echo 'Slurm scheduler detected, running via slurm...'
         ### 28.6.2019 - could create a variable here that contains call to "lsrun -J <$jobName>"
@@ -965,7 +964,7 @@ if [[ $os == 'Darwin' && $speciesTreesOnly == 'no' ]]; then
 
 elif [[ $os == 'Linux' && $speciesTreesOnly == 'no' ]]; then
 	###exePrefix="/usr/bin/time -v -o g${gene}_mafft_dna_aln_time_and_mem.log"		# NB - this will not work here - need to pick up gene id in Slurm script instead.
-    slurm=`sbatch -V | grep ^slurm | wc -l `
+    slurm=`sbatch -V 2>/dev/null | grep ^slurm | wc -l `  # Also done now above outside conditionals so redundant
     if [ $slurm -eq 1 ]; then
 		# Count the # genes to process and fix that number in the Slurm --array parameter.
     	# It has to be set outside the sbatch script I think so that I can automatically set the array size .
