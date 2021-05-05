@@ -56,6 +56,7 @@ phyloProgramDNA=fasttree
 phyloProgramPROT=no			# Work around to specify any program so software testing code will not crash! Ensures cmd parameter is always occupied which is critical
 treeshrink=no
 collapseNodes=no			# option -L
+outgroupRoot=no				# option -o
 
 # OTHER OPTIONS:
 # Hidden options (i.e. not apparent from the help menu but they always have a value so can be and have to be used in downstream scripts).
@@ -86,7 +87,8 @@ Program description:
                 makes species trees from fasta files, either of two types:
                 1. recovered genes (DNA) from multiple samples, one fasta file per sample (default)
                    The fasta header format must be: >sampleId-geneId but one other option (-a) is available.
-                2. gene-wise (DNA) fasta files, one fasta file per gene (option -G) 
+                2. gene-wise (DNA) fasta files, one fasta file per gene (option -G)
+
 
 Usage:          make_species_trees_pipeline.sh [OPTIONS] fastafile1 fastafile2 fastafile3 ...
 
@@ -96,18 +98,18 @@ OPTIONS <required_value>:
 INPUT FILE OPTIONS:
   -G               
                 make gene trees, starting from gene-wise fasta files rather than files containing all genes per sample.
-                Gene name/identifier must be identical to the sample fasta file name (minus any [dot] ending suffix e.g. .fasta),
+                Gene name/identifier must be identical to the fasta file name (minus any [dot] ending suffix e.g. .fasta),
                 else change the gene name list in option -g so that it is.	
                 Fasta header line format MUST BE: >sampleId
   -g <file>        
                 file (including path to it) containing list of gene names only (required option)
                 NB - pretty sure that gene names must NOT have '.' characters in them if the suffix is what makes them unique.         
   -a               
-                add sample name onto the fasta header from the input fasta file name.
+                add sample name/identifier onto the fasta header from the input fasta file name.
                 Expected gene identifier format in the input fasta header: >geneId (no hyphen '-' characters allowed)
   -t <csv file>    
-                add sample name and other info from a comma separated value (csv) table file into the tree leaf labels.
-                Format of table row: sample_name/identifier, followed by any species information (include sample_name/identifier again if required) 
+                add sample name/identifier and other info (e.g. taxonomy) from a comma separated value (csv) table file into the tree leaf labels.
+                Format of table row: sample_name/identifier, followed by any information (include sample_name/identifier again if required) 
   -u               
                 add contig length info onto species tree tips (requires option -t)
                 Sample_name/identifier must be identical to the sample fasta file name (minus any [dot] ending suffix e.g. .fasta)
@@ -121,7 +123,7 @@ ALIGNMENT OPTIONS:
   -A <string>      
                 alignment program to use: mafft, upp (default=mafft)
   -M <string>      
-                if using mafft, specify algorithm to use in quotes i.e. '--retree 1', '--retree 2', '--maxiterate 1000' etc (default='--retree 2')
+                if using mafft, specify alignment algorithm to use in quotes i.e. '--retree 1', '--retree 2', '--maxiterate 1000' etc (default='--retree 2')
 FILTERING AND TRIMMING OPTIONS:
   -F <2 integers> 
                 filter sequences option 1. Format: '<1> <2>' (no default; N.B. values must be quoted)
@@ -156,7 +158,10 @@ PHYLOGENY OPTIONS:
   -T               
                 use TreeShrink on gene trees (followed by re-alignment)
   -L <integer>     
-                collapse gene tree nodes with bootstrap support less than <integer> percent (no default)
+                collapse gene tree nodes with bootstrap support less than <integer> percent
+
+  -o <string>   list outgroup or root sample names/identifiers. Format: 'species1 species2 species3 etc' (N.B. values must be inside quote characters).
+                To mid-point root the trees, type 'mid-point root'
 OTHER OPTIONS: 
   -C <integer>     
                 number of cpu to use for genetrees; NB - not convinced >1 cpu works robustly for raxml-ng with small datasets! (default=1)
@@ -177,17 +182,17 @@ OTHER OPTIONS:
                 Slurm time limit to use for species trees. Format: <days>-<hours>:<minutes>
                 e.g. 1-0:0 is 1 day (default=0, means no limit is imposed in default Slurm set up)
   -Q <string>      
-                Slurm partition (queue) for gene trees (default=medium; select more than one queue with a comma delimited list e.g. medium,long)
+                Slurm partition (queue) for gene trees (default=long; select more than one queue with a comma delimited list e.g. medium,long)
   -Y <string>
-                Slurm partition (queue) for species trees (default=medium)
+                Slurm partition (queue) for species trees (default=long)
   -H <integer>     
                 Slurm array throttle for gene trees (default=50; could set to 1, then increase once happy with run with: scontrol update arraytaskthrottle=<integer> job=<jobId>)
 
 A basic example run is described below:
 build genes trees from sample fasta files, formatted as described for option -a, by aligning the input
 DNA sequence for each gene with the MAFFT --retree 2 algorithm, building each gene tree with FASTTREE, 
-then reconstructing species trees with ASTRAL, FASTTREE and RAxML (last two program make a supermatrix tree from 
-concatenated gene alignments):
+then reconstructing species trees with ASTRAL, FASTTREE and RAxML (The last two programs make a supermatrix 
+tree from concatenated gene alignments):
 
 make_species_trees_pipeline.sh \\
 -a \\
@@ -218,7 +223,7 @@ EOF
 
 
 #echo User inputs:    ### For testing only 
-while getopts "hvat:ug:ijGF:m:p:M:q:r:TC:c:d:Q:Y:A:D:O:L:I:JK:R:X:U:V:W:H:"  OPTION; do	# Remaining options - try capital letters!
+while getopts "hvat:ug:ijGF:m:p:M:q:r:TC:c:d:Q:Y:A:D:O:L:I:JK:R:X:U:V:W:H:o:"  OPTION; do	# Remaining options - try capital letters!
 
 	#echo -$OPTION $OPTARG	### For testing only - could try to run through options again below 
 	 
@@ -261,6 +266,7 @@ while getopts "hvat:ug:ijGF:m:p:M:q:r:TC:c:d:Q:Y:A:D:O:L:I:JK:R:X:U:V:W:H:"  OPT
 		V) geneTreeSlurmTime=$OPTARG ;;
 		W) speciesTreeSlurmTime=$OPTARG ;;
 		H) slurmThrottle=$OPTARG ;;
+		o) outgroupRoot="$OPTARG" ;;
 		?)  echo This option is not allowed. Read the usage summary below.
       	    echo
       	    usage; exit 1 ;;
@@ -504,7 +510,7 @@ and input gene-wise fasta files with a relative path (probably from a previous r
     # NB - on MacOS awk inserts a blank line between output lines so removing them with grep -v '^$'.
     numbrSamples=`cat *_dna.fasta | awk '{if($1 ~ /^>/)  {print $1} }' | grep -v  '^$' | sort -u | wc -l `
 else
-	# Format is already ready to go (>sampleId-geneId).
+	echo 'Fasta file format of the input files is already the default (>sampleId-geneId).'
    
 	### Still deciding on whether to change to this format completely throughout...
 	### For the moment, altering the ">species-gene" format back to my "gene species" format:
@@ -733,8 +739,9 @@ fi
 
 
 # Input parsing and checks for option -X (extra memory for specific genes)
-slurm=`sbatch -V 2>/dev/null | grep ^slurm | wc -l `	# First testing if Slurm is present - important otherwise genes 
-										 	                                # will be missed out if Slurm is absent but -X is accidentally left ON.   
+slurm=`sbatch -V 2>/dev/null | grep ^slurm | wc -l `	# Also testing if Slurm is present - important otherwise genes 
+										 	                                # will be missed out if Slurm is absent but -X is accidentally left ON.
+											                                 # NB - this line also prints an error if sbatch is absent.
 if [[ $extraMem != 'no' && $slurm -eq 1 ]]; then 
 
 	# Test the number of ':' delimited fields, then trust the user with field contents (for the moment):
@@ -796,6 +803,7 @@ echo 'geneTreeSlurmMem: ' $geneTreeSlurmMem
 echo 'speciesTreeSlurmMem: ' $speciesTreeSlurmMem
 echo 'geneTreeSlurmTime: ' $geneTreeSlurmTime
 echo 'speciesTreeSlurmTime: ' $speciesTreeSlurmTime
+echo 'Outgroup root(s): ' $outgroupRoot
 echo
 #exit
 
@@ -805,8 +813,8 @@ echo
 # be used from a previous run, even if they have been filtered out in the current run. Probably is
 # only relevant for small datasets:
 #### 29.9.2020 - still get an error message though!!!!!
-#### 1.10.2020 - hey why don't I just put all the other files under the umbrella of the first line, there will always be some *.aln.for_tree.fasta files!
-### OH NO THAT WON'T WORK!!!!!!
+### 24.3.2021 - noticed that I also need to remove the *.modified.fasta files if the file names have changed
+### betwen runs, otherwise all the samples will enter the analysis twice!!
 echo "Deleting output files if any exist from a previous run of the pipeline."
 if ls *.aln.for_tree.fasta >/dev/null 2>&1; then rm *.aln.for_tree.fasta *gene_tree_USE_THIS.nwk ; fi
 # Also, now I have added filterShortSeqs() function I need to check whether any of the filtered/trimmed fasta files need removing:
@@ -889,7 +897,8 @@ if [[ $os == 'Darwin' && $speciesTreesOnly == 'no' ]]; then
 		$filterSeqs2 \
 		$trimAln1 \
 		$trimAln2 \
-		"$treeshrink"
+		"$treeshrink" \
+		"$outgroupRoot"
 	done > make_gene_trees.log 2>&1
 	#exit
 	if [[ $filterSeqs1 != 'no' ]]; then
@@ -958,6 +967,7 @@ if [[ $os == 'Darwin' && $speciesTreesOnly == 'no' ]]; then
 		"$option_u" \
 		"$extraMem" \
 		"$partitionForSpeciesTrees" \
+    "$outgroupRoot" \
 		> run_treeshrink_and_realign.log 2>&1
 		exit	# Species trees will be made after TreeShrink or re-alignment step(s) in nested call to this script, if requested.
 	fi
@@ -1004,7 +1014,8 @@ elif [[ $os == 'Linux' && $speciesTreesOnly == 'no' ]]; then
 		"$filterSeqs2" \
 		"$trimAln1" \
 		"$trimAln2" \
-		"$treeshrink" `
+		"$treeshrink" \
+		"$outgroupRoot" `
 
 		echo jobInfo: $jobInfo
 		jobId=`echo $jobInfo | cut -d ' ' -f 4 `
@@ -1040,7 +1051,8 @@ elif [[ $os == 'Linux' && $speciesTreesOnly == 'no' ]]; then
 			"$filterSeqs2" \
 			"$trimAln1" \
 			"$trimAln2" \
-			"$treeshrink" `
+			"$treeshrink" \
+			"$outgroupRoot" `
 
 			echo jobInfoX: $jobInfoX
 			jobIdX=`echo $jobInfoX | cut -d ' ' -f 4 `
@@ -1123,7 +1135,8 @@ elif [[ $os == 'Linux' && $speciesTreesOnly == 'no' ]]; then
 			"$speciesTreeSlurmTime" \
 			"$option_u" \
 			"$extraMem" \
-			"$partitionForSpeciesTrees" `
+			"$partitionForSpeciesTrees" \
+      "$outgroupRoot" `
 			exit	# Species trees will be made after TreeShrink or re-alignment step(s) in nested call to this script, if requested.
 		fi
 	else
@@ -1154,7 +1167,8 @@ elif [[ $os == 'Linux' && $speciesTreesOnly == 'no' ]]; then
 			"$filterSeqs2" \
 			"$trimAln1" \
 			"$trimAln2" \
-			"$treeshrink"
+			"$treeshrink" \
+			"$outgroupRoot"
 		done > make_gene_trees.log 2>&1
 
 		if [[ $filterSeqs1 != 'no' ]]; then
@@ -1223,6 +1237,7 @@ elif [[ $os == 'Linux' && $speciesTreesOnly == 'no' ]]; then
 			"$option_u" \
 			"$extraMem" \
 			"$partitionForSpeciesTrees" \
+      "$outgroupRoot" \
 			> run_treeshrink_and_realign.log 2>&1
 			exit	# Species trees will be made after TreeShrink or re-alignment step(s) in nested call to this script, if requested.
 		fi

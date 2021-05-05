@@ -311,3 +311,45 @@ cat mafft_dna_alns_fasta_file_list.txt | xargs cat | grep '>' | sed 's/>//' | so
 
 
 rm samples_submitted.txt mafft_dna_alns_fasta_samples_in_tree.txt
+
+
+
+
+
+#########################
+# Create alignment images
+#########################
+echo Testing JalView is installed...
+	$software >/dev/null 2>&1
+
+if [[ -x $JALVIEW ]]; then 
+	### Probably not necessary to chech this:
+	java -Djava.awt.headless=true -jar $JALVIEW -h >/dev/null 2>&1
+	if [[ $? == 127 ]]; then
+		echo "ERROR: Jalview command not found"
+			exit
+	else
+		java -Djava.awt.headless=true -jar $JALVIEW \
+		-open  7602_mafft_dna_aln_ovr60pc_aln_covrg_trimCols0.001.fasta \
+		-colour BLOSUM62 \
+		-png test_BLOSUM62.png 
+		# NB - obtained a corrupt file with a long gene aln but only 12 seqs!
+	fi
+else
+	echo "ERROR: Jalview not available: $JALVIEW"
+fi
+
+
+
+### UPTOHERE 22.3.2020
+# Get above code working in the dev branch
+#	Why can't I just create immage immdeiately after makign aln???????
+# Quickly check file sizes of other formats - note how they scale
+# Add -sortbytree and -tree option... - maybe do thsi first - tree files are there
+# implment the root and use NewickUtils to root + ladderize as usual
+
+
+
+
+
+

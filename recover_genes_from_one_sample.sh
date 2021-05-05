@@ -195,7 +195,7 @@ if [ $hybSeqProgram == 'paftools' ]; then
 		#  | sed  's/ \([12]\):[YN]:[0-9]:.\{1,\}/:\1/' \
 		# > ${sampleId}_all_trimmed.fastq
 
-		### 15.4.2020 - also remove ${sampleId}_R1_trimmomatic.fastq and ${sampleId}_R2_trimmomatic.fastq 7167_R1_trimmomatic_unpaired.fastq.gz 7167_R2_trimmomatic_unpaired.fastq.gz if they exist
+		### 15.4.2020 - remove ${sampleId}_R1_trimmomatic.fastq and ${sampleId}_R2_trimmomatic.fastq 7167_R1_trimmomatic_unpaired.fastq.gz 7167_R2_trimmomatic_unpaired.fastq.gz if they exist
 	fi
 elif [[ $hybSeqProgram == 'hybpiper'* ]]; then
 
@@ -346,6 +346,8 @@ elif [[ $hybSeqProgram == 'hybpiper'* ]]; then
 
         # HybPiper cleanup - remvoves the spades dir (Sample_/$sampleId/$geneName/$geneName_spades)
         cleanup.py $sampleId
+
+        ### 15.4.2020 - remove ${sampleId}_R1_trimmomatic.fastq and ${sampleId}_R2_trimmomatic.fastq 7167_R1_trimmomatic_unpaired.fastq.gz 7167_R2_trimmomatic_unpaired.fastq.gz ${sampleId}_R1_R2_trimmomatic_unpaired.fastq if they exist
 	fi
 else
 	echo "WARNING: the Hyb-Seq program was not recognised. The options are 'paftools' or 'hybpiper' (without the quotes)."
@@ -453,6 +455,9 @@ if [[ $stats != 'no' ]]; then
     fi
 
 	
+	# Getting contig recovery stats and adding each statistic to a file, one statistic per line.
+	# Then in overall_gene_recovery_stats.sh script, the results can be converted in a table for 
+	# all sample and genes. 
 	# Number of recovered genes:
 	numbrRecoveredGenes=`cat ${sampleId}.fasta | grep '>' | wc -l `
 	# Sum length of genes :

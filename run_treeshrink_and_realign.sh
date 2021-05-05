@@ -48,6 +48,7 @@ speciesTreeSlurmTime="${30}"
 option_u="${31}"
 extraMem="${32}"
 partitionForSpeciesTrees="${33}"
+outgroupRoot="${34}"
 
 
 echo "$numbrSamples"
@@ -78,6 +79,7 @@ echo "speciesTreeSlurmTime: $speciesTreeSlurmTime"
 echo "option_u: $option_u"
 echo "extraMem: $extraMem"
 echo "partitionForSpeciesTrees: $partitionForSpeciesTrees"
+echo "outgroupRoot: $outgroupRoot"
 
 
 # Convert $emptyMatchStateFractn to a percent for use in the output files:
@@ -128,7 +130,7 @@ runTreeShrink() {
     # Output filenames:
     # 1. dna_gene_tree_RS_shrunk_0.05.txt   - contains a tab-separated list of sample names removed
     #                                       - I think the 0.05 refers to option -q = 0.05 by default - can't confirm until I change this option
-    ### NB - there is also another file dna_gene_tree_USE_THIS_shrunk_RS_0.05.txt - don't know what this is - empty so far.
+    ### NB - there is also another file dna_gene_tree_USE_THIS_shrunk_RS_0.05.txt - don't know what this is - empty so far - yes and after big tree.
     # 2. dna_gene_tree_tree_shrunk_0.05.nwk  -  NB - these trees don't have bootstrap values so file size appears smaller
     # 3. dna_gene_tree_aln_shrunk_0.05.fasta
 
@@ -192,14 +194,16 @@ reAlignSeqs()   {
     # or not if it is a full path.
     # NB - need to use a fresh variable otherwise relative path is extended after every call of reAlignSeqs() !
 
-    # Ammend option -t path if required and selected:
+    # Ammend option -t path if required and selected (variables will remain empty if not selected):
     uOption=''
+    sampleTableFileOption=''
     if [[ $sampleTableFile != 'no' ]]; then
         if [[ $sampleTableFile != /* ]]; then 
             sampleTableFileForReAln="../$sampleTableFile"
         else
             sampleTableFileForReAln=$sampleTableFile
         fi
+        sampleTableFileOption="-t $sampleTableFileForReAln"
 
         if [ $option_u == 'yes' ]; then
             uOption='-u'
@@ -209,7 +213,6 @@ reAlignSeqs()   {
             # script because it gets prepared again at start of the realn step.
         fi
     fi
-    ls -l $sampleTableFileForReAln
 
     # Amend option -g path if necessary (mandatory option so always have to check):
     if [[ $geneListFile != /* ]]; then 
@@ -240,7 +243,7 @@ reAlignSeqs()   {
     extraMemOptionX=''
     if [ $extraMem != 'no' ]; then extraMemOptionX="-X $extraMem"; fi
 
-
+   
     ### At the moment these files don't exist in /after_treeshrink_USE_THIS_dna/ dir
     ### which exists by this stage - but they do exist in the above dir so will copy 
     ### them over here so can now make a concatenated aln and tree:
@@ -248,14 +251,20 @@ reAlignSeqs()   {
 
 
     # Note the quotes around variables with spaces! BUT $2 must not be quoted!
+    ### 23.4.2021 Also, I don't think new variables need to be created above unless 
+    ### the option variable has changed since the input which it has for option -g
+    ### and -t and also where it is enough to specify a flag with no value e.g. 
+    ### option -i. All other options can be used on the command line using the
+    ### variables input to this script i.e. can remove $trimAlnOption2,
+    ### collapseNodesOption, extraMemOptionX and set the option instead with inported var.
     #echo " # For checking option values that need to be quoted (contain spaces)
     $pathToScripts/make_species_trees_pipeline.sh $iOption $trimAlnOption1 $trimAlnOption2 $collapseNodesOption $uOption $extraMemOptionX \
+    $sampleTableFileOption \
     -p $fileNamePrefix \
     -G \
     -D "$1" \
     -A $alnProgram \
     -M "$mafftAlgorithm" \
-    -t $sampleTableFileForReAln \
     -g $geneListFileForReAln \
     -m $fractnMaxColOcc \
     -O $maxColOccThreshold \
@@ -268,6 +277,7 @@ reAlignSeqs()   {
     -U $speciesTreeSlurmMem \
     -V $geneTreeSlurmTime \
     -W $speciesTreeSlurmTime \
+    -o "$outgroupRoot" \
     *_${3}.fasta \
     > make_species_trees_pipeline_${3}.log 2>&1 #"
 }
