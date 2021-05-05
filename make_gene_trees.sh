@@ -38,7 +38,7 @@ echo SLURM_ARRAY_JOB_ID: $SLURM_ARRAY_JOB_ID
 echo SLURM_ARRAY_TASK_ID: $SLURM_ARRAY_TASK_ID
 
 
-geneId=`echo $geneId | cut -d ',' -f 1 `		#### 20.8.2019 - does this do anything now? Required only for ${geneId}_aln_summary.log but i coudl change that.
+geneId=`echo $geneId | cut -d ',' -f 1 `		#### 20.8.2019 - does this do anything now? Required only for ${geneId}_aln_summary.log but i coudl change that - i.e. USE $gene instead!!
 gene=`echo $geneId | tr -d '\n' `				# Need to remove line return, if present after the first field! Was for the sample- to gene-wise conversion 
 ### Might also be good to have the family
 #genus=`echo $line | cut -d ',' -f 2 `
@@ -242,6 +242,7 @@ if [[ $maxColOcc -ge $3 ]]; then
 		fi
 	else
 		# Printing out the alignments with < 4 sequences for assessing further (can concatenate them together)
+		### 28.4.2021 is this warnign needed now the check for 4 seqs is being made just before gene tree is made?
 		# NB - this file is produced only for the protein seqs, even if DNA is selected; but is produced for DNA if DNA only has been selected.
 		echo "WARNING: Not able to build a tree for this gene: $gene (less than four sequences)"
 		echo $1 >> ${gene}_filtered_out_alignments.txt
@@ -655,29 +656,34 @@ filterShortSeqs()	{
 }
 
 
-createGeneAlignmentImage()	{
+createGeneAlignmentAndTreeImages()	{
 	###########
-    # Function: creates an image with Jalview for the alignment file used to build the gene tree
- 	#
- 	# Input parameter:
+    # Function: creates an image with Jalview for the alignment file used to build the gene tree.
+    #			The alignment will always be guided by the gene tree.
+    #			If option -o has been used to specify outgroup(s) the the tree will be outgroup
+    #			rooted, or if that is not possible, mid-point rooted instead.
+    #			Also creates two images for the gene tree, a small circular tree for visualising
+    #			long branches and a larger tree showing tree tip labels 
+    #
+ 	# Input parameters:
  	# $1 = residue type: dna, aa or codon (required for specifying the right gene_alignment_images_* dir) 
- 	# $2 = input alignment fasta file
- 	# $3 = input tree file matching alignment
+ 	# $2 = input alignment fasta file		  (currently *.dna.aln.for_tree.fasta)
+ 	# $3 = input tree file matching alignment (currently *_dna_gene_tree_USE_THIS.nwk - 22,.4.2021 - this will change to *.dna.gene_tree_USE_THIS.nwk)
     #
     # Note: not established whether Jalview fails with large alignment files
     #       e.g. have obtained a corrupt .png file with a long gene aln but only 12 seqs!
     ###########
 	if [[ -x $JALVIEW ]]; then
-		if [[ ! -d gene_alignment_images_$1 ]]; then mkdir gene_alignment_images_$1; fi
+		if [[ ! -d gene_alignment_tree_images_$1 ]]; then mkdir gene_alignment_tree_images_$1; fi
 		treeFileToUse=$3
 		jalviewTreeFlags="-tree $treeFileToUse -sortbytree"
+		geneNwkFileNoSuffix=`basename -s .fasta $3`
 		if [[ $outgroupRoot != 'no' ]]; then
 			# Root gene trees so that they can be more easily compared:
-			geneNwkFileNoSuffix=`basename -s .fasta $3`
 			echo "outgroup/root samples: $outgroupRoot"
 			nw_reroot $3 $outgroupRoot | nw_order -c a /dev/fd/0 \
-			> gene_alignment_images_$1/${geneNwkFileNoSuffix}_rerooted.nwk
-			# nw_reroot -c a - orders tips alphabetically - may be easier for comparisons
+			> gene_alignment_tree_images_$1/${geneNwkFileNoSuffix}_rerooted.nwk
+			# nw_reroot -c a - orders tips alphabetically - may be easier for comparisons to similar tree label names
 			# NB - 1.if none of the leaf labels is correct, then the tree is rerooted
 			#      on the longest branch - i.e. there is no error to trap
 			#      Also this action looks to be the same as mid-pointing rooting a tree.
@@ -686,12 +692,12 @@ createGeneAlignmentImage()	{
 			#		  I think this issue will occur when >1 $outgroupRoot identifers are chosen but don't cluster together.
 			#		  Easiest thing to do is to just supply a single root sample or mid-point root instead, in the latter case, 
 			#		  supply a label that doesn't exist e.g. 'midpoint' 
-			treeFileToUse=gene_alignment_images_$1/${geneNwkFileNoSuffix}_rerooted.nwk
+			treeFileToUse=gene_alignment_tree_images_$1/${geneNwkFileNoSuffix}_rerooted.nwk
 			if [[ ! -s $treeFileToUse ]]; then
 				echo "WARNING: Outgroup(s) last common ancestor (LCA) is the tree's root - cannot reroot. Will mid-point root instead."
 				nw_reroot $3 | nw_order -c a /dev/fd/0 \
-				> gene_alignment_images_$1/${geneNwkFileNoSuffix}_rerooted.nwk
-				### OR alternatively, don't re-root but assign the original tree to $treeFileToUse so at least the alignment can be ordered.
+				> gene_alignment_tree_images_$1/${geneNwkFileNoSuffix}_rerooted.nwk 	# NB - same name as just above!
+				### OR alternatively, don't re-root but assign the original tree to $treeFileToUse so at least the alignment can be ordered by the tree.
 			fi
 			jalviewTreeFlags="-tree $treeFileToUse -sortbytree"
 
@@ -700,8 +706,52 @@ createGeneAlignmentImage()	{
 		$exePrefix java -Djava.awt.headless=true -jar $JALVIEW  $jalviewTreeFlags \
 		-open $2 \
 		-colour BLOSUM62 \
-		-png gene_alignment_images_$1/${geneAlnFileNoSuffix}.png
+		-png gene_alignment_tree_images_$1/${geneAlnFileNoSuffix}.png
 		# NBNB - always supplying $treeFileToUse, even if not being re-rooted
+		gzip -f gene_alignment_tree_images_$1/${geneAlnFileNoSuffix}.png 	# -f force overwriting
+
+
+		# Now preparing gene tree images (in <svg> format for viewing in a web browser).
+		# File size: up to 2MB - compresses down to ~360KB (~127MB for 353 gene trees with ~3,500 tree tips)
+		# (File size is the same, whether a small circular tree or detailed tree showing tree tip labels).
+		# Small circular gene tree image (useful for visualising long branches - 
+		# 	using them to show results before and after treeShrink - see make_species_trees.sh):
+		nw_display -s -r -b 'opacity:0' -i 'visibility:hidden' -l 'visibility:hidden' -W 1.0 -S \
+		$treeFileToUse \
+		| sed "s/<line class/<text x=-150 y=-135 style=font-size:medium;font-family:Arial;font-weight:bold;fill:black>Gene tree $gene<\/text><line class/" \
+		> gene_alignment_tree_images_$1/${geneNwkFileNoSuffix}.small.html
+		gzip -f gene_alignment_tree_images_$1/${geneNwkFileNoSuffix}.small.html 	# -f force overwriting
+		# Note: also adding the description of the gene name to the svg object (top lefthand corner)
+		# It looks like the text is best plaçed inside the <svg> object - placing adjacent to the first <line class tag>
+		# Coordinates for circular plot:
+ 		# x=0, y=0 = centre of plotting area (top lefthand corner of a cladogram (see below)
+ 		# x=-140 y=-135 = top lefthand corner, just inside plotting area  (for default svg width=300)
+
+
+		# Big tree image (useful for seeing which sequences appear misplaced)
+		# First add the tree labels (if option -t is selected)
+		if [[ -s 'tree_tip_info_mapfile.txt' ]]; then
+			# NB - this is one way to check whether option -t is set. Should really bring in 
+			# $treeTipInfoMapFile to this script. However it only matters if user re-runs in same directory
+			# but no longer wants the -t option and wants to see existing tree labels - a minor issue I think.
+			nw_rename -l  $treeFileToUse \
+    		tree_tip_info_mapfile.txt \
+    		> gene_alignment_tree_images_$1/${geneNwkFileNoSuffix}.tree_tip_info.nwk
+    		treeFileToUse=gene_alignment_tree_images_$1/${geneNwkFileNoSuffix}.tree_tip_info.nwk
+		fi
+
+		nw_topology $treeFileToUse \
+		| nw_display -s -w 1500 -v 15  -b 'visibility:hidden' -I r -l 'font-size:small;font-family:Arial' \
+		-i 'font-size:small;font-family:Arial;color:blue' \
+ 		- \
+ 		| sed "s/<svg/<svg height=30 width=1500><text x=0 y=15 style=font-size:medium;font-family:Arial;font-weight:bold;fill:black>Gene tree $gene<\/text><\/svg><svg/" \
+ 		> gene_alignment_tree_images_$1/${geneNwkFileNoSuffix}.big.html 
+ 		gzip -f gene_alignment_tree_images_$1/${geneNwkFileNoSuffix}.big.html 	# -f force overwriting
+ 		### NB - there could be various ways to add the tree title:
+ 		### 1. Text tag within the svg - looks like it will overlap with a bit of the tree:
+ 		###	| sed "s/<line class/<text x=0 y=15 style=font-size:medium;font-family:Arial;font-weight:bold;fill:black>gene tree $gene<\/text><line class/" \   
+ 		### 2. Create an svg object outside main one with the same width - doing this - might not always work in which case find how to specify the exact coords:
+ 		###	   can use nested svg or <g transform> tag
 	else
 		echo "ERROR: Jalview not available, gene alignment images will not be created: $JALVIEW "
 	fi
@@ -1149,7 +1199,7 @@ if [[ -s $dnaAlnForTree || -s $proteinAlnForTree ]]; then
 ### Still need to confirm file/variable input
 			if [ "$numbrSeqs" -gt 3 ]; then 	# Check goes here after ALL filtering steps
 				makeGeneTree dna ${gene}.dna.aln.for_tree.fasta '.' 'GTR+G' 'DNA' '-nt -gtr'
-				createGeneAlignmentImage dna ${gene}.dna.aln.for_tree.fasta ${gene}_dna_gene_tree_USE_THIS.nwk
+				createGeneAlignmentAndTreeImages dna ${gene}.dna.aln.for_tree.fasta ${gene}_dna_gene_tree_USE_THIS.nwk
 			else
 				echo "WARNING: Not able to build a tree for this gene: $gene (less than four sequences)"
 			fi
@@ -1160,7 +1210,7 @@ if [[ -s $dnaAlnForTree || -s $proteinAlnForTree ]]; then
 ### Still need to confirm file/variable input
 			if [ "$numbrSeqs" -gt 3 ]; then
 				makeGeneTree codon ${gene}.codon.aln.for_tree.fasta 'codonAln' 'GTR+G' 'DNA' '-nt -gtr'
-				createGeneAlignmentImage codon ${gene}.codon.aln.for_tree.fasta ${gene}_codon_gene_tree_USE_THIS.nwk
+				createGeneAlignmentAndTreeImages codon ${gene}.codon.aln.for_tree.fasta ${gene}_codon_gene_tree_USE_THIS.nwk
 			else
 				echo "WARNING: Not able to build a tree for this gene: $gene (less than four sequences)"
 			fi
@@ -1172,7 +1222,7 @@ if [[ -s $dnaAlnForTree || -s $proteinAlnForTree ]]; then
 			echo numbrSeqs: $numbrSeqs
 			if [ "$numbrSeqs" -gt 3 ]; then
 				makeGeneTree protein ${gene}.protein.aln.for_tree.fasta '.' 'JTT+G' 'AA' ''
-				createGeneAlignmentImage protein ${gene}.protein.aln.for_tree.fasta ${gene}_codon_gene_tree_USE_THIS.nwk
+				createGeneAlignmentAndTreeImages protein ${gene}.protein.aln.for_tree.fasta ${gene}_codon_gene_tree_USE_THIS.nwk
 			else
 				echo "WARNING: Not able to build a tree for this gene: $gene (less than four sequences)"
 			fi

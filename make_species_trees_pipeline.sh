@@ -266,7 +266,7 @@ while getopts "hvat:ug:ijGF:m:p:M:q:r:TC:c:d:Q:Y:A:D:O:L:I:JK:R:X:U:V:W:H:o:"  O
 		V) geneTreeSlurmTime=$OPTARG ;;
 		W) speciesTreeSlurmTime=$OPTARG ;;
 		H) slurmThrottle=$OPTARG ;;
-		o) outgroupRoot=$OPTARG ;;
+		o) outgroupRoot="$OPTARG" ;;
 		?)  echo This option is not allowed. Read the usage summary below.
       	    echo
       	    usage; exit 1 ;;
@@ -510,7 +510,7 @@ and input gene-wise fasta files with a relative path (probably from a previous r
     # NB - on MacOS awk inserts a blank line between output lines so removing them with grep -v '^$'.
     numbrSamples=`cat *_dna.fasta | awk '{if($1 ~ /^>/)  {print $1} }' | grep -v  '^$' | sort -u | wc -l `
 else
-	# Format is already ready to go (>sampleId-geneId).
+	echo 'Fasta file format of the input files is already the default (>sampleId-geneId).'
    
 	### Still deciding on whether to change to this format completely throughout...
 	### For the moment, altering the ">species-gene" format back to my "gene species" format:
@@ -803,6 +803,7 @@ echo 'geneTreeSlurmMem: ' $geneTreeSlurmMem
 echo 'speciesTreeSlurmMem: ' $speciesTreeSlurmMem
 echo 'geneTreeSlurmTime: ' $geneTreeSlurmTime
 echo 'speciesTreeSlurmTime: ' $speciesTreeSlurmTime
+echo 'Outgroup root(s): ' $outgroupRoot
 echo
 #exit
 

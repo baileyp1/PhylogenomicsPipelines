@@ -243,10 +243,7 @@ reAlignSeqs()   {
     extraMemOptionX=''
     if [ $extraMem != 'no' ]; then extraMemOptionX="-X $extraMem"; fi
 
-    outgroupRootOption=''
-    if [[ "$outgroupRoot" != 'no' ]]; then outgroupRootOption="-o $outgroupRoot"; fi
-
-
+   
     ### At the moment these files don't exist in /after_treeshrink_USE_THIS_dna/ dir
     ### which exists by this stage - but they do exist in the above dir so will copy 
     ### them over here so can now make a concatenated aln and tree:
@@ -254,9 +251,15 @@ reAlignSeqs()   {
 
 
     # Note the quotes around variables with spaces! BUT $2 must not be quoted!
+    ### 23.4.2021 Also, I don't think new variables need to be created above unless 
+    ### the option variable has changed since the input which it has for option -g
+    ### and -t and also where it is enough to specify a flag with no value e.g. 
+    ### option -i. All other options can be used on the command line using the
+    ### variables input to this script i.e. can remove $trimAlnOption2,
+    ### collapseNodesOption, extraMemOptionX and set the option instead with inported var.
     #echo " # For checking option values that need to be quoted (contain spaces)
     $pathToScripts/make_species_trees_pipeline.sh $iOption $trimAlnOption1 $trimAlnOption2 $collapseNodesOption $uOption $extraMemOptionX \
-    $sampleTableFileOption "$outgroupRootOption" \
+    $sampleTableFileOption \
     -p $fileNamePrefix \
     -G \
     -D "$1" \
@@ -274,6 +277,7 @@ reAlignSeqs()   {
     -U $speciesTreeSlurmMem \
     -V $geneTreeSlurmTime \
     -W $speciesTreeSlurmTime \
+    -o "$outgroupRoot" \
     *_${3}.fasta \
     > make_species_trees_pipeline_${3}.log 2>&1 #"
 }
