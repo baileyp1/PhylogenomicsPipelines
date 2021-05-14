@@ -753,7 +753,7 @@ createGeneAlignmentAndTreeImages()	{
  		### 2. Create an svg object outside main one with the same width - doing this - might not always work in which case find how to specify the exact coords:
  		###	   can use nested svg or <g transform> tag
 	else
-		echo "ERROR: Jalview not available, gene alignment images will not be created: $JALVIEW "
+		echo "WARNING: Jalview not available, gene alignment images will not be created: $JALVIEW "
 	fi
 }
 
