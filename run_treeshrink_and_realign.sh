@@ -115,7 +115,7 @@ runTreeShrink() {
     done
 
     bParameter=20
-    run_treeshrink.py -b $bParameter -i treeshrink_${1}_gene_trees  -t ${1}_gene_tree_USE_THIS.nwk -a ${1}_gene_tree_aln.fasta -O ${1}_gene_tree
+    run_treeshrink.py -b $bParameter -i treeshrink_${1}_gene_trees  -t ${1}_gene_tree_USE_THIS.nwk -a ${1}_gene_tree_aln.fasta -O ${1}_gene_tree_treeshrink
     # Summary of usage:
     # Three modes: 'per-gene', 'all-genes', 'per-species' - auto will select per-species 
     #              unless there are rare species (i.e. a species that occurs in less than 20 gene trees),
@@ -136,7 +136,7 @@ runTreeShrink() {
 
     # TreeShrink results
     # Count number of samples removed from any tree:
-    numbrSeqsRemoved=`cat treeshrink_${1}_gene_trees/*/${1}_gene_tree_RS_shrunk_0.05.txt | sed 's/\t/\n/g' | sort -u | wc -l`
+	numbrSeqsRemoved=`cat treeshrink_${1}_gene_trees/*/${1}_gene_tree_treeshrink.txt | sed 's/\t/\n/g' | sort -u | wc -l`
     echo "TreeShrink results
 ==================
 -b parameter = $bParameter
@@ -145,7 +145,7 @@ Number of samples removed from any gene tree: $numbrSeqsRemoved " > ${fileNamePr
     # Only print if > 0 samples have been removed:
     if [[ $numbrSeqsRemoved -ge 1 ]]; then
         echo "NumberOfGeneTrees RemovedSampleFrom
-`cat treeshrink_${1}_gene_trees/*/${1}_gene_tree_RS_shrunk_0.05.txt | sed 's/\t/\n/g' | grep -v '^$' | sort | uniq -c | sort -k1nr` " >> ${fileNamePrefix}_treeshrink_results.txt
+`cat treeshrink_${1}_gene_trees/*/${1}_gene_tree_treeshrink.txt  | sed 's/\t/\n/g' | grep -v '^$' | sort | uniq -c | sort -k1nr` " >> ${fileNamePrefix}_treeshrink_results.txt
     fi
 
  
@@ -169,7 +169,7 @@ Number of samples removed from any gene tree: $numbrSeqsRemoved " > ${fileNamePr
         # Get the leaf labels from the TreeShrunk Newick file (could also use the equivalent aln file) then extract from the unaligned starting DNA file:
         ### NB - 21.10.2020 - just realised I have this wrong - need to use the TS output to get the retained labels:
         ### nw_labels -I $file > ${gene}_${1}_tree_leaf_labels.txt
-        nw_labels -I treeshrink_${1}_gene_trees/$gene/${1}_gene_tree_tree_shrunk_0.05.nwk > ${gene}_${1}_tree_leaf_labels.txt
+		nw_labels -I treeshrink_${1}_gene_trees/$gene/${1}_gene_tree_treeshrink.nwk > ${gene}_${1}_tree_leaf_labels.txt
         seqtk subseq -l 0 \
         ../${gene}_dna.fasta \
         ${gene}_${1}_tree_leaf_labels.txt \
