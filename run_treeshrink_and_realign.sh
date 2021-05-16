@@ -114,8 +114,8 @@ runTreeShrink() {
         cp ../${gene}.${1}.aln.for_tree.fasta  treeshrink_${1}_gene_trees/$gene/${1}_gene_tree_aln.fasta 
     done
 
-    bParameter=20
-    run_treeshrink.py -b $bParameter -i treeshrink_${1}_gene_trees  -t ${1}_gene_tree_USE_THIS.nwk -a ${1}_gene_tree_aln.fasta -O ${1}_gene_tree
+    bParameter=20                                                                                                              # --force only in versions 1.3.5+
+    run_treeshrink.py -b $bParameter -i treeshrink_${1}_gene_trees  -t ${1}_gene_tree_USE_THIS.nwk -a ${1}_gene_tree_aln.fasta --force -O ${1}_gene_tree_treeshrink
     # Summary of usage:
     # Three modes: 'per-gene', 'all-genes', 'per-species' - auto will select per-species 
     #              unless there are rare species (i.e. a species that occurs in less than 20 gene trees),
@@ -127,16 +127,23 @@ runTreeShrink() {
     #    NB - documentation says: a higher value, like -b 20 may make more sense for your dataset if you want to be more conservative. We suggest exploring this option.
     #         i.e. at -b 20 the species would have to have a higher distance before being considered for removal
 
-    # Output filenames:
+    # Output filenames (as of version 1.3.4):
     # 1. dna_gene_tree_RS_shrunk_0.05.txt   - contains a tab-separated list of sample names removed
     #                                       - I think the 0.05 refers to option -q = 0.05 by default - can't confirm until I change this option
     ### NB - there is also another file dna_gene_tree_USE_THIS_shrunk_RS_0.05.txt - don't know what this is - empty so far - yes and after big tree.
     # 2. dna_gene_tree_tree_shrunk_0.05.nwk  -  NB - these trees don't have bootstrap values so file size appears smaller
     # 3. dna_gene_tree_aln_shrunk_0.05.fasta
 
+    # Output filenames (as of version 1.3.5+)
+    # 1. dna_gene_tree_treeshrink.txt           - tab-separated list of sample names removed (t.b.c.)
+    # 2. dna_gene_tree_treeshrink.nwk           - TreeShrunk tree
+    # 3. dna_gene_tree_treeshrink.fasta         - alignment file matching TreeShrunk tree
+    # 4. dna_gene_tree_treeshrink_summary.txt   - TreeShrink output summary file:
+
     # TreeShrink results
     # Count number of samples removed from any tree:
-    numbrSeqsRemoved=`cat treeshrink_${1}_gene_trees/*/${1}_gene_tree_RS_shrunk_0.05.txt | sed 's/\t/\n/g' | sort -u | wc -l`
+    ###numbrSeqsRemoved=`cat treeshrink_${1}_gene_trees/*/${1}_gene_tree_RS_shrunk_0.05.txt | sed 's/\t/\n/g' | sort -u | wc -l`
+numbrSeqsRemoved=`cat treeshrink_${1}_gene_trees/*/${1}_gene_tree_treeshrink.txt | sed 's/\t/\n/g' | sort -u | wc -l`
     echo "TreeShrink results
 ==================
 -b parameter = $bParameter
@@ -145,7 +152,7 @@ Number of samples removed from any gene tree: $numbrSeqsRemoved " > ${fileNamePr
     # Only print if > 0 samples have been removed:
     if [[ $numbrSeqsRemoved -ge 1 ]]; then
         echo "NumberOfGeneTrees RemovedSampleFrom
-`cat treeshrink_${1}_gene_trees/*/${1}_gene_tree_RS_shrunk_0.05.txt | sed 's/\t/\n/g' | grep -v '^$' | sort | uniq -c | sort -k1nr` " >> ${fileNamePrefix}_treeshrink_results.txt
+`cat treeshrink_${1}_gene_trees/*/${1}_gene_tree_treeshrink.txt | sed 's/\t/\n/g' | grep -v '^$' | sort | uniq -c | sort -k1nr` " >> ${fileNamePrefix}_treeshrink_results.txt
     fi
 
  
@@ -169,7 +176,7 @@ Number of samples removed from any gene tree: $numbrSeqsRemoved " > ${fileNamePr
         # Get the leaf labels from the TreeShrunk Newick file (could also use the equivalent aln file) then extract from the unaligned starting DNA file:
         ### NB - 21.10.2020 - just realised I have this wrong - need to use the TS output to get the retained labels:
         ### nw_labels -I $file > ${gene}_${1}_tree_leaf_labels.txt
-        nw_labels -I treeshrink_${1}_gene_trees/$gene/${1}_gene_tree_tree_shrunk_0.05.nwk > ${gene}_${1}_tree_leaf_labels.txt
+        nw_labels -I treeshrink_${1}_gene_trees/$gene/${1}_gene_tree_treeshrink.nwk > ${gene}_${1}_tree_leaf_labels.txt
         seqtk subseq -l 0 \
         ../${gene}_dna.fasta \
         ${gene}_${1}_tree_leaf_labels.txt \
