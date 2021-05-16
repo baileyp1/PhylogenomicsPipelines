@@ -64,10 +64,9 @@ One way of setting up the above software requirements is described [here](https:
 ### Example of running recover_genes_from_all_samples.sh
 A typical example is shown at the bottom of the command line help.<br>
 ### Outputs of running recover_genes_from_all_samples.sh
-The main output files from the gene recovery pipeline are listed below. Additional files will exist depending on the option(s) used, the option(s) value and the underlying programs triggered by the option(s).
-
-* \<geneName\>.[dna|protein|codon].fasta<br>
-  Unaligned sequence file, one gene from (all) samples in the data set<br>
+The main output file from the gene recovery pipeline is an unaligned sequence file with all recovered genes from one sample:
+* \<SampleName\>.fasta (Paftools)
+* \<SampleName\>_all_genes.fasta (HybPiper)
   
 ## make_species_trees_pipeline.sh 
 ### Example of running make_species_trees_pipeline.sh 
