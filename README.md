@@ -45,9 +45,9 @@ For gene recovery (if known, specific version requirements are shown in brackets
 For phylogenetic analysis (if known, specific version requirements are shown in brackets):
 * Python
 * [seqtk](https://github.com/lh3/seqtk) (version 1.3)
-* [Exonerate] (https://www.ebi.ac.uk/about/vertebrate-genomics/software/exonerate) (version 2.4)
+* [Exonerate](https://www.ebi.ac.uk/about/vertebrate-genomics/software/exonerate) (version 2.4)
 * [MAFFT ](https://mafft.cbrc.jp/alignment/software/) or [UPP](https://github.com/smirarab/sepp/blob/master/README.UPP.md). UPP requires SEPP and PASTA as explained in the link
-* Jalview, optional
+* [Jalview](https://www.jalview.org), optional
 * [PAL2NAL](http://www.bork.embl.de/pal2nal/) if option '-D codon' is used
 * [FastTree](http://www.microbesonline.org/fasttree/), [RAxML-NG](https://github.com/amkozlov/raxml-ng) or [IQ-TREE version 2](http://www.iqtree.org)
 * [RAxML](https://github.com/stamatak/standard-RAxML) (used for building a species tree using a concatenated alignment)
@@ -101,7 +101,7 @@ make_species_trees_pipeline.sh \
 ```
 Note that in the above command there must not be a space character after the back slash, there must be a space before the back slash and any option values that contain spaces need to be quoted e.g. option -F. 
 
-The Slurm options, -Q, -Y, -V and -W, will need to be altered depending on how Slurm is set up. Slurm memory options, -R and -U, will need to be altered depending on the size of the data set; also refer to option -X which helps with memory efficiency by  allowing the user to increase memory for specific genes that require significantly more memory. The values set in the above example are appropriate for building gene trees then a species tree with ASTRAL containing up to 3,200 samples or so. (Refer to the citation above, KewTreeOfLife version 1.0). 
+The Slurm options, -Q, -Y, -V and -W, will need to be altered depending on how Slurm is set up. Slurm memory options, -R and -U, will need to be altered depending on the size of the data set; also refer to option -X which helps with memory efficiency by  allowing the user to increase memory for specific genes that require significantly more memory. The values set in the above example were appropriate for building gene trees then a species tree with ASTRAL containing up to 3,200 samples or so over a 7-10 day period. (Refer to the citation above, KewTreeOfLife version 1.0).
 
 ### Outputs from make_species_trees_pipeline.sh  
 The main output files from the phylogenetic analysis pipeline are listed below in output order. Additional files will exist depending on the option(s) used, the option(s) value and the underlying programs triggered by the option(s).
