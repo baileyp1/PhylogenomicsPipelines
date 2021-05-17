@@ -142,8 +142,7 @@ runTreeShrink() {
 
     # TreeShrink results
     # Count number of samples removed from any tree:
-    ###numbrSeqsRemoved=`cat treeshrink_${1}_gene_trees/*/${1}_gene_tree_RS_shrunk_0.05.txt | sed 's/\t/\n/g' | sort -u | wc -l`
-numbrSeqsRemoved=`cat treeshrink_${1}_gene_trees/*/${1}_gene_tree_treeshrink.txt | sed 's/\t/\n/g' | sort -u | wc -l`
+    numbrSeqsRemoved=`cat treeshrink_${1}_gene_trees/*/${1}_gene_tree_treeshrink.txt | sed 's/\t/\n/g' | sort -u | wc -l`
     echo "TreeShrink results
 ==================
 -b parameter = $bParameter
