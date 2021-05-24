@@ -130,7 +130,7 @@ getTreeStats () {
 ###     make a dna species tree - can I make a subroutine for dna protein and codon and for supermatrix trees? 
 
 
-# Concatenate trees containing more than $fractnSpecies of samples for use with ASTRAL:
+# Concatenate trees containing more than $fractnSpecies of samples (AND with species > 3 ) for use with ASTRAL:
 # NB - have made filenames generic so they can be derived from different phylo programs.
 echo dnaSelected: $dnaSelected
 if [[ $dnaSelected == 'yes' ]]; then    ### TEMP SET UP - this doesn't woerk!!!!
@@ -143,7 +143,7 @@ if [[ $dnaSelected == 'yes' ]]; then    ### TEMP SET UP - this doesn't woerk!!!!
         echo $gene " " $numbrSamples
     done \
     | awk -v numbrSamplesThreshold=$numbrSamplesThreshold -v fractnAlnCovrg_pc=${fractnAlnCovrg_pc} \
-    '$2 >= numbrSamplesThreshold  {print $1 "_dna_gene_tree_USE_THIS.nwk"}' \
+    '$2 >= numbrSamplesThreshold && $2 > 3 {print $1 "_dna_gene_tree_USE_THIS.nwk"}' \
     | xargs cat > ${fileNamePrefix}_${seqType}_gene_trees_for_coelescence_phylo.nwk
 fi
                                                             ### NBNB - 2nd -v fractnAlnCovrg_pc not used here!!!!! Huh? 
@@ -155,7 +155,7 @@ fi
 ### filtering (?) and now because of filtering small seqs just before the aln. The code is OK but to remvoe the error shoudl do:
 ### 1.just use the .nwk files to begin with. To coutn the # seqs in fasta - could use Newick Utils on the trees instead - 
 ### I still think i need to filter here unless I remove the fratnSpecies variable
-### 2.implement removal of the for_tree aln andnwk files before start of analysis, then any previous runs can’t affect 
+### 2.implement removal of the for_tree aln and nwk files before start of analysis, then any previous runs can’t affect 
 ### the outcome of next run if run in same directory - better solution i think 
 
 
@@ -168,7 +168,7 @@ if [[ "$phyloProgramPROT" == 'fasttree' ||  "$phyloProgramPROT" == 'raxml-ng' ||
         echo $gene " " $numbrSamples
     done \
     | awk -v numbrSamplesThreshold=$numbrSamplesThreshold -v fractnAlnCovrg_pc=${fractnAlnCovrg_pc} \
-    '$2 >= numbrSamplesThreshold  {print $1 "_protein_gene_tree_USE_THIS.nwk"}' \
+    '$2 >= numbrSamplesThreshold && $2 > 3 {print $1 "_protein_gene_tree_USE_THIS.nwk"}' \
     | xargs cat > ${fileNamePrefix}_${seqType}_gene_trees_for_coelescence_phylo.nwk
 fi
 

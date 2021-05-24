@@ -217,18 +217,20 @@ done \
 
 
 ### 20.8.2020 - Need to re-work this section 
-### Still get the same stats but better now to redo the protein lists in the species tree script i think 
+### Still get the same stats but better now to redo the protein lists in the species tree script i think
+### 22.5.2021 - Also, if fasta file has < 4 seqs it should not enter this list beacuse trees are not beign made !!!!
 
 ################################################################################################################################
 # Create list of gene alns with > ${fractnAlnCovrg_pc} gene coverge AND containing more than the $fractnSpecies % of the samples
 # Used to concatenate gene alns for supermatrix methods AND to gather the stats below
+# NB - also checking whether ther are > 3 species in each gene tree (this check was already made before building each gene tree)
 ################################################################################################################################
 for file in *.$alnFileForTreeSuffix; do
  	gene=`echo $file | sed "s/.$alnFileForTreeSuffix//" `
  	numbrSamples=`cat $file | grep '>' | wc -l `;
     echo $gene " " $numbrSamples
 done \
-| awk -v alnFileForTreeSuffix=$alnFileForTreeSuffix -v numbrSamplesThreshold=$numbrSamplesThreshold -v fractnAlnCovrg_pc=${fractnAlnCovrg_pc}  '$2 >= numbrSamplesThreshold  {print $1 "." alnFileForTreeSuffix}' \
+| awk -v alnFileForTreeSuffix=$alnFileForTreeSuffix -v numbrSamplesThreshold=$numbrSamplesThreshold -v fractnAlnCovrg_pc=${fractnAlnCovrg_pc}  '$2 >= numbrSamplesThreshold && $2 > 3 {print $1 "." alnFileForTreeSuffix}' \
 > mafft_dna_alns_fasta_file_list.txt
 
 # For protein file list:
@@ -236,7 +238,7 @@ cat mafft_dna_alns_fasta_file_list.txt | sed 's/dna/protein/' > mafft_protein_al
 
 
 # Count the number of samples in the gene trees being used and place a sorted list into a file:
-### 6.9.2020 - if i now do this on the aln_for_tree.fasta file, then I don't need to generate the file list above here!!!!!!
+### 6.9.2020 - if i now do this on the aln_for_tree.fasta file, then I don't need to generate the file list above here in this script!!
 numbrSamplesInTrees=`cat mafft_dna_alns_fasta_file_list.txt | xargs cat | grep '>' | sort -u | wc -l | sed 's/ //g'`
 cat mafft_dna_alns_fasta_file_list.txt | xargs cat | grep '>' | sed 's/>//' | sort -u > mafft_dna_alns_fasta_samples_in_tree.txt
 ### NB - 11.10.2020 - what happens if this is protein trees or if dna is not beign used?!!
@@ -311,43 +313,6 @@ cat mafft_dna_alns_fasta_file_list.txt | xargs cat | grep '>' | sed 's/>//' | so
 
 
 rm samples_submitted.txt mafft_dna_alns_fasta_samples_in_tree.txt
-
-
-
-
-
-#########################
-# Create alignment images
-#########################
-echo Testing JalView is installed...
-	$software >/dev/null 2>&1
-
-if [[ -x $JALVIEW ]]; then 
-	### Probably not necessary to chech this:
-	java -Djava.awt.headless=true -jar $JALVIEW -h >/dev/null 2>&1
-	if [[ $? == 127 ]]; then
-		echo "ERROR: Jalview command not found"
-			exit
-	else
-		java -Djava.awt.headless=true -jar $JALVIEW \
-		-open  7602_mafft_dna_aln_ovr60pc_aln_covrg_trimCols0.001.fasta \
-		-colour BLOSUM62 \
-		-png test_BLOSUM62.png 
-		# NB - obtained a corrupt file with a long gene aln but only 12 seqs!
-	fi
-else
-	echo "ERROR: Jalview not available: $JALVIEW"
-fi
-
-
-
-### UPTOHERE 22.3.2020
-# Get above code working in the dev branch
-#	Why can't I just create immage immdeiately after makign aln???????
-# Quickly check file sizes of other formats - note how they scale
-# Add -sortbytree and -tree option... - maybe do thsi first - tree files are there
-# implment the root and use NewickUtils to root + ladderize as usual
-
 
 
 
