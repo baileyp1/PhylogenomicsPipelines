@@ -452,6 +452,9 @@ $exePrefix raxmlHPC-PTHREADS-SSE3 -T $cpu \
 # This is the Newick  output file compatible with NewickTools):
 # RAxML_bipartitions.${fileNamePrefix}__raxmlHPC-PTHREADS-SSE
 # -m - was using GTRGAMMA but GTRCAT is ~4x quicker - should not use it if have < 50 seqs in dataset.
+#      Also, shouldn't need to use alpha (GAMMA) parameter for really small data sets but can't use
+#      GTR model without GAMMA with RAxML; can use CAT with -V option but then shouldn't use CAT model
+#      for small data sets! RAxML gives an error: 'WARNING the alpha parameter...' - OK for now.
 # -q Added -q option for partitioning genes:
 #    If, e.g.,-m GTRGAMMA is used, individual alpha-shape parameters, GTR rates, and empirical 
 #    base frequencies will be estimated and optimized for each partition. Note - RAxML doesn't have 
@@ -480,7 +483,7 @@ if [[ "$phyloProgramPROT" == 'fasttree' ||  "$phyloProgramPROT" == 'raxml-ng'  |
     if [ -a protein.aln.ovr${fractnAlnCovrg_pc}pc_acpg_ovr${fractnSpecies_pc}pc_spgt__concatenated.fasta.reduced ]; then rm protein.aln.ovr${fractnAlnCovrg_pc}pc_acpg_ovr${fractnSpecies_pc}pc_spgt__concatenated.fasta.reduced; fi
 
     RAxML_ModelOfEvolution=PROTCATJTT
-    if [[ $totalNumbrSamples -lt 50 ]]; then    # 21.4.2020 - set to 200, only really need speed up with larger trees 
+    if [[ $totalNumbrSamples -lt 200 ]]; then    # 21.4.2020 - set to 200, only really need speed up with larger trees 
         RAxML_ModelOfEvolution=PROTGAMMAJTT
     fi
 
