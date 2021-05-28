@@ -152,7 +152,9 @@ if [ $hybSeqProgram == 'paftools' ]; then
 		> ${sampleId}_overlapSerial.log 2>&1
 
 		rm $targetsFile	# If write to database fails, this fail doesn't get deleted (c.f. set cmds active), so presence of file is a useful 'marker' for failing to write to db
-		### 15.4.2020 - also remove PAFTOL_000948_R1.fastq and PAFTOL_000948_R2.fastq files to save space
+
+		# Remove the large fastq files::
+		if [[ -s $unzippedR1FastqFile ]]; then rm $unzippedR1FastqFile $unzippedR2FastqFile; fi
 	else 
 
 		################
@@ -195,7 +197,13 @@ if [ $hybSeqProgram == 'paftools' ]; then
 		#  | sed  's/ \([12]\):[YN]:[0-9]:.\{1,\}/:\1/' \
 		# > ${sampleId}_all_trimmed.fastq
 
-		### 15.4.2020 - remove ${sampleId}_R1_trimmomatic.fastq and ${sampleId}_R2_trimmomatic.fastq 7167_R1_trimmomatic_unpaired.fastq.gz 7167_R2_trimmomatic_unpaired.fastq.gz if they exist
+		if [[ $stats == 'no' ]]; then
+			# Remove the large fastq files:
+			if [[ -s ${sampleId}_R1_trimmomatic.fastq ]]; then 
+				rm ${sampleId}_R1_trimmomatic.fastq.gz ${sampleId}_R1_trimmomatic_unpaired.fastq.gz \
+				${sampleId}_R2_trimmomatic.fastq.gz ${sampleId}_R2_trimmomatic_unpaired.fastq.gz
+			fi
+		fi
 	fi
 elif [[ $hybSeqProgram == 'hybpiper'* ]]; then
 
@@ -347,10 +355,17 @@ elif [[ $hybSeqProgram == 'hybpiper'* ]]; then
         # HybPiper cleanup - remvoves the spades dir (Sample_/$sampleId/$geneName/$geneName_spades)
         cleanup.py $sampleId
 
-        ### 15.4.2020 - remove ${sampleId}_R1_trimmomatic.fastq and ${sampleId}_R2_trimmomatic.fastq 7167_R1_trimmomatic_unpaired.fastq.gz 7167_R2_trimmomatic_unpaired.fastq.gz ${sampleId}_R1_R2_trimmomatic_unpaired.fastq if they exist
+        if [[ $stats == 'no' ]]; then
+			# Remove the large fastq files:
+			if [[ -s ${sampleId}_R1_trimmomatic.fastq ]]; then 
+				rm ${sampleId}_R1_trimmomatic.fastq.gz ${sampleId}_R1_trimmomatic_unpaired.fastq.gz \
+				${sampleId}_R2_trimmomatic.fastq.gz ${sampleId}_R2_trimmomatic_unpaired.fastq.gz \
+				${sampleId}_R1_R2_trimmomatic_unpaired.fastq
+			fi
+		fi
 	fi
 else
-	echo "WARNING: the Hyb-Seq program was not recognised. The options are 'paftools' or 'hybpiper' (without the quotes)."
+	echo "WARNING: If option -y was used, the Hyb-Seq program was not recognised. The options are 'paftools' or 'hybpiper' (without the quotes)."
 	#exit
 fi
 
@@ -376,9 +391,6 @@ if [[ $stats != 'no' ]]; then
 			# Gene recovery file is in pwd.
 		elif [[ -s ${sampleId}_all_genes.fasta ]]; then
 			refFileName=${sampleId}_all_genes.fasta
-### 25.1.2021 - NBNB - but then I still need to copy this file to ${sampleId}.fasta
-### for the stats to recognise the file OR possibly better assign filename to use to
-### a variable in the program calls - same below in the else clause
 			# Gene recovery file is in pwd.
 		else
 			echo "ERROR: Option -S selected but gene recovery fasta file not found or is empty. May need to use option -P. Stats cannot be calculated for sample: ${sampleId}."
@@ -388,14 +400,22 @@ if [[ $stats != 'no' ]]; then
 		fi
 	else
 		# Try to use path given in option -P:
+		# For Paftools output:
 		if [[ -s $refFilePathForStats/${samplePrefix}_${sampleId}/${sampleId}.fasta ]]; then 
 			refFileName=$refFilePathForStats/${samplePrefix}_${sampleId}/${sampleId}.fasta
-			# Copy the gene recovery file to pwd so that the BWA indices go to pwd:
+			# Need to copy the gene recovery file to pwd so that the BWA indices go to pwd(!):
 			cp -p  $refFileName ${sampleId}.fasta
 		elif [[ -s $refFilePathForStats/${sampleId}.fasta ]]; then
 			refFileName=$refFilePathForStats/${sampleId}.fasta
-			# Copy the gene recovery file to pwd so that the BWA indices go to pwd:
+			# Need to copy the gene recovery file to pwd so that the BWA indices go to pwd:
 			cp -p  $refFileName ${sampleId}.fasta
+		# For HybPiper output:
+		elif [[ -s $refFilePathForStats/${samplePrefix}_${sampleId}/${sampleId}_all_genes.fasta ]]; then
+			cp -p  $refFilePathForStats/${samplePrefix}_${sampleId}/${sampleId}_all_genes.fasta  ${sampleId}_all_genes.fasta
+			refFileName=${sampleId}_all_genes.fasta
+		elif [[ -s $refFilePathForStats/${sampleId}_all_genes.fasta ]]; then
+			cp -p  $refFilePathForStats/${sampleId}_all_genes.fasta  ${sampleId}_all_genes.fasta
+			refFileName=${sampleId}_all_genes.fasta
 		else 
 			echo "ERROR: option -P - can't find the correct path to the gene recovery fasta file or is empty. Stats cannot be calculated for sample: ${sampleId}."
 			echo 
@@ -406,20 +426,42 @@ if [[ $stats != 'no' ]]; then
 
 	echo "Found gene recovery fasta file: $refFileName"
 
-
 	# Prepare to map reads for getting stats:
-	bwa index ${sampleId}.fasta
-	bwa mem -t $cpu ${sampleId}.fasta \
+	bamFileWithDups=''
+	bwa index $refFileName
+	bwa mem -t $cpu $refFileName \
 	${sampleId}_R1_trimmomatic.fastq \
 	${sampleId}_R2_trimmomatic.fastq \
 	> ${sampleId}_bwa_mem_with_dups.sam
-### NB - WHAT HAPPENS WHEN USING HYBPIPER? NEED TO ALSO MAP THE UNPAIRED READS
-### Don’t forget to pipe in/out files as much as possible to save space
-### ALSO, uptodate samtools versions can output straight to bam - take a look - shoudl be able to go from bwa sam stright to samtools sort
+
+	### Don’t forget to pipe in/out files as much as possible to save space
+	### ALSO, uptodate samtools versions can output straight to bam - take a look - shoudl be able to go from bwa sam stright to samtools sort
 	samtools view -bS ${sampleId}_bwa_mem_with_dups.sam > ${sampleId}_bwa_mem_with_dups.bam
 	# Need to sort bam before indexing
 	samtools sort ${sampleId}_bwa_mem_with_dups.bam > ${sampleId}_bwa_mem_with_dups_sort.bam
 	samtools index  ${sampleId}_bwa_mem_with_dups_sort.bam
+	bamFileWithDups=${sampleId}_bwa_mem_with_dups_sort.bam
+
+	if [[ $hybSeqProgram == 'hybpiper'* ]]; then
+		# Also need to map the single end reads file:
+		bwa index $refFileName
+		bwa mem -t $cpu $refFileName \
+		${sampleId}_R1_R2_trimmomatic_unpaired.fastq \
+		> ${sampleId}_bwa_mem_with_dups_unpaired_reads.sam
+
+		samtools view -bS ${sampleId}_bwa_mem_with_dups_unpaired_reads.sam > ${sampleId}_bwa_mem_with_dups_unpaired_reads.bam
+		# Need to sort bam before indexing
+		samtools sort ${sampleId}_bwa_mem_with_dups_unpaired_reads.bam > ${sampleId}_bwa_mem_with_dups_unpaired_reads_sort.bam
+		# Merge sorted bam files:
+		samtools merge  ${sampleId}_bwa_mem_with_dups_sort_merged.bam  ${sampleId}_bwa_mem_with_dups_sort.bam  ${sampleId}_bwa_mem_with_dups_unpaired_reads_sort.bam
+		# Resort bam (just in case):
+		samtools sort ${sampleId}_bwa_mem_with_dups_sort_merged.bam > ${sampleId}_bwa_mem_with_dups_unpaired_reads_sort_merged_resort.bam
+		samtools index  ${sampleId}_bwa_mem_with_dups_unpaired_reads_sort_merged_resort.bam
+		bamFileWithDups=${sampleId}_bwa_mem_with_dups_unpaired_reads_sort_merged_resort.bam
+
+		if [[ -s ${sampleId}_R1_R2_trimmomatic_unpaired.fastq ]]; then rm ${sampleId}_R1_R2_trimmomatic_unpaired.fastq; fi 
+	fi
+
 
 	# Before assessing read depth stats, remove duplicates from the mapped bam file:
 	if [[ ! -d tmp ]]; then mkdir tmp; fi 	# Not sure if this is vital - maybe sample size dependant
@@ -427,7 +469,7 @@ if [[ $stats != 'no' ]]; then
 	### Example in docs: for 8.6GB/20GB file, run with 2GB (-Xmx2g) and 10 GB hard memory
 	### So far not needed to set memory with PAFTOL data: ${sampleId}_largest _R1_trimmomatic.fastq file done to date = 4.9GB
 	java -jar  -XX:ParallelGCThreads=$cpu -Djava.io.tmpdir=tmp $PICARD MarkDuplicates \
-	INPUT=${sampleId}_bwa_mem_with_dups_sort.bam \
+	INPUT=$bamFileWithDups \
 	OUTPUT=${sampleId}_bwa_mem_sort.bam \
 	METRICS_FILE=${sampleId}_bwa_mem_sort_markdup_metrics \
 	REMOVE_DUPLICATES=true \
@@ -459,15 +501,15 @@ if [[ $stats != 'no' ]]; then
 	# Then in overall_gene_recovery_stats.sh script, the results can be converted in a table for 
 	# all sample and genes. 
 	# Number of recovered genes:
-	numbrRecoveredGenes=`cat ${sampleId}.fasta | grep '>' | wc -l `
+	numbrRecoveredGenes=`cat $refFileName | grep '>' | wc -l `
 	# Sum length of genes :
-	sumLengthOfGenes=`fastalength ${sampleId}.fasta | awk '{sum+=$1} END {print sum}' `
+	sumLengthOfGenes=`fastalength $refFileName | awk '{sum+=$1} END {print sum}' `
 	echo "sampleId: $sampleId
 numbrRecoveredGenes: $numbrRecoveredGenes
 sumLengthOfGenes: $sumLengthOfGenes" > ${sampleId}_gene_recovery_stats.txt  # Also wipes out file contents from any previous run
 
 	# Count number of all ambiguity codes:
-	###numbrAmbiguityCodesInGenes=`cat ${sampleId}.fasta | grep -v '>' | grep -o '[RYMKSWHBDN]' | wc -l `
+	###numbrAmbiguityCodesInGenes=`cat $refFileName | grep -v '>' | grep -o '[RYMKSWHBDN]' | wc -l `
 	###echo "numbrAmbiguityCodesInGenes: $numbrAmbiguityCodesInGenes" >> ${sampleId}_gene_recovery_stats.txt
 	### For some reason doesn't work - may have to turn off set +u and +e - see below
 	
@@ -476,7 +518,7 @@ sumLengthOfGenes: $sumLengthOfGenes" > ${sampleId}_gene_recovery_stats.txt  # Al
 	# General stats on the BWA alignment
 	####################################
 	# Count the number of reads in the bam file just after mapping but before removing read duplicates:
-	numbrTrimmedReadsInBamInclDups=`samtools view -c ${sampleId}_bwa_mem_with_dups_sort.bam `
+	numbrTrimmedReadsInBamInclDups=`samtools view -c $bamFileWithDups `
 	echo numbrTrimmedReadsInBamInclDups: $numbrTrimmedReadsInBamInclDups  >> ${sampleId}_gene_recovery_stats.txt
 
 	# Count the number of reads in the bam file just after mapping and removing read duplicates.
@@ -505,7 +547,7 @@ sumLengthOfGenes: $sumLengthOfGenes" > ${sampleId}_gene_recovery_stats.txt  # Al
 	# Reads on-target stats
 	#######################
 	# Reads per sample on-target with samtools view -L - need a bedfile:
-	fastalength ${sampleId}.fasta | awk '{print $2 " 0 " $1}'  > ${sampleId}.bed
+	fastalength $refFileName | awk '{print $2 " 0 " $1}'  > ${sampleId}.bed
 	# samtools view -F4 -L 10895.bed 10895_bwa_mem_sort.bam > 10895_bwa_mem_sort_st_-L.sam
 	# 2,030,124 - total # reads = 2,784,802 = 72.9 % on-target
 	numbrReadsOnTarget=`samtools view -c -F4 -q 20 -L ${sampleId}.bed ${sampleId}_bwa_mem_sort.bam `
@@ -526,7 +568,7 @@ sumLengthOfGenes: $sumLengthOfGenes" > ${sampleId}_gene_recovery_stats.txt  # Al
 	# samtools coverage - “meandepth” per gene (column 7 - includes positions with zero depth - see below)
 	####################
 	samtools coverage -q 20 -Q 20 ${sampleId}_bwa_mem_sort.bam > ${sampleId}_bwa_mem_sort_st_covrg.txt
-	# Removed --reference ${sampleId}.fasta - I don't think it is required - not sure why you need to supply it - same for samtools depth
+	# Removed --reference $refFileName - I don't think it is required - not sure why you need to supply it - same for samtools depth
 	# NB - It is necessary to implement a mapping quality threshold e.g. 20 would be OK - otherwise valeu a very high
 	# -q 20 base quality - NBNB - on closer inspection there is an error in the samtools view command line docs - -q and -Q could be the other way round - Ok for now if I use 20 for each.
 	# -Q 20 mapping quality
@@ -597,7 +639,7 @@ sumLengthOfGenes: $sumLengthOfGenes" > ${sampleId}_gene_recovery_stats.txt  # Al
 
 
 	# Also comparing read depth at >=4x WITH duplicates NOT removed to read depth at >=4x without duplicates.
-	samtools depth -q 20 -q 20 -a ${sampleId}_bwa_mem_with_dups_sort.bam > ${sampleId}_bwa_mem_with_dups_sort_st_depth.txt
+	samtools depth -q 20 -q 20 -a $bamFileWithDups > ${sampleId}_bwa_mem_with_dups_sort_st_depth.txt
 
 	# Mean read depth for bases with >= 4x depth  across ALL genes:
 	meanReadDepthWithDups_min4x=`cat ${sampleId}_bwa_mem_with_dups_sort_st_depth.txt | awk '$3 >= 4' | awk '{sum+=$3} END {if(sum > 0) {print sum/NR} else {print "0"}}' `	# average
@@ -627,6 +669,12 @@ sumLengthOfGenes: $sumLengthOfGenes" > ${sampleId}_gene_recovery_stats.txt  # Al
 	#########################################
 	# 1. Read depth per gene across all samples --> results for 353 genes
 	# 2. Read depth across all genes and samples - total mean and median values
+
+	# Remove the large fastq files from any gene recovery method:
+	if [[ -s ${sampleId}_R1_trimmomatic.fastq ]]; then 
+		rm ${sampleId}_R1_trimmomatic.fastq.gz ${sampleId}_R1_trimmomatic_unpaired.fastq.gz \
+		${sampleId}_R2_trimmomatic.fastq.gz ${sampleId}_R2_trimmomatic_unpaired.fastq.gz
+	fi
 fi
 #####cd ../ # Back up to parent dir for next sample - 20.4.2020 - has no effect here now and not required anymore because looping through samples is done outside this script 
 echo
