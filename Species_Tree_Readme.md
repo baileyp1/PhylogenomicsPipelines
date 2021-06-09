@@ -2,8 +2,8 @@
 
 ## Create a new environment
 ```
-conda create --name phylo python=3.7
-conda activate phylo
+conda create --name phylogenomics python=3.8
+conda activate phylogenomics
 ```
 ## Install packages
 Most packages can be installed with conda
@@ -26,7 +26,7 @@ cd ~; git clone https://github.com/baileyp1/PhylogenomicsPipelines; export PATH=
 * 1. Activate environment and enter a working directory
 
 ```
-conda activate phylo
+conda activate phylogenomics
 cd /mnt/shared/scratch/kleempoe/paftol/phylotree/test_2
 PATH=~/PhylogenomicsPipelines:$PATH
 export ASTRAL=/home/kleempoe/Astral/astral.5.7.7.jar
