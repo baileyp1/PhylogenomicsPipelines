@@ -230,7 +230,7 @@ while getopts "hvat:ug:ijGF:m:p:M:q:r:TC:c:d:Q:Y:A:D:O:L:I:JK:R:X:U:V:W:H:o:"  O
 	case $OPTION in
 
 		h) usage; exit 1 ;;
-		v) echo "make_species_trees_pipeline.sh  version 0.0.1"; exit ;;
+		v) echo "make_species_trees_pipeline.sh version 1.0"; exit ;;
 		a) addSampleName=yes ;;
 		t) sampleTableFile=$OPTARG ;;
 		u) option_u=yes ;;
@@ -624,11 +624,11 @@ else echo "ERROR: the gene list file (option -g) does not exist or is empty: $ge
 # 	exit
 # fi
 
-
-if (( $(bc <<< "$fractnMaxColOcc < 0") || $(bc <<< "$fractnMaxColOcc > 1") )); then 
-	echo "ERROR: -m option needs to be a fraction between 0 and 1 - exiting"
-	exit
-fi
+# 14.5.2021 - removing the remaining call to bc - change to use an integer value instead
+#if (( $(bc <<< "$fractnMaxColOcc < 0") || $(bc <<< "$fractnMaxColOcc > 1") )); then 
+#	echo "ERROR: -m option needs to be a fraction between 0 and 1 - exiting"
+#	exit
+#fi
 
 
 # Check first for whether $cpu is an integer (this is a logical fudge for detecting whether an integer or string) 
