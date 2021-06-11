@@ -58,15 +58,16 @@ OPTIONS <value>:
   -f <string>    
                  FULL path to all sample fastq files; N.B. no filenames, just the full path to them, not a relative path and no wild cards! (required option)
   -t <string>    
-                 file name of target genes in fasta format (required option)
+                 file name of target genes in DNA fasta format; NB: option -y 'hybpiper' requires protein fasta format (required option)
   -a <string>    
                  file name of adaptors in fasta format (required option)
   -y <string>    
                  Hyb-Seq program; options are: paftools, hybpiper, hybpiper-bwa
   -S    
                  calculate statistics for gene recovery from read data (includes per sample reads on-target, read coverage, read depth).
-                 This option can be used separately after the gene recoveries have run but the path to the gene recovery fasta 
-                 files has to be specified with option -P, if not running in the same location as the original gene recovery run
+                 This option can be used separately after the gene recoveries have run (do not specify option -y!) but the path to the
+                 gene recovery fasta files has to be specified with option -P, if not running in the same location as the original gene 
+                 recovery run
   -P <string> 
                  Specify FULL path to the gene recovery fasta files (for option -S), but only the part common to all files.
                  This option looks for the first, then the second of these two cases:
@@ -116,7 +117,7 @@ while getopts "hvs:t:f:a:y:p:c:d:H:m:T:Q:SP:"  OPTION; do
   case $OPTION in
 
     h) usage; exit 1 ;;
-    v) echo "recover_genes_from_all_samples.sh  version 0.0.1"; exit ;;
+    v) echo "recover_genes_from_all_samples.sh version 1.0"; exit ;;
     s) sampleList=$OPTARG ;;
     t) targetsFile=$OPTARG ;;
     f) paftolDataSymlinksDir=$OPTARG ;;
@@ -200,8 +201,8 @@ then echo ""
 else usage; echo "ERROR: option -c should be an integer - exiting "; exit; fi  
 
 
-if [[ $usePaftolDb != 'PAFTOL' && $usePaftolDb != 'OneKP_Transcripts' && $usePaftolDb != 'OneKP_Reads' && $usePaftolDb != 'SRA' && $usePaftolDb != 'AG' && $usePaftolDb != 'no' ]]; then 
-  usage; echo "ERROR: option -d should contain one of the following data sets: PAFTOL, OneKP_Transcripts, OneKP_Reads, SRA or AG - you added \'$usePaftolDb\'. Exiting"
+if [[ $usePaftolDb != 'PAFTOL' && $usePaftolDb != 'OneKP_Reads' && $usePaftolDb != 'SRA' && $usePaftolDb != 'GAP' && $usePaftolDb != 'no' ]]; then 
+  usage; echo "ERROR: option -d should specify one of the following data sets: PAFTOL, OneKP_Reads, SRA or GAP - you added '$usePaftolDb'. Exiting"
   exit
 fi    
 

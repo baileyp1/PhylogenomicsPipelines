@@ -99,7 +99,8 @@ if [ $hybSeqProgram == 'paftools' ]; then
 		gunzip -f -c $paftolDataSymlinksDir/$R2FastqFile > $unzippedR2FastqFile
 		
  		# Add sampleId flag and value to paftools command, depending on the data type, PAFTOL or external data.
- 		# NB - PAFTOL data doesn't use this flag value but the flag is still required!
+ 		# NB - PAFTOL data doesn't use this flag value but the flag is still required! Paftools checks whether 
+ 		#      an externalSequenceID exists and fails if one doesn't for a non-paftol sample.
 		if [[ -n $externalSequenceID ]]; then
 			externalSequenceID="--sampleId $externalSequenceID"
 		fi
@@ -115,6 +116,7 @@ if [ $hybSeqProgram == 'paftools' ]; then
 		# NB - the file name must be of this format e.g. PAFTOL_005853_R1.fastq BUT now only for PAFTOL data
 		# The fastqPath entered in the database consists of the path and filename e.g. $paftolDataSymlinksDir/$unzippedR1FastqFile
 		# --sampleId=$sampleId - must be included for all data types (there must be a value), however in the case of paftol data it is ignored but the flag and a value is still required!
+		### 7.6.2021 - NB - I don't think this is true anymore! I think --sampleId anf therefore $externalSequenceID can be blank
 		# --dataOrigin - dataset origin added via the -d flag of this script/pipeline e.g. -d PAFTOL, -d SRA
 
 		echo "Exit status of paftools addpaftolFastq:" $?
@@ -376,7 +378,7 @@ if [[ $stats != 'no' ]]; then
 
 	if [[ $usePaftolDb != 'no' ]]; then
 
-		echo If using PaftolDB with Paftools, need to run Trimmomatic again as the previous run was only saved to /tmp/ - still to add
+		echo If using PaftolDB with Paftools, need to run Trimmomatic again as the previous run was only saved to /tmp/ - still to add Trimmomatic step here
 		# NB - in all other case trimmomatic is being run again above
 		exit
 	fi	
@@ -542,6 +544,17 @@ sumLengthOfGenes: $sumLengthOfGenes" > ${sampleId}_gene_recovery_stats.txt  # Al
 	# NB for some reason | grep 'XA:Z' didn't work!
 	echo numbrReadsWithAltHits: $numbrReadsWithAltHits >> ${sampleId}_gene_recovery_stats.txt
 
+	# Count the number of unmapped reads:
+	numbrUnmappedReads=`samtools view -c -f4 ${sampleId}_bwa_mem_sort.bam `
+	echo numbrUnmappedReads: $numbrUnmappedReads  >> ${sampleId}_gene_recovery_stats.txt
+	# Output the unmapped reads and convert to a fastq file - need to resort bam for use with
+	### Not needed now can do this with samtools fastq
+	###samtools view -f4 ${sampleId}_bwa_mem_sort.bam > ${sampleId}_bwa_mem_sort_unmapped.bam  TEHn what?
+	# Need to sort bam by fastq record id:
+	samtools sort -n ${sampleId}_bwa_mem_sort.bam \
+	| samtools fastq -f4 -1 ${sampleId}_bwa_mem_unmapped_R1.fastq -2 ${sampleId}_bwa_mem_unmapped_R2.fastq \
+	-s ${sampleId}_bwa_mem_unmapped_single_ends.fastq -n
+	# -n - adds /1 and /2 to output records - would be good to test out the singleton file
 
 	#######################
 	# Reads on-target stats
