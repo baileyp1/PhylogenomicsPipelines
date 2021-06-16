@@ -86,8 +86,8 @@ OPTIONS <value>:
   -T <string>    
                  Slurm time limit, format <days>-<hours>:<minutes> (default=0-36:00 (36 hours)
   -Q <string>    
-                 Slurm partition (queue) to use (default=medium)
-
+                 Slurm partition (queue) to use (default=medium; select more than one queue with a comma delimited list e.g. medium,long)
+ 
   -H <integer>
                  Slurm array throttle (default=1; could set to 1, then increase once happy with run with: scontrol update arraytaskthrottle=<integer> job=<jobId>)
  
@@ -273,9 +273,11 @@ elif [ $os == 'Linux' ]; then
     # Maximum array size by default is 1000 - can be increased with MaxArraySize (max supported = 4000001, default set to 1001)
     # NBNB - it's only an administration value set globally i think  - can't be changed by user
 		# Prevent jobs going over 1000, otherwise will get empty sample directories and log files - minor issue!:
-    if [ $numbrSamples -ge 1001 ]; then
-      numbrSamples=1000
-      echo "WARNING: Maximum default size of Slurm array is 1000, processing only the first 1000 samples"
+    # Now finding what the value is set to on the cluster and using that as the maximum value to set for $numbrSamples:
+    maxSlurmArraySize=`scontrol show config | grep MaxArraySize | awk '{print $3}' `
+    if [ $numbrSamples -ge $maxSlurmArraySize ]; then
+      numbrSamples=$maxSlurmArraySize
+      echo "WARNING: Maximum default size of Slurm array is $maxSlurmArraySize, processing only the first $maxSlurmArraySize samples"
     elif [ $numbrSamples -lt $slurmThrottle ]; then 
       slurmThrottle=$numbrSamples
     fi

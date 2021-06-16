@@ -553,7 +553,7 @@ sumLengthOfGenes: $sumLengthOfGenes" > ${sampleId}_gene_recovery_stats.txt  # Al
 	# First, need to sort bam by fastq record id:
 	samtools sort -n ${sampleId}_bwa_mem_sort.bam \
 	| samtools fastq -f4 -1 ${sampleId}_bwa_mem_unmapped_R1.fastq.gz -2 ${sampleId}_bwa_mem_unmapped_R2.fastq.gz \
-	-s ${sampleId}_bwa_mem_unmapped_single_ends.fastq.gz
+	-s ${sampleId}_bwa_mem_unmapped_single_ends.fastq.gz -N
 	# -n - means that /1 and /2 are NOT added output records - would be good to test out the singleton file
 
 	#######################
