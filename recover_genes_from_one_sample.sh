@@ -547,14 +547,17 @@ sumLengthOfGenes: $sumLengthOfGenes" > ${sampleId}_gene_recovery_stats.txt  # Al
 	# Count the number of unmapped reads:
 	numbrUnmappedReads=`samtools view -c -f4 ${sampleId}_bwa_mem_sort.bam `
 	echo numbrUnmappedReads: $numbrUnmappedReads  >> ${sampleId}_gene_recovery_stats.txt
-	# Output the unmapped reads and convert to a fastq file - need to resort bam for use with
+	# Output the unmapped reads and convert to a fastq file.
+	# (Need to re-sort bam by fastq record name for use with 'samtools fastq'.)
 	# Not needed now - can select unmapped reads with samtools fastq:
 	# samtools view -f4 ${sampleId}_bwa_mem_sort.bam > ${sampleId}_bwa_mem_sort_unmapped.bam
-	# First, need to sort bam by fastq record id:
+
+	# First, sort bam by fastq record id:
 	samtools sort -n ${sampleId}_bwa_mem_sort.bam \
 	| samtools fastq -f4 -1 ${sampleId}_bwa_mem_unmapped_R1.fastq.gz -2 ${sampleId}_bwa_mem_unmapped_R2.fastq.gz \
 	-s ${sampleId}_bwa_mem_unmapped_single_ends.fastq.gz -N
-	# -n - means that /1 and /2 are NOT added output records - would be good to test out the singleton file
+	# samtools fastq -n - means that /1 and /2 are NOT added output records - didn't work here
+	# samtools fastq -N - means that /1 and /2 are ALWAYS added to fastq record ids 
 
 	#######################
 	# Reads on-target stats
