@@ -403,14 +403,14 @@ if [[ $stats != 'no' ]]; then
 	else
 		# Try to use path given in option -P:
 		# For Paftools output:
-		if [[ -s $refFilePathForStats/${samplePrefix}_${sampleId}/${sampleId}.fasta ]]; then 
-			refFileName=$refFilePathForStats/${samplePrefix}_${sampleId}/${sampleId}.fasta
+		if [[ -s $refFilePathForStats/${samplePrefix}_${sampleId}/${sampleId}.fasta ]]; then
 			# Need to copy the gene recovery file to pwd so that the BWA indices go to pwd(!):
-			cp -p  $refFileName ${sampleId}.fasta
+			cp -p  $refFilePathForStats/${samplePrefix}_${sampleId}/${sampleId}.fasta  ${sampleId}.fasta
+			refFileName=${sampleId}.fasta
 		elif [[ -s $refFilePathForStats/${sampleId}.fasta ]]; then
-			refFileName=$refFilePathForStats/${sampleId}.fasta
 			# Need to copy the gene recovery file to pwd so that the BWA indices go to pwd:
-			cp -p  $refFileName ${sampleId}.fasta
+			cp -p  $refFilePathForStats/${sampleId}.fasta  ${sampleId}.fasta
+			refFileName=${sampleId}.fasta
 		# For HybPiper output:
 		elif [[ -s $refFilePathForStats/${samplePrefix}_${sampleId}/${sampleId}_all_genes.fasta ]]; then
 			cp -p  $refFilePathForStats/${samplePrefix}_${sampleId}/${sampleId}_all_genes.fasta  ${sampleId}_all_genes.fasta
@@ -548,13 +548,13 @@ sumLengthOfGenes: $sumLengthOfGenes" > ${sampleId}_gene_recovery_stats.txt  # Al
 	numbrUnmappedReads=`samtools view -c -f4 ${sampleId}_bwa_mem_sort.bam `
 	echo numbrUnmappedReads: $numbrUnmappedReads  >> ${sampleId}_gene_recovery_stats.txt
 	# Output the unmapped reads and convert to a fastq file - need to resort bam for use with
-	### Not needed now can do this with samtools fastq
-	###samtools view -f4 ${sampleId}_bwa_mem_sort.bam > ${sampleId}_bwa_mem_sort_unmapped.bam  TEHn what?
-	# Need to sort bam by fastq record id:
+	# Not needed now - can select unmapped reads with samtools fastq:
+	# samtools view -f4 ${sampleId}_bwa_mem_sort.bam > ${sampleId}_bwa_mem_sort_unmapped.bam
+	# First, need to sort bam by fastq record id:
 	samtools sort -n ${sampleId}_bwa_mem_sort.bam \
-	| samtools fastq -f4 -1 ${sampleId}_bwa_mem_unmapped_R1.fastq -2 ${sampleId}_bwa_mem_unmapped_R2.fastq \
-	-s ${sampleId}_bwa_mem_unmapped_single_ends.fastq -n
-	# -n - adds /1 and /2 to output records - would be good to test out the singleton file
+	| samtools fastq -f4 -1 ${sampleId}_bwa_mem_unmapped_R1.fastq.gz -2 ${sampleId}_bwa_mem_unmapped_R2.fastq.gz \
+	-s ${sampleId}_bwa_mem_unmapped_single_ends.fastq.gz
+	# -n - means that /1 and /2 are NOT added output records - would be good to test out the singleton file
 
 	#######################
 	# Reads on-target stats
@@ -685,8 +685,8 @@ sumLengthOfGenes: $sumLengthOfGenes" > ${sampleId}_gene_recovery_stats.txt  # Al
 
 	# Remove the large fastq files from any gene recovery method:
 	if [[ -s ${sampleId}_R1_trimmomatic.fastq ]]; then 
-		rm ${sampleId}_R1_trimmomatic.fastq.gz ${sampleId}_R1_trimmomatic_unpaired.fastq.gz \
-		${sampleId}_R2_trimmomatic.fastq.gz ${sampleId}_R2_trimmomatic_unpaired.fastq.gz
+		rm ${sampleId}_R1_trimmomatic.fastq ${sampleId}_R1_trimmomatic_unpaired.fastq.gz \
+		${sampleId}_R2_trimmomatic.fastq ${sampleId}_R2_trimmomatic_unpaired.fastq.gz
 	fi
 fi
 #####cd ../ # Back up to parent dir for next sample - 20.4.2020 - has no effect here now and not required anymore because looping through samples is done outside this script 
