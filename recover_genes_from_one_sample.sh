@@ -86,6 +86,8 @@ fi
 usePaftolDbFlag=''
 if [ $hybSeqProgram == 'paftools' ]; then
 
+	echo "Running gene recovery with Paftools..."
+
 	#if [ $usePaftolDb != 'usePaftol' ]; then - To fit with other data types, changed to house the dataset acronym in $usePaftolDb 
 	if [ $usePaftolDb != 'no' ]; then 
 		usePaftolDbFlag='--usePaftolDb'
@@ -209,6 +211,8 @@ if [ $hybSeqProgram == 'paftools' ]; then
 	fi
 elif [[ $hybSeqProgram == 'hybpiper'* ]]; then
 
+	echo "Running gene recovery with HybPiper..."
+
 	bwa=''
 	if [[ $hybSeqProgram == 'hybpiper-bwa' ]];then 
 		bwa='--bwa'
@@ -301,6 +305,7 @@ elif [[ $hybSeqProgram == 'hybpiper'* ]]; then
 		# Now creating geneIds with the paralog suffix, if present, so that no paralogs
 		# will be used in the make_species_trees_pipeline.sh script:
 		### NB - searching for .main or .\d is quite dangerous if sample names/ids also have dots in them! Unless you were to grab the text after the last dot or inform the user.
+		### 17.6.2021 - Instead, you could split into an array, then get the last element (after last dot) and add remainder to $sampleId - easy! Also above file as well
 		for geneName in $geneList; do
 			export geneName
 			paralog_retriever.py  ${sampleId}_name.txt  $geneName \
@@ -558,6 +563,7 @@ sumLengthOfGenes: $sumLengthOfGenes" > ${sampleId}_gene_recovery_stats.txt  # Al
 	-s ${sampleId}_bwa_mem_unmapped_single_ends.fastq.gz -N
 	# samtools fastq -n - means that /1 and /2 are NOT added output records - didn't work here
 	# samtools fastq -N - means that /1 and /2 are ALWAYS added to fastq record ids 
+	#	NB - not sure if this needs to be done - all reads should be unique unless you are combining the R1 AND R2 read files (?)
 
 	#######################
 	# Reads on-target stats

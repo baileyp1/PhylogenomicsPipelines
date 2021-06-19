@@ -691,7 +691,7 @@ createGeneAlignmentAndTreeImages()	{
 			#	   3. If an $outgroupRoot identifer is already in the root position, then rooting fails and file is zero byte.
 			#		  I think this issue will occur when >1 $outgroupRoot identifers are chosen but don't cluster together.
 			#		  Easiest thing to do is to just supply a single root sample or mid-point root instead, in the latter case, 
-			#		  supply a label that doesn't exist e.g. 'midpoint' 
+			#		  supply a label that doesn't exist e.g. 'midpoint' (as advised in the command line help for option -o)
 			treeFileToUse=gene_alignment_tree_images_$1/${geneNwkFileNoSuffix}_rerooted.nwk
 			if [[ ! -s $treeFileToUse ]]; then
 				echo "WARNING: Outgroup(s) last common ancestor (LCA) is the tree's root - cannot reroot. Will mid-point root instead."

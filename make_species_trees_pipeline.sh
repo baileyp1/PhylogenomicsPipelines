@@ -121,7 +121,7 @@ ALIGNMENT OPTIONS:
                 sequence type to use: dna, protein, codon (default=dna). N.B. use with multiple types must be quoted (e.g. 'dna protein')
                 codon is input DNA aligned but guided by a protein alignment
   -A <string>      
-                alignment program to use: mafft, upp (default=mafft)
+                alignment program to use: mafft, upp (UPP is ideal for large alignments) (default=mafft)
   -M <string>      
                 if using mafft, specify alignment algorithm to use in quotes i.e. '--retree 1', '--retree 2', '--maxiterate 1000' etc (default='--retree 2')
 FILTERING AND TRIMMING OPTIONS:
@@ -160,7 +160,7 @@ PHYLOGENY OPTIONS:
   -L <integer>     
                 collapse gene tree nodes with bootstrap support less than <integer> percent
 
-  -o <string>   list outgroup or root sample names/identifiers. Format: 'species1 species2 species3 etc' (N.B. values must be inside quote characters).
+  -o <string>   list outgroup or root sample name/identifier. Format: 'sampleId1 sampleId2 sampleId3 etc' (N.B. values must be inside quote characters).
                 To mid-point root the trees, type 'mid-point root'
 OTHER OPTIONS: 
   -C <integer>     
