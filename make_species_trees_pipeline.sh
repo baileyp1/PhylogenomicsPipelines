@@ -63,6 +63,8 @@ outgroupRoot=no				# option -o
 # Need to check them if I make them public
 fileNamePrefix=tree_pipeline
 fractnMaxColOcc=0.7
+
+checkpointing=no
 slurmThrottle=50			# Was 1, set to 50 as now have two rounds of alignment 
 partitionName=long   		# Values depend on the cluster being used so good to have a flagged option for this
 partitionForSpeciesTrees=long 	# NB - need an extra variable for species tree so I can use a different queue e.g. for a large memory node
@@ -162,7 +164,9 @@ PHYLOGENY OPTIONS:
 
   -o <string>   list outgroup or root sample name/identifier. Format: 'sampleId1 sampleId2 sampleId3 etc' (N.B. values must be inside quote characters).
                 To mid-point root the trees, type 'mid-point root'
-OTHER OPTIONS: 
+OTHER OPTIONS:
+  -b            Turn on checkpointing i.e. repeat exactly the same run in the same location, reconstructing any gene trees that failed at the first attempt
+
   -C <integer>     
                 number of cpu to use for genetrees; NB - not convinced >1 cpu works robustly for raxml-ng with small datasets! (default=1)
   -c <integer>     
@@ -223,7 +227,7 @@ EOF
 
 
 #echo User inputs:    ### For testing only 
-while getopts "hvat:ug:ijGF:m:p:M:q:r:TC:c:d:Q:Y:A:D:O:L:I:JK:R:X:U:V:W:H:o:"  OPTION; do	# Remaining options - try capital letters!
+while getopts "hvat:ug:ijGF:m:p:M:q:r:TC:c:d:Q:Y:A:D:O:L:I:JK:R:X:U:V:W:H:o:b"  OPTION; do	# Remaining options - try capital letters!
 
 	#echo -$OPTION $OPTARG	### For testing only - could try to run through options again below 
 	 
@@ -231,42 +235,48 @@ while getopts "hvat:ug:ijGF:m:p:M:q:r:TC:c:d:Q:Y:A:D:O:L:I:JK:R:X:U:V:W:H:o:"  O
 
 		h) usage; exit 1 ;;
 		v) echo "make_species_trees_pipeline.sh version 1.0"; exit ;;
+#INPUT FILE OPTIONS:
+    G) useGenewiseFiles=yes ;;
+    g) geneListFile=$OPTARG ;;
 		a) addSampleName=yes ;;
 		t) sampleTableFile=$OPTARG ;;
 		u) option_u=yes ;;
+    p) fileNamePrefix=$OPTARG ;;
 #ALIGNMENT OPTIONS
 		D) seqType=$OPTARG ;;
 		A) alnProgram=$OPTARG ;;
-
-		g) geneListFile=$OPTARG ;;
-		i) geneTreesOnly=yes ;;
-		j) speciesTreesOnly=yes ;;
-		G) useGenewiseFiles=yes ;;
+    M) mafftAlgorithm="$OPTARG" ;;
+#FILTERING AND TRIMMING OPTIONS:
 		F) filterSeqs1=$OPTARG ;;
 		#f) fractnAlnCovrg=$OPTARG ;;
 		m) fractnMaxColOcc=$OPTARG ;;
+    O) maxColOccThreshold=$OPTARG ;;
 		#s) fractnSamples=$OPTARG ;;
-		p) fileNamePrefix=$OPTARG ;;
-		M) mafftAlgorithm="$OPTARG" ;;
+    I) filterSeqs2=$OPTARG ;;
+    ###J) trimAln1=yes ;;
+    K) trimAln2=$OPTARG ;;
+#PHYLOGENY OPTIONS:
+    i) geneTreesOnly=yes ;;
+    j) speciesTreesOnly=yes ;;
 		q) phyloProgramDNA=$OPTARG ;;
 		r) phyloProgramPROT=$OPTARG ;;
+
 		T) treeshrink=yes ;;
+    L) collapseNodes=$OPTARG ;;
+    o) outgroupRoot="$OPTARG" ;;
+#OTHER OPTIONS:
+    b) checkpointing=yes ;;
 		C) cpuGeneTree=$OPTARG ;;
 		c) cpu=$OPTARG ;;
 		Q) partitionName=$OPTARG ;;
 		Y) partitionForSpeciesTrees=$OPTARG ;;
-		O) maxColOccThreshold=$OPTARG ;;
-		L) collapseNodes=$OPTARG ;;
-		I) filterSeqs2=$OPTARG ;;
-		###J) trimAln1=yes ;;
-		K) trimAln2=$OPTARG ;;
 		R) geneTreeSlurmMem=$OPTARG ;;
 		X) extraMem=$OPTARG ;;
 		U) speciesTreeSlurmMem=$OPTARG ;;
 		V) geneTreeSlurmTime=$OPTARG ;;
 		W) speciesTreeSlurmTime=$OPTARG ;;
 		H) slurmThrottle=$OPTARG ;;
-		o) outgroupRoot="$OPTARG" ;;
+		
 		?)  echo This option is not allowed. Read the usage summary below.
       	    echo
       	    usage; exit 1 ;;
@@ -779,7 +789,7 @@ if [[ $extraMem != 'no' && $slurm -eq 1 ]]; then
 	echo genesForExtraMem_CpuToUse: $genesForExtraMem_CpuToUse
 	echo genesForExtraMem_MemToUse: $genesForExtraMem_MemToUse
 	echo Number of genes in main list after removing specified genes for extra mem: `cat  $geneListFile | wc -l`
-	echo Number of genes requiring extra menory: $numbrGenesForExtraMem
+	echo Number of genes requiring extra memory: $numbrGenesForExtraMem
 fi
 
 
@@ -815,20 +825,23 @@ echo
 #### 29.9.2020 - still get an error message though!!!!!
 ### 24.3.2021 - noticed that I also need to remove the *.modified.fasta files if the file names have changed
 ### betwen runs, otherwise all the samples will enter the analysis twice!!
-echo "Deleting output files if any exist from a previous run of the pipeline."
-if ls *.aln.for_tree.fasta >/dev/null 2>&1; then rm *.aln.for_tree.fasta *gene_tree_USE_THIS.nwk ; fi
-# Also, now I have added filterShortSeqs() function I need to check whether any of the filtered/trimmed fasta files need removing:
-if ls *.aln.after_filter1.fasta >/dev/null 2>&1; then rm *.aln.after_filter1.fasta ; fi
-if ls *.aln.after_filter2.fasta >/dev/null 2>&1; then rm *.aln.after_filter2.fasta ; fi
-if ls *.aln.after_trim1.fasta >/dev/null 2>&1; then rm *.aln.after_trim1.fasta ; fi
-if ls *.aln.after_trim2.fasta >/dev/null 2>&1; then rm *.aln.after_trim2.fasta ; fi
-# Other filter/trim output files should go here.
-# Also (!), if there is no filtering or trimming done then the file going into 
-# tree building is *.dna.aln.fasta so should be removed as well:
-if ls *.aln.fasta >/dev/null 2>&1; then rm *.aln.fasta ; fi
-# Also w.r.t. the realignment step, also need to delete these files (they mustn't linger around, otherwise gene set will be used, if if already filtered out)
-if ls after_reAlnFilterSeqs_USE_THIS/*after_filterSeqs_dna.fasta >/dev/null 2>&1; then rm after_reAlnFilterSeqs_USE_THIS/*after_filterSeqs_dna.fasta ; fi
-if ls after_reAlnFilterSeqs_USE_THIS/*after_treeshrink_dna.fasta >/dev/null 2>&1; then rm after_reAlnFilterSeqs_USE_THIS/*after_treeshrink_dna.fasta ; fi
+
+if [[ $checkpointing == 'no' ]]; then
+  echo "Deleting output files if any exist from a previous run of the pipeline."
+  if ls *.aln.for_tree.fasta >/dev/null 2>&1; then rm *.aln.for_tree.fasta *gene_tree_USE_THIS.nwk ; fi
+  # Also, now I have added filterShortSeqs() function I need to check whether any of the filtered/trimmed fasta files need removing:
+  if ls *.aln.after_filter1.fasta >/dev/null 2>&1; then rm *.aln.after_filter1.fasta ; fi
+  if ls *.aln.after_filter2.fasta >/dev/null 2>&1; then rm *.aln.after_filter2.fasta ; fi
+  if ls *.aln.after_trim1.fasta >/dev/null 2>&1; then rm *.aln.after_trim1.fasta ; fi
+  if ls *.aln.after_trim2.fasta >/dev/null 2>&1; then rm *.aln.after_trim2.fasta ; fi
+  # Other filter/trim output files should go here.
+  # Also (!), if there is no filtering or trimming done then the file going into 
+  # tree building is *.dna.aln.fasta so should be removed as well:
+  if ls *.aln.fasta >/dev/null 2>&1; then rm *.aln.fasta ; fi
+  # Also w.r.t. the realignment step, also need to delete these files (they mustn't linger around, otherwise gene set will be used, if if already filtered out)
+  if ls after_reAlnFilterSeqs_USE_THIS/*after_filterSeqs_dna.fasta >/dev/null 2>&1; then rm after_reAlnFilterSeqs_USE_THIS/*after_filterSeqs_dna.fasta ; fi
+  if ls after_reAlnFilterSeqs_USE_THIS/*after_treeshrink_dna.fasta >/dev/null 2>&1; then rm after_reAlnFilterSeqs_USE_THIS/*after_treeshrink_dna.fasta ; fi
+fi
 
 
 ##########################
@@ -898,7 +911,8 @@ if [[ $os == 'Darwin' && $speciesTreesOnly == 'no' ]]; then
 		$trimAln1 \
 		$trimAln2 \
 		"$treeshrink" \
-		"$outgroupRoot"
+		"$outgroupRoot" \
+    "$checkpointing"
 	done > make_gene_trees.log 2>&1
 	#exit
 	if [[ $filterSeqs1 != 'no' ]]; then
@@ -968,6 +982,7 @@ if [[ $os == 'Darwin' && $speciesTreesOnly == 'no' ]]; then
 		"$extraMem" \
 		"$partitionForSpeciesTrees" \
     "$outgroupRoot" \
+    "$checkpointing" \
 		> run_treeshrink_and_realign.log 2>&1
 		exit	# Species trees will be made after TreeShrink or re-alignment step(s) in nested call to this script, if requested.
 	fi
@@ -1015,7 +1030,8 @@ elif [[ $os == 'Linux' && $speciesTreesOnly == 'no' ]]; then
 		"$trimAln1" \
 		"$trimAln2" \
 		"$treeshrink" \
-		"$outgroupRoot" `
+		"$outgroupRoot" \
+    "$checkpointing" `
 
 		echo jobInfo: $jobInfo
 		jobId=`echo $jobInfo | cut -d ' ' -f 4 `
@@ -1052,7 +1068,8 @@ elif [[ $os == 'Linux' && $speciesTreesOnly == 'no' ]]; then
 			"$trimAln1" \
 			"$trimAln2" \
 			"$treeshrink" \
-			"$outgroupRoot" `
+			"$outgroupRoot" \
+      "$checkpointing" `
 
 			echo jobInfoX: $jobInfoX
 			jobIdX=`echo $jobInfoX | cut -d ' ' -f 4 `
@@ -1136,7 +1153,8 @@ elif [[ $os == 'Linux' && $speciesTreesOnly == 'no' ]]; then
 			"$option_u" \
 			"$extraMem" \
 			"$partitionForSpeciesTrees" \
-      "$outgroupRoot" `
+      "$outgroupRoot" \
+      "$checkpointing" `
 			exit	# Species trees will be made after TreeShrink or re-alignment step(s) in nested call to this script, if requested.
 		fi
 	else
@@ -1168,7 +1186,8 @@ elif [[ $os == 'Linux' && $speciesTreesOnly == 'no' ]]; then
 			"$trimAln1" \
 			"$trimAln2" \
 			"$treeshrink" \
-			"$outgroupRoot"
+			"$outgroupRoot" \
+      "$checkpointing"
 		done > make_gene_trees.log 2>&1
 
 		if [[ $filterSeqs1 != 'no' ]]; then
@@ -1238,6 +1257,7 @@ elif [[ $os == 'Linux' && $speciesTreesOnly == 'no' ]]; then
 			"$extraMem" \
 			"$partitionForSpeciesTrees" \
       "$outgroupRoot" \
+      "$checkpointing" \
 			> run_treeshrink_and_realign.log 2>&1
 			exit	# Species trees will be made after TreeShrink or re-alignment step(s) in nested call to this script, if requested.
 		fi

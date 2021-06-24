@@ -49,6 +49,7 @@ option_u="${31}"
 extraMem="${32}"
 partitionForSpeciesTrees="${33}"
 outgroupRoot="${34}"
+checkpointing="${35}"
 
 
 echo "$numbrSamples"
@@ -80,6 +81,7 @@ echo "option_u: $option_u"
 echo "extraMem: $extraMem"
 echo "partitionForSpeciesTrees: $partitionForSpeciesTrees"
 echo "outgroupRoot: $outgroupRoot"
+echo "checkpointing: $checkpointing"
 
 
 # Convert $emptyMatchStateFractn to a percent for use in the output files:
@@ -249,6 +251,9 @@ reAlignSeqs()   {
     extraMemOptionX=''
     if [ $extraMem != 'no' ]; then extraMemOptionX="-X $extraMem"; fi
 
+    bOption=''
+    if [ $checkpointing == 'yes' ]; then bOption='-b'; fi
+
    
     ### At the moment these files don't exist in /after_treeshrink_USE_THIS_dna/ dir
     ### which exists by this stage - but they do exist in the above dir so will copy 
@@ -263,9 +268,10 @@ reAlignSeqs()   {
     ### option -i. All other options can be used on the command line using the
     ### variables input to this script i.e. can remove $trimAlnOption2,
     ### collapseNodesOption, extraMemOptionX and set the option instead with inported var.
+    ### together with the option on the command line.
     #echo " # For checking option values that need to be quoted (contain spaces)
     $pathToScripts/make_species_trees_pipeline.sh $iOption $trimAlnOption1 $trimAlnOption2 $collapseNodesOption $uOption $extraMemOptionX \
-    $sampleTableFileOption \
+    $sampleTableFileOption $bOption \
     -p $fileNamePrefix \
     -G \
     -D "$1" \

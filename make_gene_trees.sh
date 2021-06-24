@@ -28,6 +28,7 @@ trimAln1="${18}"
 trimAln2="${19}"
 treeshrink="${20}"
 outgroupRoot="${21}"
+checkpointing="${22}"
 
 # Convert $emptyMatchStateFractn to a percent for use in the output files:
 fractnAlnCovrg_pc=`awk -v FRACTN=$fractnAlnCovrg 'BEGIN{printf "%.0f", FRACTN * 100}' `
@@ -65,6 +66,7 @@ echo trimAln1: $trimAln1
 echo trimAln2: $trimAln2
 echo treeshrink: $treeshrink
 echo outgroupRoot: $outgroupRoot
+echo checkpointing: $checkpointing
 
 
 filterSeqs1()	{
@@ -145,7 +147,7 @@ echo maxColOcc: $maxColOcc  >> ${geneId}_aln_summary.log
 # So now allowing all seqs for these genes through where $maxColOcc==0 (they tend to be small genes),
 # just need to set $maxColOcc to 1 for awk to work.
 if [[ $maxColOcc -eq 0 ]]; then
-	maxColOcc = 1
+	maxColOcc=1
 fi
 if [[ $maxColOcc -ge $3 ]]; then
 
@@ -249,7 +251,7 @@ if [[ $maxColOcc -ge $3 ]]; then
 	fi
 else
 	# Printing out the alignments with little sequence overlap for assessing further (can concatenate them together)
-	echo $1 >> ${gene}_filtered_out_alignments.txt 
+	echo $1 >> ${gene}_filtered_out_alignments.txt
 fi 
 } # End of filterSeqs1 function
 
@@ -833,6 +835,17 @@ dnaAlnToUse=''		# Stores the alignment file from the chosen aligner - is then us
 proteinAlnToUse=''
 codonAlnToUse=''
 if [[ $dnaSelected == 'yes' ]]; then
+
+	# Adding a checkpoint here - if the gene tree Newick file already exists AND checkpointing is turned on,
+	# the alignment and tree steps are skipped for current gene. Otherwise these steps are done again and 
+	# previous ones overwritten, useful if some of the parameters have chagned from a previous run (this is 
+	# allowed even though a fresh directory is advised if a re-run is required) 
+	if [[ -s ${gene}_dna_gene_tree_USE_THIS.nwk && $checkpointing == 'yes' ]]; then 
+		echo "INFO: checkpointing is ON so this gene tree is being skipped - already done: ${gene}_dna_gene_tree_USE_THIS.nwk"
+		exit 0
+	fi
+
+
     if [[ "$alnProgram" == 'mafft' ]]; then 	# If aligners can be set to auto residue detect, can use a generic subR - or brign in a variable.
     	echo
         echo Creating a DNA alignment with MAFFT...
@@ -881,7 +894,7 @@ if [[ $dnaSelected == 'yes' ]]; then
 		#      UPP doesn’t seem to align two seqs but it does align three seqs!
     	#	   With the -M -1 flag it couldn’t align 5 genes but sucess depends on how complete the sequences are.
 		if [[ ! -s ${gene}.dna.upp_alignment.fasta ]]; then 
-			echo "ERROR: UPP was not able to align this gene set - skipping alignment of $dnaFastaFileForAln"
+			echo "WARNING: UPP was not able to align this gene set - skipping alignment of $dnaFastaFileForAln"
 			exit 0	# zero allows Slurm to continue with the dependancies
 		fi
 		mv ${gene}.dna.upp_alignment_masked.fasta ${gene}.dna.aln.fasta 
@@ -889,7 +902,16 @@ if [[ $dnaSelected == 'yes' ]]; then
     fi
 fi
 
-if [[ $proteinSelected == 'yes' || $codonSelected == 'yes' ]]; then 
+if [[ $proteinSelected == 'yes' || $codonSelected == 'yes' ]]; then
+
+	# Adding a checkpoint here (see above clause for explanations):
+	if [[ -s ${gene}_protein_gene_tree_USE_THIS.nwk && $codonSelected == 'no'  && $checkpointing == 'yes' ]]; then 
+		echo "INFO: checkpointing is ON so this gene tree is being skipped - already done: ${gene}_protein_gene_tree_USE_THIS.nwk"
+		exit 0
+	fi
+	### NB - 23.6.2021- still need to check that this checkpoint works (and with all permutations of options)
+
+
  	# NB - The protein fasta headers will contain  \[translate(1)\] - fastatranslate (v2.4.x) adds this string to the header.
 	# It makes raxml-ng crash so remove it here:
 	fastatranslate -F 1  $dnaFastaFileForAln \
@@ -931,6 +953,14 @@ if [[ $proteinSelected == 'yes' || $codonSelected == 'yes' ]]; then
 	fi
 
 	if [[ $codonSelected == 'yes' ]]; then
+
+		# Adding a checkpoint here (see above clause for explanations):
+		if [[ -s codonAln/${gene}_codon_gene_tree_USE_THIS.nwk && $checkpointing == 'yes' ]]; then 
+			echo "INFO: checkpointing is ON so this gene tree is being skipped - already done: ${gene}_codon_gene_tree_USE_THIS.nwk"
+			exit 0
+		fi
+
+
 		echo
 		echo Creating a DNA alignment guided by the protein alignment...
 		if [[ ! -d codonAln ]]; then mkdir codonAln; fi
