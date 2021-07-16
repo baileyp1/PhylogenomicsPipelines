@@ -201,10 +201,23 @@ then echo ""
 else usage; echo "ERROR: option -c should be an integer - exiting "; exit; fi  
 
 
-if [[ $usePaftolDb != 'PAFTOL' && $usePaftolDb != 'OneKP_Reads' && $usePaftolDb != 'SRA' && $usePaftolDb != 'GAP' && $usePaftolDb != 'no' ]]; then 
-  usage; echo "ERROR: option -d should specify one of the following data sets: PAFTOL, OneKP_Reads, SRA or GAP - you added '$usePaftolDb'. Exiting"
+# Option -d input:
+if [[ $usePaftolDb != 'PAFTOL'* && $usePaftolDb != 'OneKP_Reads'* && $usePaftolDb != 'SRA'* && $usePaftolDb != 'GAP'* && $usePaftolDb != 'no' ]]; then 
+  usage; echo "ERROR: option -d should specify one of the following data sets and a recovery run: PAFTOL, OneKP_Reads, SRA or GAP e.g. 'PAFTOL:run1' - you added '$usePaftolDb'. Exiting"
   exit
-fi    
+else
+  numbrFields=`echo $usePaftolDb | awk -F ':' '{print NF}' `
+  # Test the number of ':' delimited fields:
+  if [[ $numbrFields -ne 2 ]]; then echo "ERROR: option -d requires two fields e.g. <datasetOrigin>:run<number> - exiting "; exit; fi
+  # Separate out the fields and check that each field is occupied:
+  datasetOrigin=`echo $usePaftolDb | cut -d ':' -f 1 `
+  recoveryRun=`echo $usePaftolDb | cut -d ':' -f 2 `
+  if [[ -z "$datasetOrigin" ]]; then echo "ERROR: option -d, one of two fields is empty - exiting "; exit; fi
+  if [[ -z "recoveryRun=" ]]; then echo "ERROR: option -d, one of two fields is empty - exiting "; exit; fi
+  # Not checking the alphanumerical nature of the values.
+  # Paftools will let user know if the datasetOrigin and recoveryRun are not found.
+fi
+
 
 ##########################
 # End of user input checks
