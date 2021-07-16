@@ -73,7 +73,7 @@ $maxColOccThreshold \
 "$trimAln1" \
 "$trimAln2" \
 "$treeshrink" \
-"$outgroupRoot"
+"$outgroupRoot" \
 "$checkpointing"
 ### 16.3.2020 - could remove this $$exePrefix - but it might be useful to see whether sub-processes get added to the mem used for this script.
 ### 3.6.2020 - yes they do - the time and mem from this command is the total of tiem within script AND max mem used within the child processes - good
