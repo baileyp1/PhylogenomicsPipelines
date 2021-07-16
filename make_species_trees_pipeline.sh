@@ -163,7 +163,7 @@ PHYLOGENY OPTIONS:
                 collapse gene tree nodes with bootstrap support less than <integer> percent
 
   -o <string>   list outgroup or root sample name/identifier. Format: 'sampleId1 sampleId2 sampleId3 etc' (N.B. values must be inside quote characters).
-                To mid-point root the trees, type 'mid-point root'
+                To mid-point root the trees, type 'mid-point'
 OTHER OPTIONS:
   -b            Turn on checkpointing i.e. repeat exactly the same run in the same location, reconstructing any gene trees that failed at the first attempt
 
