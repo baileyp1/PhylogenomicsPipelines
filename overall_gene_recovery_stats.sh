@@ -13,11 +13,11 @@
 shopt -s failglob
 
 
-### Need to bring in the Sample prefix
+### Need to bring in the Sample prefix; might vary from 'Sample*'
 
 
-# Required for the per gene stats:
-geneList=/science/projects/paftol/PAFTOL_additional_files/Angiosperms353_targetSequences_organism-gene_format_corrected_geneIds_ONLY.txt
+# Required for the per gene stats (readDepthPerGene_st_depth.txt):
+geneList=/data/projects/paftol/PAFTOL_additional_files/Angiosperms353_targetSequences_organism-gene_format_corrected_geneIds_ONLY.txt
 ### NBNB - maybe use the fasta file so that i get the length of each gene
 
 
