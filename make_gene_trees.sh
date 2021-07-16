@@ -385,7 +385,7 @@ trimAln2()	{
 makeGeneTree()	{
 	###########
     # Function: makes the gene tree from the available methods in this function 
-    # 			from a DNA alignment
+    # 			from a sequence alignment
  	#
  	# Input parameters:
  	# $1 = residue type: dna, aa or codon 

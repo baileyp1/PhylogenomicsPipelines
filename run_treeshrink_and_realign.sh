@@ -50,6 +50,7 @@ extraMem="${32}"
 partitionForSpeciesTrees="${33}"
 outgroupRoot="${34}"
 checkpointing="${35}"
+speciesTreeProgram="${36}"
 
 
 echo "$numbrSamples"
@@ -82,6 +83,7 @@ echo "extraMem: $extraMem"
 echo "partitionForSpeciesTrees: $partitionForSpeciesTrees"
 echo "outgroupRoot: $outgroupRoot"
 echo "checkpointing: $checkpointing"
+echo "speciesTreeProgram: $speciesTreeProgram"
 
 
 # Convert $emptyMatchStateFractn to a percent for use in the output files:
@@ -191,7 +193,7 @@ reAlignSeqs()   {
     # Function: realigns sequences from gene-wise files that have passed through a filtering, trimming or
     #           a TreeShrink step. 
     # $1 = $seqType
-    # $2 = $phyloProgramMethod
+    # $2 = $phyloProgramMethod (gene trees)
     # $3 = log file suffix and used for the input fasta files
     # All global variables are also available so no need to bring them in as such - keep confirming...
     ###########
@@ -281,6 +283,7 @@ reAlignSeqs()   {
     -m $fractnMaxColOcc \
     -O $maxColOccThreshold \
     $2 \
+    -s "$speciesTreeProgram" \
     -C $cpuGeneTree \
     -c $cpu \
     -Q $partitionName \
