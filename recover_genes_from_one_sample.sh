@@ -209,8 +209,8 @@ if [ $hybSeqProgram == 'paftools' ]; then
 		if [[ $stats == 'no' ]]; then
 			# Remove the large fastq files:
 			if [[ -s ${sampleId}_R1_trimmomatic.fastq ]]; then 
-				rm ${sampleId}_R1_trimmomatic.fastq.gz ${sampleId}_R1_trimmomatic_unpaired.fastq.gz \
-				${sampleId}_R2_trimmomatic.fastq.gz ${sampleId}_R2_trimmomatic_unpaired.fastq.gz
+				rm ${sampleId}_R1_trimmomatic.fastq ${sampleId}_R1_trimmomatic_unpaired.fastq.gz \
+				${sampleId}_R2_trimmomatic.fastq ${sampleId}_R2_trimmomatic_unpaired.fastq.gz
 			fi
 		fi
 	fi
@@ -370,8 +370,8 @@ elif [[ $hybSeqProgram == 'hybpiper'* ]]; then
         if [[ $stats == 'no' ]]; then
 			# Remove the large fastq files:
 			if [[ -s ${sampleId}_R1_trimmomatic.fastq ]]; then 
-				rm ${sampleId}_R1_trimmomatic.fastq.gz ${sampleId}_R1_trimmomatic_unpaired.fastq.gz \
-				${sampleId}_R2_trimmomatic.fastq.gz ${sampleId}_R2_trimmomatic_unpaired.fastq.gz \
+				rm ${sampleId}_R1_trimmomatic.fastq ${sampleId}_R1_trimmomatic_unpaired.fastq.gz \
+				${sampleId}_R2_trimmomatic.fastq ${sampleId}_R2_trimmomatic_unpaired.fastq.gz \
 				${sampleId}_R1_R2_trimmomatic_unpaired.fastq
 			fi
 		fi
