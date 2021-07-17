@@ -1031,7 +1031,7 @@ elif [[ $os == 'Linux' && $speciesTreesOnly == 'no' ]]; then
 		"$trimAln2" \
 		"$treeshrink" \
 		"$outgroupRoot" \
-    "$checkpointing" `
+        "$checkpointing" `
 
 		echo jobInfo: $jobInfo
 		jobId=`echo $jobInfo | cut -d ' ' -f 4 `
@@ -1069,7 +1069,7 @@ elif [[ $os == 'Linux' && $speciesTreesOnly == 'no' ]]; then
 			"$trimAln2" \
 			"$treeshrink" \
 			"$outgroupRoot" \
-      "$checkpointing" `
+            "$checkpointing" `
 
 			echo jobInfoX: $jobInfoX
 			jobIdX=`echo $jobInfoX | cut -d ' ' -f 4 `
