@@ -94,8 +94,8 @@ if [ $hybSeqProgram == 'paftools' ]; then
   		# Separate out the two fields:
   		datasetOrigin=`echo $usePaftolDb | cut -d ':' -f 1 `
   		recoveryRun=`echo $usePaftolDb | cut -d ':' -f 2 `
-  		echo "Dataset type: $datasetOrigin"
-  		echo "Recovery run: $recoveryRun" 
+  		echo "Dataset type: $datasetOrigin"		# Required for addPaftolFastq program
+  		echo "Recovery run: $recoveryRun" 		# Required for recoverSeqs program 
 
 		# Remove the .gz ending from the file name for adding to the pafto_da database
 		unzippedR1FastqFile=`basename -s .gz $paftolDataSymlinksDir/$R1FastqFile `
