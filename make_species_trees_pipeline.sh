@@ -55,6 +55,7 @@ speciesTreesOnly=no
 phyloProgramDNA=fasttree
 phyloProgramPROT=no			# Work around to specify any program so software testing code will not crash! Ensures cmd parameter is always occupied which is critical
 speciesTreeProgram=none
+numbrBootstraps=100          # Number of bootstrap searches for RAxML tree (and IQ-Tree when implemented)
 treeshrink=no
 collapseNodes=no			# option -L
 outgroupRoot=no				# option -o
@@ -156,8 +157,10 @@ PHYLOGENY OPTIONS:
                 name of phylogeny program for gene trees from protein sequences.
                 If required, options are, fastest to slowest: fasttree, iqtree2-B1000-nm110, iqtree2-B1000-nm200, iqtree2-B1000-nm1000, iqtree2, raxml-ng (no default)
   -S <string>      
-                name of phylogeny programs to use for the species tree(s) for supermatrix approach (concatenated gene alignments).
-                If required, options are, fastest to slowest: fasttree, RAxML - UNDER DEVELOPMENT - both programs run in series at the moment 
+                name of phylogeny program(s) to use for the species tree(s) if required. Coalescent-based method: astral, astralmp (multi-threaded);
+                using a concatenated set of gene alignments: fasttree, raxml. N.B. using several programs must be quoted (e.g. 'astral fasttree')
+  -B <integer>  
+                number of bootstrap searches for RAxML species tree (default=100)
   -T               
                 use TreeShrink on gene trees (followed by re-alignment)
   -L <integer>     
@@ -171,7 +174,7 @@ OTHER OPTIONS:
   -C <integer>     
                 number of cpu to use for genetrees; NB - not convinced >1 cpu works robustly for raxml-ng with small datasets! (default=1)
   -c <integer>     
-                number of cpu to use for RAxML in supermatrix method (default=8)
+                number of cpu to use by ASTRAL-MP and/or RAxML for the species tree(s) (default=8)
   -R <integer>     
                 Slurm memory to use (in MB) for gene trees and TreeShrink (default=0; means no limit is imposed in default Slurm set up)
 
@@ -228,7 +231,7 @@ EOF
 
 
 #echo User inputs:    ### For testing only 
-while getopts "hvat:ug:ijGF:m:p:M:q:r:TC:c:d:Q:Y:A:D:O:L:I:JK:R:X:U:V:W:H:o:bs:"  OPTION; do	# Remaining options - try capital letters!
+while getopts "hvat:ug:ijGF:m:p:M:q:r:TC:c:d:Q:Y:A:D:O:L:I:JK:R:X:U:V:W:H:o:bs:B:"  OPTION; do	# Remaining options - try capital letters!
 
 	#echo -$OPTION $OPTARG	### For testing only - could try to run through options again below 
 	 
@@ -262,6 +265,7 @@ while getopts "hvat:ug:ijGF:m:p:M:q:r:TC:c:d:Q:Y:A:D:O:L:I:JK:R:X:U:V:W:H:o:bs:"
 		q) phyloProgramDNA=$OPTARG ;;
 		r) phyloProgramPROT=$OPTARG ;;
         s) speciesTreeProgram=$OPTARG ;;
+        B) numbrBootstraps=$OPTARG ;;
 		T) treeshrink=yes ;;
         L) collapseNodes=$OPTARG ;;
         o) outgroupRoot="$OPTARG" ;;
@@ -816,6 +820,7 @@ echo 'geneTreeSlurmTime: ' $geneTreeSlurmTime
 echo 'speciesTreeSlurmTime: ' $speciesTreeSlurmTime
 echo 'Outgroup root(s): ' $outgroupRoot
 echo 'Species tree program(s): ' $speciesTreeProgram
+echo "Number of bootstraps for RAxML: $numbrBootstraps"
 echo
 #exit
 
@@ -986,6 +991,7 @@ if [[ $os == 'Darwin' && $speciesTreesOnly == 'no' ]]; then
         "$outgroupRoot" \
         "$checkpointing" \
         "$speciesTreeProgram" \
+        "$numbrBootstraps" \
 		> run_treeshrink_and_realign.log 2>&1
 		exit	# Species trees will be made after TreeShrink or re-alignment step(s) in nested call to this script, if requested.
 	fi
@@ -1158,7 +1164,8 @@ elif [[ $os == 'Linux' && $speciesTreesOnly == 'no' ]]; then
 			"$partitionForSpeciesTrees" \
             "$outgroupRoot" \
             "$checkpointing" \
-            "$speciesTreeProgram" `
+            "$speciesTreeProgram" \
+            "$numbrBootstraps" `
 			exit	# Species trees will be made after TreeShrink or re-alignment step(s) in nested call to this script, if requested.
 		fi
 	else
@@ -1263,6 +1270,7 @@ elif [[ $os == 'Linux' && $speciesTreesOnly == 'no' ]]; then
             "$outgroupRoot" \
             "$checkpointing" \
             "$speciesTreeProgram" \
+            "$numbrBootstraps" \
 			> run_treeshrink_and_realign.log 2>&1
 			exit	# Species trees will be made after TreeShrink or re-alignment step(s) in nested call to this script, if requested.
 		fi
@@ -1299,6 +1307,7 @@ if [ $os == 'Darwin' ]; then
     "$speciesTreeProgram" \
     "$outgroupRoot" \
     $speciesTreeSlurmMem \
+    $numbrBootstraps \
 	> ${fileNamePrefix}_make_species_trees.log 2>&1
 elif [ $os == 'Linux' ]; then
 	exePrefix="/usr/bin/time -v"
@@ -1329,7 +1338,8 @@ elif [ $os == 'Linux' ]; then
 		$option_u \
         "$speciesTreeProgram" \
         "$outgroupRoot" \
-        $speciesTreeSlurmMem
+        $speciesTreeSlurmMem \
+        $numbrBootstraps
 	else
 		$pathToScripts/make_species_trees.sh \
 		$fractnAlnCovrg \
@@ -1351,6 +1361,7 @@ elif [ $os == 'Linux' ]; then
         "$speciesTreeProgram" \
         "$outgroupRoot" \
         $speciesTreeSlurmMem \
+        $numbrBootstraps \
 		> ${fileNamePrefix}_make_species_trees.log 2>&1
 	fi
 fi

@@ -29,7 +29,7 @@ phyloProgramDNA=$7
 phyloProgramPROT=$8
 exePrefix="$9"
 treeTipInfoMapFile=${10}        # NB - just testing if this filename was submitted, then will add tree tip info to species tree
-dnaSelected=${11}
+dnaSelected=${11}               # NB - for these <seqType>Selected variables, this script should be able to process all three types together OR separately!
 proteinSelected=${12}
 codonSelected=${13}
 collapseNodes=${14}
@@ -38,6 +38,7 @@ option_u=${16}
 speciesTreeProgram=${17}
 outgroupRoot=${18}
 speciesTreeSlurmMem=${19}
+numbrBootstraps=${20}
 
 
 echo Preparing to run species trees...
@@ -47,9 +48,13 @@ echo numbrSamples: $totalNumbrSamples
 echo numbrSamplesThreshold: $numbrSamplesThreshold
 echo exePrefix: $exePrefix
 echo treeTipInfoMapFile: $treeTipInfoMapFile
+echo dnaSelected: $dnaSelected
+echo proteinSelected $proteinSelected
+echo codonSelected: $codonSelected
 echo collapseNodes: $collapseNodes
 echo speciesTreeProgram: $speciesTreeProgram
 echo "Option -U (species tree memory to use in mb): $speciesTreeSlurmMem"
+echo "Number of bootstrap data sets to use for RAxML: $numbrBootstraps"
 
 # Convert $emptyMatchStateFractn and $fractnSpecies to a percent for use in the output files:
 fractnAlnCovrg_pc=`awk -v FRACTN=$fractnAlnCovrg 'BEGIN{printf "%.0f", FRACTN * 100}' `
@@ -199,17 +204,23 @@ makeSpeciesTree () {
         | sed "s/;[QCENp=.\;0-9-]\{1,\}\]':/:/g" \
         > ${outFilePrefix}/${fileNamePrefix}.${residueType}.species_tree.astral_pp1_value.nwk
         # Also running with -t option set to 16:
-        $exePrefix java -Xmx12000m -jar $ASTRAL -t 16 \
-        -i $inFile \
-        -o ${outFilePrefix}/${fileNamePrefix}.${residueType}.species_tree.astral_-t16.nwk
-        mv ${outFilePrefix}/freqQuad.csv ${outFilePrefix}/${fileNamePrefix}.${residueType}.species_tree.astral_-t16_freqQuad.txt
+        #$exePrefix java -Xmx12000m -jar $ASTRAL -t 16 \
+        #-i $inFile --output ${outFilePrefix}/${fileNamePrefix}.${residueType}.species_tree.astral_-t16.nwk
+        ### 21.7.2021 - NB - in this script the -o or --output flag doesn't work for ASTRAL or ASTRAL-MP!
+        ### It works from the command line though so no idea what's going on - error is:
+        ### Error: -o does not exist.
+        ### Error: Unexpected argument: ./test.dna.species_tree.astralmp_-t16.nwk
+        #mv ${outFilePrefix}/freqQuad.csv ${outFilePrefix}/${fileNamePrefix}.${residueType}.species_tree.astral_-t16_freqQuad.txt
     elif [[ "$programToUse" == 'astralmp' ]]; then
         echo programToUse: $programToUse
         echo AstralInFile: $infile
         echo Running ASTRAL-MP on the DNA gene trees...
         ### Could also add a fixed value to Slurm memory OPTION -U so astral-mp will still work if slurm mem is set to zero:
-        ### let "speciesTreeSlurmMem= $speciesTreeSlurmMem + 12000" - might not be optimal though
-        $exePrefix java -Xmx${speciesTreeSlurmMem}m $ASTRALMPLIB -jar $ASTRALMP -C -T $cpu \
+        ### 4.8.2021 - if $speciesTreeSlurmMem == 0 , then give it some memory
+        ###     echo statement about memory using e.g. "Defualt memory for ASTRAL-MP is 12GB. Use option -U to adjust memory up or down."
+        ### 4.8.2021 - Also if -$cpu == 1 increase to 2 otherwise prgoram crashes
+        ### let "speciesTreeSlurmMem= $speciesTreeSlurmMem + 12000" - might not be optimal though, but then user should specify the amount of memory to use
+        $exePrefix java -Xmx${speciesTreeSlurmMem}m $ASTRALMPLIB -jar $ASTRALMP -C -T $cpu -t 2 \
         -i $infile \
         -o ${outFilePrefix}/${fileNamePrefix}.${residueType}.species_tree.astralmp_-t2.nwk
 
@@ -218,10 +229,10 @@ makeSpeciesTree () {
         | sed "s/;[QCENp=.\;0-9-]\{1,\}\]':/:/g" \
         > ${outFilePrefix}/${fileNamePrefix}.${residueType}.species_tree.astralmp_pp1_value.nwk
         # Also running with -t option set to 16:
-        $exePrefix java -Xmx${speciesTreeSlurmMem}m $ASTRALMPLIB -jar $ASTRALMP -C -T $cpu -t 16 \
-        -i $inFile \
-        -o ${outFilePrefix}/${fileNamePrefix}.${residueType}.species_tree.astralmp_-t16.nwk
-        mv ${outFilePrefix}/freqQuad.csv ${outFilePrefix}/${fileNamePrefix}.${residueType}.species_tree.astralmp_-t16_freqQuad.txt
+        #$exePrefix java -Xmx${speciesTreeSlurmMem}m $ASTRALMPLIB -jar $ASTRALMP -C -T $cpu -t 16 \
+        #-i $inFile \
+        #-o ${outFilePrefix}/${fileNamePrefix}.${residueType}.species_tree.astralmp_-t16.nwk
+        #mv ${outFilePrefix}/freqQuad.csv ${outFilePrefix}/${fileNamePrefix}.${residueType}.species_tree.astralmp_-t16_freqQuad.txt
     elif [[ "$programToUse" == 'fasttree' ]]; then
         echo programToUse: $programToUse
         echo Running fasttree on the concatenated alignment...
@@ -233,22 +244,22 @@ makeSpeciesTree () {
         echo "Running RAxML on the concatenated alignment using a partitioned analysis of each gene.
         Number of samples: ${totalNumbrSamples}; model of evolution: $RAxML_ModelOfEvolution"
         # RAxML won't run if files already exists from a previous run so remove them here: 
-        if [ -a RAxML_bootstrap.${fileNamePrefix}_${residueType}_raxmlHPC-PTHREADS-SSE ]; then rm RAxML_bootstrap.${fileNamePrefix}_${residueType}_raxmlHPC-PTHREADS-SSE; fi
-        if [ -a RAxML_bestTree.${fileNamePrefix}_${residueType}_raxmlHPC-PTHREADS-SSE ]; then rm RAxML_bestTree.${fileNamePrefix}_${residueType}_raxmlHPC-PTHREADS-SSE; fi
-        if [ -a RAxML_bipartitions.${fileNamePrefix}_${residueType}_raxmlHPC-PTHREADS-SSE ]; then rm RAxML_bipartitions.${fileNamePrefix}_${residueType}_raxmlHPC-PTHREADS-SSE; fi
-        if [ -a RAxML_bipartitionsBranchLabels.${fileNamePrefix}_${residueType}_raxmlHPC-PTHREADS-SSE ]; then rm RAxML_bipartitionsBranchLabels.${fileNamePrefix}_${residueType}_raxmlHPC-PTHREADS-SSE; fi
-        if [ -a RAxML_info.${fileNamePrefix}_${residueType}_raxmlHPC-PTHREADS-SSE ]; then rm RAxML_info.${fileNamePrefix}_${residueType}_raxmlHPC-PTHREADS-SSE; fi
+        if [ -a RAxML_bootstrap.${fileNamePrefix}.${residueType}.raxmlHPC-PTHREADS-SSE ]; then rm RAxML_bootstrap.${fileNamePrefix}.${residueType}.raxmlHPC-PTHREADS-SSE; fi
+        if [ -a RAxML_bestTree.${fileNamePrefix}.${residueType}.raxmlHPC-PTHREADS-SSE ]; then rm RAxML_bestTree.${fileNamePrefix}.${residueType}.raxmlHPC-PTHREADS-SSE; fi
+        if [ -a RAxML_bipartitions.${fileNamePrefix}.${residueType}.raxmlHPC-PTHREADS-SSE ]; then rm RAxML_bipartitions.${fileNamePrefix}.${residueType}.raxmlHPC-PTHREADS-SSE; fi
+        if [ -a RAxML_bipartitionsBranchLabels.${fileNamePrefix}.${residueType}.raxmlHPC-PTHREADS-SSE ]; then rm RAxML_bipartitionsBranchLabels.${fileNamePrefix}.${residueType}.raxmlHPC-PTHREADS-SSE; fi
+        if [ -a RAxML_info.${fileNamePrefix}.${residueType}.raxmlHPC-PTHREADS-SSE ]; then rm RAxML_info.${fileNamePrefix}.${residueType}.raxmlHPC-PTHREADS-SSE; fi
         if [ -a ${infile}.reduced ]; then rm ${infile}.reduced; fi
 
         $exePrefix raxmlHPC-PTHREADS-SSE3 -T $cpu \
         -f a \
         -x 12345 \
         -p 12345 \
-        -# 100 \
+        -# $numbrBootstraps \
         -m $raxmlModel \
         -s $infile \
-        -n ${fileNamePrefix}_${residueType}_raxmlHPC-PTHREADS-SSE \
-        -q ${residueType}.alns.partitions.txt
+        -n ${fileNamePrefix}.${residueType}.raxmlHPC-PTHREADS-SSE \
+        -q ${fileNamePrefix}.${residueType}.alns.partitions.txt
         # This is the Newick  output file compatible with NewickTools):
         # RAxML_bipartitions.${fileNamePrefix}__raxmlHPC-PTHREADS-SSE
         # -m - was using GTRGAMMA but GTRCAT is ~4x quicker - should not use it if have < 50 seqs in dataset.
@@ -277,7 +288,7 @@ if [[ "$astralSelected" == 'yes' || "$astralmpSelected" == 'yes' || "$astral-pro
         seqType=dna
         echo dnaSelected: $dnaSelected   
 
-        # Concatenate trees containing more than $fractnSpecies of samples (AND with species > 3 ) for use with ASTRAL:
+        # Prepare to concatenate trees containing more than $fractnSpecies of samples (AND with species > 3 ) for use with ASTRAL:
         # NB - have made filenames generic so they can be derived from different phylo programs.
         echo Listing required gene set:
         ls *.${seqType}.$alnFileForTreeSuffix       # This gives the whole set
@@ -288,9 +299,12 @@ if [[ "$astralSelected" == 'yes' || "$astralmpSelected" == 'yes' || "$astral-pro
         done \
         | awk -v numbrSamplesThreshold=$numbrSamplesThreshold -v fractnAlnCovrg_pc=${fractnAlnCovrg_pc} \
         '$2 >= numbrSamplesThreshold && $2 > 3 {print $1 "_dna_gene_tree_USE_THIS.nwk"}' \
-        | xargs cat > ${fileNamePrefix}_${seqType}_gene_trees_for_coelescence_phylo.nwk
+        > ${fileNamePrefix}.${seqType}.gene_trees_set_filenames.txt
+        # Now concatenate the gene trees into a single file:
+        cat ${fileNamePrefix}.${seqType}.gene_trees_set_filenames.txt | xargs cat > ${fileNamePrefix}.${seqType}.gene_trees_set.nwk
     fi
-                                                            ### NBNB - 2nd -v fractnAlnCovrg_pc not used here!!!!! Huh? 
+    ### NBNB - 2nd -v fractnAlnCovrg_pc not used here anymore! Can delete... - same for protein below
+    ###        Also, the above can be made into a function as it can be the same for protein
 
     ### 24.8.2020 - improving the above selection of tree files.
     ### make_species_trees.sh line ~84ff - have had an error with gene dna_gene_tree_USE_THIS.nwk files not existing
@@ -305,7 +319,7 @@ if [[ "$astralSelected" == 'yes' || "$astralmpSelected" == 'yes' || "$astral-pro
 
     if [[ $proteinSelected == 'yes' ]]; then
         seqType=protein
-        # Concatenate the protein gene trees as well (almost repeat of the above code):
+        # Prepare to concatenate the protein gene trees as well (almost repeat of the above code):
         for file in *.${seqType}.$alnFileForTreeSuffix; do
  	      gene=`echo $file | sed "s/.${seqType}.$alnFileForTreeSuffix//" `
  	      numbrSamples=`cat $file | grep '>' | wc -l `;
@@ -313,15 +327,19 @@ if [[ "$astralSelected" == 'yes' || "$astralmpSelected" == 'yes' || "$astral-pro
         done \
         | awk -v numbrSamplesThreshold=$numbrSamplesThreshold -v fractnAlnCovrg_pc=${fractnAlnCovrg_pc} \
         '$2 >= numbrSamplesThreshold && $2 > 3 {print $1 "_protein_gene_tree_USE_THIS.nwk"}' \
-        | xargs cat > ${fileNamePrefix}_${seqType}_gene_trees_for_coelescence_phylo.nwk
+        > ${fileNamePrefix}.${seqType}.gene_trees_set_filenames.txt
+        # Now concatenate the gene trees into a single file:
+        cat ${fileNamePrefix}.${seqType}.gene_trees_set_filenames.txt | xargs cat > ${fileNamePrefix}.${seqType}.gene_trees_set.nwk
     fi
 
 
     # Before running Astral, collapse clades with low bootstrap values (less than $collapseNodes) from all trees at once, if requested.
     # NB - this step collapses nodes whose certainty is not clear by creating multifurcations with a parent node that is well supported.
     # No taxa are removed!
-    dnaAstralInFile=${fileNamePrefix}_dna_gene_trees_for_coelescence_phylo.nwk
-    proteinAstralInfile=${fileNamePrefix}_protein_gene_trees_for_coelescence_phylo.nwk
+    dnaAstralInFile=${fileNamePrefix}.dna.gene_trees_set.nwk
+    proteinAstralInfile=${fileNamePrefix}.protein.gene_trees_set.nwk
+    dnaGeneTreesSetFilenames=${fileNamePrefix}.${seqType}.gene_trees_set_filenames.txt
+    proteinGeneTreesSetFilenames=${fileNamePrefix}.${seqType}.gene_trees_set_filenames.txt
     if [[ $collapseNodes != 'no' ]]; then
         if [[ $dnaSelected == 'yes' ]]; then
             seqType=dna
@@ -334,15 +352,25 @@ if [[ "$astralSelected" == 'yes' || "$astralmpSelected" == 'yes' || "$astral-pro
                 # numbrLowSupportNodesThreshold=`echo $numbrLowSupportNodesThreshold | awk 'fractn=$1/100 {print fractn}' `
                 # echo "\$numbrLowSupportNodesThreshold should now be a fraction for FASTTREE (internal value): $numbrLowSupportNodesThreshold"
             fi
-            collapseNodesD=$collapseNodes    # Required later for remembering the actual value for DNA (It might get changed for prtoein!!!)
+            collapseNodesD=$collapseNodes    # Required later for remembering the actual value for DNA (It might get changed for prtoein!!!) - 20.7.2021 - pretty sure this doesn't apply now.
             #numbrLowSupportNodesThresholdD=$numbrLowSupportNodesThreshold    # Same for this var
-   
-            nw_ed  ${fileNamePrefix}_dna_gene_trees_for_coelescence_phylo.nwk "i & (b < $collapseNodesD)" o > ${fileNamePrefix}_dna_gene_trees_for_coelescence_phylo_bs_less_${collapseNodesD}_rmed.nwk
-            dnaAstralInFile=${fileNamePrefix}_dna_gene_trees_for_coelescence_phylo_bs_less_${collapseNodesD}_rmed.nwk
+            nw_ed  $dnaAstralInFile "i & (b < $collapseNodesD)" o > ${fileNamePrefix}.${seqType}.gene_trees_set.collapse${collapseNodesD}.nwk
+            # Also create list of filenames for the collapsed trees for use in creating an archive file:
+            cat $dnaGeneTreesSetFilenames \
+            | xargs ls | sed "s/.nwk$/.collapse${collapseNodesD}.nwk/" > ${fileNamePrefix}.${seqType}.gene_trees_set_filenames.collapse${collapseNodesD}.txt
+            # Also require separate gene tree files for the Kew Tree of Life Explorer for generating the gene tree tarball (see below):
+            cat $dnaGeneTreesSetFilenames | \
+            while read file; do
+                filePrefix=`basename -s .nwk $file `
+                cat $file | nw_ed  /dev/fd/0  "i & (b < 30)" o > ${filePrefix}.collapse${collapseNodesD}.nwk 
+            done
+            # These files now required for ASTRAL:
+            dnaAstralInFile=${fileNamePrefix}.${seqType}.gene_trees_set.collapse${collapseNodesD}.nwk
+            dnaGeneTreesSetFilenames=${fileNamePrefix}.${seqType}.gene_trees_set_filenames.collapse${collapseNodesD}.txt
         fi
 
-        if [[ $proteinSelected == 'yes' ]]; then    
-
+        if [[ $proteinSelected == 'yes' ]]; then
+            seqType=protein
             ### Not tested logic for this conditional yet - I think I need a separate varialbe for DNA and protein - done
             if [[ $phyloProgramPROT == 'fasttree' ]]; then
                 # For fasttree (only, so far), need to convert $collapseNodes percent value to a fraction and use that in nw_ed. 
@@ -355,8 +383,16 @@ if [[ "$astralSelected" == 'yes' || "$astralmpSelected" == 'yes' || "$astral-pro
             fi 
 
             # Remove clades with low bootstrap values from the protein trees:
-            nw_ed  ${fileNamePrefix}_protein_gene_trees_for_coelescence_phylo.nwk "i & (b < $collapseNodes)" o > ${fileNamePrefix}_protein_gene_trees_for_coelescence_phylo_bs_less_${collapseNodes}_rmed.nwk
-            proteinAstralInfile=${fileNamePrefix}_protein_gene_trees_for_coelescence_phylo_bs_less_${collapseNodes}_rmed.nwk
+            nw_ed  $proteinAstralInfile "i & (b < $collapseNodes)" o > ${fileNamePrefix}.${seqType}.gene_trees_set.collapse${collapseNodes}.nwk
+            cat $proteinGeneTreesSetFilenames \
+            | xargs ls | sed "s/.nwk$/.collapse${collapseNodes}.nwk/" > ${fileNamePrefix}.${seqType}.gene_trees_set_filenames.collapse${collapseNodes}.txt
+             cat $proteinGeneTreesSetFilenames | \
+            while read file; do
+                filePrefix=`basename -s .nwk $file `
+                cat $file | nw_ed  /dev/fd/0  "i & (b < 30)" o > ${filePrefix}.collapse${collapseNodes}.nwk 
+            done
+            proteinAstralInfile=${fileNamePrefix}.${seqType}.gene_trees_set.collapse${collapseNodes}.nwk
+            proteinGeneTreesSetFilenames=${fileNamePrefix}.${seqType}.gene_trees_set_filenames.collapse${collapseNodes}.txt
         fi
         # else
         #     ### NB - 15.10.2020 - need to set these new variables for the rest of the code if collapse nodes is not set!!!
@@ -368,6 +404,7 @@ if [[ "$astralSelected" == 'yes' || "$astralmpSelected" == 'yes' || "$astral-pro
         #         echo "\$numbrLowSupportNodesThreshold should now be a fraction for FASTTREE (internal value): $numbrLowSupportNodesThreshold"
         #     fi
     fi
+### Does this need a codon clause here as well????
     echo
     echo
     echo #################
@@ -392,9 +429,9 @@ if [[ "$astralSelected" == 'yes' || "$astralmpSelected" == 'yes' || "$astral-pro
             makeSpeciesTree dna $dnaAstralInFile '.' astralmp 'GTR+G' 'DNA' '-nt -gtr'
             # Add tree tip info.
             if [ -s $treeTipInfoMapFile ]; then
-                nw_rename -l  ${fileNamePrefix}.${residueType}.species_tree.astralmp_-t2.nwk \
+                nw_rename -l  ${fileNamePrefix}.dna.species_tree.astralmp_pp1_value.nwk \
                 tree_tip_info_mapfile.txt \
-                > ${fileNamePrefix}.${residueType}.species_tree.astralmp_USE_THIS.nwk
+                > ${fileNamePrefix}.dna.species_tree.astralmp_USE_THIS.nwk
             fi
             getTreeStats ${fileNamePrefix}.dna.species_tree.astralmp_pp1_value.nwk $numbrLowSupportNodesThreshold astral
         fi
@@ -412,9 +449,9 @@ if [[ "$astralSelected" == 'yes' || "$astralmpSelected" == 'yes' || "$astral-pro
         elif [[ "$astralmpSelected" == 'yes' ]]; then 
             makeSpeciesTree protein $proteinAstralInFile '.' astralmp 'GTR+G' 'DNA' '-nt -gtr'
             if [ -s $treeTipInfoMapFile ]; then
-                nw_rename -l  ${fileNamePrefix}.${residueType}.species_tree.astralmp_-t2.nwk \
+                nw_rename -l  ${fileNamePrefix}.protein.species_tree.astralmp_pp1_value.nwk \
                 tree_tip_info_mapfile.txt \
-                > ${fileNamePrefix}.${residueType}.species_tree.astralmp_USE_THIS.nwk
+                > ${fileNamePrefix}.protein.species_tree.astralmp_USE_THIS.nwk
             fi
             getTreeStats ${fileNamePrefix}.protein.species_tree.astralmp_pp1_value.nwk $numbrLowSupportNodesThreshold astral
         fi
@@ -426,14 +463,25 @@ fi # End of Astral step
 # Creating a zipped tarball for the gene alignments and trees files. 
 # These archives can then be moved around easily and checked with a single checksum.
 # Doing this before the concatenated alignment trees which will take ages!  
-tar -c -f dna.aln.for_tree.fasta.tar *dna.aln.for_tree.fasta
-gzip -c dna.aln.for_tree.fasta.tar > dna.aln.for_tree.fasta.tar.gz
-### IF EXISTS....
-tar -c -f dna_gene_tree_USE_THIS.nwk.tar *dna_gene_tree_USE_THIS.nwk
-gzip -c dna_gene_tree_USE_THIS.nwk.tar > dna_gene_tree_USE_THIS.nwk.tar.gz
-
-
-
+if [[ $dnaSelected == 'yes' ]]; then
+    tar -czf ${fileNamePrefix}.dna.aln.for_tree.fasta.tar.gz  *dna.aln.for_tree.fasta
+    # Newick files may not exist if only building a concatenated alignment tree:
+    if [[ -s $dnaAstralInFile ]]; then
+        # Trees will be collapsed or not according to the use of option -L; $dnaAstralInFile variable 
+        # already contains file with either tree type, with nodes collapsed or not.
+        # Using the file of filnames here to create the archive, rather than the file containing all 
+        # the trees (and printing each tree per line) because very big trees will start to print to > 1 line 
+        # once ARG_MAX is reached)
+        tar -czf ${dnaGeneTreesSetFilenames}.tar.gz `cat $dnaGeneTreesSetFilenames`
+    fi
+fi
+if [[ $proteinSelected == 'yes' ]]; then
+    tar -czf  ${fileNamePrefix}.protein.aln.for_tree.fasta.tar.gz  *protein.aln.for_tree.fasta
+    if [[ -s $proteinAstralInFile ]]; then
+        tar -czf ${proteinGeneTreesSetFilenames}.tar.gz `cat $proteinGeneTreesSetFilenames`
+    fi
+fi
+#### NEED TO ADD CODON CONDITIONAL AS WELL HERE
 
 
 if [[ "$fasttreeSelected" == 'yes' || "$raxmlSelected" == 'yes' ]]; then
@@ -450,7 +498,7 @@ if [[ "$fasttreeSelected" == 'yes' || "$raxmlSelected" == 'yes' ]]; then
         --out-format fasta \
         -t dna.alns.concatenated.fasta
         # NB - also creates a partitions.txt file with coords for each gene - preparing for use with RAxML:
-        cat partitions.txt | awk -F '_' '{print "DNA, " $2}' > dna.alns.partitions.txt
+        cat partitions.txt | awk -F '_' '{print "DNA, " $2}' > ${fileNamePrefix}.dna.alns.partitions.txt
 
         # Compressing file for easier transfer of large alignments:
         gzip -c dna.alns.concatenated.fasta \
@@ -465,7 +513,7 @@ if [[ "$fasttreeSelected" == 'yes' || "$raxmlSelected" == 'yes' ]]; then
         --out-format fasta \
         -t protein.alns.concatenated_temp.fasta
         # NB - also creates a partitions.txt file with coords for each gene - preparing for use with RAxML:
-        cat partitions.txt | awk -F '_' '{print "JTT, " $2}' > protein.alns.partitions.txt
+        cat partitions.txt | awk -F '_' '{print "JTT, " $2}' > ${fileNamePrefix}.protein.alns.partitions.txt
         ### NB - model is hard coded at the moment
 
         ### On cluster the protein fasta headers now contain _\[translate(1)\] - fastatranslate (v2.4.x) adds this string to the header,
@@ -520,11 +568,11 @@ if [[ "$fasttreeSelected" == 'yes' || "$raxmlSelected" == 'yes' ]]; then
             makeSpeciesTree dna dna.alns.concatenated.fasta '.' raxml $RAxML_ModelOfEvolution 'not_required_here' 'not_required_here'
             # Add tree tip info:
             if [[ -s $treeTipInfoMapFile ]]; then 
-                nw_rename -l  RAxML_bipartitions.${fileNamePrefix}_dna_raxmlHPC-PTHREADS-SSE \
+                nw_rename -l  RAxML_bipartitions.${fileNamePrefix}.dna.raxmlHPC-PTHREADS-SSE \
                 tree_tip_info_mapfile.txt \
-                > ${fileNamePrefix}.dna.species_tree.raxml_100bs_USE_THIS.nwk
+                > ${fileNamePrefix}.dna.species_tree.raxml_${numbrBootstraps}bs_USE_THIS.nwk
             fi
-            getTreeStats RAxML_bipartitions.${fileNamePrefix}_dna_raxmlHPC-PTHREADS-SSE $numbrLowSupportNodesThreshold astral
+            getTreeStats RAxML_bipartitions.${fileNamePrefix}.dna.raxmlHPC-PTHREADS-SSE $numbrLowSupportNodesThreshold astral
         fi
         if [[ $proteinSelected == 'yes' ]]; then
             RAxML_ModelOfEvolution=PROTCATJTT
@@ -534,11 +582,11 @@ if [[ "$fasttreeSelected" == 'yes' || "$raxmlSelected" == 'yes' ]]; then
             makeSpeciesTree protein protein.alns.concatenated.fasta '.' raxml $RAxML_ModelOfEvolution 'not_required_here' 'not_required_here'
             # Add tree tip info:
             if [[ -s $treeTipInfoMapFile ]]; then 
-                nw_rename -l   RAxML_bipartitions.${fileNamePrefix}_protein_raxmlHPC-PTHREADS-SSE \
+                nw_rename -l   RAxML_bipartitions.${fileNamePrefix}.protein.raxmlHPC-PTHREADS-SSE \
                 tree_tip_info_mapfile.txt \
-                > ${fileNamePrefix}.protein.species_tree.raxml_100bs_USE_THIS.nwk
+                > ${fileNamePrefix}.protein.species_tree.raxml_${numbrBootstraps}bs_USE_THIS.nwk
             fi
-            getTreeStats RAxML_bipartitions.${fileNamePrefix}_protein_raxmlHPC-PTHREADS-SSE $numbrLowSupportNodesThreshold astral   
+            getTreeStats RAxML_bipartitions.${fileNamePrefix}.protein.raxmlHPC-PTHREADS-SSE $numbrLowSupportNodesThreshold astral   
         fi
         #### NEED TO ADD CODON CONDITIONAL AS WELL HERE
     fi

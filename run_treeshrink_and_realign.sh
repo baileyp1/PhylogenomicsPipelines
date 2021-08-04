@@ -51,7 +51,7 @@ partitionForSpeciesTrees="${33}"
 outgroupRoot="${34}"
 checkpointing="${35}"
 speciesTreeProgram="${36}"
-
+numbrBootstraps="${37}"
 
 echo "$numbrSamples"
 echo "$phyloProgramDNA"
@@ -84,6 +84,7 @@ echo "partitionForSpeciesTrees: $partitionForSpeciesTrees"
 echo "outgroupRoot: $outgroupRoot"
 echo "checkpointing: $checkpointing"
 echo "speciesTreeProgram: $speciesTreeProgram"
+echo "Number of bootstraps for RAxML: $numbrBootstraps"
 
 
 # Convert $emptyMatchStateFractn to a percent for use in the output files:
@@ -268,9 +269,9 @@ reAlignSeqs()   {
     ### the option variable has changed since the input which it has for option -g
     ### and -t and also where it is enough to specify a flag with no value e.g. 
     ### option -i. All other options can be used on the command line using the
-    ### variables input to this script i.e. can remove $trimAlnOption2,
-    ### collapseNodesOption, extraMemOptionX and set the option instead with inported var.
-    ### together with the option on the command line.
+    ### variables input to this script i.e. options for which there is an option value of some sort.
+    ### So, can remove $trimAlnOption2, collapseNodesOption, extraMemOptionX and 
+    ### set the option instead with inported var. together with the option on the command line.
     #echo " # For checking option values that need to be quoted (contain spaces)
     $pathToScripts/make_species_trees_pipeline.sh $iOption $trimAlnOption1 $trimAlnOption2 $collapseNodesOption $uOption $extraMemOptionX \
     $sampleTableFileOption $bOption \
@@ -293,6 +294,7 @@ reAlignSeqs()   {
     -V $geneTreeSlurmTime \
     -W $speciesTreeSlurmTime \
     -o "$outgroupRoot" \
+    -B $numbrBootstraps \
     *_${3}.fasta \
     > make_species_trees_pipeline_${3}.log 2>&1 #"
 }
