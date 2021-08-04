@@ -679,25 +679,26 @@ createGeneAlignmentAndTreeImages()	{
 		if [[ ! -d gene_alignment_tree_images_$1 ]]; then mkdir gene_alignment_tree_images_$1; fi
 		treeFileToUse=$3
 		jalviewTreeFlags="-tree $treeFileToUse -sortbytree"
-		geneNwkFileNoSuffix=`basename -s .fasta $3`
+		geneNwkFileNoSuffix=`basename -s .nwk $treeFileToUse`
 		if [[ $outgroupRoot != 'no' ]]; then
 			# Root gene trees so that they can be more easily compared:
 			echo "outgroup/root samples: $outgroupRoot"
-			nw_reroot $3 $outgroupRoot | nw_order -c a /dev/fd/0 \
+			nw_reroot $treeFileToUse $outgroupRoot | nw_order -c a /dev/fd/0 \
 			> gene_alignment_tree_images_$1/${geneNwkFileNoSuffix}_rerooted.nwk
 			# nw_reroot -c a - orders tips alphabetically - may be easier for comparisons to similar tree label names
-			# NB - 1.if none of the leaf labels is correct, then the tree is rerooted
+			# NB - 1.if none of the leaf labels is correct (i.e. present), then the tree is rerooted
 			#      on the longest branch - i.e. there is no error to trap
 			#      Also this action looks to be the same as mid-pointing rooting a tree.
-			#      2. If an incorrect sample Id has been added, a warning is printed to standard error, but tree still produced
+			#      2. If an incorrect sample Id has been added (or is not present, a warning is printed to standard error, 
+			#		  but tree is still produced and rooted on the sampleId(s) that exist in the tree.		  
 			#	   3. If an $outgroupRoot identifer is already in the root position, then rooting fails and file is zero byte.
 			#		  I think this issue will occur when >1 $outgroupRoot identifers are chosen but don't cluster together.
 			#		  Easiest thing to do is to just supply a single root sample or mid-point root instead, in the latter case, 
-			#		  supply a label that doesn't exist e.g. 'midpoint' (as advised in the command line help for option -o)
+			#		  supply a label that doesn't exist e.g. 'midpoint' (as advised in the command line help for option -o (this pipeline))
 			treeFileToUse=gene_alignment_tree_images_$1/${geneNwkFileNoSuffix}_rerooted.nwk
 			if [[ ! -s $treeFileToUse ]]; then
 				echo "WARNING: Outgroup(s) last common ancestor (LCA) is the tree's root - cannot reroot. Will mid-point root instead."
-				nw_reroot $3 | nw_order -c a /dev/fd/0 \
+				nw_reroot $treeFileToUse | nw_order -c a /dev/fd/0 \
 				> gene_alignment_tree_images_$1/${geneNwkFileNoSuffix}_rerooted.nwk 	# NB - same name as just above!
 				### OR alternatively, don't re-root but assign the original tree to $treeFileToUse so at least the alignment can be ordered by the tree.
 			fi
