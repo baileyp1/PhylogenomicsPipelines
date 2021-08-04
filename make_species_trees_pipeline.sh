@@ -40,8 +40,8 @@ mafftAlgorithm='--retree 2'     # Hidden option - '--maxiterate 1000' #'--retree
 filterSeqs1=no			# My filter sequencing option (option 1)
 filterSeqs2=no
 ### NBNBNB - 12.1.2020 - need to change both these values - for when filtering not used at 2nd aln iteration!!!!!!
-fractnAlnCovrg=0.6			# NB - variable is used via filterSeqs1, this value is used when filterSeqs1 is not used and MUST be set to ZERO - needs to have a default value for passing in variable to scripts
-fractnSamples=0.1			# NB - variable is used via filterSeqs1, this value is used when filterSeqs1 is not used and MUST be set to ZERO - needs to have a default value for passing in variable to scripts
+fractnAlnCovrg=0		# NB - variable is used via filterSeqs1, this value is also used when filterSeqs1 is not used and MUST therefore be set to ZERO - needs to have a default value for passing in variable to scripts
+fractnSamples=0			# NB - variable is used via filterSeqs1, this value is also used when filterSeqs1 is not used and MUST therfore be set to ZERO - needs to have a default value for passing in variable to scripts
 trimAln1=no					# Filter alignment columns with optrimAl
 trimAln2=no					# Filter alignment columns to remove rarer insertions; maximum limit of percent occupancy to trim at
 
@@ -54,6 +54,8 @@ geneTreesOnly=no
 speciesTreesOnly=no
 phyloProgramDNA=fasttree
 phyloProgramPROT=no			# Work around to specify any program so software testing code will not crash! Ensures cmd parameter is always occupied which is critical
+speciesTreeProgram=none
+numbrBootstraps=100          # Number of bootstrap searches for RAxML tree (and IQ-Tree when implemented)
 treeshrink=no
 collapseNodes=no			# option -L
 outgroupRoot=no				# option -o
@@ -73,7 +75,7 @@ cpuGeneTree=1				# still keep this separate from the supermatrix tree; then I ca
 cpu=8						# number of cpu to use for RAxML in supermatrix method
 geneTreeSlurmMem=5000		# option -R; 1.1.2021 - change from 20000 to 5000
 extraMem=no					# option -X 
-speciesTreeSlurmMem=50000	# option -U; I think I need 500 GB mem for the RAxML large tree (Slurm)
+speciesTreeSlurmMem=50000	# option -U; I think I need 500 GB mem for the RAxML large tree (Slurm); fasttree uses 44GB mem for 3,564 species
 geneTreeSlurmTime=1-00:00	# SBATCH -t 0-36:00;  A time limit of zero requests that no time limit be imposed - like the mem option
 speciesTreeSlurmTime=0		# SBATCH -t 0-36:00
 ####-D  upload details to PAFTOL database (internal use only) 	
@@ -133,7 +135,7 @@ FILTERING AND TRIMMING OPTIONS:
                    in the alignment covered by a sample sequence. A well conserved column is one with > 70 % residue occupancy
                    Minimum percent to tolerate (advised=60; 0 would mean no filtering, i.e. include sequence of any length)
                 2. percent of samples in each gene tree.
-                   Minumum percent to tolerate (advised=30; 0 would mean no filtering, include all available samples in each gene tree)
+                   Minumum percent to tolerate (0 would mean no filtering, include all available samples in each gene tree)
                 Don't use with option -I else option -F only will applied.
   -I <integer>     
                 filter sequences option 2 (no default; advised=60). Filters sequences from the alignment based on their length as a 
@@ -155,8 +157,10 @@ PHYLOGENY OPTIONS:
                 name of phylogeny program for gene trees from protein sequences.
                 If required, options are, fastest to slowest: fasttree, iqtree2-B1000-nm110, iqtree2-B1000-nm200, iqtree2-B1000-nm1000, iqtree2, raxml-ng (no default)
   -S <string>      
-                name of phylogeny programs to use for the species tree(s) for supermatrix approach (concatenated gene alignments).
-                If required, options are, fastest to slowest: fasttree, RAxML - UNDER DEVELOPMENT - both programs run in series at the moment 
+                name of phylogeny program(s) to use for the species tree(s) if required. Coalescent-based method: astral, astralmp (multi-threaded);
+                using a concatenated set of gene alignments: fasttree, raxml. N.B. using several programs must be quoted (e.g. 'astral fasttree')
+  -B <integer>  
+                number of bootstrap searches for RAxML species tree (default=100)
   -T               
                 use TreeShrink on gene trees (followed by re-alignment)
   -L <integer>     
@@ -170,7 +174,7 @@ OTHER OPTIONS:
   -C <integer>     
                 number of cpu to use for genetrees; NB - not convinced >1 cpu works robustly for raxml-ng with small datasets! (default=1)
   -c <integer>     
-                number of cpu to use for RAxML in supermatrix method (default=8)
+                number of cpu to use by ASTRAL-MP and/or RAxML for the species tree(s) (default=8)
   -R <integer>     
                 Slurm memory to use (in MB) for gene trees and TreeShrink (default=0; means no limit is imposed in default Slurm set up)
 
@@ -178,7 +182,7 @@ OTHER OPTIONS:
                 Slurm extra memory (in MB) to use with large data sets for specific gene trees named here: Format: <geneId1>,<geneId2><etc>:<cpu>:<mem>
                 Real life examples: Angiosperms353 genes (5921, 5596)
   -U <integer>     
-                Slurm memory to use (in MB) for species trees (default=0; means no limit is imposed in default Slurm set up)
+                Memory to use (in MB) for species trees (default=50000)
   -V <string>      
                 Slurm time limit to use for gene trees. Format: <days>-<hours>:<minutes>
                 e.g. 1-0:0 is 1 day (default=0, means no limit is imposed in default Slurm set up)
@@ -227,7 +231,7 @@ EOF
 
 
 #echo User inputs:    ### For testing only 
-while getopts "hvat:ug:ijGF:m:p:M:q:r:TC:c:d:Q:Y:A:D:O:L:I:JK:R:X:U:V:W:H:o:b"  OPTION; do	# Remaining options - try capital letters!
+while getopts "hvat:ug:ijGF:m:p:M:q:r:TC:c:d:Q:Y:A:D:O:L:I:JK:R:X:U:V:W:H:o:bs:B:"  OPTION; do	# Remaining options - try capital letters!
 
 	#echo -$OPTION $OPTARG	### For testing only - could try to run through options again below 
 	 
@@ -235,37 +239,38 @@ while getopts "hvat:ug:ijGF:m:p:M:q:r:TC:c:d:Q:Y:A:D:O:L:I:JK:R:X:U:V:W:H:o:b"  
 
 		h) usage; exit 1 ;;
 		v) echo "make_species_trees_pipeline.sh version 1.0"; exit ;;
-#INPUT FILE OPTIONS:
-    G) useGenewiseFiles=yes ;;
-    g) geneListFile=$OPTARG ;;
-		a) addSampleName=yes ;;
+    #INPUT FILE OPTIONS:
+        G) useGenewiseFiles=yes ;;
+        g) geneListFile=$OPTARG ;;
+        a) addSampleName=yes ;;
 		t) sampleTableFile=$OPTARG ;;
 		u) option_u=yes ;;
-    p) fileNamePrefix=$OPTARG ;;
-#ALIGNMENT OPTIONS
+        p) fileNamePrefix=$OPTARG ;;
+    #ALIGNMENT OPTIONS
 		D) seqType=$OPTARG ;;
 		A) alnProgram=$OPTARG ;;
-    M) mafftAlgorithm="$OPTARG" ;;
-#FILTERING AND TRIMMING OPTIONS:
+        M) mafftAlgorithm="$OPTARG" ;;
+    #FILTERING AND TRIMMING OPTIONS:
 		F) filterSeqs1=$OPTARG ;;
 		#f) fractnAlnCovrg=$OPTARG ;;
 		m) fractnMaxColOcc=$OPTARG ;;
-    O) maxColOccThreshold=$OPTARG ;;
+        O) maxColOccThreshold=$OPTARG ;;
 		#s) fractnSamples=$OPTARG ;;
-    I) filterSeqs2=$OPTARG ;;
-    ###J) trimAln1=yes ;;
-    K) trimAln2=$OPTARG ;;
-#PHYLOGENY OPTIONS:
-    i) geneTreesOnly=yes ;;
-    j) speciesTreesOnly=yes ;;
+        I) filterSeqs2=$OPTARG ;;
+        ###J) trimAln1=yes ;;
+        K) trimAln2=$OPTARG ;;
+    #PHYLOGENY OPTIONS:
+        i) geneTreesOnly=yes ;;
+        j) speciesTreesOnly=yes ;;
 		q) phyloProgramDNA=$OPTARG ;;
 		r) phyloProgramPROT=$OPTARG ;;
-
+        s) speciesTreeProgram=$OPTARG ;;
+        B) numbrBootstraps=$OPTARG ;;
 		T) treeshrink=yes ;;
-    L) collapseNodes=$OPTARG ;;
-    o) outgroupRoot="$OPTARG" ;;
-#OTHER OPTIONS:
-    b) checkpointing=yes ;;
+        L) collapseNodes=$OPTARG ;;
+        o) outgroupRoot="$OPTARG" ;;
+    #OTHER OPTIONS:
+        b) checkpointing=yes ;;
 		C) cpuGeneTree=$OPTARG ;;
 		c) cpu=$OPTARG ;;
 		Q) partitionName=$OPTARG ;;
@@ -322,16 +327,16 @@ fi
 if [[ $phyloProgramPROT == 'iqtree2'* ]]; then
 	phyloProgramPROT_Test='iqtree2'
 fi
-### Other optional software to be tested here e.g. TreeShrink
+### Other optional software to be tested here e.g. TreeShrink if option is selected
+### 8.7.2021 - removed: $phyloProgramDNA_Test $phyloProgramPROT_Test $ASTRAL raxmlHPC-PTHREADS-SSE3 from list below - to be tested separately if selected
 
-
-softwareList=(seqtk fastatranslate fastalength $phyloProgramDNA_Test $phyloProgramPROT_Test nw_ed java $ASTRAL AMAS.py raxmlHPC-PTHREADS-SSE3)	# fasttree raxml-ng now tested in $phyloProgramDNA and $phyloProgramPROT 
+softwareList=(seqtk fastatranslate fastalength nw_ed java $ASTRAL AMAS.py raxmlHPC-PTHREADS-SSE3)
 ### Difficult to test the following softwares in this way in an array - could try to test separately: 'bc --help' 'est2genome --help' 'mafft --help'
 ###		28.1.2020 - try to double quote the array to keep these cmds with spaces together!
 ### NB - astral.5.6.3.jar also may not be straight forward to check!!!! Also fasttreeMP not on Macbook - fasttree is the minimum.
 ### NBNBNB - in recover_genes_from_all_samples.sh, running seqtk like this makes the script stop, but here it doesn't seem to!!!! It's because there a no set options in this script
 #echo ${softwareList[@]}
-### NB - 29.8.2020 - only need to check the software actually being used e.g. upp, maffft, phylog programs - could check software when checking the  
+### NB - 29.8.2020 - only need to check the software actually being used e.g. upp, maffft, phylog programs - could check software just before using the program but should check the essential software  
 for software in ${softwareList[@]}; do
 	if [[ $software != 'no' ]]; then			# The default state $phyloProgramPROT and some other software - so don't want to test that!
 		echo Testing $software is installed...
@@ -670,7 +675,7 @@ fi
 dnaSelected=no
 proteinSelected=no
 codonSelected=no
-if [[ `echo $seqType | grep -o 'dna' ` == 'dna' ]];then 
+if [[ `echo $seqType | grep -o 'dna' ` == 'dna' ]];then     # NB - conditional not entered if there are multiple lines returned - good 
 	dnaSelected=yes
 fi
 if [[ `echo $seqType | grep -o 'protein' ` == 'protein' ]];then 
@@ -814,6 +819,8 @@ echo 'speciesTreeSlurmMem: ' $speciesTreeSlurmMem
 echo 'geneTreeSlurmTime: ' $geneTreeSlurmTime
 echo 'speciesTreeSlurmTime: ' $speciesTreeSlurmTime
 echo 'Outgroup root(s): ' $outgroupRoot
+echo 'Species tree program(s): ' $speciesTreeProgram
+echo "Number of bootstraps for RAxML: $numbrBootstraps"
 echo
 #exit
 
@@ -912,7 +919,7 @@ if [[ $os == 'Darwin' && $speciesTreesOnly == 'no' ]]; then
 		$trimAln2 \
 		"$treeshrink" \
 		"$outgroupRoot" \
-    "$checkpointing"
+        "$checkpointing"
 	done > make_gene_trees.log 2>&1
 	#exit
 	if [[ $filterSeqs1 != 'no' ]]; then
@@ -981,14 +988,16 @@ if [[ $os == 'Darwin' && $speciesTreesOnly == 'no' ]]; then
 		"$option_u" \
 		"$extraMem" \
 		"$partitionForSpeciesTrees" \
-    "$outgroupRoot" \
-    "$checkpointing" \
+        "$outgroupRoot" \
+        "$checkpointing" \
+        "$speciesTreeProgram" \
+        "$numbrBootstraps" \
 		> run_treeshrink_and_realign.log 2>&1
 		exit	# Species trees will be made after TreeShrink or re-alignment step(s) in nested call to this script, if requested.
 	fi
 
 elif [[ $os == 'Linux' && $speciesTreesOnly == 'no' ]]; then
-	###exePrefix="/usr/bin/time -v -o g${gene}_mafft_dna_aln_time_and_mem.log"		# NB - this will not work here - need to pick up gene id in Slurm script instead.
+    ###exePrefix="/usr/bin/time -v -o g${gene}_mafft_dna_aln_time_and_mem.log"		# NB - this will not work here - need to pick up gene id in Slurm script instead.
     slurm=`sbatch -V 2>/dev/null | grep ^slurm | wc -l `  # Also done now above outside conditionals so redundant
     if [ $slurm -eq 1 ]; then
 		# Count the # genes to process and fix that number in the Slurm --array parameter.
@@ -1153,8 +1162,10 @@ elif [[ $os == 'Linux' && $speciesTreesOnly == 'no' ]]; then
 			"$option_u" \
 			"$extraMem" \
 			"$partitionForSpeciesTrees" \
-      "$outgroupRoot" \
-      "$checkpointing" `
+            "$outgroupRoot" \
+            "$checkpointing" \
+            "$speciesTreeProgram" \
+            "$numbrBootstraps" `
 			exit	# Species trees will be made after TreeShrink or re-alignment step(s) in nested call to this script, if requested.
 		fi
 	else
@@ -1187,7 +1198,7 @@ elif [[ $os == 'Linux' && $speciesTreesOnly == 'no' ]]; then
 			"$trimAln2" \
 			"$treeshrink" \
 			"$outgroupRoot" \
-      "$checkpointing"
+            "$checkpointing"
 		done > make_gene_trees.log 2>&1
 
 		if [[ $filterSeqs1 != 'no' ]]; then
@@ -1256,8 +1267,10 @@ elif [[ $os == 'Linux' && $speciesTreesOnly == 'no' ]]; then
 			"$option_u" \
 			"$extraMem" \
 			"$partitionForSpeciesTrees" \
-      "$outgroupRoot" \
-      "$checkpointing" \
+            "$outgroupRoot" \
+            "$checkpointing" \
+            "$speciesTreeProgram" \
+            "$numbrBootstraps" \
 			> run_treeshrink_and_realign.log 2>&1
 			exit	# Species trees will be made after TreeShrink or re-alignment step(s) in nested call to this script, if requested.
 		fi
@@ -1291,6 +1304,10 @@ if [ $os == 'Darwin' ]; then
 	$collapseNodes \
 	aln.for_tree.fasta \
 	$option_u \
+    "$speciesTreeProgram" \
+    "$outgroupRoot" \
+    $speciesTreeSlurmMem \
+    $numbrBootstraps \
 	> ${fileNamePrefix}_make_species_trees.log 2>&1
 elif [ $os == 'Linux' ]; then
 	exePrefix="/usr/bin/time -v"
@@ -1318,7 +1335,11 @@ elif [ $os == 'Linux' ]; then
 		$codonSelected \
 		$collapseNodes \
 		aln.for_tree.fasta \
-		$option_u
+		$option_u \
+        "$speciesTreeProgram" \
+        "$outgroupRoot" \
+        $speciesTreeSlurmMem \
+        $numbrBootstraps
 	else
 		$pathToScripts/make_species_trees.sh \
 		$fractnAlnCovrg \
@@ -1337,6 +1358,10 @@ elif [ $os == 'Linux' ]; then
 		$collapseNodes \
 		aln.for_tree.fasta \
 		$option_u \
+        "$speciesTreeProgram" \
+        "$outgroupRoot" \
+        $speciesTreeSlurmMem \
+        $numbrBootstraps \
 		> ${fileNamePrefix}_make_species_trees.log 2>&1
 	fi
 fi

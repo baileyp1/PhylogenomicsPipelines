@@ -88,9 +88,14 @@ if [ $hybSeqProgram == 'paftools' ]; then
 
 	echo "Running gene recovery with Paftools..."
 
-	#if [ $usePaftolDb != 'usePaftol' ]; then - To fit with other data types, changed to house the dataset acronym in $usePaftolDb 
 	if [ $usePaftolDb != 'no' ]; then 
-		usePaftolDbFlag='--usePaftolDb'
+		usePaftolDbFlag='--usePaftolDb'		### NB - 6.7.2021 - I don't think $usePaftolDbFlag needs to be used in the else part of the conditional - it is a completely different command - then I can remove usePaftolDbFlag='' just above.
+
+  		# Separate out the two fields:
+  		datasetOrigin=`echo $usePaftolDb | cut -d ':' -f 1 `
+  		recoveryRun=`echo $usePaftolDb | cut -d ':' -f 2 `
+  		echo "Dataset type: $datasetOrigin"		# Required for addPaftolFastq program
+  		echo "Recovery run: $recoveryRun" 		# Required for recoverSeqs program 
 
 		# Remove the .gz ending from the file name for adding to the pafto_da database
 		unzippedR1FastqFile=`basename -s .gz $paftolDataSymlinksDir/$R1FastqFile `
@@ -113,7 +118,7 @@ if [ $hybSeqProgram == 'paftools' ]; then
 		export PYTHONPATH=$HOME/lib/python
 		paftools --loglevel INFO addPaftolFastq $externalSequenceID \
 		--fastqPath $paftolDataSymlinksDir \
-		--dataOrigin $usePaftolDb \
+		--dataOrigin $datasetOrigin \
 		$unzippedR1FastqFile  $unzippedR2FastqFile
 		# NB - the file name must be of this format e.g. PAFTOL_005853_R1.fastq BUT now only for PAFTOL data
 		# The fastqPath entered in the database consists of the path and filename e.g. $paftolDataSymlinksDir/$unzippedR1FastqFile
@@ -130,10 +135,10 @@ if [ $hybSeqProgram == 'paftools' ]; then
 		cp $targetsFile . 
 		targetsFile=`basename $targetsFile `
 
-		# NB - Use of --usePaftolDb flag requires the use of the Paftools trimmomatic flag so have to have a separate paftools recoverSeqs command here.
+		# NB - Use of --usePaftolDb flag requires the use of the Paftools trimmomatic flags so have to have a separate paftools recoverSeqs command here.
 		#      The Trimmomatic program name needs to be 
 		export PYTHONPATH=$HOME/lib/python 			# I had to add this for the cluster ONLY - need to. Check it is OK on Macbook, it should be.
-		$exePrefix  paftools recoverSeqs \
+		$exePrefix  paftools --loglevel INFO recoverSeqs \
 		$targetsFile \
 		${sampleId}.fasta \
 		-f $unzippedR1FastqFile \
@@ -152,7 +157,7 @@ if [ $hybSeqProgram == 'paftools' ]; then
 		--windowSizeReadOverlap 30 \
 		--relIdentityThresholdReadOverlap 0.9 \
 		--summaryCsv ${sampleId}_summary.csv \
-		$usePaftolDbFlag \
+		$usePaftolDbFlag $recoveryRun \
 		> ${sampleId}_overlapSerial.log 2>&1
 
 		rm $targetsFile	# If write to database fails, this fail doesn't get deleted (c.f. set cmds active), so presence of file is a useful 'marker' for failing to write to db
@@ -561,9 +566,9 @@ sumLengthOfGenes: $sumLengthOfGenes" > ${sampleId}_gene_recovery_stats.txt  # Al
 	samtools sort -n ${sampleId}_bwa_mem_sort.bam \
 	| samtools fastq -f4 -1 ${sampleId}_bwa_mem_unmapped_R1.fastq.gz -2 ${sampleId}_bwa_mem_unmapped_R2.fastq.gz \
 	-s ${sampleId}_bwa_mem_unmapped_single_ends.fastq.gz -N
-	# samtools fastq -n - means that /1 and /2 are NOT added output records - didn't work here
+	# samtools fastq -n - means that /1 and /2 are NOT added to output records - didn't work here
 	# samtools fastq -N - means that /1 and /2 are ALWAYS added to fastq record ids 
-	#	NB - not sure if this needs to be done - all reads should be unique unless you are combining the R1 AND R2 read files (?)
+	#	NB - not sure if this needs to be done - all singleton reads should be unique (would only be a problem if combining the R1 AND R2 read pairs)
 
 	#######################
 	# Reads on-target stats
@@ -681,7 +686,7 @@ sumLengthOfGenes: $sumLengthOfGenes" > ${sampleId}_gene_recovery_stats.txt  # Al
 	# With duplicates removed:
 	numbrBasesInAllGenes_ReadDepth_min4x=`cat ${sampleId}_bwa_mem_sort_st_depth.txt | awk '$3 >= 4' | wc -l `
 	echo "NumbrBasesInAllGenes_ReadDepth_min4x_(samtools_depth): $numbrBasesInAllGenes_ReadDepth_min4x" >> ${sampleId}_gene_recovery_stats.txt
-	# Without duplicates:
+	# With duplicates:
 	numbrBasesInAllGenes_ReadDepthWithDups_min4x=`cat ${sampleId}_bwa_mem_with_dups_sort_st_depth.txt | awk '$3 >= 4' | wc -l `
 	echo "NumbrBasesInAllGenes_ReadDepthWithDups_min4x_(samtools_depth): $numbrBasesInAllGenes_ReadDepthWithDups_min4x" >> ${sampleId}_gene_recovery_stats.txt
 
