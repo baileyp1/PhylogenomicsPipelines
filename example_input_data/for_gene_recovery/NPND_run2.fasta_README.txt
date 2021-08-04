@@ -1,1 +1,2 @@
 For testing upload to a paftol_da database the info for a OneKP 'recovered genes' fasta file.
+Requires the database to contain the Angiosperm353 and mega353 targets.
