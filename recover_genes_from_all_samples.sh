@@ -213,7 +213,7 @@ else
   datasetOrigin=`echo $usePaftolDb | cut -d ':' -f 1 `
   recoveryRun=`echo $usePaftolDb | cut -d ':' -f 2 `
   if [[ -z "$datasetOrigin" ]]; then echo "ERROR: option -d, one of two fields is empty - exiting "; exit; fi
-  if [[ -z "recoveryRun=" ]]; then echo "ERROR: option -d, one of two fields is empty - exiting "; exit; fi
+  if [[ -z "$recoveryRun=" ]]; then echo "ERROR: option -d, one of two fields is empty - exiting "; exit; fi
   # Not checking the alphanumerical nature of the values.
   # Paftools will let user know if the datasetOrigin and recoveryRun are not found.
 fi
