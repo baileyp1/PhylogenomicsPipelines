@@ -205,7 +205,7 @@ else usage; echo "ERROR: option -c should be an integer - exiting "; exit; fi
 if [[ $usePaftolDb != 'PAFTOL'* && $usePaftolDb != 'OneKP_Reads'* && $usePaftolDb != 'SRA'* && $usePaftolDb != 'GAP'* && $usePaftolDb != 'no' ]]; then 
   usage; echo "ERROR: option -d should specify one of the following data sets and a recovery run: PAFTOL, OneKP_Reads, SRA or GAP e.g. 'PAFTOL:run1' - you added '$usePaftolDb'. Exiting"
   exit
-else
+elif [[ $usePaftolDb != 'no' ]]; then
   numbrFields=`echo $usePaftolDb | awk -F ':' '{print NF}' `
   # Test the number of ':' delimited fields:
   if [[ $numbrFields -ne 2 ]]; then echo "ERROR: option -d requires two fields e.g. <datasetOrigin>:run<number> - exiting "; exit; fi
