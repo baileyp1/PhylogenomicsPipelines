@@ -123,7 +123,7 @@ if [ $hybSeqProgram == 'paftools' ]; then
 		# NB - the file name must be of this format e.g. PAFTOL_005853_R1.fastq BUT now only for PAFTOL data
 		# The fastqPath entered in the database consists of the path and filename e.g. $paftolDataSymlinksDir/$unzippedR1FastqFile
 		# --sampleId=$sampleId - must be included for all data types (there must be a value), however in the case of paftol data it is ignored but the flag and a value is still required!
-		### 7.6.2021 - NB - I don't think this is true anymore! I think --sampleId anf therefore $externalSequenceID can be blank
+		### 7.6.2021 - NB - I don't think this is true anymore! I think --sampleId and therefore $externalSequenceID can be blank
 		# --dataOrigin - dataset origin added via the -d flag of this script/pipeline e.g. -d PAFTOL, -d SRA
 
 		echo "Exit status of paftools addpaftolFastq:" $?
