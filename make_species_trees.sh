@@ -217,9 +217,12 @@ makeSpeciesTree () {
         echo Running ASTRAL-MP on the DNA gene trees...
         ### Could also add a fixed value to Slurm memory OPTION -U so astral-mp will still work if slurm mem is set to zero:
         ### 4.8.2021 - if $speciesTreeSlurmMem == 0 , then give it some memory
-        ###     echo statement about memory using e.g. "Defualt memory for ASTRAL-MP is 12GB. Use option -U to adjust memory up or down."
-        ### 4.8.2021 - Also if -$cpu == 1 increase to 2 otherwise prgoram crashes
         ### let "speciesTreeSlurmMem= $speciesTreeSlurmMem + 12000" - might not be optimal though, but then user should specify the amount of memory to use
+        ###     Check this was enough mem for the release 1.0 tree ~ 3100 tree tips
+        ###     echo statement about memory using e.g. "Defualt memory for ASTRAL-MP is 12GB. Use option -U to adjust memory up or down."
+
+        ### 4.8.2021 - Also if -$cpu == 1 increase to 2 otherwise prgoram crashes
+       
         $exePrefix java -Xmx${speciesTreeSlurmMem}m $ASTRALMPLIB -jar $ASTRALMP -C -T $cpu -t 2 \
         -i $infile \
         -o ${outFilePrefix}/${fileNamePrefix}.${residueType}.species_tree.astralmp_-t2.nwk

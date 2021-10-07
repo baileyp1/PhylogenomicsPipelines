@@ -603,7 +603,7 @@ makeGeneTree()	{
 		rm  ${3}/${gene}.${1}.aln_iqtree.contree
 
 
-#### 17.10.2020 - could fast bootstraps with raxml
+#### 17.10.2020 - could fast bootstraps with raxml and using the CAT model
 
 	# if [[ "$phyloProgramPROT" == 'fasttree' ||  "$phyloProgramPROT" == 'raxml-ng'  || "$phyloProgramPROT" == 'iqtree2' ]]; then
  #     echo Running RAxML on the protein supermatrix...
@@ -877,8 +877,7 @@ if [[ $dnaSelected == 'yes' ]]; then
    			# Don't think this file always exists (for very small datasets):
    			if [[ -f ${gene}.dna.upp_insertion_columns.txt ]]; then rm ${gene}.dna.upp_insertion_columns.txt; fi
    		fi
-		run_upp.py -x $cpuGeneTree -M -1 -s $dnaFastaFileForAln -o ${gene}.dna.upp
-### 16.11.2020 - noticed that I had two -M -1 flags typed into the command! - OK?
+		$exePrefix run_upp.py -x $cpuGeneTree -M -1 -s $dnaFastaFileForAln -o ${gene}.dna.upp
 		# Other options to consider:
 		# UPP(Fast): run_upp.py -s input.fas -B 100. - what's the -B option??!!
 		# -m [dna|rna|amino]
