@@ -156,7 +156,7 @@ PHYLOGENY OPTIONS:
   -r <string>      
                 name of phylogeny program for gene trees from protein sequences.
                 If required, options are, fastest to slowest: fasttree, iqtree2-B1000-nm110, iqtree2-B1000-nm200, iqtree2-B1000-nm1000, iqtree2, raxml-ng (no default)
-  -S <string>      
+  -s <string>      
                 name of phylogeny program(s) to use for the species tree(s) if required. Coalescent-based method: astral, astralmp (multi-threaded);
                 using a concatenated set of gene alignments: fasttree, raxml. N.B. using several programs must be quoted (e.g. 'astral fasttree')
   -B <integer>  
