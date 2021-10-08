@@ -123,7 +123,7 @@ INPUT FILE OPTIONS:
 ALIGNMENT OPTIONS:
   -D <string>      
                 sequence type to use: dna, protein, codon (default=dna). N.B. use with multiple types must be quoted (e.g. 'dna protein')
-                codon is input DNA aligned but guided by a protein alignment
+                codon is input DNA aligned but guided by a protein alignment. NB - the 'protein' and 'codon' options are not finished yet!
   -A <string>      
                 alignment program to use: mafft, upp (UPP is ideal for large alignments) (default=mafft)
   -M <string>      
