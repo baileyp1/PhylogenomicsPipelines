@@ -199,8 +199,7 @@ OTHER OPTIONS:
 A basic example run is described below:
 build genes trees from sample fasta files, formatted as described for option -a, by aligning the input
 DNA sequence for each gene with the MAFFT --retree 2 algorithm, building each gene tree with FASTTREE, 
-then reconstructing species trees with ASTRAL, FASTTREE and RAxML (The last two programs make a supermatrix 
-tree from concatenated gene alignments):
+then reconstructing a species tree with ASTRAL:
 
 make_species_trees_pipeline.sh \\
 -a \\
@@ -211,7 +210,7 @@ make_species_trees_pipeline.sh \\
 -g <geneListFile> \\
 -F '60 10' \\
 -q fasttree \\
--c 8 \\
+-s astral \\
 -C 1 \\
 <path_to_recovered_genes_from_samples>/*.fasta \\
 > make_species_trees_pipeline.log 2>&1 &
