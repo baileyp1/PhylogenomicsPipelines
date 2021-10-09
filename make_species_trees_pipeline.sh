@@ -1045,7 +1045,7 @@ elif [[ $os == 'Linux' && $speciesTreesOnly == 'no' ]]; then
 		jobId=`echo $jobInfo | cut -d ' ' -f 4 `
 		echo \$jobId: $jobId - same id as \$SLURM_ARRAY_JOB_ID - from running slurm_setup_array_to_make_gene_trees.sh
 		# NB - If jobId variable is used after each call to Slurm then it doesn't matter if
-		# a Slurm step is missed out - the jobId last assigned will alway be used.
+		# a Slurm step is missed out - the jobId last assigned will always be used.
 		sleep 3		# Pausing to allow Slurm to process and start previous submission (may not be necessary)
 
 		if [[ -s $genesForExtraMem ]]; then
