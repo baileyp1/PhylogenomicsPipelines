@@ -672,8 +672,8 @@ createGeneAlignmentAndTreeImages()	{
  	# $2 = input alignment fasta file		  (currently *.dna.aln.for_tree.fasta)
  	# $3 = input tree file matching alignment (currently *_dna_gene_tree_USE_THIS.nwk - 22,.4.2021 - this will change to *.dna.gene_tree_USE_THIS.nwk)
     #
-    # Note: not established whether Jalview fails with large alignment files
-    #       e.g. have obtained a corrupt .png file with a long gene aln but only 12 seqs!
+    # Note: Jalview fails with large alignment files but have also obtained a corrupt .png file with a long gene aln but only 12 seqs!
+    # Note: at the moment MAFFT --reorder flag is re-ordering seqs w.r.t. the info at the alignment step. 
     ###########
 	if [[ -x $JALVIEW ]]; then
 		if [[ ! -d gene_alignment_tree_images_$1 ]]; then mkdir gene_alignment_tree_images_$1; fi
