@@ -217,13 +217,14 @@ done \
 
 
 ### 20.8.2020 - Need to re-work this section 
-### Still get the same stats but better now to redo the protein lists in the species tree script i think
+### Still get the same stats but better now to redo the protein lists in the species tree script i think - the file might not be used
 ### 22.5.2021 - Also, if fasta file has < 4 seqs it should not enter this list beacuse trees are not beign made !!!!
 
 ################################################################################################################################
 # Create list of gene alns with > ${fractnAlnCovrg_pc} gene coverge AND containing more than the $fractnSpecies % of the samples
 # Used to concatenate gene alns for supermatrix methods AND to gather the stats below
-# NB - also checking whether ther are > 3 species in each gene tree (this check was already made before building each gene tree)
+# NB - also checking whether ther are > 3 species in each gene tree (this check was already made before building each gene tree
+#      but the alignment file still exists so is removed here below.
 ################################################################################################################################
 for file in *.$alnFileForTreeSuffix; do
  	gene=`echo $file | sed "s/.$alnFileForTreeSuffix//" `
