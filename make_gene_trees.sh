@@ -39,7 +39,7 @@ echo SLURM_ARRAY_JOB_ID: $SLURM_ARRAY_JOB_ID
 echo SLURM_ARRAY_TASK_ID: $SLURM_ARRAY_TASK_ID
 
 
-geneId=`echo $geneId | cut -d ',' -f 1 `		#### 20.8.2019 - does this do anything now? Required only for ${geneId}_aln_summary.log but i coudl change that - i.e. USE $gene instead!!
+geneId=`echo $geneId | cut -d ',' -f 1 `		#### 20.8.2019 - does this do anything now? Required only for ${geneId}_aln_summary.txt but I could change that - i.e. USE $gene instead!!
 gene=`echo $geneId | tr -d '\n' `				# Need to remove line return, if present after the first field! Was for the sample- to gene-wise conversion 
 ### Might also be good to have the family
 #genus=`echo $line | cut -d ',' -f 2 `
@@ -98,9 +98,9 @@ filterSeqs1()	{
 
 
     # Create gene alignment summary file or empty an existing one:
-	>${geneId}_aln_summary.log
+	>${geneId}_aln_summary.txt
 	echo "gene Id: ${geneId}
-residueType: $2" >> ${geneId}_aln_summary.log
+residueType: $2" >> ${geneId}_aln_summary.txt
 
 	# Find the length of the alignment to calculate the coverage of each sequence:
 	# NB - this code works because seqtk also counts dashes - c.f. fastalength which does not.
@@ -114,7 +114,7 @@ residueType: $2" >> ${geneId}_aln_summary.log
 # Using fastalength to determine the longest gene in the alignment, rather than the full length of each alignment (as above)
 # This is probably a better messure for the total aln length esp for a phylogeny subset e.g. single family; total aln length is probably too strict.
 #lenLongestGene=`fastalength  ${gene}_mafft_dna_aln.fasta | sort -n | tail -n 1 | awk '{print $1}' `
-#echo lenLongestGene: $lenLongestGene  >> ${geneId}_aln_summary.log
+#echo lenLongestGene: $lenLongestGene  >> ${geneId}_aln_summary.txt
 ### NB - 28.1.2020 - now calculating this AFTER filtering for $maxColOcc and for > 3 seqs so it is directly comparable to lenLongestGeneAfterTrim
 ### 10.10.2019 - NBNB - the issue with this approach to calculating the longest gene is that some genes are much bigger than the majority of the alignment.
 ### BUT - I think the issue occurs with only a small number of seqs so I could calculate the median value for the top say 10 of seqs and use that value.
@@ -129,7 +129,7 @@ AMAS.py trim -f fasta -d $residueType -t ${fractnMaxColOcc} -i $1 -o ${gene}_${2
 ###maxColOcc=`fastalength  ${gene}_mafft_dna_aln_AMAS_${fractnMaxColOcc}.fasta 2>/dev/null | sort -k1n | tail -n 1 | awk '{print $1}' `
 maxColOcc=`fastalength  ${gene}_${2}_aln_AMAS_trim_${fractnMaxColOcc}.fasta 2>/dev/null | sort -k1n | tail -n 1 | awk '{print $1}' `
 # NB - some seqs will have zero length seqs but the fastalength warning can go to /dev/null; using this command to check the occupancy but nothing more 
-echo maxColOcc: $maxColOcc  >> ${geneId}_aln_summary.log
+echo maxColOcc: $maxColOcc  >> ${geneId}_aln_summary.txt
 
 ### Old method and ideas:
 # $maxColOcc needs to be at least 150 bp so that even the shortest seqs are ~100bp over the region.
@@ -154,11 +154,11 @@ if [[ $maxColOcc -ge $3 ]]; then
 	# Calculate the number of parsimonious columns (-p option) for the columns found from $maxColOcc:
 	AMAS.py trim -f fasta -d dna -t $fractnMaxColOcc -p -i ${gene}_${2}_aln_AMAS_trim_${fractnMaxColOcc}.fasta -o ${gene}_${2}_aln_AMAS_trim_-p_${fractnMaxColOcc}.fasta
 	maxParsCols=`fastalength ${gene}_${2}_aln_AMAS_trim_-p_${fractnMaxColOcc}.fasta 2>/dev/null | sort -k1n | tail -n 1 | awk '{print $1}' `
-	echo maxParsCols: $maxParsCols  >> ${geneId}_aln_summary.log
+	echo maxParsCols: $maxParsCols  >> ${geneId}_aln_summary.txt
 
 	# Count total number of residues in the MCOT region here:
 	totalResiduesInMaxColOccRegion=`fastalength ${gene}_${2}_aln_AMAS_trim_${fractnMaxColOcc}.fasta 2>/dev/null | awk '{sum+=$1} END {print sum}' `
-	echo totalResiduesInMaxColOccRegion: $totalResiduesInMaxColOccRegion >> ${geneId}_aln_summary.log
+	echo totalResiduesInMaxColOccRegion: $totalResiduesInMaxColOccRegion >> ${geneId}_aln_summary.txt
 
 	# Now find the lengths of each sequence in bases only (not dashes!)
 	# and create a list of sequences that are >= $fractnAlnCovrg across $maxColOcc region
@@ -193,12 +193,12 @@ if [[ $maxColOcc -ge $3 ]]; then
 
 		# Record stats (NB - before trimming)
 		lenLongestGene=`fastalength  $1 | sort -n | tail -n 1 | awk '{print $1}' `
-		echo lenLongestGene: $lenLongestGene  >> ${geneId}_aln_summary.log
+		echo lenLongestGene: $lenLongestGene  >> ${geneId}_aln_summary.txt
 
 		# Median value of sequence length for current gene:
 		medianPoint=`fastalength $1 | awk 'END {printf "%.0f" , NR/2}' `
 		medianGeneLength=`fastalength $1 | awk '{print $1}' | sort -n | head -n $medianPoint | tail -n 1 `
-		echo medianGeneLength: $medianGeneLength  >> ${geneId}_aln_summary.log
+		echo medianGeneLength: $medianGeneLength  >> ${geneId}_aln_summary.txt
 
 
 		# Extra steps here to do if DNA and/or codon is also selected.
@@ -272,14 +272,14 @@ filterSeqs2()	{
    	###########
 
    	# Create gene alignment summary file or empty an existing one:
-	>${geneId}_aln_summary.log
+	>${geneId}_aln_summary.txt
 	echo "gene Id: ${geneId}
-	residueType: $2" >> ${geneId}_aln_summary.log
+	residueType: $2" >> ${geneId}_aln_summary.txt
 
    	# Find the median value of the sequence lengths for current gene set (NB - fastalength ignores dash chars):
 	medianPoint=`fastalength $1 | awk 'END {printf "%.0f" , NR/2}' `
 	medianGeneLength=`fastalength $1 | awk '{print $1}' | sort -n | head -n $medianPoint | tail -n 1 `
-	echo medianGeneLength: $medianGeneLength  >> ${geneId}_aln_summary.log
+	echo medianGeneLength: $medianGeneLength  >> ${geneId}_aln_summary.txt
 
 	# Use the median length to find sequences that are >= $fractnAlnCovrg of the median length
 	# and create a list of them.
@@ -373,11 +373,11 @@ trimAln2()	{
 	-o $4
 	# Stats on the number of bases removed (it will be considerable for large trees with diverse taxa)
 	lenLongestGeneAfterTrim=`fastalength $4 | sort -n | tail -n 1 | awk '{print $1}' `
-	if [[ -s ${geneId}_aln_summary.log ]]; then
-		echo lenLongestGeneAfterTrim: $lenLongestGeneAfterTrim  >> ${geneId}_aln_summary.log
+	if [[ -s ${geneId}_aln_summary.txt ]]; then
+		echo lenLongestGeneAfterTrim: $lenLongestGeneAfterTrim  >> ${geneId}_aln_summary.txt
 	else
 		echo gene Id: $geneId
-		echo lenLongestGeneAfterTrim: $lenLongestGeneAfterTrim  > ${geneId}_aln_summary.log
+		echo lenLongestGeneAfterTrim: $lenLongestGeneAfterTrim  > ${geneId}_aln_summary.txt
 	fi
 }
 
