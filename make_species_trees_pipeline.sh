@@ -76,7 +76,7 @@ cpu=8						# number of cpu to use for RAxML in supermatrix method
 geneTreeSlurmMem=5000		# option -R; 1.1.2021 - change from 20000 to 5000
 extraMem=no					# option -X 
 speciesTreeSlurmMem=50000	# option -U; I think I need 500 GB mem for the RAxML large tree (Slurm); fasttree uses 44GB mem for 3,564 species
-geneTreeSlurmTime=1-00:00	# SBATCH -t 0-36:00;  A time limit of zero requests that no time limit be imposed - like the mem option
+geneTreeSlurmTime=0	      # SBATCH -t 0-36:00;  A time limit of zero requests that no time limit be imposed - like the mem option
 speciesTreeSlurmTime=0		# SBATCH -t 0-36:00
 ####-D  upload details to PAFTOL database (internal use only) 	
 
