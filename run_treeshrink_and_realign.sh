@@ -155,7 +155,7 @@ Number of samples in data set before TreeShrink: $numbrSamples
 Number of samples removed from any gene tree: $numbrSeqsRemoved " > ${fileNamePrefix}_treeshrink_results.txt
     # Only print if > 0 samples have been removed:
     if [[ $numbrSeqsRemoved -ge 1 ]]; then
-        echo "NumberOfGeneTrees RemovedSampleFrom
+        echo "NumberOfGeneTreesRemoved Sample
 `cat treeshrink_${1}_gene_trees/*/${1}_gene_tree_treeshrink.txt | sed 's/\t/\n/g' | grep -v '^$' | sort | uniq -c | sort -k1nr` " >> ${fileNamePrefix}_treeshrink_results.txt
     fi
 
