@@ -447,12 +447,12 @@ makeGeneTree()	{
 		echo
 		echo Running IQ-Tree on the gene alignment with these options: -B 1000 ... 
 		$exePrefix iqtree2 -T AUTO -ntmax $cpuGeneTree \
-		-redo \
 		--seqtype $iqTree2SeqType \
 		-s $2 \
 		--prefix ${3}/${gene}.${1}.aln_iqtree \
 		-B 1000
 		# Command notes:
+		# -redo			6.11.2021 - removed this parameter - means that IQTREE2 will now use its iqtree.ckp.gz file to re-start the analysis from where it go interupted
 		# --prefix		you can also add a path and the output files go into the specified directory
 		# -B 			ultrafast bootstrap option (NB - the minimum number you can set is 1000!)
 		# -alrt 		Removed -alrt 1000 option but it is very fast to compute so no real need - BUT it does add an extra value at the node I think
@@ -469,7 +469,6 @@ makeGeneTree()	{
 		echo
 		echo Running IQ-Tree on the gene alignment with these options: -fast, -b 100, -m GTR+F+G ...
 		$exePrefix iqtree2 -T AUTO -ntmax $cpuGeneTree \
-		-redo \
 		--seqtype $iqTree2SeqType \
 		-s $2 \
 		--prefix ${3}/${gene}.${1}.aln_iqtree \
@@ -486,7 +485,6 @@ makeGeneTree()	{
 		echo
 		echo Running IQ-Tree on the gene alignment with these options: -alrt, -m GTR+F+G ...
 		$exePrefix iqtree2 -T AUTO -ntmax $cpuGeneTree \
-		-redo \
 		--seqtype $iqTree2SeqType \
 		-s $2 \
 		--prefix ${3}/${gene}.${1}.aln_iqtree \
@@ -518,7 +516,6 @@ makeGeneTree()	{
 		echo																    # NB max iteration must be > min -nstep iteration! 
 		echo Running IQ-Tree on the gene alignment with these options: -B 1000, -nstep 100, -nm 110, -m GTR+F+G ...
 		$exePrefix iqtree2 -T AUTO -ntmax $cpuGeneTree \
-		-redo \
 		--seqtype $iqTree2SeqType \
 		-s $2 \
 		--prefix ${3}/${gene}.${1}.aln_iqtree \
@@ -535,7 +532,6 @@ makeGeneTree()	{
 		echo																    # NB max iteration must be > min -nstep iteration! 
 		echo Running IQ-Tree on the gene alignment with these options: -B 1000, -nstep 100, -nm 200, -m GTR+F+G ...
 		$exePrefix iqtree2 -T AUTO -ntmax $cpuGeneTree \
-		-redo \
 		--seqtype $iqTree2SeqType \
 		-s $2 \
 		--prefix ${3}/${gene}.${1}.aln_iqtree \
@@ -554,7 +550,6 @@ makeGeneTree()	{
 		echo																   		# NB max iteration must be > min -nstep iteration! 
 		echo Running IQ-Tree on the DNA gene alignment with these options: -B 1000, -nstep 100, -nm 1000, -m GTR+F+G ...
 		$exePrefix iqtree2 -T AUTO -ntmax $cpuGeneTree \
-		-redo \
 		--seqtype $iqTree2SeqType \
 		-s $2 \
 		--prefix ${3}/${gene}.${1}.aln_iqtree \
@@ -571,7 +566,6 @@ makeGeneTree()	{
 		echo																   		# NB max iteration must be > min iteration! 
 		echo Running IQ-Tree on the DNA gene alignment with these options: -B 1000, -nstep 100, -nm 210, -mset HKY,TIM2,TVM,GTR
 		$exePrefix iqtree2 -T AUTO -ntmax $cpuGeneTree \
-		-redo \
 		--seqtype $iqTree2SeqType \
 		-s $2 \
 		--prefix ${3}/${gene}.${1}.aln_iqtree \
@@ -588,7 +582,6 @@ makeGeneTree()	{
 		echo																   			# NB max iteration must be > min iteration! 
 		echo Running IQ-Tree on the protein gene alignment with these options: -B 1000, -nstep 100, -nm 210, -mset HKY,TIM2,TVM,GTR ...
 		$exePrefix iqtree2 -T AUTO -ntmax $cpuGeneTree \
-		-redo \
 		--seqtype $iqTree2SeqType \
 		-s $2 \
 		--prefix ${3}/${gene}.${1}.aln_iqtree \
