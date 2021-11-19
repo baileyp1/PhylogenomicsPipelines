@@ -210,7 +210,8 @@ if [ $hybSeqProgram == 'paftools' ]; then
 			# Remove the large fastq files:
 			if [[ -s ${sampleId}_R1_trimmomatic.fastq ]]; then 
 				rm ${sampleId}_R1_trimmomatic.fastq ${sampleId}_R1_trimmomatic_unpaired.fastq.gz \
-				${sampleId}_R2_trimmomatic.fastq ${sampleId}_R2_trimmomatic_unpaired.fastq.gz
+				${sampleId}_R2_trimmomatic.fastq ${sampleId}_R2_trimmomatic_unpaired.fastq.gz \
+				${sampleId}_R1_R2_trimmomatic.log
 			fi
 		fi
 	fi
@@ -372,7 +373,8 @@ elif [[ $hybSeqProgram == 'hybpiper'* ]]; then
 			if [[ -s ${sampleId}_R1_trimmomatic.fastq ]]; then 
 				rm ${sampleId}_R1_trimmomatic.fastq ${sampleId}_R1_trimmomatic_unpaired.fastq.gz \
 				${sampleId}_R2_trimmomatic.fastq ${sampleId}_R2_trimmomatic_unpaired.fastq.gz \
-				${sampleId}_R1_R2_trimmomatic_unpaired.fastq
+				${sampleId}_R1_R2_trimmomatic_unpaired.fastq \
+				${sampleId}_R1_R2_trimmomatic.log
 			fi
 		fi
 	fi
@@ -471,6 +473,7 @@ if [[ $stats != 'no' ]]; then
 		samtools index  ${sampleId}_bwa_mem_with_dups_unpaired_reads_sort_merged_resort.bam
 		bamFileWithDups=${sampleId}_bwa_mem_with_dups_unpaired_reads_sort_merged_resort.bam
 
+		# This file is only created in hybpiper mode:
 		if [[ -s ${sampleId}_R1_R2_trimmomatic_unpaired.fastq ]]; then rm ${sampleId}_R1_R2_trimmomatic_unpaired.fastq; fi 
 	fi
 
@@ -700,7 +703,9 @@ sumLengthOfGenes: $sumLengthOfGenes" > ${sampleId}_gene_recovery_stats.txt  # Al
 	# Remove the large fastq files from any gene recovery method:
 	if [[ -s ${sampleId}_R1_trimmomatic.fastq ]]; then 
 		rm ${sampleId}_R1_trimmomatic.fastq ${sampleId}_R1_trimmomatic_unpaired.fastq.gz \
-		${sampleId}_R2_trimmomatic.fastq ${sampleId}_R2_trimmomatic_unpaired.fastq.gz
+		${sampleId}_R2_trimmomatic.fastq ${sampleId}_R2_trimmomatic_unpaired.fastq.gz \
+		${sampleId}_R1_R2_trimmomatic.log
+		# NB - ${sampleId}_R1_R2_trimmomatic_unpaired.fastq is only created in hybpiper mode and has already been removed above
 	fi
 fi
 #####cd ../ # Back up to parent dir for next sample - 20.4.2020 - has no effect here now and not required anymore because looping through samples is done outside this script 
