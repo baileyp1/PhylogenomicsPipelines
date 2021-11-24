@@ -358,7 +358,7 @@ echo \$OPTIND == $OPTIND								# Position of the first free parameter after any
 #echo 'Values of all free parameters: '${@:$OPTIND:$#}	# Therefore ${@:$OPTIND:$#} will access all the free parameters
 echo $(( $# - $OPTIND + 1 ))							# Number of free parameters, in this case the number of samples
 numbrSamples=$(( $# - $OPTIND + 1 ))
-#echo $numbrSamples
+echo $numbrSamples
 
 
 if [ $(( $# - $OPTIND + 1 )) -lt 4 ]; then				### 30.3.2020 AND speciesTreesOnly == no to handle scritp just processing species trees
@@ -706,13 +706,13 @@ if [[ $filterSeqs1 != 'no' ]]; then
 		else echo "ERROR: 1st value of option -F should contain an integer value between 1 and 100 - exiting "; exit; fi
 		if [[ -z "$fractnAlnCovrg" ]]; then echo "ERROR: option -F should contain an integer value between 1 and 100 - exiting "; exit; fi
 		# Eventually could use these percentages directly, but meanwhile changing into a fraction to use with the existing code:	
-		fractnAlnCovrg=`echo $filterSeqs1 | awk 'fractn=$1/100 {print fractn}' `
+		fractnAlnCovrg=`echo $filterSeqs1 | awk '{fractn=$1/100; print fractn}' `
 
 		fractnSamples=`echo $filterSeqs1 | awk '$2 >= 0 && $2 <= 100 {print $2}' `
-		if [[ "$fractnSamples" -eq "$fractnSamples" ]] 2>/dev/null; then echo ""
+		if [[ "$fractnSamples" -eq "$fractnSamples" ]] 2>/dev/null; then echo ""    # Test for an integer
 		else echo "ERROR: 2nd value of option -F should contain an integer value - exiting "; exit; fi
-		if [[ -z "$fractnSamples" ]]; then echo "ERROR: option -F should contain an integer value between 1 and 100 - exiting "; exit; fi
-		fractnSamples=`echo $filterSeqs1 | awk 'fractn=$2/100 {print fractn}' `
+		if [[ -z "$fractnSamples" ]]; then echo "ERROR: option -F should contain an integer value between 0 and 100 - exiting "; exit; fi   # tests if variable has a value
+		fractnSamples=`echo $filterSeqs1 | awk '{fractn=$2/100; print fractn}' `
 	else
 		echo "ERROR: Filter sequences option (option -F) was selected but should contain two values."; exit
 	fi
@@ -806,8 +806,8 @@ echo proteinSelected: $proteinSelected
 
 echo 'filter sequence option 1 (option -F): ' $filterSeqs1
 echo 'filter sequence option 2 (option -I): ' $filterSeqs2
-#echo '	fractnAlnCovrg: ' $fractnAlnCovrg
-#echo '	fractnSamples: ' $fractnSamples
+echo 'fractnAlnCovrg: ' $fractnAlnCovrg
+echo 'fractnSamples: ' $fractnSamples
 echo 'collapseNodes (option -L): ' $collapseNodes
 echo 'trimAln1 (option -J): ' $trimAln1
 echo 'trimAln2 (option -K): ' $trimAln2
@@ -935,6 +935,7 @@ if [[ $os == 'Darwin' && $speciesTreesOnly == 'no' ]]; then
 		### 6.10.2020 - NBNB - what about codon aln files - I assume they are required as well if used????????
 		echo seqType: $seqType
 		echo alnFileForTreeSuffix: $alnFileForTreeSuffix
+    echo numbrSamples: $numbrSamples
 		$pathToScripts/assess_gene_alignments.sh \
 		$fractnAlnCovrg \
 		$fractnMaxColOcc \
