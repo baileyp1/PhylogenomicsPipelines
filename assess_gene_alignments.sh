@@ -45,10 +45,15 @@ numbrSamplesThreshold=`awk -v FRACTN=$fractnSpecies -v numbrSamples=$totalNumbrS
 # Above awk code is zero proof - can have 0 * 100 - returns zero
 
 
-#echo fractnAlnCovrg to use: $fractnAlnCovrg
-#echo fractnSpecies to use: $fractnSpecies
-#echo numbrSamples: $totalNumbrSamples
+echo fractnAlnCovrg to use: $fractnAlnCovrg
+echo fractnMaxColOcc: $fractnMaxColOcc
+echo fractnSpecies to use: $fractnSpecies
+echo numbrSamples: $totalNumbrSamples
 #echo numbrSamplesThreshold: $numbrSamplesThreshold
+echo fileNamePrefix: $fileNamePrefix
+echo geneFile: $geneFile
+echo treeTipInfoMapFile: $treeTipInfoMapFile
+echo option_u: $option_u
 echo "seqType (in assess script): " $seqType
 echo "alnFileForTreeSuffix (in assess script): " $alnFileForTreeSuffix
 

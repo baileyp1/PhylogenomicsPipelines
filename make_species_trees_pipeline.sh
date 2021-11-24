@@ -67,14 +67,14 @@ fileNamePrefix=tree_pipeline
 fractnMaxColOcc=0.7
 
 checkpointing=no
-slurmThrottle=50			# Was 1, set to 50 as now have two rounds of alignment 
-partitionName=long   		# Values depend on the cluster being used so good to have a flagged option for this
+slurmThrottle=50			    # Was 1, set to 50 as now have two rounds of alignment 
+partitionName=long   		  # Values depend on the cluster being used so good to have a flagged option for this
 partitionForSpeciesTrees=long 	# NB - need an extra variable for species tree so I can use a different queue e.g. for a large memory node
-cpuGeneTree=1				# still keep this separate from the supermatrix tree; then I can specify loads more for the supermatrix.
-							# Maybe hava a comma separated list e.g. 4,30 for gene and species tree.
-cpu=8						# number of cpu to use for RAxML in supermatrix method
-geneTreeSlurmMem=5000		# option -R; 1.1.2021 - change from 20000 to 5000
-extraMem=no					# option -X 
+cpuGeneTree=1				      # still keep this separate from the supermatrix tree; then I can specify loads more for the supermatrix.
+							            # Maybe hava a comma separated list e.g. 4,30 for gene and species tree.
+cpu=8						          # number of cpu to use for RAxML in supermatrix method
+geneTreeSlurmMem=5000		  # option -R; 1.1.2021 - change from 20000 to 5000
+extraMem=no					      # option -X
 speciesTreeSlurmMem=50000	# option -U; I think I need 500 GB mem for the RAxML large tree (Slurm); fasttree uses 44GB mem for 3,564 species
 geneTreeSlurmTime=0	      # SBATCH -t 0-36:00;  A time limit of zero requests that no time limit be imposed - like the mem option
 speciesTreeSlurmTime=0		# SBATCH -t 0-36:00
@@ -568,16 +568,16 @@ else
 		###cat CKDK_Ochnaceae_Ochna_serrulata.fasta | awk '{if($1 ~ /^>/)  {{gsub(/>/,"",$1)} {print ">" $2 "-" $1}} else {print $0}}' >species-gene-format.fasta ]]
 		### NB - need to change awk code when altering format in next script
 		### NB - keep an eye on the max line length allowed w.r.t. seqtk
-    done
+  done
 	
-    # Finally, test whether there are the same number of sample identifiers on the fasta header lines as there are samples submitted:
+  # Finally, test whether there are the same number of sample identifiers on the fasta header lines as there are samples submitted:
 ### 7.10.2019 - NOT YET TESTED ALL SITUATIONS
-    # NB - Fasta file format is now: >geneId sampelId.
-    # NB - on MacOS awk inserts a blank line between output lines so removing them with grep -v '^$'.
-    numbrSamplesInFile=`cat *_modified.fasta | awk '{if($1 ~ /^>/)  {print $2} }' | grep -v  '^$' | sort -u | wc -l `
-    ### NB - if file can get through here with no sample field occupied (it can't I don't think), then you would end up counting genes, then number of genes could equal number of samples (unlikely).
-    if [ $numbrSamples -ne $numbrSamplesInFile ]; then echo "ERROR: number of samples counted according to the fasta header lines is different to the number of input files"; exit 1
-    else
+  # NB - Fasta file format is now: >geneId sampelId.
+  # NB - on MacOS awk inserts a blank line between output lines so removing them with grep -v '^$'.
+  numbrSamplesInFile=`cat *_modified.fasta | awk '{if($1 ~ /^>/)  {print $2} }' | grep -v  '^$' | sort -u | wc -l `
+  ### NB - if file can get through here with no sample field occupied (it can't I don't think), then you would end up counting genes, then number of genes could equal number of samples (unlikely).
+  if [ $numbrSamples -ne $numbrSamplesInFile ]; then echo "ERROR: number of samples counted according to the fasta header lines is different to the number of input files"; exit 1
+  else
 		# Concatenate fasta files and put seqs on a single line:
 		fileList=`ls *_modified.fasta `
 		#echo $fileList
@@ -596,7 +596,7 @@ if [[ $sampleTableFile != 'no' ]]; then
 	if [[ -s $sampleTableFile ]]; then
 		echo Will use this file containing text for the tree leaves: $sampleTableFile
 		# First check that the table is a csv file (plus header - is possible?)
-		### I think I can check here the csv file - must start with the table header! - only check needed - maybe check that it has ',' chars (?)
+		### I think I can check here the csv file - maybe check that it has ',' chars (?)
 		
 
 
@@ -608,7 +608,7 @@ if [[ $sampleTableFile != 'no' ]]; then
 		# Prepare a mapfile for Newick Utils to switch in sample info onto the tree tips:
 		addTreeTipInfoFromTable.py  $sampleTableFile  tree_tip_info_mapfile.txt  ${@:$OPTIND:$#}
 		### 29.1.2020 - not now using ${@:$OPTIND:$#}
-		# Check that tree_tip_info_mapfile.txt now exists, if not an identifier is not unique in the table:
+		# Check that tree_tip_info_mapfile.txt now exists. If not, an identifier is not unique in the table:
 		if [[ ! -s tree_tip_info_mapfile.txt ]]; then
 			echo "ERROR: the sample table (from option -t) was not able to be prepared. Exiting..."
 			exit
