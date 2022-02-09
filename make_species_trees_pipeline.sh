@@ -46,7 +46,7 @@ trimAln1=no					# Filter alignment columns with optrimAl
 trimAln2=no					# Filter alignment columns to remove rarer insertions; maximum limit of percent occupancy to trim at
 
 
-maxColOccThreshold=90		### 7.9.2020 - now testing lower values e.g. 30 and 15 - still need to check input value; also should it be minColOccLenThreshold
+maxColOccThreshold=90		### 7.9.2020 - now testing lower values e.g. 30 and 15 - still need to check input value; also should it be 'Number of columns with minColOccLenThreshold'
 							### Hidden variable - length unit in bases
 
 # PHYLOGENY OPTIONS:
@@ -91,7 +91,7 @@ Program description:
                 makes species trees from fasta files, either of two types:
                 1. recovered genes (DNA) from multiple samples, one fasta file per sample (default)
                    The fasta header format must be: >sampleId-geneId but one other option (-a) is available.
-                2. gene-wise (DNA) fasta files, one fasta file per gene (option -G)
+                2. gene-wise (DNA only) fasta files, one fasta file per gene (option -G)
 
 
 Usage:          make_species_trees_pipeline.sh [OPTIONS] fastafile1 fastafile2 fastafile3 ...
@@ -101,7 +101,7 @@ OPTIONS <required_value>:
   -v            program version
 INPUT FILE OPTIONS:
   -G               
-                make gene trees, starting from gene-wise fasta files rather than files containing all genes per sample.
+                make gene trees starting from unaligned gene-wise fasta files rather than files containing all genes per sample.
                 Gene name/identifier must be identical to the fasta file name (minus any [dot] ending suffix e.g. .fasta),
                 else change the gene name list in option -g so that it is.	
                 Fasta header line format MUST BE: >sampleId
@@ -128,7 +128,7 @@ ALIGNMENT OPTIONS:
                 alignment program to use: mafft, upp (UPP is ideal for large alignments) (default=mafft)
   -M <string>      
                 if using mafft, specify alignment algorithm to use in quotes i.e. '--retree 1', '--retree 2', '--maxiterate 1000' etc (default='--retree 2')
-FILTERING AND TRIMMING OPTIONS:
+ALIGNMENT FILTERING AND TRIMMING OPTIONS:
   -F <2 integers> 
                 filter sequences option 1. Format: '<1> <2>' (no default; N.B. values must be quoted)
                 1. filters sequences in gene alignments by coverage, in this option by the percent of well conserved regions (columns) 
@@ -179,7 +179,7 @@ OTHER OPTIONS:
                 Slurm memory to use (in MB) for gene trees and TreeShrink (default=0; means no limit is imposed in default Slurm set up)
 
   -X <string>	
-                Slurm extra memory (in MB) to use with large data sets for specific gene trees named here: Format: <geneId1>,<geneId2><etc>:<cpu>:<mem>
+                Slurm extra memory (in MB) and cpu to use with large data sets for specific gene trees named here: Format: <geneId1>,<geneId2><etc>:<cpu>:<mem>
                 Real life examples: Angiosperms353 genes (5921, 5596)
   -U <integer>     
                 Memory to use (in MB) for species trees (default=50000)
@@ -230,7 +230,7 @@ EOF
 
 
 #echo User inputs:    ### For testing only 
-while getopts "hvat:ug:ijGF:m:p:M:q:r:TC:c:d:Q:Y:A:D:O:L:I:JK:R:X:U:V:W:H:o:bs:B:"  OPTION; do	# Remaining options - try capital letters!
+while getopts "hvat:ug:ijGF:f:m:p:M:q:r:TC:c:d:Q:Y:A:D:O:L:I:JK:R:X:U:V:W:H:o:bs:B:"  OPTION; do	# 52 letter options available - 39 taken!
 
 	#echo -$OPTION $OPTARG	### For testing only - could try to run through options again below 
 	 
@@ -251,7 +251,7 @@ while getopts "hvat:ug:ijGF:m:p:M:q:r:TC:c:d:Q:Y:A:D:O:L:I:JK:R:X:U:V:W:H:o:bs:B
         M) mafftAlgorithm="$OPTARG" ;;
     #FILTERING AND TRIMMING OPTIONS:
 		F) filterSeqs1=$OPTARG ;;
-		#f) fractnAlnCovrg=$OPTARG ;;
+		f) fractnSamples=$OPTARG ;;
 		m) fractnMaxColOcc=$OPTARG ;;
         O) maxColOccThreshold=$OPTARG ;;
 		#s) fractnSamples=$OPTARG ;;
@@ -1004,7 +1004,7 @@ elif [[ $os == 'Linux' && $speciesTreesOnly == 'no' ]]; then
     	# It has to be set outside the sbatch script I think so that I can automatically set the array size .
     	# It has to be set each time otherwise.
     	numbrGenes=`tail -n+1 $geneListFile | wc -l `
-    	numbrGenes=$(( $numbrGenes - 1 ))		# Slurm array needs to start at zero so need to adjust the max value.
+    	numbrGenes=$(( $numbrGenes - 1 ))		# Slurm array needs to start at zero so need to adjust the max value (the SLURM_ARRAY_TASK_ID and the log files start from zero)
 
     	# Notes on the --array flag - e.g. SBATCH --array=1-${numbrSamples}%50 
     	# 0-352%10	# NB - if input file has a header line, array should start at 1 (but the gene list file doesn't!);
