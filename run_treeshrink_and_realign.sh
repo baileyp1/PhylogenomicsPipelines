@@ -22,7 +22,7 @@ sampleTableFile="$4"
 geneListFile="$5"
 fractnAlnCovrg="$6"
 fractnMaxColOcc="$7"
-fractnSamples="$8"
+fractnSamples="$8"       # Enters this script as a fraction
 mafftAlgorithm="$9"
 cpuGeneTree="${10}"
 partitionName="${11}"
@@ -88,7 +88,9 @@ echo "Number of bootstraps for RAxML: $numbrBootstraps"
 
 
 # Convert $emptyMatchStateFractn to a percent for use in the output files:
-fractnAlnCovrg_pc=`awk -v FRACTN=$fractnAlnCovrg 'BEGIN{printf "%.0f", FRACTN * 100}' `
+fractnAlnCovrg_pc=`awk -v FRACTN=$fractnAlnCovrg 'BEGIN{printf "%.0f", FRACTN * 100}' ` # 27.1.2022 - not using fractnAlnCovrg OR fractnAlnCovrg_pc!
+######fractnSamples=`awk -v FRACTN=$fractnAlnCovrg 'BEGIN{printf "%.0f", FRACTN * 100}' `
+
 
 
 runTreeShrink() {
@@ -273,6 +275,17 @@ reAlignSeqs()   {
     ### So, can remove $trimAlnOption2, collapseNodesOption, extraMemOptionX and 
     ### set the option instead with inported var. together with the option on the command line.
     #echo " # For checking option values that need to be quoted (contain spaces)
+
+    # NB - still need to add $fractnSamples because it needs to enter the species tree because
+    #      the gene tree Newick files are filtered on the $fractnSamples if set, otherwise
+    #      $fractnSamples=0 i.e. no gene trees will be removed before running the species tree.
+    #      Cannot use the -F option otherwise filtering is attempted again!
+    #      The only thing I can think to do is to use a new hidden option (-f) for
+    #      setting $fractnSamples. In this script $fractnSamples is already a fraction 
+    #      so is ready to go.
+
+    ### 28.1.2022 -  
+
     $pathToScripts/make_species_trees_pipeline.sh $iOption $trimAlnOption1 $trimAlnOption2 $collapseNodesOption $uOption $extraMemOptionX \
     $sampleTableFileOption $bOption \
     -p $fileNamePrefix \
@@ -281,6 +294,7 @@ reAlignSeqs()   {
     -A $alnProgram \
     -M "$mafftAlgorithm" \
     -g $geneListFileForReAln \
+    -f $fractnSamples \
     -m $fractnMaxColOcc \
     -O $maxColOccThreshold \
     $2 \
@@ -409,6 +423,7 @@ elif [[ $filterSeqs1 != 'no' || $filterSeqs2 != 'no' ]]; then
         done
         echo Before reAlnSeqs:  seqType: $seqType, mafftAlgorithm: $mafftAlgorithm 
         reAlignSeqs "$seqType" "$phyloProgramsToUse" "after_filterSeqs"
+### 9.2.2022 - NB - should above line contain $treeType or $seqType - it might be correct
     elif [[ `echo $seqType | grep -o 'codon' ` == 'codon' ]]; then
         treeType=codon
         for file in  ../*_${treeType}_gene_tree_USE_THIS.nwk; do
