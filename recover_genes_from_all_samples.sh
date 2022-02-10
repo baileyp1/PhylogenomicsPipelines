@@ -278,7 +278,7 @@ elif [ $os == 'Linux' ]; then
     # Count the # samples to process and fix that number in the Slurm --array parameter.\
     # It has to be set outside the sbatch script I think so that I can automatically set the array size .
     # It has to be set each time otherwise.
-    numbrSamples=`tail -n+2 $sampleList | wc -l `
+    numbrSamples=`tail -n+2 $sampleList | wc -l ` # Because there is a header line, the Slurm array needs to start at 1 (so then no need to adjust the max value of the Slurm array (the SLURM_ARRAY_TASK_ID and the log files will start from 1)
 
     # Notes on the --array flag - e.g. SBATCH --array=1-${numbrSamples}%50 
     # 0-352%10	# NB - if input file has a header line, array should start at 1;

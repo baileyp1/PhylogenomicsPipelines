@@ -59,7 +59,7 @@ echo "Number of bootstrap data sets to use for RAxML: $numbrBootstraps"
 # Convert $emptyMatchStateFractn and $fractnSpecies to a percent for use in the output files:
 fractnAlnCovrg_pc=`awk -v FRACTN=$fractnAlnCovrg 'BEGIN{printf "%.0f", FRACTN * 100}' `
 fractnSpecies_pc=`awk -v FRACTN=$fractnSpecies 'BEGIN{printf "%.0f", FRACTN * 100}' `
-# Minimum number of samples to tolerate for including into Astral:
+# Minimum number of samples to tolerate for including into Astral (9.2.2022 - looks like the number is rounded down!)
 numbrSamplesThreshold=`awk -v FRACTN=$fractnSpecies -v numbrSamples=$totalNumbrSamples 'BEGIN{printf "%.0f", FRACTN * numbrSamples}' `
 # Above awk code is zero proof - can have 0 * 100 - returns zero
 
@@ -92,11 +92,16 @@ if [[ -s $treeTipInfoMapFile && $option_u == 'yes' ]]; then
 fi
 
 
-numbrLowSupportNodesThreshold=70    # For use with getTreeStats() - if using a program like fasttree that
+numbrLowSupportNodesThreshold=95    # For use with getTreeStats() - if using a program like fasttree that
                                     # outputs support values as fractions, need to convert percent value
                                     # beforehand then import into function - 23.10.2020 - changed logic slightly - too complicated to use this value
 
-> ${fileNamePrefix}_summary_tree_stats.txt  # Wiping out file contents from any previous run 
+echo "Tree statistics
+---------------
+Support nodes threshold set to: $numbrLowSupportNodesThreshold
+ASTRAL: local posterior probability (considered to be well supported if >= 95% (Sayyari et al., 2016)
+IQTREE2: ultrafast bootstrap support (considered to be well supported if >= 95% (Minh et al., 2013)
+---------------"> ${fileNamePrefix}_summary_tree_stats.txt  # Wiping out file contents from any previous run 
 
 
 getTreeStats () {
@@ -242,7 +247,7 @@ makeSpeciesTree () {
         $exePrefix fasttree $fasttreeFlags \
         $infile \
         > $outFilePrefix/${fileNamePrefix}.${residueType}.species_tree.fasttree.nwk
-    elif [[ "$programToUse" == 'raxml' ]]; then
+    elif [[ "$programToUse" == 'raxmlq' ]]; then
         echo programToUse: $programToUse
         echo "Running RAxML on the concatenated alignment using a partitioned analysis of each gene.
         Number of samples: ${totalNumbrSamples}; model of evolution: $RAxML_ModelOfEvolution"
@@ -275,6 +280,26 @@ makeSpeciesTree () {
         #    other DNA models so can't specify them in the partitions file
         #    Also note - you can not assign different models of rate heterogeneity to different partitions,
         #    i.e., it will be either CAT , GAMMA , GAMMAI etc. for all partitions, as specified with -m.
+    elif [[ "$programToUse" == 'raxml' ]]; then
+        echo programToUse: $programToUse
+        echo "Running RAxML on the concatenated alignment WITHOUT using a partitioned analysis of each gene.
+        Number of samples: ${totalNumbrSamples}; model of evolution: $RAxML_ModelOfEvolution"
+        # RAxML won't run if files already exists from a previous run so remove them here: 
+        if [ -a RAxML_bootstrap.${fileNamePrefix}.${residueType}.raxmlHPC-PTHREADS-SSE ]; then rm RAxML_bootstrap.${fileNamePrefix}.${residueType}.raxmlHPC-PTHREADS-SSE; fi
+        if [ -a RAxML_bestTree.${fileNamePrefix}.${residueType}.raxmlHPC-PTHREADS-SSE ]; then rm RAxML_bestTree.${fileNamePrefix}.${residueType}.raxmlHPC-PTHREADS-SSE; fi
+        if [ -a RAxML_bipartitions.${fileNamePrefix}.${residueType}.raxmlHPC-PTHREADS-SSE ]; then rm RAxML_bipartitions.${fileNamePrefix}.${residueType}.raxmlHPC-PTHREADS-SSE; fi
+        if [ -a RAxML_bipartitionsBranchLabels.${fileNamePrefix}.${residueType}.raxmlHPC-PTHREADS-SSE ]; then rm RAxML_bipartitionsBranchLabels.${fileNamePrefix}.${residueType}.raxmlHPC-PTHREADS-SSE; fi
+        if [ -a RAxML_info.${fileNamePrefix}.${residueType}.raxmlHPC-PTHREADS-SSE ]; then rm RAxML_info.${fileNamePrefix}.${residueType}.raxmlHPC-PTHREADS-SSE; fi
+        if [ -a ${infile}.reduced ]; then rm ${infile}.reduced; fi
+
+        $exePrefix raxmlHPC-PTHREADS-SSE3 -T $cpu \
+        -f a \
+        -x 12345 \
+        -p 12345 \
+        -# $numbrBootstraps \
+        -m $raxmlModel \
+        -s $infile \
+        -n ${fileNamePrefix}.${residueType}.raxmlHPC-PTHREADS-SSE
     fi
 }
 
@@ -367,7 +392,7 @@ if [[ "$astralSelected" == 'yes' || "$astralmpSelected" == 'yes' || "$astral-pro
                 filePrefix=`basename -s .nwk $file `
                 cat $file | nw_ed  /dev/fd/0  "i & (b < 30)" o > ${filePrefix}.collapse${collapseNodesD}.nwk 
             done
-            # These files now required for ASTRAL:
+            # The set of 'collapsed' files now required for ASTRAL:
             dnaAstralInFile=${fileNamePrefix}.${seqType}.gene_trees_set.collapse${collapseNodesD}.nwk
             dnaGeneTreesSetFilenames=${fileNamePrefix}.${seqType}.gene_trees_set_filenames.collapse${collapseNodesD}.txt
         fi
@@ -565,9 +590,20 @@ if [[ "$fasttreeSelected" == 'yes' || "$raxmlSelected" == 'yes' ]]; then
     if [[ "$raxmlSelected" == 'yes' ]]; then
         if [[ $dnaSelected == 'yes' ]]; then
             RAxML_ModelOfEvolution=GTRCAT
+            phyloProgramSwitch=raxml
             if [[ $totalNumbrSamples -lt 200 ]]; then   # 21.4.2020 - set to 200, only really need speed up with larger trees 
                 RAxML_ModelOfEvolution=GTRGAMMA
             fi
+            # if [[ $totalNumbrSamples -lt 20 ]]; then    # Maybe have to adjust this if number samples over 20 give this error: 'WARNING the alpha parameter with a value of' 
+            #     RAxML_ModelOfEvolution=   [ use GTR only ]  - will need to use IQTREE2 or raxml-ng; can use RAxML -V option with the CAT model but number of sample here is low!
+            #     THEN: makeSpeciesTree dna dna.alns.concatenated.fasta '.' [IQTREE2 or raxml-ng - I think IQTREE is better] $RAxML_ModelOfEvolution 'not_required_here' 'not_required_here'
+            #     ALSO: need to include the option for partitioning here as well
+            # else USE existing command below - or use the phyloProgramSwitch variable above and just have ONE call to makeSpeciesTrees()
+            ### NB - need to check that the chosen program is installed here
+            ### For turning on partitioning or not:     [ also add to protein cmd ]     
+            ### if [[ $speciesTreeProgram == *'raxmlq'* ]];then
+            ###    makeSpeciesTree dna dna.alns.concatenated.fasta '.' raxmlq $RAxML_ModelOfEvolution 'not_required_here' 'not_required_here'
+            ### else
             makeSpeciesTree dna dna.alns.concatenated.fasta '.' raxml $RAxML_ModelOfEvolution 'not_required_here' 'not_required_here'
             # Add tree tip info:
             if [[ -s $treeTipInfoMapFile ]]; then 
