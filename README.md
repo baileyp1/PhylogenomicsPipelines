@@ -158,7 +158,7 @@ The main output files from the phylogenetic analysis pipeline are listed below i
     summary of gene trees reported by AMAS.py
   * run3b_summary_tree_stats.txt<br>
     summary tree statistics
-    
+ ---
 ## Further details
 ### Installing, compiling and running the additional software
 If using an existing computer set up, many of the additional programs required might already be installed. If so, just ensure that the program version is up to date. The requirement for a specific version is listed in the software section above, if known. Minor programs listed as optional and not installed are ignored and their outputs will not exist e.g. Jalview for gene alignment images.
