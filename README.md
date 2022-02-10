@@ -26,7 +26,7 @@ source ~/.bash_profile
 then on the command line type the name of the programs shown above to see brief instructions on their use. At least for the phylogenetic analysis script it is best to work in a new empty directory. The main reason (amongst a few others) is that the  script uses wild cards in several places to pick up a set of files and may pick up extra files that also match, however most file name sets are now checked for and deleted at the start of the analysis.  
  
 ##  Additional software required
-The following programs need to be installed and available from the command line by typing the native program name. Some but not all of them are easily available from software installers (e.g. bioconda, brew, apt, yum). If the Java programs are being used (i.e. Trimmomatic, ASTRAL[-MP], Jalview, Picard) it is necessary to set global variables with exactly these names: TRIMMOMATIC, ASTRAL, ASTRALMP, JALVIEW, PICARD. Add them to your .bash_profile or equivalent file) as follows - e.g.
+The following programs need to be installed and available from the command line by typing the native program name. Some but not all of them are easily available from software installers (e.g. bioconda, brew, apt, yum). If the Java programs are being used (i.e. Trimmomatic, ASTRAL[-MP], Jalview, Picard) it is necessary to set global variables with exactly these names: TRIMMOMATIC, ASTRAL, ASTRALMP, JALVIEW, PICARD. Add them to your .bash_profile or (equivalent file) as follows - e.g.
 ```bash
 export TRIMMOMATIC=<path_to_executable>/Trimmomatic-<VERSION>/trimmomatic-<VERSION>.jar
 export ASTRAL=<path_to_executable>/astral/Astral/astral.<VERSION>.jar
@@ -57,14 +57,14 @@ For phylogenetic analysis (if known, specific version requirements are shown in 
 * [FastTree](http://www.microbesonline.org/fasttree/), [RAxML-NG](https://github.com/amkozlov/raxml-ng) or [IQ-TREE version 2](http://www.iqtree.org)
 * [RAxML](https://github.com/stamatak/standard-RAxML) (used for building a species tree using a concatenated alignment)
 * [Newick Utilities](http://cegg.unige.ch/newick_utils)
-* [ASTRAL](https://github.com/smirarab/ASTRAL). For [ASTRAL-MP](https://github.com/smirarab/ASTRAL/tree/MP), switch to the ASTRAL-MP branch.
+* [ASTRAL](https://github.com/smirarab/ASTRAL). For [ASTRAL-MP](https://github.com/smirarab/ASTRAL/tree/MP), clone and switch to the ASTRAL-MP branch.
 * [AMAS.py](https://github.com/marekborowiec/AMAS) (ensure the version has the 'trim' option) and/or [trimAl](http://trimal.cgenomics.org/) (for trimming if those options are used)
 * [TreeShrink](https://github.com/uym2/TreeShrink) if option is used (version 1.3.5+)
 * [R](https://www.r-project.org/) (version 4.0)  if the TreeShrink option <!--or trimAl are--> is used
 
 One way of setting up the above software requirements is described [here](https://github.com/baileyp1/PhylogenomicsPipelines/blob/master/Species_Tree_Readme.md). 
  
-## How to use, outputs    [[and further details  ]]
+## How to run, inputs and outputs
 ## recover_genes_from_all_samples.sh
 ### Example of running recover_genes_from_all_samples.sh
 A typical example is shown at the bottom of the command line help.<br>
@@ -79,7 +79,7 @@ The main output file from the gene recovery pipeline is an unaligned sequence fi
   
 ## make_species_trees_pipeline.sh 
 ### Example of running make_species_trees_pipeline.sh 
-A basic example is shown at the bottom of the command line help and can be used to build up more command options. A more extensive analysis is presented below (options for this pipeline in brackets) with jobs set to run via Slurm job manager on a High Performance Computing (HPC) Linux cluster. 
+A basic example is shown at the bottom of the command line help and can be used as a template to add more command options. A more extensive analysis is presented below (options for this pipeline in brackets) with jobs set to run via Slurm job manager on a High Performance Computing (HPC) Linux cluster. 
 
 Build genes trees from sample fasta files, formatted as described for option -a, by aligning the input DNA sequence for each gene with UPP (option -A),  filtering out genes with low sequence coverage across the alignment (option -F), removing very rare insertions (option -K), building each gene tree with IQTREE-2 using the Ultrafast bootstrap option (option -q), using TreeShrink to identify unusually long branches in the gene trees (option -T), then collapsing nodes with bootstrap values < 30 % (option -L) before building species trees with the programs specified in option -s, first ASTRAL, then FastTree and RAxML are used to reconstruct a supermatrix tree built from a concatenated set of the UPP gene alignments:
 ```bash
@@ -155,9 +155,37 @@ The main output files from the phylogenetic analysis pipeline are listed below i
     summary of gene trees reported by AMAS.py
   * run3b_summary_tree_stats.txt<br>
     summary tree statistics
+    
+## Further details
+### Installing, compiling and running the additional software
+If using an existing computer set up, many of the additional programs required might already be installed. If so, just ensure that the program version is up to date. The requirement for a specific version is listed in the software section above, if known. Minor programs listed as optional and not installed are ignored and their outputs will not exist e.g. Jalview for gene alignment images.
+
+### How to run, inputs and outputs
+#### make_species_trees_pipeline.sh
+### Options
+Option -q <string> name of phylogeny program for gene trees from DNA sequences. 
+* iqtree2<br>
+default IQTREE2 run with model testing (slow for big alignments) and Ufboot bootstrapping<br>
+* iqtree2-B1000-nm1000<br>
+  single model of evolution (GTR for dna, JTT for protein) and Ufboot bootstrapping with 1000 tree iterations<br>
+* iqtree2-B1000-nm110<br>
+  same as for 'iqtree2-B1000-nm1000’ except number of iterations is set to 110. Approximately 10x faster but less thorough tree search
+* iqtree2-B1000-nm200       
+  same as for 'iqtree2-B1000-nm1000’ except number of iterations is set to 200. Approximately 5x faster but less thorough tree search
+
+Option -s ‘astral’ name of phylogeny program(s) to use for the species tree(s)<br>
+when 'astral' is usedIs fixed to use 12GB RAM and is sufficient to build a species tree with approximately 3,200 samples. For larger data set it would be better to use ASTRAL-MP for faster analysis. Memory for ASTRAL-MP should be set via option -U.
+
+Option -H    Slurm array throttle for gene trees<br>
+* By default, this option is set to a throttle of one only (i.e. runs one gene) which is useful to make sure the set up is running as expected for one gene. However, it means that Slurm throttle has to be altered by hand to run more genes in parallel e.g. for 50:
+```bash
+scontrol update arraytaskthrottle=50 job<slurm_job_id>
+```
+If any type of sequence filtering is on (options -F, -I, -T), then upon gene re-alignment, the throttle is set to 50 by default. 
+* If option -X is used, an additonal slurm array is set up for gene trees that need significantly higher memory and/or cpu for the alignment or tree steps relative to other genes in the data set. There are some! The throttle will also need to be increased for this array too.
+
 ---
 <span style="font-size:small;">Copyright © 2020 The Board of Trustees of the Royal Botanic Gardens, Kew</span>
-
 
 
 
