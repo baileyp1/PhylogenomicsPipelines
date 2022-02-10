@@ -81,7 +81,7 @@ The main output file from the gene recovery pipeline is an unaligned sequence fi
 ### Example of running make_species_trees_pipeline.sh 
 A basic example is shown at the bottom of the command line help and can be used as a template to add more command options. A more extensive analysis is presented below (options for this pipeline in brackets) with jobs set to run via Slurm job manager on a High Performance Computing (HPC) Linux cluster. 
 
-Build genes trees from sample fasta files, formatted as described for option -a, by aligning the input DNA sequence for each gene with UPP (option -A),  filtering out genes with low sequence coverage across the alignment (option -F), removing very rare insertions (option -K), building each gene tree with IQTREE-2 using the Ultrafast bootstrap option (option -q), using TreeShrink to identify unusually long branches in the gene trees (option -T), then collapsing nodes with bootstrap values < 30 % (option -L) before building species trees with the programs specified in option -s, first ASTRAL, then FastTree and RAxML are used to reconstruct a supermatrix tree built from a concatenated set of the UPP gene alignments:
+Build genes trees from sample fasta files, formatted as described for option -a, by aligning the input DNA sequence for each gene with UPP (option -A),  filtering out genes with low sequence coverage across the alignment (option -F), removing very rare insertions (option -K), building each gene tree with IQTREE-2 using the Ultrafast bootstrap option (option -q), using TreeShrink to identify unusually long branches in the gene trees (option -T), then collapsing nodes with bootstrap values < 30 % (option -L) before building species trees with the programs specified in option -s, first ASTRAL, then FastTree is used to reconstruct a supermatrix tree built from a concatenated set of the UPP gene alignments:
 ```bash
 make_species_trees_pipeline.sh \
 -a \
@@ -90,27 +90,30 @@ make_species_trees_pipeline.sh \
 -t <path_to>/taxon_info_for_tree_labels.csv \
 -g <path_to>/<file_with_target_geneIds_ONLY.txt> \
 -F '60 10' \
+-O 0 \
 -K 0.003 \
 -q iqtree2-B1000-nm1000 \
 -T \
 -L 30 \
--s 'astral fasttree raxml' \
--c 26 \
+-s 'astral fasttree' \
+-o mid-point \
 -C 3 \
+-c 32 \
 -Q long \
--Y long \
--R 5500 \
--U 12000 \
+-Y himem \
+-R 13400 \
+-U 1400000 \
 -V 0 \
 -W 0 \
 -H 1 \
--X 5921,5596:6:20000 \
+-p release_2.0_tree \
+-X 5921,5596,5333,5614:12:50000 \
 *.fasta \
 > make_species_trees_pipeline.log 2>&1 &
 ```
 Note that in the above command there must not be a space character after the back slash, there must be a space before the back slash and any option values that contain spaces need to be quoted e.g. option -F. 
 
-The Slurm options, -Q, -Y, -V and -W, will need to be altered depending on how Slurm is set up. Slurm memory options, -R and -U, will need to be altered depending on the size of the data set; also refer to option -X which helps with memory efficiency by  allowing the user to increase memory for specific genes that require significantly more memory. The values set in the above example were appropriate for building gene trees then a species tree with ASTRAL containing up to 3,200 samples over a 7-10 day period. (Refer to the citation above and KewTreeOfLife version 1.0.)
+The Slurm options, -Q, -Y, -V and -W, will need to be altered depending on how Slurm is set up. Slurm memory options, -R and -U, will need to be altered depending on the size of the data set; also refer to option -X which helps with memory efficiency by  allowing the user to increase memory for specific genes that require significantly more memory. The values set in the above example were appropriate for building gene trees then a species tree with ASTRAL containing up to 9,844 samples over a 46 day period. (Refer to the citation above and KewTreeOfLife version 2.0.)
 
 ### Outputs from make_species_trees_pipeline.sh  
 The main output files from the phylogenetic analysis pipeline are listed below in output order. Additional files will exist depending on the option(s) used, the option(s) value and the underlying programs triggered by the option(s).
