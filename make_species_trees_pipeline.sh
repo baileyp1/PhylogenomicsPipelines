@@ -34,7 +34,7 @@ option_u=no
 # ALIGNMENT OPTIONS:
 seqType=dna
 alnProgram=mafft 				# 27.7.2020 - may want to merge this option with mafftAlgorithm so it woudl be quoted liek so: 'mafft --retree 2'
-mafftAlgorithm='--retree 2'     # Hidden option - '--maxiterate 1000' #'--retree 1'   '--retree 2' - need to ry and merge with the alnProgram option somehow
+mafftAlgorithm='--retree 2'     # '--maxiterate 1000' #'--retree 1'   '--retree 2' - need to ry and merge with the alnProgram option somehow
 
 # FILTERING AND TRIMMING OPTIONS:
 filterSeqs1=no			# My filter sequencing option (option 1)
@@ -46,7 +46,7 @@ trimAln1=no					# Filter alignment columns with optrimAl
 trimAln2=no					# Filter alignment columns to remove rarer insertions; maximum limit of percent occupancy to trim at
 
 
-maxColOccThreshold=90		### 7.9.2020 - now testing lower values e.g. 30 and 15 - still need to check input value; also should it be 'Number of columns with minColOccLenThreshold'
+maxColOccThreshold=30		### 7.9.2020 - now testing lower values e.g. 30 and 15 - still need to check input value; also should it be 'Number of columns with minColOccLenThreshold'
 							### Hidden variable - length unit in bases
 
 # PHYLOGENY OPTIONS:
@@ -130,16 +130,23 @@ ALIGNMENT OPTIONS:
                 if using mafft, specify alignment algorithm to use in quotes i.e. '--retree 1', '--retree 2', '--maxiterate 1000' etc (default='--retree 2')
 ALIGNMENT FILTERING AND TRIMMING OPTIONS:
   -F <2 integers> 
-                filter sequences option 1. Format: '<1> <2>' (no default; N.B. values must be quoted)
+                filter sequences option 1 (followed by re-alignment). Format: '<1> <2>' (no default; N.B. values must be quoted)
                 1. filters sequences in gene alignments by coverage, in this option by the percent of well conserved regions (columns) 
                    in the alignment covered by a sample sequence. A well conserved column is one with > 70 % residue occupancy
                    Minimum percent to tolerate (advised=60; 0 would mean no filtering, i.e. include sequence of any length)
                 2. percent of samples in each gene tree.
                    Minumum percent to tolerate (0 would mean no filtering, include all available samples in each gene tree)
                 Don't use with option -I else option -F only will applied.
+
+  -O <integer>
+                mimimum length to tolerate for the conserved region described in -F option 1; 0 would mean allow a gene 
+                through even though there is no overlap between the majority (>70%) of sequences, 30 would mean exclude gene from the 
+                analysis if overlapping region is less than 30 columns (default=30)
+
   -I <integer>     
-                filter sequences option 2 (no default; advised=60). Filters sequences from the alignment based on their length as a 
+                filter sequences option 2 (followed by re-alignment). Filters sequences from the alignment based on their length as a 
                 percent of the median length of all sequences in the data set. Don't use with option -F else option -F only will applied.
+                (no default; advised=60)
   -J               
                 trim alignment option 1. Filter columns with OpTrimAL (after Shee el al 2020, https://doi.org/10.3389/fpls.2020.00258)
                 NB - this option is not ready yet and has been removed!
@@ -156,13 +163,13 @@ PHYLOGENY OPTIONS:
   -r <string>      
                 name of phylogeny program for gene trees from protein sequences.
                 If required, options are, fastest to slowest: fasttree, iqtree2-B1000-nm110, iqtree2-B1000-nm200, iqtree2-B1000-nm1000, iqtree2, raxml-ng (no default)
+  -T               
+                use TreeShrink on gene trees (followed by re-alignment)  
   -s <string>      
                 name of phylogeny program(s) to use for the species tree(s) if required. Coalescent-based method: astral, astralmp (multi-threaded);
                 using a concatenated set of gene alignments: fasttree, raxml. N.B. using several programs must be quoted (e.g. 'astral fasttree')
   -B <integer>  
                 number of bootstrap searches for RAxML species tree (default=100)
-  -T               
-                use TreeShrink on gene trees (followed by re-alignment)
   -L <integer>     
                 collapse gene tree nodes with bootstrap support less than <integer> percent
 
@@ -182,7 +189,7 @@ OTHER OPTIONS:
                 Slurm extra memory (in MB) and cpu to use with large data sets for specific gene trees named here: Format: <geneId1>,<geneId2><etc>:<cpu>:<mem>
                 Real life examples: Angiosperms353 genes (5921, 5596)
   -U <integer>     
-                Memory to use (in MB) for species trees (default=50000)
+                Memory to use (in MB) for species trees (default=50000; NB: for option -s ‘astral’, memory is already fixed at 12GB)
   -V <string>      
                 Slurm time limit to use for gene trees. Format: <days>-<hours>:<minutes>
                 e.g. 1-0:0 is 1 day (default=0, means no limit is imposed in default Slurm set up)
@@ -230,7 +237,7 @@ EOF
 
 
 #echo User inputs:    ### For testing only 
-while getopts "hvat:ug:ijGF:f:m:p:M:q:r:TC:c:d:Q:Y:A:D:O:L:I:JK:R:X:U:V:W:H:o:bs:B:"  OPTION; do	# 52 letter options available - 39 taken!
+while getopts "hvat:ug:ijGF:f:m:p:M:q:r:TC:c:d:Q:Y:A:D:O:L:I:JK:R:X:U:V:W:H:o:bs:B:"  OPTION; do	# 52 letter options available (U and L case) - 39 taken!
 
 	#echo -$OPTION $OPTARG	### For testing only - could try to run through options again below 
 	 
@@ -1114,7 +1121,7 @@ elif [[ $os == 'Linux' && $speciesTreesOnly == 'no' ]]; then
 			$seqType \
 			$alnFileForTreeSuffix `
 
-    		echo jobInfo1: $jobInfo1
+    	echo jobInfo1: $jobInfo1
 			jobId=`echo $jobInfo1 | cut -d ' ' -f 4 `
 			echo \$jobId: $jobId - from running assess_gene_alignments.sh
 		fi
