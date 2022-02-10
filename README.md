@@ -164,7 +164,7 @@ The main output files from the phylogenetic analysis pipeline are listed below i
 If using an existing computer set up, many of the additional programs required might already be installed. If so, just ensure that the program version is up to date. The requirement for a specific version is listed in the software section above, if known. Minor programs listed as optional and not installed are ignored and their outputs will not exist e.g. Jalview for gene alignment images.
 
 ### How to run, inputs and outputs
-#### make_species_trees_pipeline.sh
+### make_species_trees_pipeline.sh
 ### Options
 Option -q <string> name of phylogeny program for gene trees from DNA sequences. 
 * iqtree2<br>
@@ -176,10 +176,10 @@ default IQTREE2 run with model testing (slow for big alignments) and Ufboot boot
 * iqtree2-B1000-nm200       
   same as for 'iqtree2-B1000-nm1000’ except number of iterations is set to 200. Approximately 5x faster but less thorough tree search
 
-Option -s ‘astral’ name of phylogeny program(s) to use for the species tree(s)<br>
-when 'astral' is usedIs fixed to use 12GB RAM and is sufficient to build a species tree with approximately 3,200 samples. For larger data set it would be better to use ASTRAL-MP for faster analysis. Memory for ASTRAL-MP should be set via option -U.
+Option -s name of phylogeny program(s) to use for the species tree(s)
+* When 'astral' is used RAM is fixed to 12GB and is sufficient to build a species tree with approximately 3,200 samples. For larger data sets it would be better to use ASTRAL-MP for faster analysis. Memory for ASTRAL-MP should be set via option -U.
 
-Option -H    Slurm array throttle for gene trees<br>
+Option -H Slurm array throttle for gene trees<br>
 * By default, this option is set to a throttle of one only (i.e. runs one gene) which is useful to make sure the set up is running as expected for one gene. However, it means that Slurm throttle has to be altered by hand to run more genes in parallel e.g. for 50:
 ```bash
 scontrol update arraytaskthrottle=50 job<slurm_job_id>
