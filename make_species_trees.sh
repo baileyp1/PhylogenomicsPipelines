@@ -96,12 +96,14 @@ numbrLowSupportNodesThreshold=95    # For use with getTreeStats() - if using a p
                                     # outputs support values as fractions, need to convert percent value
                                     # beforehand then import into function - 23.10.2020 - changed logic slightly - too complicated to use this value
 
+# 
 echo "Tree statistics
 ---------------
 Support nodes threshold set to: $numbrLowSupportNodesThreshold
-ASTRAL: local posterior probability (considered to be well supported if >= 95% (Sayyari et al., 2016)
-IQTREE2: ultrafast bootstrap support (considered to be well supported if >= 95% (Minh et al., 2013)
+ASTRAL: local posterior probability (considered to be well supported if >= 95% (Sayyari et al., 2016) Molecular Biology and Evolution https://doi.org/10.1093/molbev/msw079
+IQTREE2: ultrafast bootstrap support (considered to be well supported if >= 95% (Minh et al., 2013) Molecular Biology and Evolution https://doi.org/10.1093/molbev/mst024
 ---------------"> ${fileNamePrefix}_summary_tree_stats.txt  # Wiping out file contents from any previous run 
+
 
 
 getTreeStats () {
@@ -134,7 +136,7 @@ getTreeStats () {
 
     # Count number of low support nodes:
 ### not sure why I'm using -r!!
-    numbrLowSupportNodes=`nw_ed -r $newickTree  "i & b < $bootstrapThreshold" s | wc -l | sed 's/ //g' `
+    numbrLowSupportNodes=`nw_ed -r $newickTree  "i & b >= $bootstrapThreshold" s | wc -l | sed 's/ //g' `
 ### NBNB - 15.10.2020 - this gives '1' even when the file is empty!!!#
     # Count the total number of support nodes with support values:
     ### 23.10.2020 - Astral tree seems to have two root nodes which get printed by "i" (i.e. get 2 more nodes than expected, only can notice with v small trees)
@@ -147,7 +149,7 @@ getTreeStats () {
     # Write summary stats:
     echo >> ${fileNamePrefix}_summary_tree_stats.txt
     if [[ $totalNumbrSupportNodes > 0 ]]; then
-        echo "$newickTree - number of internal nodes with low support values < $bootstrapThreshold (total number of internal nodes): ${numbrLowSupportNodes} (${totalNumbrSupportNodes})" >> ${fileNamePrefix}_summary_tree_stats.txt 
+        echo "$newickTree - number of internal nodes with low support values >= $bootstrapThreshold (total number of internal nodes): ${numbrLowSupportNodes} (${totalNumbrSupportNodes})" >> ${fileNamePrefix}_summary_tree_stats.txt 
     fi
 
     outFilePrefix=`basename $newickTree .nwk`
@@ -502,11 +504,18 @@ if [[ $dnaSelected == 'yes' ]]; then
         # once ARG_MAX is reached)
         tar -czf ${dnaGeneTreesSetFilenames}.tar.gz `cat $dnaGeneTreesSetFilenames`
     fi
+    # Also reating a zipped tarball for the original unaligned gene-wise fasta files.
+    if ls ../*dna.fasta >/dev/null 2>&1; then
+        tar -czf ${fileNamePrefix}.dna.fasta.tar.gz ../*dna.fasta
+    fi
 fi
 if [[ $proteinSelected == 'yes' ]]; then
     tar -czf  ${fileNamePrefix}.protein.aln.for_tree.fasta.tar.gz  *protein.aln.for_tree.fasta
     if [[ -s $proteinAstralInFile ]]; then
         tar -czf ${proteinGeneTreesSetFilenames}.tar.gz `cat $proteinGeneTreesSetFilenames`
+    fi
+    if ls ../*protein.fasta >/dev/null 2>&1; then
+        tar -czf ${fileNamePrefix}.protein.fasta.tar.gz ../*protein.fasta
     fi
 fi
 #### NEED TO ADD CODON CONDITIONAL AS WELL HERE

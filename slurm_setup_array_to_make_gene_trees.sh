@@ -13,7 +13,7 @@ phyloProgramDNA=$5
 phyloProgramPROT=$6
 fractnMaxColOcc=$7
 cpuGeneTree=$8
-mafftAlgorithm="$9"
+alnParams="$9"
 exePrefix="${10}"
 alnProgram="${11}"
 dnaSelected="${12}"
@@ -60,7 +60,7 @@ $phyloProgramDNA \
 $phyloProgramPROT \
 $fractnMaxColOcc \
 $cpuGeneTree \
-"$mafftAlgorithm" \
+"$alnParams" \
 "$exePrefix" \
 "$alnProgram" \
 $dnaSelected \
