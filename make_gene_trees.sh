@@ -14,7 +14,7 @@ phyloProgramDNA=$4
 phyloProgramPROT=$5
 fractnMaxColOcc=$6
 cpuGeneTree=$7
-mafftAlgorithm="$8"
+alnParams="$8"
 exePrefix="$9"
 alnProgram="${10}"
 dnaSelected="${11}"
@@ -52,8 +52,8 @@ echo GeneId: $geneId
 echo fractnAlnCovrg: $fractnAlnCovrg
 echo fractnAlnCovrg_pc: $fractnAlnCovrg_pc
 echo geneFile: $geneFile
-echo mafftAlgorithm: $mafftAlgorithm
 echo alnProgram: $alnProgram
+echo alnParams: $alnParams
 echo dnaSelected: $dnaSelected
 echo proteinSelected: $proteinSelected
 echo codonSelected: $codonSelected
@@ -693,7 +693,7 @@ createGeneAlignmentAndTreeImages()	{
 				echo "WARNING: Outgroup(s) last common ancestor (LCA) is the tree's root - cannot reroot. Will mid-point root instead."
 				nw_reroot $treeFileToUse | nw_order -c a /dev/fd/0 \
 				> gene_alignment_tree_images_$1/${geneNwkFileNoSuffix}_rerooted.nwk 	# NB - same name as just above!
-				### OR alternatively, don't re-root but assign the original tree to $treeFileToUse so at least the alignment can be ordered by the tree.
+				### OR alternatively, don't re-root but assign the original tree to $treeFileToUse so at least the alignment can be ordered by the tree.
 			fi
 			jalviewTreeFlags="-tree $treeFileToUse -sortbytree"
 
@@ -754,7 +754,41 @@ createGeneAlignmentAndTreeImages()	{
 }
 
 
+prepareOptionsForUPP()	{
+	###########
+    # Function: Prepares values for UPP options -M and -T
+    #
+ 	# Input parameters:
+ 	# $1 = alignment parameters input from user ($alnParams)
+ 	# $2 = fasta file to align ($dnaFastaFileForAln)
+    ###########
+    #echo \$1: $1
+    #echo \$1: $2
+   	alnParamsPrepared=''
+   	# Get the value ONLY for option -M and -T:
+   	optionM_Value=`echo $1 | grep -o '\-M \{1,4\}[0-9-]\{1,3\}' | sed 's/\-M \{1,4\}//' `
+   	optionT_Value=`echo $1 | grep -o '\-T \{1,4\}0.[0-9]\{1,2\}' | sed 's/\-T \{1,4\}//' ` 		
+   	#echo optionM_Value from user: $optionM_Value
+   	#echo optionT_Value from user: $optionT_Value
+   	# Any other UPP options could be added here.
+   	# If above values not found, letting UPP report error.
 
+   	if [[ $optionM_Value != '-1' ]]; then
+   		# Prepare the option -M percentile point value:
+		numbrSeqsToAln=`cat $2 | grep '>' | wc -l `
+		# Find the sequence length to use in -M option from user percentile value:
+		percentilePoint=`echo $optionM_Value $numbrSeqsToAln | awk '{printf "%.0f" , $1/100 * $2}' `
+   		percentilePointValue=`fastalength $2 | sort -k1n | head -n $percentilePoint | awk '{print $1}' | tail -n 1 `	
+
+   		alnParamsPrepared="-M $percentilePointValue -T $optionT_Value"
+   	else
+   		if [[ -z $optionT_Value ]]; then
+   			alnParamsPrepared='-M -1'
+   		else	# Enables option -T to still be used with when option is set to -M -1 
+   			alnParamsPrepared="-M -1 -T $optionT_Value"
+   		fi
+   	fi
+}
 
 
 ############
@@ -844,7 +878,7 @@ if [[ $dnaSelected == 'yes' ]]; then
     	echo
         echo Creating a DNA alignment with MAFFT...
 		$exePrefix mafft --thread $cpuGeneTree \
-		$mafftAlgorithm \
+		$alnParams \
 		--reorder \
 		--preservecase \
 		$dnaFastaFileForAln \
@@ -862,6 +896,7 @@ if [[ $dnaSelected == 'yes' ]]; then
     	echo
    		echo Creating a DNA alignment with UPP...
    		# Before running check whether pasta has already been run and delete previous files (they can't be overwritten!):
+###REMOVE COMMENT:
    		### NB - had an issue with removing all files when only testing one of them, in the end my own error I think.
    		### If it happens again (UPP will complain about overwriting files) can use this conditional instead to check all the files in the set at once:
    		### if ls *.dna.upp* 2>&1 >/dev/null; then echo exists; ls -l *.dna.upp* ; fi
@@ -870,7 +905,9 @@ if [[ $dnaSelected == 'yes' ]]; then
    			# Don't think this file always exists (for very small datasets):
    			if [[ -f ${gene}.dna.upp_insertion_columns.txt ]]; then rm ${gene}.dna.upp_insertion_columns.txt; fi
    		fi
-		$exePrefix run_upp.py -x $cpuGeneTree -M -1 -s $dnaFastaFileForAln -o ${gene}.dna.upp
+   		prepareOptionsForUPP "$alnParams" $dnaFastaFileForAln
+   		echo "Option values for UPP (from user): $alnParamsPrepared"
+		$exePrefix run_upp.py -x $cpuGeneTree $alnParamsPrepared -s $dnaFastaFileForAln -o ${gene}.dna.upp
 		# Other options to consider:
 		# UPP(Fast): run_upp.py -s input.fas -B 100. - what's the -B option??!!
 		# -m [dna|rna|amino]
@@ -905,11 +942,13 @@ if [[ $proteinSelected == 'yes' || $codonSelected == 'yes' ]]; then
 	### NB - 23.6.2021- still need to check that this checkpoint works (and with all permutations of options)
 
 
- 	# NB - The protein fasta headers will contain  \[translate(1)\] - fastatranslate (v2.4.x) adds this string to the header.
-	# It makes raxml-ng crash so remove it here:
-	fastatranslate -F 1  $dnaFastaFileForAln \
-	| sed 's/ \[translate(1)\]//' \
-	> ${gene}.protein.fasta
+	if [[ $geneFile != 'use_genewise_files' && $proteinSelected != 'protein' && dnaSelected != 'no' ]]; then
+ 		# NB - The protein fasta headers will contain  \[translate(1)\] - fastatranslate (v2.4.x) adds this string to the header.
+		# It makes raxml-ng crash so remove it here:
+		fastatranslate -F 1  $dnaFastaFileForAln \
+		| sed 's/ \[translate(1)\]//' \
+		> ${gene}.protein.fasta
+	fi
 
 	# Detect STOP codons and create STOPS stats, then switch to use file containing 0 or 1 STOP codons:
 	$pathToScripts/various_tasks_in_python.py detect_stops ${gene}.protein.fasta  ${gene}.protein
@@ -923,7 +962,7 @@ if [[ $proteinSelected == 'yes' || $codonSelected == 'yes' ]]; then
 		echo
 		echo Creating a protein alignment with MAFFT...
 		$exePrefix mafft --thread $cpuGeneTree \
-		$mafftAlgorithm \
+		$alnParams \
 		--reorder \
 		--preservecase \
 		${gene}.protein.fasta \
@@ -933,10 +972,13 @@ if [[ $proteinSelected == 'yes' || $codonSelected == 'yes' ]]; then
 		echo
    		echo Creating a protein alignment with UPP...
    		if [[ -f ${gene}.protein.upp_pasta.fasta ]]; then
-   			rm ${gene}.protein.upp_pasta.fasta ${gene}.protein.upp_pasta.fasttree ${gene}.protein.upp_alignment.fasta
+   			rm ${gene}.protein.upp_pasta.fasta ${gene}.protein.upp_pasta.fasßttree ${gene}.protein.upp_alignment.fasta
    			if [[ -f ${gene}.protein.upp_insertion_columns.txt ]]; then rm ${gene}.protein.upp_insertion_columns.txt; fi
    		fi
-		run_upp.py -x $cpuGeneTree -M -1 -m amino -s ${gene}.protein.fasta -o ${gene}.protein.upp
+   		prepareOptionsForUPP "$alnParams" $dnaFastaFileForAln
+   		echo "Option values for UPP (from user): $alnParamsPrepared"
+		#run_upp.py -x $cpuGeneTree -M -1 -m amino -s ${gene}.protein.fasta -o ${gene}.protein.upp
+		$exePrefix run_upp.py -x $cpuGeneTree $alnParamsPrepared -m amino -s ${gene}.protein.fasta -o ${gene}.protein.upp
 		if [[ ! -s ${gene}.protein.upp_alignment.fasta ]]; then 
 			echo "ERROR: UPP was not able to align this gene set - skipping alignment of ${gene}.protein.fasta"
 			exit 0

@@ -26,24 +26,25 @@ shopt -s failglob
 # is off.
 
 # INPUT FILE OPTIONS:
-useGenewiseFiles=no
+useGenewiseFiles=no             
 addSampleName=no
-sampleTableFile=no			# 10.5.2020 - only just added in - check - ensures cmdline parameter is always accupied which is critical
+sampleTableFile=no			    # 10.5.2020 - only just added in - check - ensures cmdline parameter is always accupied which is critical
 option_u=no
 
 # ALIGNMENT OPTIONS:
-seqType=dna
+seqType=dna                     # NB - 18.3.2022 - see line 683 - I don't think seqType has a default anymore - it gets wiped out.
 alnProgram=mafft 				# 27.7.2020 - may want to merge this option with mafftAlgorithm so it woudl be quoted liek so: 'mafft --retree 2'
 mafftAlgorithm='--retree 2'     # '--maxiterate 1000' #'--retree 1'   '--retree 2' - need to ry and merge with the alnProgram option somehow
+alnParams=''                    # General variable for modifiying the MAFFT and UPP options         
 
 # FILTERING AND TRIMMING OPTIONS:
-filterSeqs1=no			# My filter sequencing option (option 1)
+filterSeqs1=no			        # My filter sequencing option (option 1)
 filterSeqs2=no
 ### NBNBNB - 12.1.2020 - need to change both these values - for when filtering not used at 2nd aln iteration!!!!!!
-fractnAlnCovrg=0		# NB - variable is used via filterSeqs1, this value is also used when filterSeqs1 is not used and MUST therefore be set to ZERO - needs to have a default value for passing in variable to scripts
-fractnSamples=0			# NB - variable is used via filterSeqs1, this value is also used when filterSeqs1 is not used and MUST therfore be set to ZERO - needs to have a default value for passing in variable to scripts
-trimAln1=no					# Filter alignment columns with optrimAl
-trimAln2=no					# Filter alignment columns to remove rarer insertions; maximum limit of percent occupancy to trim at
+fractnAlnCovrg=0		       # NB - variable is used via filterSeqs1, this value is also used when filterSeqs1 is not used and MUST therefore be set to ZERO - needs to have a default value for passing in variable to scripts
+fractnSamples=0			       # NB - variable is used via filterSeqs1, this value is also used when filterSeqs1 is not used and MUST therfore be set to ZERO - needs to have a default value for passing in variable to scripts
+trimAln1=no			           # Filter alignment columns with optrimAl
+trimAln2=no                    # Filter alignment columns to remove rarer insertions; maximum limit of percent occupancy to trim at
 
 
 maxColOccThreshold=30		### 7.9.2020 - now testing lower values e.g. 30 and 15 - still need to check input value; also should it be 'Number of columns with minColOccLenThreshold'
@@ -255,7 +256,7 @@ while getopts "hvat:ug:ijGF:f:m:p:M:q:r:TC:c:d:Q:Y:A:D:O:L:I:JK:R:X:U:V:W:H:o:bs
     #ALIGNMENT OPTIONS
 		D) seqType=$OPTARG ;;
 		A) alnProgram=$OPTARG ;;
-        M) mafftAlgorithm="$OPTARG" ;;
+        M) alnParams="$OPTARG" ;;
     #FILTERING AND TRIMMING OPTIONS:
 		F) filterSeqs1=$OPTARG ;;
 		f) fractnSamples=$OPTARG ;;
@@ -368,10 +369,11 @@ numbrSamples=$(( $# - $OPTIND + 1 ))
 echo $numbrSamples
 
 
-if [ $(( $# - $OPTIND + 1 )) -lt 4 ]; then				### 30.3.2020 AND speciesTreesOnly == no to handle scritp just processing species trees
-														###		Would need to think how to specify the input file(s) !!!!!!!!!!! 
-														### 4.7.2020 AND now if gene-wise files == no are entered - can have less than one of those right?
-														### 12.8.2020 - Just have an if else clause and say: less than 1 files but in gene-wise mode so OK 
+#if [ $(( $# - $OPTIND + 1 )) -lt 4 ]; then				                     ### 30.3.2020 AND speciesTreesOnly == no to handle scritp just processing species trees
+if [[ $(( $# - $OPTIND + 1 )) -lt 4 && $useGenewiseFiles  != 'yes' ]]; then	 ###		Would need to think how to specify the input file(s) !!!!!!!!!!! 
+														                     ### 4.7.2020 AND now if gene-wise files == no are entered - can have less than one of those right?
+                                                                             ###     opted for this 17.3.2022 - checks are done later anyway if < 4 species
+														                     ### 12.8.2020 - Just have an if else clause and say: less than 1 files but in gene-wise mode so OK 
     echo
     echo "ERROR: you need to input fasta files containing recovered genes from at least four species!"
     exit 1
@@ -804,12 +806,27 @@ if [[ $extraMem != 'no' && $slurm -eq 1 ]]; then
 fi
 
 
+# Preparing option -M - set to default if not selected by user (i.e. -z $alnParams is zero length):
+# Create default options for mafft and UPP:
+if [[ $alnProgram == 'mafft' &&  -z $alnParams ]]; then
+    alnParams='--retree 2'
+elif [[ $alnProgram == 'upp' &&  -z $alnParams ]]; then
+    alnParams='-M 80 -T 0.15'
+fi
+### Could restrict the length of the $alnParams value:
+###alnParamsLen=`echo $alnParams | awk '{print length($1)}' `
+###if alnParamsLen > 50, exit
+
+
 # Some parameters selected for checking:
 echo "################"
 echo "Options selected"
 echo "################"
 echo dnaSelected: $dnaSelected
 echo proteinSelected: $proteinSelected
+echo alignment program: $alnProgram
+echo alignment parameters: $alnParams
+
 
 echo 'filter sequence option 1 (option -F): ' $filterSeqs1
 echo 'filter sequence option 2 (option -I): ' $filterSeqs2
@@ -911,7 +928,7 @@ if [[ $os == 'Darwin' && $speciesTreesOnly == 'no' ]]; then
 		$phyloProgramPROT \
 		$fractnMaxColOcc \
 		$cpuGeneTree \
-		"$mafftAlgorithm" \
+		"$alnParams" \
 		"$exePrefix" \
 		"$alnProgram" \
 		$dnaSelected \
@@ -970,7 +987,7 @@ if [[ $os == 'Darwin' && $speciesTreesOnly == 'no' ]]; then
 		"$fractnAlnCovrg" \
 		"$fractnMaxColOcc" \
 		"$fractnSamples" \
-		"$mafftAlgorithm" \
+		"$alnParams" \
 		"$cpuGeneTree" \
 		"$partitionName" \
 		"$pathToScripts" \
@@ -1034,7 +1051,7 @@ elif [[ $os == 'Linux' && $speciesTreesOnly == 'no' ]]; then
 		$phyloProgramPROT \
 		$fractnMaxColOcc \
 		$cpuGeneTree \
-		"$mafftAlgorithm" \
+		"$alnParams" \
 		"$exePrefix" \
 		"$alnProgram" \
 		$dnaSelected \
@@ -1072,7 +1089,7 @@ elif [[ $os == 'Linux' && $speciesTreesOnly == 'no' ]]; then
 			$phyloProgramPROT \
 			$fractnMaxColOcc \
 			$genesForExtraMem_CpuToUse \
-			"$mafftAlgorithm" \
+			"$alnParams" \
 			"$exePrefix" \
 			"$alnProgram" \
 			$dnaSelected \
@@ -1144,7 +1161,7 @@ elif [[ $os == 'Linux' && $speciesTreesOnly == 'no' ]]; then
 			"$fractnAlnCovrg" \
 			"$fractnMaxColOcc" \
 			"$fractnSamples" \
-			"$mafftAlgorithm" \
+			"$alnParams" \
 			"$cpuGeneTree" \
 			"$partitionName" \
 			"$pathToScripts" \
@@ -1191,7 +1208,7 @@ elif [[ $os == 'Linux' && $speciesTreesOnly == 'no' ]]; then
 			$phyloProgramPROT \
 			$fractnMaxColOcc \
 			$cpuGeneTree \
-			"$mafftAlgorithm" \
+			"$alnParams" \
 			"$exePrefix" \
 			"$alnProgram" \
 			$dnaSelected \
@@ -1249,7 +1266,7 @@ elif [[ $os == 'Linux' && $speciesTreesOnly == 'no' ]]; then
 			"$fractnAlnCovrg" \
 			"$fractnMaxColOcc" \
 			"$fractnSamples" \
-			"$mafftAlgorithm" \
+			"$alnParams" \
 			"$cpuGeneTree" \
 			"$partitionName" \
 			"$pathToScripts" \
