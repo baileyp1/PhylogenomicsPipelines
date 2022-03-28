@@ -106,6 +106,8 @@ INPUT FILE OPTIONS:
                 Gene name/identifier must be identical to the fasta file name (minus any [dot] ending suffix e.g. .fasta),
                 else change the gene name list in option -g so that it is.	
                 Fasta header line format MUST BE: >sampleId
+  -P
+                perform protein family analysis with protein input $usrInProt
   -g <file>        
                 file (including path to it) containing list of gene names only (required option)
                 NB - pretty sure that gene names must NOT have '.' characters in them if the suffix is what makes them unique.         
@@ -127,8 +129,11 @@ ALIGNMENT OPTIONS:
                 codon is input DNA aligned but guided by a protein alignment. NB - the 'protein' and 'codon' options are not finished yet!
   -A <string>      
                 alignment program to use: mafft, upp (UPP is ideal for large alignments) (default=mafft)
-  -M <string>      
-                if using mafft, specify alignment algorithm to use in quotes i.e. '--retree 1', '--retree 2', '--maxiterate 1000' etc (default='--retree 2')
+
+  -M <string:>  options to use with chosen alignment program (they must be quoted). For mafft, specify the alignment algorithm to use 
+                in quotes i.e. '--retree 1', '--retree 2', '--maxiterate 1000' etc (default='--retree 2'); for upp, choose values for 
+                options -M and -T (default='-M 80 -T 0.15'). Note - the value for upp option -M should be a percentile of the sequence 
+                lengths which will get converted to the corresponding length for the input gene data set
 ALIGNMENT FILTERING AND TRIMMING OPTIONS:
   -F <2 integers> 
                 filter sequences option 1 (followed by re-alignment). Format: '<1> <2>' (no default; N.B. values must be quoted)
@@ -517,8 +522,12 @@ elif [[ $useGenewiseFiles == 'yes' && $addSampleName != 'yes' ]]; then
 		# Get filename and chop off the file ending if there is one:
     	geneName=`basename $file | awk -F '.' '{print $1}' `
     	#echo $geneName
-		cp $file ${geneName}_dna.fasta
-		### 11.8.2020 - consider to reanme to e.g.  ${geneName}_dna_for_aln.fasta and move rather than copy (one less file)
+		#cp $file ${geneName}_dna.fasta
+    # Improved the preparation of gene-wise files from user input. The fasta header is now cut at the first 
+    # space to retain the fasta record id field only, so other info on the fasta header line if it exists is lost.
+    # Otherwise AMAS.py merges all the fields on the fasta header line from .aln.fasta file and then seqtk can't find
+    # those record ids from the aln_ovr[60]pc_aln_covrg.txt file!   
+    cat $file | awk '{if($1 ~ /^>/) {print $1} else {print $0}}' > ${geneName}_dna.fasta
 		if [[ $? == 1 ]]; then
 			### I've kept this in - it avoids _dna.fasta file stamping on itself if these files are submitted by the user 
 			echo "ERROR: if running pipeline (possibly again) in gene-wise mode, please run in a another directory
