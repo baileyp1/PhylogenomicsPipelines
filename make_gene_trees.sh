@@ -882,6 +882,7 @@ if [[ $dnaSelected == 'yes' ]]; then
 		--reorder \
 		--preservecase \
 		$dnaFastaFileForAln \
+		| sed 's/^>_R_/>/' \
 		> ${gene}.dna.aln.fasta
 		# Possible run modes:
 		# 1. Progressive method (fast - up to 5k seqs) --retree 1                           			FFT-NS-1/NW-NS-1
@@ -891,6 +892,7 @@ if [[ $dnaSelected == 'yes' ]]; then
 		# NB - if using Slurm srun with mafft AND fasttree with -c set to > 1, you need to pin the task down with -n flag to 1 task, 
 		# otherwise it spawns > 1 runs of the same task.
 		### 25.7.2020 - look at docs to see best/max number of thread worthwhile to use - hard code so it only uses max # thread (== to cpu?)
+		# NB - the sed line removes the reverse complement indicator (sequences are marked with "_R_" at the head of sequence title) if MAFFT --adjustdirection is used.
         dnaAlnToUse=${gene}.dna.aln.fasta
     elif [[ "$alnProgram" == 'upp' ]]; then
     	echo
@@ -942,13 +944,14 @@ if [[ $proteinSelected == 'yes' || $codonSelected == 'yes' ]]; then
 	### NB - 23.6.2021- still need to check that this checkpoint works (and with all permutations of options)
 
 
-	if [[ $geneFile != 'use_genewise_files' && $proteinSelected != 'protein' && dnaSelected != 'no' ]]; then
+	###if [[ $geneFile != 'use_genewise_files' && proteinSelected != 'proteininput' THISc WILL NOT WORK ]]; then	# i.e. do not translate if input sequence residues are amino acid.
+	###if [[ $geneFile != 'use_genewise_files' && $usrInProt != 'yes' ]]; then 
  		# NB - The protein fasta headers will contain  \[translate(1)\] - fastatranslate (v2.4.x) adds this string to the header.
 		# It makes raxml-ng crash so remove it here:
 		fastatranslate -F 1  $dnaFastaFileForAln \
 		| sed 's/ \[translate(1)\]//' \
 		> ${gene}.protein.fasta
-	fi
+	###fi
 
 	# Detect STOP codons and create STOPS stats, then switch to use file containing 0 or 1 STOP codons:
 	$pathToScripts/various_tasks_in_python.py detect_stops ${gene}.protein.fasta  ${gene}.protein
