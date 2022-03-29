@@ -130,10 +130,10 @@ ALIGNMENT OPTIONS:
   -A <string>      
                 alignment program to use: mafft, upp (UPP is ideal for large alignments) (default=mafft)
 
-  -M <string:>  options to use with chosen alignment program (they must be quoted). For mafft, specify the alignment algorithm to use 
-                in quotes i.e. '--retree 1', '--retree 2', '--maxiterate 1000' etc (default='--retree 2'); for upp, choose values for 
-                options -M and -T (default='-M 80 -T 0.15'). Note - the value for upp option -M should be a percentile of the sequence 
-                lengths which will get converted to the corresponding length for the input gene data set
+  -M <string:>  options to use with chosen alignment program (they must be quoted). For MAFFT, specify the alignment algorithm to use 
+                in quotes i.e. '--retree 1', '--retree 2', '--maxiterate 1000' etc (default='--retree 2'); for UPP, choose values for 
+                options -M and -T (default='-M 80 -T 0.15'). Note - the value for UPP option -M should be a percentile of the sequence 
+                lengths for each gene which will then get converted to the corresponding length for input into UPP
 ALIGNMENT FILTERING AND TRIMMING OPTIONS:
   -F <2 integers> 
                 filter sequences option 1 (followed by re-alignment). Format: '<1> <2>' (no default; N.B. values must be quoted)
