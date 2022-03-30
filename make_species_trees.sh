@@ -149,7 +149,7 @@ getTreeStats () {
     # Write summary stats:
     echo >> ${fileNamePrefix}_summary_tree_stats.txt
     if [[ $totalNumbrSupportNodes > 0 ]]; then
-        echo "$newickTree - number of internal nodes with low support values >= $bootstrapThreshold (total number of internal nodes): ${numbrLowSupportNodes} (${totalNumbrSupportNodes})" >> ${fileNamePrefix}_summary_tree_stats.txt 
+        echo "$newickTree - number of internal nodes with high support values >= $bootstrapThreshold (total number of internal nodes): ${numbrLowSupportNodes} (${totalNumbrSupportNodes})" >> ${fileNamePrefix}_summary_tree_stats.txt 
     fi
 
     outFilePrefix=`basename $newickTree .nwk`
