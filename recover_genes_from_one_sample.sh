@@ -241,6 +241,13 @@ elif [[ $hybSeqProgram == 'hybpiper'* ]]; then
 	#        flag is for velvetg - set to 4 otherwise default=8
 	# NB - 11.4.2020 - trialing --length_pct set to 50
 
+	# Creating a tarball for the main HybPIper results directory beneath the main <samplePrefix>_<sampleId> folder.
+	# Reason: its difficult for the file storage system to cope with lots of these directories 
+	# containing many other directories and small files. 
+	if [[ -d $sampleId ]]; then
+		tar -czf ${sampleId}.tar.gz ${sampleId}
+	fi
+
 	if [ -s ${sampleId}/genes_with_seqs.txt ]; then
 		# Alter the genewise files to be compatible with the make_species_trees_pipeline.sh script,
 		# i.e. create sample fasta file containing all genes with faster header format >sampleId-geneId:
