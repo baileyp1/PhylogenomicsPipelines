@@ -64,7 +64,7 @@ if [[ $usePaftolDb == 'no' ]]; then
 	if [ -z "$R2FastqFile" ]; then
 		$exePrefix  java -jar $TRIMMOMATIC SE \
 		-threads $cpu \
-		-trimlog ${sampleId}_trimmomatic.log \
+		-trimlog ${sampleId}_R1_trimmomatic.log \
 		$paftolDataSymlinksDir/$R1FastqFile \
 		${sampleId}_R1_trimmomatic.fastq.gz \
 		ILLUMINACLIP:${adapterFasta}:2:30:10:2:true \
@@ -93,7 +93,8 @@ if [[ $usePaftolDb == 'no' ]]; then
 
 	# Paftools requires unzipped fastq files (NB - if unzipped files already present, files will not be unzipped again (i.e gzip exits with an error), so I've included the -f flag to force uncompression!):
 	#srun -J ${sampleId}_unzip_R1_R2 -n 1  gunzip -f ${sampleId}_R1_trimmomatic.fq.gz  ${sampleId}_R2_trimmomatic.fq.gz
-	gunzip -f ${sampleId}_R1_trimmomatic.fastq.gz  ${sampleId}_R2_trimmomatic.fastq.gz
+	if [[ -s ${sampleId}_R1_trimmomatic.fastq.gz ]]; then gunzip -f ${sampleId}_R1_trimmomatic.fastq.gz; fi  
+	if [[ -s ${sampleId}_R2_trimmomatic.fastq.gz ]]; then gunzip -f ${sampleId}_R2_trimmomatic.fastq.gz; fi
 fi
 
 
@@ -213,7 +214,8 @@ if [ $hybSeqProgram == 'paftools' ]; then
 		rm $targetsFile	# If write to database fails, this fail doesn't get deleted (c.f. set cmds active), so presence of file is a useful 'marker' for failing to write to db
 
 		# Remove the large fastq files::
-		if [[ -s $unzippedR1FastqFile ]]; then rm $unzippedR1FastqFile $unzippedR2FastqFile; fi
+		if [[ -s $unzippedR1FastqFile ]]; then rm $unzippedR1FastqFile; fi
+		if [[ -s $unzippedR2FastqFile ]]; then rm $unzippedR2FastqFile; fi
 	else
 		################
 		# overlapRecover (OLC approach)
@@ -276,11 +278,11 @@ if [ $hybSeqProgram == 'paftools' ]; then
 
 		if [[ $stats == 'no' ]]; then
 			# Remove the large fastq files:
-			if [[ -s ${sampleId}_R1_trimmomatic.fastq ]]; then 
-				rm ${sampleId}_R1_trimmomatic.fastq ${sampleId}_R1_trimmomatic_unpaired.fastq.gz \
-				${sampleId}_R2_trimmomatic.fastq ${sampleId}_R2_trimmomatic_unpaired.fastq.gz \
-				${sampleId}_R1_R2_trimmomatic.log
-			fi
+			if [[ -s ${sampleId}_R1_trimmomatic.fastq ]]; then rm ${sampleId}_R1_trimmomatic.fastq; fi
+			if [[ -s ${sampleId}_R1_trimmomatic_unpaired.fastq.gz ]]; then rm ${sampleId}_R1_trimmomatic_unpaired.fastq.gz; fi
+			if [[ -s ${sampleId}_R2_trimmomatic.fastq ]]; then rm ${sampleId}_R2_trimmomatic.fastq ${sampleId}_R2_trimmomatic_unpaired.fastq.gz; fi
+			if [[ -s ${sampleId}_R1_R2_trimmomatic.log ]];then rm ${sampleId}_R1_R2_trimmomatic.log; fi
+			if [[ -s ${sampleId}_R1_trimmomatic.log ]]; then rm ${sampleId}_R1_trimmomatic.log; fi
 		fi
 	fi
 elif [[ $hybSeqProgram == 'hybpiper'* ]]; then
@@ -294,16 +296,21 @@ elif [[ $hybSeqProgram == 'hybpiper'* ]]; then
 	fi
 
 	# First combine unpaired reads (both single end reads should have unique ids) - but won't I have the same problem as above?!
-	gunzip -fc ${sampleId}_R1_trimmomatic_unpaired.fastq.gz ${sampleId}_R2_trimmomatic_unpaired.fastq.gz \
-	> ${sampleId}_R1_R2_trimmomatic_unpaired.fastq
+	unpairedFastqFile=''
+	if [[ -n "$R2FastqFile" ]]; then
+		gunzip -fc ${sampleId}_R1_trimmomatic_unpaired.fastq.gz ${sampleId}_R2_trimmomatic_unpaired.fastq.gz \
+		> ${sampleId}_R1_R2_trimmomatic_unpaired.fastq
+		unpairedFastqFile="--unpaired ${sampleId}_R1_R2_trimmomatic_unpaired.fastq"
+	fi
 
 	$exePrefix reads_first.py --cpu $cpu $bwa \
 	-b $targetsFile \
 	-r ${sampleId}_R*_trimmomatic.fastq  \
 	--cov_cutoff 4 \
 	--prefix ${sampleId} \
-	--unpaired ${sampleId}_R1_R2_trimmomatic_unpaired.fastq \
+	$unpairedFastqFile \
 	> ${sampleId}_hybpiper.log 2>&1
+	### 11.4.2022 - now using the --unpaired ${sampleId}_R1_R2_trimmomatic_unpaired.fastq \
 	# Output: sampleId/geneId/sampleId/sequences/FNA/geneId.FNA; fasta header line: >sampleId
 	# NBNB - From what I can make out, --cov_cutoff does seem to operate with spades, even though it says 
 	#        flag is for velvetg - set to 4 otherwise default=8
@@ -447,12 +454,13 @@ elif [[ $hybSeqProgram == 'hybpiper'* ]]; then
 
         if [[ $stats == 'no' ]]; then
 			# Remove the large fastq files:
-			if [[ -s ${sampleId}_R1_trimmomatic.fastq ]]; then 
-				rm ${sampleId}_R1_trimmomatic.fastq ${sampleId}_R1_trimmomatic_unpaired.fastq.gz \
-				${sampleId}_R2_trimmomatic.fastq ${sampleId}_R2_trimmomatic_unpaired.fastq.gz \
-				${sampleId}_R1_R2_trimmomatic_unpaired.fastq \
-				${sampleId}_R1_R2_trimmomatic.log
-			fi
+			if [[ -s ${sampleId}_R1_trimmomatic.fastq ]]; then rm ${sampleId}_R1_trimmomatic.fastq; fi
+			if [[ -s ${sampleId}_R1_trimmomatic_unpaired.fastq.gz ]]; then rm ${sampleId}_R1_trimmomatic_unpaired.fastq.gz; fi
+			if [[ -s ${sampleId}_R2_trimmomatic.fastq ]]; then rm ${sampleId}_R2_trimmomatic.fastq ${sampleId}_R2_trimmomatic_unpaired.fastq.gz; fi
+			if [[ -s ${sampleId}_R1_R2_trimmomatic.log ]];then rm ${sampleId}_R1_R2_trimmomatic.log; fi
+			if [[ -s ${sampleId}_R1_trimmomatic.log ]]; then rm ${sampleId}_R1_trimmomatic.log; fi
+
+			### NEED TO DECIDE HOW TO DEAL WITH THIS:	${sampleId}_R1_R2_trimmomatic_unpaired.fastq \
 		fi
 	fi
 else
@@ -778,12 +786,12 @@ sumLengthOfGenes: $sumLengthOfGenes" > ${sampleId}_gene_recovery_stats.txt  # Al
 	# 2. Read depth across all genes and samples - total mean and median values
 
 	# Remove the large fastq files from any gene recovery method:
-	if [[ -s ${sampleId}_R1_trimmomatic.fastq ]]; then 
-		rm ${sampleId}_R1_trimmomatic.fastq ${sampleId}_R1_trimmomatic_unpaired.fastq.gz \
-		${sampleId}_R2_trimmomatic.fastq ${sampleId}_R2_trimmomatic_unpaired.fastq.gz \
-		${sampleId}_R1_R2_trimmomatic.log
-		# NB - ${sampleId}_R1_R2_trimmomatic_unpaired.fastq is only created in hybpiper mode and has already been removed above
-	fi
+	if [[ -s ${sampleId}_R1_trimmomatic.fastq ]]; then rm ${sampleId}_R1_trimmomatic.fastq; fi
+	if [[ -s ${sampleId}_R1_trimmomatic_unpaired.fastq.gz ]]; then rm ${sampleId}_R1_trimmomatic_unpaired.fastq.gz; fi
+	if [[ -s ${sampleId}_R2_trimmomatic.fastq ]]; then rm ${sampleId}_R2_trimmomatic.fastq ${sampleId}_R2_trimmomatic_unpaired.fastq.gz; fi
+	if [[ -s ${sampleId}_R1_R2_trimmomatic.log ]];then rm ${sampleId}_R1_R2_trimmomatic.log; fi
+	if [[ -s ${sampleId}_R1_trimmomatic.log ]]; then rm ${sampleId}_R1_trimmomatic.log; fi
+	# NB - ${sampleId}_R1_R2_trimmomatic_unpaired.fastq is only created in hybpiper mode and has already been removed above - OK
 fi
 #####cd ../ # Back up to parent dir for next sample - 20.4.2020 - has no effect here now and not required anymore because looping through samples is done outside this script 
 echo 
