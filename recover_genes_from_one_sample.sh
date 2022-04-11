@@ -443,15 +443,6 @@ elif [[ $hybSeqProgram == 'hybpiper'* ]]; then
         # HybPiper cleanup - remvoves the spades dir (Sample_/$sampleId/$geneName/$geneName_spades)
         cleanup.py $sampleId
 
-        # Converting to a tarball archive the main HybPiper results directory beneath the main <samplePrefix>_<sampleId> folder.
-		# Reason: its difficult for the file storage system to cope with lots of these directories 
-		# containing many other directories and small files.
-		if [[ -d $sampleId ]]; then
-			tar -cf ${sampleId}.tar ${sampleId}
-			gzip -f ${sampleId}.tar
-			rm -fR $sampleId
-		fi
-
         if [[ $stats == 'no' ]]; then
 			# Remove the large fastq files:
 			if [[ -s ${sampleId}_R1_trimmomatic.fastq ]]; then rm ${sampleId}_R1_trimmomatic.fastq; fi
@@ -462,6 +453,14 @@ elif [[ $hybSeqProgram == 'hybpiper'* ]]; then
 
 			### NEED TO DECIDE HOW TO DEAL WITH THIS:	${sampleId}_R1_R2_trimmomatic_unpaired.fastq \
 		fi
+	fi
+	# Converting to a tarball archive the main HybPiper results directory beneath the main <samplePrefix>_<sampleId> folder.
+	# Reason: its difficult for the file storage system to cope with lots of these directories 
+	# containing many other directories and small files.
+	if [[ -d $sampleId ]]; then
+		tar -cf ${sampleId}.tar ${sampleId}
+		gzip -f ${sampleId}.tar
+		rm -fR $sampleId
 	fi
 else
 	echo "WARNING: If option -y was used, the Hyb-Seq program was not recognised. The options are 'paftools' or 'hybpiper' (without the quotes)."
