@@ -365,13 +365,13 @@ done
 
 # Check positional parameters are present i.e. the gene recovery fasta file(s) are present:
 # Command line variables summary:
-echo '$# == ' $#										# Total number of all parameters (excludes script name, includes flags and their values, excludes free parameters (ones with no flags)) 
-echo \$OPTIND == $OPTIND								# Position of the first free parameter after any options - free parameters must come after any optional parameters.
+echo '$# == ' $#										  # Total number of all parameters (excludes script name, includes flags and their values, excludes free parameters (ones with no flags)) 
+echo \$OPTIND == $OPTIND						  # Position of the first free parameter after any options - free parameters must come after any optional parameters.
 #echo 'Value of first free parameter: ' ${@:$OPTIND:1}	# Lists the value of the first free parameter from the $@ variable; ${@:$OPTIND:2} will access the first two free parameters.
 #echo 'Values of all free parameters: '${@:$OPTIND:$#}	# Therefore ${@:$OPTIND:$#} will access all the free parameters
-echo $(( $# - $OPTIND + 1 ))							# Number of free parameters, in this case the number of samples
+#echo $(( $# - $OPTIND + 1 ))					# Number of free parameters, in this case the number of samples
 numbrSamples=$(( $# - $OPTIND + 1 ))
-echo $numbrSamples
+echo "Number of samples submitted: $numbrSamples"
 
 
 #if [ $(( $# - $OPTIND + 1 )) -lt 4 ]; then				                     ### 30.3.2020 AND speciesTreesOnly == no to handle scritp just processing species trees
@@ -567,7 +567,7 @@ else
      	#echo "beforeDashCheck (sampleId): " $beforeDashCheck 
      	#echo "afterDashCheck (geneId): " $afterDashCheck 
      	if [[ $beforeDashCheck -gt 1 ]]; then echo "ERROR: more than one sample identifier detected on fasta header line (there should only be one sample identifier for the default format) for this sample: $file.
-     		Also check that fasta header lines have this format: >sampleId-geneId"; exit 1
+              Also check that fasta header lines have this format: >sampleId-geneId"; exit 1
      	elif [[ $afterDashCheck -gt 1 ]]; then echo "ERROR: gene identfiers should be unique, one or more not unique for this sample: $file \nAlso check that fasta header lines have this format: >sampleId-geneId"; exit 1
 		else cat $file | awk '{if($1 ~ /^>/)  {print $1} else {print $0}}' \
 			| awk -F '-' '{if($1 ~ /^>/) {{gsub(/>/,"",$1)} {print ">" $2 " " $1}} else {print $0}}' \
