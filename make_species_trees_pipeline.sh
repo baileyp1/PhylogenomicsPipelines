@@ -365,13 +365,15 @@ done
 
 # Check positional parameters are present i.e. the gene recovery fasta file(s) are present:
 # Command line variables summary:
-echo '$# == ' $#										  # Total number of all parameters (excludes script name, includes flags and their values, excludes free parameters (ones with no flags)) 
-echo \$OPTIND == $OPTIND						  # Position of the first free parameter after any options - free parameters must come after any optional parameters.
+#echo '$# == ' $#										  # Total number of all parameters (excludes script name, includes flags and their values, excludes free parameters (ones with no flags)) 
+#echo \$OPTIND == $OPTIND						  # Position of the first free parameter after any options - free parameters must come after any optional parameters.
 #echo 'Value of first free parameter: ' ${@:$OPTIND:1}	# Lists the value of the first free parameter from the $@ variable; ${@:$OPTIND:2} will access the first two free parameters.
 #echo 'Values of all free parameters: '${@:$OPTIND:$#}	# Therefore ${@:$OPTIND:$#} will access all the free parameters
 #echo $(( $# - $OPTIND + 1 ))					# Number of free parameters, in this case the number of samples
 numbrSamples=$(( $# - $OPTIND + 1 ))
+echo
 echo "Number of samples submitted: $numbrSamples"
+echo
 
 
 #if [ $(( $# - $OPTIND + 1 )) -lt 4 ]; then				                     ### 30.3.2020 AND speciesTreesOnly == no to handle scritp just processing species trees
@@ -429,11 +431,11 @@ if [[ $numbrDuplicateNames -ge 1 ]]; then echo "ERROR: there are $numbrDuplicate
 # 3. Test that the input files and their paths haven't reached ARG_MAX.
 #    getconf ARG_MAX = 262,144 (Macbook) and 2,097,152 on Hatta cluster
 lengthOfFreeParameters=`echo ${@:$OPTIND:$#} | awk '{sum+=length($0)} END {print sum}' `
-echo lengthOfFreeParameters: $lengthOfFreeParameters
+#echo lengthOfFreeParameters: $lengthOfFreeParameters
 systemARG_MAX=`getconf ARG_MAX `
 if [ $lengthOfFreeParameters -gt $systemARG_MAX ]; then
 	echo
-	echo 'ERROR: the length of the input fasta files and their paths has exceeded the system ARG_MAX variable.'
+	echo "ERROR: the length of the input fasta file names and their paths has exceeded the system ARG_MAX variable: $lengthOfFreeParameters (ARG_MAX=$systemARG_MAX)"
 	echo 'Try to reduce the length of the path to the files or increase the system ARG_MAX value somehow.'
 	exit
 fi
