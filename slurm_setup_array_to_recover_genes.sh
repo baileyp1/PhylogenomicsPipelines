@@ -2,8 +2,7 @@
 #SBATCH -J recover_genes
 #SBATCH -n 1
 #SBATCH -o recover_genes-%A-%a.log	# If this line is not set, default output name is slurm-%A_%a.out: %A = $SLURM_ARRAY_JOB_ID; %a = $SLURM_ARRAY_TASK_ID		 
-#SBATCH -e recover_genes-%A-%a.log 	# NB - if I just specify the %a, then I don't get an accumulation of ouput files for each run of the script
-									
+#SBATCH -e recover_genes-%A-%a.log
 
 csvFile=$1					### This should be samples names - I think it also can contain the full line
 targetsFile=$2
