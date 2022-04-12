@@ -768,7 +768,7 @@ prepareOptionsForUPP()	{
    	# Get the value ONLY for option -M and -T:
    	optionM_Value=`echo $1 | grep -o '\-M \{1,4\}[0-9-]\{1,3\}' | sed 's/\-M \{1,4\}//' `
    	optionT_Value=`echo $1 | grep -o '\-T \{1,4\}0.[0-9]\{1,2\}' | sed 's/\-T \{1,4\}//' ` 		
-   	#echo optionM_Value from user: $optionM_Value
+   	echo optionM_Value from user: $optionM_Value
    	#echo optionT_Value from user: $optionT_Value
    	# Any other UPP options could be added here.
    	# If above values not found, letting UPP report error.
