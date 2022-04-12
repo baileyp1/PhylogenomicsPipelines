@@ -41,18 +41,17 @@ cd ${samplePrefix}_$sampleId
 echo sampleId: $sampleId
 echo externalSequenceID: $externalSequenceID
 
-if [ -z "$R2FastqFile" ]; then
-	ls $paftolDataSymlinksDir/$R1FastqFile
-	echo "No R2FastqFile"
-else
+
+if [[ -s  $paftolDataSymlinksDir/$R1FastqFile ]]; then ls $paftolDataSymlinksDir/$R1FastqFile; fi
+if [ -z "$R2FastqFile" ]; then 
+	echo "No R2FastqFile - read trimming and gene recovery will work in single-end mode"
+else 
 	ls $paftolDataSymlinksDir/$R2FastqFile
 fi
-
 pwd
 
 #if [ $usePaftolDb != 'usePaftolDb' ]; then	- changed - now introducing data set type
 if [[ $usePaftolDb == 'no' ]]; then
-	
   			                                        #--nodelist=kppgenomics01.ad.kew.org  # mem normally set to 80000
 	#  sbatch -J ${samplePrefix}_${sampleId}_fastqToGenes -p main -t 1-0:00 -c $cpu --mem=80000 -o ${samplePrefix}_${sampleId}_fastqToGenes.log   -e ${samplePrefix}_${sampleId}_fastqToGenes.log_err   --wrap "
 	# RUNTIME: For 8 cpu, up to 2 mins; up to 18 GB mem (for 10 samples)
