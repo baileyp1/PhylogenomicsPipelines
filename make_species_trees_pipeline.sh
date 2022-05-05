@@ -107,7 +107,7 @@ INPUT FILE OPTIONS:
                 else change the gene name list in option -g so that it is.	
                 Fasta header line format MUST BE: >sampleId
   -P
-                perform protein family analysis with protein input $usrInProt
+                perform protein family analysis with protein input
   -g <file>        
                 file (including path to it) containing list of gene names only (required option)
                 NB - pretty sure that gene names must NOT have '.' characters in them if the suffix is what makes them unique.         
@@ -132,7 +132,7 @@ ALIGNMENT OPTIONS:
 
   -M <string:>  options to use with chosen alignment program (they must be quoted and the option flag(s) included). For MAFFT, specify the 
                 alignment algorithm to use in quotes i.e. '--retree 1', '--retree 2', '--maxiterate 1000' etc (default='--retree 2'); for 
-                UPP, choose values for options -M and -T (default='-M 80 -T 0.15'). Note - the value for UPP option -M should be a percentile 
+                UPP, choose values for UPP options -M and -T (default='-M 80 -T 0.15'). Note - the value for UPP option -M should be a percentile 
                 of the sequence lengths for each gene which will then get converted to the corresponding length for input into UPP
 ALIGNMENT FILTERING AND TRIMMING OPTIONS:
   -F <2 integers> 
