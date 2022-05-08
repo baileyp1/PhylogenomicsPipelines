@@ -139,22 +139,19 @@ echo maxColOcc: $maxColOcc  >> ${geneId}_aln_summary.txt
 # However, then I'm relying on $lenLongestGene again and the are some issues with that (see above)   
 # Just testing $maxColOcc should be OK.
 
-### New change - 25.9.2020 - allow $maxColOcc to work down to zero so all genes can be included if desired.
+### New change - 25.9.2020 - now allowing $maxColOcc to work down to zero so all genes can be included if desired.
 # This completes the logic of this filtering approach: filtering genes at $fractnAlnCovrg across region of $maxColOcc, 
 # the latter being filtered by $maxColOccThreshold set by user.
 # NB - if there are no overlapping columns found for a gene, then this filtering is not possibe AND 
 # the awk command will crash at $1/LENG if $maxColOcc and $3 are both zero
-# So now allowing all seqs for these genes through where $maxColOcc==0 (they tend to be small genes),
-# just need to set $maxColOcc to 1 for awk to work.
-if [[ $maxColOcc -eq 0 ]]; then
-	maxColOcc=1
-fi
-if [[ $maxColOcc -ge $3 ]]; then
+# So have created a separate conditional: elif [[ $maxColOcc -eq 0 && $3 -eq 0 ]]; then
+# to allow the unfiltered alignment through when $maxColOcc==0 and option -O set by user is zero,
+if [[ $maxColOcc -gt $3 ]]; then
 
 	# Calculate the number of parsimonious columns (-p option) for the columns found from $maxColOcc:
 	AMAS.py trim -f fasta -d dna -t $fractnMaxColOcc -p -i ${gene}_${2}_aln_AMAS_trim_${fractnMaxColOcc}.fasta -o ${gene}_${2}_aln_AMAS_trim_-p_${fractnMaxColOcc}.fasta
 	maxParsCols=`fastalength ${gene}_${2}_aln_AMAS_trim_-p_${fractnMaxColOcc}.fasta 2>/dev/null | sort -k1n | tail -n 1 | awk '{print $1}' `
-	echo maxParsCols: $maxParsCols  >> ${geneId}_aln_summary.txt
+	echo maxParsCols: $maxParsCols >> ${geneId}_aln_summary.txt
 
 	# Count total number of residues in the MCOT region here:
 	totalResiduesInMaxColOccRegion=`fastalength ${gene}_${2}_aln_AMAS_trim_${fractnMaxColOcc}.fasta 2>/dev/null | awk '{sum+=$1} END {print sum}' `
@@ -181,7 +178,7 @@ if [[ $maxColOcc -ge $3 ]]; then
 											### For now have just repeated the identical warning message at this stage as well
 											### 8.9.2020 - thinking further, this conditional should be removed but still check if numbrSeqs < 3 so I can print out alns
 											###				Also still print out alns with maxColOcc < 30 separately
-### 28.9.2020 - now I'm thinking that I shoud lstill keep it:
+### 28.9.2020 - now I'm thinking that I should still keep it:
 ### 1. saves producing files that don't get usec for tree 
 ### 2. don't then have to check the files when trimming as they will be empty... - check this!
 		seqtk subseq -l $alnLength \
@@ -195,7 +192,7 @@ if [[ $maxColOcc -ge $3 ]]; then
 		lenLongestGene=`fastalength  $1 | sort -n | tail -n 1 | awk '{print $1}' `
 		echo lenLongestGene: $lenLongestGene  >> ${geneId}_aln_summary.txt
 
-		# Median value of sequence length for current gene:
+		# Median value of sequence length of gene:
 		medianPoint=`fastalength $1 | awk 'END {printf "%.0f" , NR/2}' `
 		medianGeneLength=`fastalength $1 | awk '{print $1}' | sort -n | head -n $medianPoint | tail -n 1 `
 		echo medianGeneLength: $medianGeneLength  >> ${geneId}_aln_summary.txt
@@ -211,18 +208,9 @@ if [[ $maxColOcc -ge $3 ]]; then
 			${gene}.dna.aln.fasta \
 			${gene}_${2}_aln_ovr${fractnAlnCovrg_pc}pc_aln_covrg.txt \
 			> ${gene}.dna.aln.after_filter1.fasta
-			# Old output file name: ${gene}_dna_aln_ovr${fractnAlnCovrg_pc}pc_aln_covrg.fasta
-### DON'T NEED TO DO THIS STEP HERE NOW - DONE IN TRIMALN2 FUNCTION - REMOVE
-			# AMAS.py trim -t 0.003 \
-			# -f fasta \
-			# -d dna \
-			# -i ${gene}_dna_aln_ovr${fractnAlnCovrg_pc}pc_aln_covrg.fasta \
-			# -o ${gene}.dna.aln.for_tree.fasta
-			### 12.8.2020 - changed the filename:
-			###-o ${gene}_dna_aln_ovr${fractnAlnCovrg_pc}pc_aln_covrg_trimCols0.003.fasta
 
 			### if aligning the high occupancy columns do above for DNA and protein here - add them to a new directory
-			### if protein and DNA only, need to add above with a condtional for high occ columns
+			### if protein and DNA only, need to add above with a condtional for high occ. columns
 		fi
 		if [[ $codonSelected == 'yes' ]]; then
 			echo Also preparing the filtered codon aln...
@@ -230,16 +218,7 @@ if [[ $maxColOcc -ge $3 ]]; then
 			codonAln/${gene}.codon.aln.fasta \
 			${gene}_${2}_aln_ovr${fractnAlnCovrg_pc}pc_aln_covrg.txt \
 			> codonAln/${gene}.codon.aln.after_filter1.fasta
-			# Old output file name: codonAln/${gene}_codon_aln_ovr${fractnAlnCovrg_pc}pc_aln_covrg.fasta
-### DON'T NEED TO DO THIS STEP HERE NOW - DONE IN TRIMALN2 FUNCTION - REMOVE
-			# AMAS.py trim -t 0.003 \
-			# -f fasta \
-			# -d dna \
-			# -i codonAln/${gene}_codon_aln_ovr${fractnAlnCovrg_pc}pc_aln_covrg.fasta \
-			# -o codonAln/${gene}.codon.aln.for_tree.fasta
-			### 12.8.2020 - changed the filename:
-			###-o codonAln/${gene}_codon_aln_ovr${fractnAlnCovrg_pc}pc_aln_covrg_trimCols0.003.fasta
-
+			
 			### if aligning the high occupancy columns do above for DNA here - add them to a new directory
 		fi
 	else
@@ -248,10 +227,52 @@ if [[ $maxColOcc -ge $3 ]]; then
 		# NB - this file is produced only for the protein seqs, even if DNA is selected; but is produced for DNA if DNA only has been selected.
 		echo "WARNING: Not able to build a tree for this gene: $gene (less than four sequences)"
 		echo $1 >> ${gene}_filtered_out_alignments.txt
+		exit 0	# zero allows Slurm to continue with the dependancies
 	fi
+elif [[ $maxColOcc -eq 0 && $3 -eq 0 ]]; then
+	# If there are no overlapping columns > $fractnMaxColOcc and maxColOccThreshold is set to zero,
+	# these genes still need to be used but the above if clause is not appropriate. Instead, need to 
+	# use the original alignment file i.e. $1.
+    # Copy the original aln.fasta to the filtered name (even though it's not actually filtered! Sorry.)
+    cp -p $1 ${gene}.dna.aln.after_filter1.fasta
+    echo "WARNING: this gene alignment does not have overlapping sequences at > $fractnMaxColOcc column occupancy: $gene
+(still included in the analysis but with no sequence filtering)"
+
+	# Record stats (NB - before trimming, maxColOcc/maxParsCols refer to MaxColOccRegion ONLY)
+	echo "maxColOcc: 0" >> ${geneId}_aln_summary.txt
+	echo "maxParsCols: 0" >> ${geneId}_aln_summary.txt
+	echo "totalResiduesInMaxColOccRegion: 0" >> ${geneId}_aln_summary.txt
+	lenLongestGene=`fastalength $1 | sort -n | tail -n 1 | awk '{print $1}' `
+	echo lenLongestGene: $lenLongestGene  >> ${geneId}_aln_summary.txt
+	# Median value of sequence length of gene:
+	medianPoint=`fastalength $1 | awk 'END {printf "%.0f" , NR/2}' `
+	medianGeneLength=`fastalength $1 | awk '{print $1}' | sort -n | head -n $medianPoint | tail -n 1 `
+	echo medianGeneLength: $medianGeneLength  >> ${geneId}_aln_summary.txt
+
+	numbrSeqs=`cat $1 | grep '>' | wc -l` # Required for testing # samples for the trimming step (needs to be > 3 - not yet tested at the trimming step but should be to avoid error messages)
+	
+	# Extra steps here to do if DNA and/or codon is also selected.
+	# Prepare protein and codon alns using result of the filtering on the protein aln using this list: 
+	# ${gene}_${2}_aln_ovr${fractnAlnCovrg_pc}pc_aln_covrg.txt
+	echo "proteinSelected == 'yes' && dnaSelected == 'yes'": $proteinSelected $dnaSelected
+	if [[ $proteinSelected == 'yes' && $dnaSelected == 'yes' ]]; then
+		echo Also preparing the dna aln...
+		cp -p $1 ${gene}.dna.aln.after_filter1.fasta
+
+		### if aligning the high occupancy columns do above for DNA and protein here - add them to a new directory
+		### if protein and DNA only, need to add above with a condtional for high occ. columns
+	fi
+	if [[ $codonSelected == 'yes' ]]; then
+		echo Also preparing the codon aln...
+		cp -p $1 > codonAln/${gene}.codon.aln.after_filter1.fasta
+			
+		### if aligning the high occupancy columns do above for DNA here - add them to a new directory
+	fi    
 else
 	# Printing out the alignments with little sequence overlap for assessing further (can concatenate them together)
+	echo "WARNING: Not able to build a tree for this gene: $gene (failed filtering criteria)"
 	echo $1 >> ${gene}_filtered_out_alignments.txt
+	exit 0	# zero allows Slurm to continue with the dependancies
 fi 
 } # End of filterSeqs1 function
 
@@ -390,32 +411,31 @@ makeGeneTree()	{
  	# Input parameters:
  	# $1 = residue type: dna, aa or codon 
     # $2 = filtered alignment filename in fasta format
-    # $3 = output file prefix including the path to any directory
-    # $4 = raxmlng_model e.g. raxmlngModel='GTR+G' - for DNA; for prtoein raxmlngModel='JTT+G'
-    # $5 = iqtree2_seq_type  iqTree2SeqType='DNA'; for protein iqTree2SeqType='AA'
-    # $6 = fasttreeFlags='-nt -gtr' - for DNA; for protein fasttreeFlags='' - NB - this last flag needs to be last in case it is blank - it needs to be blank for protein analysis)
+	# $3 = output file prefix including the path to any directory
+	# $4 = phylogeny program to use ($phyloProgramDNA or $phyloProgramPROT)
+    # $5 = raxmlng_model e.g. raxmlngModel='GTR+G' - for DNA; for protein raxmlngModel='JTT+G'
+    # $6 = iqtree2_seq_type  iqTree2SeqType='DNA'; for protein iqTree2SeqType='AA'
+    # $7 = fasttreeFlags='-nt -gtr' - for DNA; for protein fasttreeFlags='' - NB - this last flag needs to be last in case it is blank - it needs to be blank for protein analysis)
     ###########
 
-    raxmlngModel=$4
-    iqTree2SeqType=$5
-    fasttreeFlags=$6
+    phyloProgramToUse=$4
+    raxmlngModel=$5
+    iqTree2SeqType=$6
+    fasttreeFlags=$7
 
-### 5.9.2020 - incorrect logic when different programs have been seelected for DNA and protein:
-    echo phyloProgramDNA: $phyloProgramDNA
-    echo phyloProgramPROT: $phyloProgramPROT
-### I think you need to do the following:
-### programToUse= <bring in to method as a varaible e.g. $phyloProgramDNA
-### Then it's  if [[ $programToUse == 'fasttree' ]]; then
+    echo phyloProgramToUse: $phyloProgramToUse
 
-
-    if [[ "$phyloProgramDNA" == 'fasttree' || "$phyloProgramPROT" == 'fasttree' ]]; then
+### 8.5.2022 - changed to using $phyloProgramToUse - still to check all conditionals work for DNA and protein
+###    if [[ "$phyloProgramDNA" == 'fasttree' || "$phyloProgramPROT" == 'fasttree' ]]; then
+	if [[ "$phyloProgramToUse" == 'fasttree' ]]; then
 		###srun -J ${gene}_make_tree -n 1 \
 		echo echo phyloProgramDNA: $phyloProgramDNA
 		echo Running fasttree on the alignment...
 		$exePrefix fasttree $fasttreeFlags \
     	$2 \
 		> ${3}/${gene}_${1}_gene_tree_USE_THIS.nwk
-	elif [[ "$phyloProgramDNA" == 'raxml-ng' || "$phyloProgramPROT" == 'raxml-ng' ]]; then
+###	elif [[ "$phyloProgramDNA" == 'raxml-ng' || "$phyloProgramPROT" == 'raxml-ng' ]]; then
+	elif [[ "$phyloProgramToUse" == 'raxml-ng' ]]; then
 		# RAxML-NG with DNA (uses conventional bs support - how fast is it? it is slow!):
 		### RAXML-NG will crash if there is not enough data to ||elize so need to use 1 cpu for small # seqs,
 		### and also aln length - keep an eye on this - test larger dataet with 2, 4 cpu
@@ -443,7 +463,8 @@ makeGeneTree()	{
 		cp -p ${3}/${gene}.${1}.aln.raxml.supportFBP \
 		${3}/${gene}_${1}_gene_tree_USE_THIS.nwk
 		rm ${3}/${gene}.${1}l.aln.raxml.supportFBP 					  # NB - these values below need to start with 'iqtree' so that software can be chacked in main parent script - see line ~ 274	
-	elif [[ "$phyloProgramDNA" == 'iqtree2' || "$phyloProgramPROT" == 'iqtree2' ]]; then
+###	elif [[ "$phyloProgramDNA" == 'iqtree2' || "$phyloProgramPROT" == 'iqtree2' ]]; then
+	elif [[ "$phyloProgramToUse" == 'iqtree2' ]]; then
 		echo
 		echo Running IQ-Tree on the gene alignment with these options: -B 1000 ... 
 		$exePrefix iqtree2 -T AUTO -ntmax $cpuGeneTree \
@@ -465,7 +486,8 @@ makeGeneTree()	{
 		cp -p ${3}/${gene}.${1}.aln_iqtree.contree \
 		${3}/${gene}_${1}_gene_tree_USE_THIS.nwk
 		rm  ${3}/${gene}.${1}.aln_iqtree.contree
-	elif [[ "$phyloProgramDNA" == 'iqtree2-fast-b100' || "$phyloProgramPROT" == 'iqtree2-fast-b100' ]]; then
+###	elif [[ "$phyloProgramDNA" == 'iqtree2-fast-b100' || "$phyloProgramPROT" == 'iqtree2-fast-b100' ]]; then
+	elif [[ "$phyloProgramToUse" == 'iqtree2-fast-b100' ]]; then
 		echo
 		echo Running IQ-Tree on the gene alignment with these options: -fast, -b 100, -m GTR+F+G ...
 		$exePrefix iqtree2 -T AUTO -ntmax $cpuGeneTree \
@@ -481,7 +503,8 @@ makeGeneTree()	{
 		cp -p ${3}/${gene}.${1}.aln_iqtree.contree \
 		${3}/${gene}_${1}_gene_tree_USE_THIS.nwk
 		rm  ${3}/${gene}.${1}.aln_iqtree.contree
-	elif [[ "$phyloProgramDNA" == 'iqtree2-alrt' || "$phyloProgramPROT" == 'iqtree2-alrt' ]]; then
+###	elif [[ "$phyloProgramDNA" == 'iqtree2-alrt' || "$phyloProgramPROT" == 'iqtree2-alrt' ]]; then
+	elif [[ "$phyloProgramToUse" == 'iqtree2-alrt' ]]; then
 		echo
 		echo Running IQ-Tree on the gene alignment with these options: -alrt, -m GTR+F+G ...
 		$exePrefix iqtree2 -T AUTO -ntmax $cpuGeneTree \
@@ -512,7 +535,8 @@ makeGeneTree()	{
 	# 	cp -p ${3}/${gene}.${1}.aln_iqtree.contree \
 	# 	${3}/${gene}_${1}_gene_tree_USE_THIS.nwk
 	# 	rm  ${3}/${gene}.${1}.aln_iqtree.contree
-	elif [[ "$phyloProgramDNA" == 'iqtree2-B1000-nm110' || "$phyloProgramPROT" == 'iqtree2-B1000-nm110' ]]; then
+###	elif [[ "$phyloProgramDNA" == 'iqtree2-B1000-nm110' || "$phyloProgramPROT" == 'iqtree2-B1000-nm110' ]]; then
+	elif [[ "$phyloProgramToUse" == 'iqtree2-B1000-nm110' ]]; then
 		echo																    # NB max iteration must be > min -nstep iteration! 
 		echo Running IQ-Tree on the gene alignment with these options: -B 1000, -nstep 100, -nm 110, -m GTR+F+G ...
 		$exePrefix iqtree2 -T AUTO -ntmax $cpuGeneTree \
@@ -528,7 +552,8 @@ makeGeneTree()	{
 		cp -p ${3}/${gene}.${1}.aln_iqtree.contree \
 		${3}/${gene}_${1}_gene_tree_USE_THIS.nwk
 		rm  ${3}/${gene}.${1}.aln_iqtree.contree
-	elif [[ "$phyloProgramDNA" == 'iqtree2-B1000-nm200' || "$phyloProgramPROT" == 'iqtree2-B1000-nm200' ]]; then
+###	elif [[ "$phyloProgramDNA" == 'iqtree2-B1000-nm200' || "$phyloProgramPROT" == 'iqtree2-B1000-nm200' ]]; then
+	elif [[ "$phyloProgramToUse" == 'iqtree2-B1000-nm200' ]]; then
 		echo																    # NB max iteration must be > min -nstep iteration! 
 		echo Running IQ-Tree on the gene alignment with these options: -B 1000, -nstep 100, -nm 200, -m GTR+F+G ...
 		$exePrefix iqtree2 -T AUTO -ntmax $cpuGeneTree \
@@ -546,7 +571,8 @@ makeGeneTree()	{
 		rm  ${3}/${gene}.${1}.aln_iqtree.contree
 
 
-	elif [[ "$phyloProgramDNA" == 'iqtree2-B1000-nm1000' || "$phyloProgramPROT" == 'iqtree2-B1000-nm1000' ]]; then
+###	elif [[ "$phyloProgramDNA" == 'iqtree2-B1000-nm1000' || "$phyloProgramPROT" == 'iqtree2-B1000-nm1000' ]]; then
+	elif [[ "$phyloProgramToUse" == 'iqtree2-B1000-nm1000' ]]; then
 		echo																   		# NB max iteration must be > min -nstep iteration! 
 		echo Running IQ-Tree on the DNA gene alignment with these options: -B 1000, -nstep 100, -nm 1000, -m GTR+F+G ...
 		$exePrefix iqtree2 -T AUTO -ntmax $cpuGeneTree \
@@ -562,7 +588,8 @@ makeGeneTree()	{
 		cp -p ${3}/${gene}.${1}.aln_iqtree.contree \
 		${3}/${gene}_${1}_gene_tree_USE_THIS.nwk
 		rm  ${3}/${gene}.${1}.aln_iqtree.contree
-	elif [[ "$phyloProgramDNA" == 'iqtree2-B1000-nm210-MT' ]]; then
+###	elif [[ "$phyloProgramDNA" == 'iqtree2-B1000-nm210-MT' ]]; then
+	elif [[ "$phyloProgramToUse" == 'iqtree2-B1000-nm210-MT' ]]; then
 		echo																   		# NB max iteration must be > min iteration! 
 		echo Running IQ-Tree on the DNA gene alignment with these options: -B 1000, -nstep 100, -nm 210, -mset HKY,TIM2,TVM,GTR
 		$exePrefix iqtree2 -T AUTO -ntmax $cpuGeneTree \
@@ -578,7 +605,8 @@ makeGeneTree()	{
 		cp -p ${3}/${gene}.${1}.aln_iqtree.contree \
 		${3}/${gene}_${1}_gene_tree_USE_THIS.nwk
 		rm  ${3}/${gene}.${1}.aln_iqtree.contree
-	elif [[ "$phyloProgramPROT" == 'iqtree2-B1000-nm210-MT' ]]; then
+###	elif [[ "$phyloProgramPROT" == 'iqtree2-B1000-nm210-MT' ]]; then
+	elif [[ "$phyloProgramToUse" == 'iqtree2-B1000-nm210-MT' ]]; then
 		echo																   			# NB max iteration must be > min iteration! 
 		echo Running IQ-Tree on the protein gene alignment with these options: -B 1000, -nstep 100, -nm 210, -mset HKY,TIM2,TVM,GTR ...
 		$exePrefix iqtree2 -T AUTO -ntmax $cpuGeneTree \
@@ -678,6 +706,8 @@ createGeneAlignmentAndTreeImages()	{
 			echo "outgroup/root samples: $outgroupRoot"
 			nw_reroot $treeFileToUse $outgroupRoot | nw_order -c a /dev/fd/0 \
 			> gene_alignment_tree_images_$1/${geneNwkFileNoSuffix}_rerooted.nwk
+			### 6.5.2022 - get error "No such file or directory" when file can't be rerooted
+			### but now planning to use gotree to midpoint root.
 			# nw_reroot -c a - orders tips alphabetically - may be easier for comparisons to similar tree label names
 			# NB - 1.if none of the leaf labels is correct (i.e. present), then the tree is rerooted
 			#      on the longest branch - i.e. there is no error to trap
@@ -812,7 +842,7 @@ if [[ $geneFile != 'use_genewise_files' ]]; then
 	#                 e.g. 50, 506 and 5064 and they won't pick each other out (BUT these chars count as word endings: '.'  '/' ) - NB 26.11.2020 - therefore may want to recheck after this step for multiple seqs with the same gene ID   
 	# 2. print seqs for current gene to a separate file
 	# 3. reorganise the fasta header so that species info is next to '>' and the gene id is removed (required to run in coalescence)
-	###gene=`echo $geneId | tr -d '\n' `	# Need to remove line return, if present after the first field! Now moved furtehr up.
+	###gene=`echo $geneId | tr -d '\n' `	# Need to remove line return, if present after the first field! Now moved further up.
 	#echo Gene: $gene
 	cat $geneFile \
 	| grep -Ew -A1 ">$gene" \
@@ -832,6 +862,8 @@ if [[ $geneFile != 'use_genewise_files' ]]; then
 
 
 # If an input fasta file name doesn't exist then the 'modified.fasta' created above will not exist.
+### - 16.4.2022 - I don't understand the above comment now - this is a file for a sample not gene-wise file
+###				  Shouldn't the same test be done on the files creatd in the above conditional?
 # Testing whether the gene-wise file exists here: ${gene}_dna.fasta, 4802_after_treeshrink_dna.fasta or ${gene}_after_filterSeqs_dna.fasta
 #	None of them existing triggers the error.
 elif [[ ! -s $dnaFastaFileForAln ]]; then
@@ -845,7 +877,7 @@ elif [[ ! -s $dnaFastaFileForAln ]]; then
 	else
 		echo "WARNING: the input gene-wise fasta file for this gene does not exist or is empty: $gene - skipping alignment of this gene.
 (It indicates that there are no samples for this gene (possibly after a filtering step),
-or, the gene list is incompatible with the input fasta files.)"
+or, the gene list is not completely compatible with the input fasta files.)"
 ###or in gene-wise mode (option -G), the gene list is incompatible with the input gene-wise fasta files.)"
 		# NB - acknowledged error above so OK to exit with zero.
 		# Anyway it has to be zero to satisfy Slurm --dependancy afterok:$jobId parameter;
@@ -919,7 +951,7 @@ if [[ $dnaSelected == 'yes' ]]; then
 		# Ouput files:
 		# _pasta.fasta 	- backbone aln (?)
 		# _pasta.Fasttree - backbone tree (?)
-		# _alignment.fasta 	- main aln but also contains regions outside the HMM columns which remain unaligned (so do not use!!)
+		# _alignment.fasta 	- main aln but also contains regions outside the HMM columns which remain unaligned (so do not use!!); I think all bases from *_dna.fasta are present.
 		# _alignment_masked.fasta - masked aln where non-homologous sites in the query set are removed (This is the file to use!!)
 
 		# NB - UPP might not be able to align small gene sets (e.g. from the test data set) - will report this and skip this gene.
@@ -975,7 +1007,7 @@ if [[ $proteinSelected == 'yes' || $codonSelected == 'yes' ]]; then
 		echo
    		echo Creating a protein alignment with UPP...
    		if [[ -f ${gene}.protein.upp_pasta.fasta ]]; then
-   			rm ${gene}.protein.upp_pasta.fasta ${gene}.protein.upp_pasta.fasßttree ${gene}.protein.upp_alignment.fasta
+   			rm ${gene}.protein.upp_pasta.fasta ${gene}.protein.upp_pasta.fasttree ${gene}.protein.upp_alignment.fasta
    			if [[ -f ${gene}.protein.upp_insertion_columns.txt ]]; then rm ${gene}.protein.upp_insertion_columns.txt; fi
    		fi
    		prepareOptionsForUPP "$alnParams" $dnaFastaFileForAln
@@ -997,7 +1029,6 @@ if [[ $proteinSelected == 'yes' || $codonSelected == 'yes' ]]; then
 			echo "INFO: checkpointing is ON so this gene tree is being skipped - already done: ${gene}_codon_gene_tree_USE_THIS.nwk"
 			exit 0
 		fi
-
 
 		echo
 		echo Creating a DNA alignment guided by the protein alignment...
@@ -1263,13 +1294,14 @@ if [[ -s $dnaAlnForTree || -s $proteinAlnForTree ]]; then
 			# Function parameters: input_fasta_file, minimum_seq_length_to_tolerate, output_fasta_file_for_tree_building					
 			filterShortSeqs $dnaAlnForTree 80 ${gene}.dna.aln.for_tree.fasta	
 			echo numbrSeqs: $numbrSeqs
-			# Function parameters: residue_type, input_fasta_file, out_dir, raxmlng_model, iqtree2_seq_type, fasttree_flags (NB - this last flag needs to be last - it needs to be blank for protein analysis)
+			# Function parameters: residue_type, input_fasta_file, out_dir, phylo_program_to_use, raxmlng_model, iqtree2_seq_type, fasttree_flags (NB - this last flag needs to be last - it needs to be blank for protein analysis)
 ### Still need to confirm file/variable input
 			if [ "$numbrSeqs" -gt 3 ]; then 	# Check goes here after ALL filtering steps
-				makeGeneTree dna ${gene}.dna.aln.for_tree.fasta '.' 'GTR+G' 'DNA' '-nt -gtr'
+				makeGeneTree dna ${gene}.dna.aln.for_tree.fasta '.' $phyloProgramDNA 'GTR+G' 'DNA' '-nt -gtr'
 				createGeneAlignmentAndTreeImages dna ${gene}.dna.aln.for_tree.fasta ${gene}_dna_gene_tree_USE_THIS.nwk
 			else
 				echo "WARNING: Not able to build a tree for this gene: $gene (less than four sequences)"
+				exit 0	# zero allows Slurm to continue with the dependancies; NB - any seq. filtering done on protein, DNA or codon should be identical so can exit on this clause and the two below
 			fi
 		fi
 		if [[ $codonSelected == 'yes' ]]; then
@@ -1277,10 +1309,11 @@ if [[ -s $dnaAlnForTree || -s $proteinAlnForTree ]]; then
 			echo numbrSeqs: $numbrSeqs
 ### Still need to confirm file/variable input
 			if [ "$numbrSeqs" -gt 3 ]; then
-				makeGeneTree codon ${gene}.codon.aln.for_tree.fasta 'codonAln' 'GTR+G' 'DNA' '-nt -gtr'
+				makeGeneTree codon ${gene}.codon.aln.for_tree.fasta 'codonAln' $phyloProgramDNA 'GTR+G' 'DNA' '-nt -gtr'
 				createGeneAlignmentAndTreeImages codon ${gene}.codon.aln.for_tree.fasta ${gene}_codon_gene_tree_USE_THIS.nwk
 			else
 				echo "WARNING: Not able to build a tree for this gene: $gene (less than four sequences)"
+				exit 0	# zero allows Slurm to continue with the dependancies
 			fi
 		fi
 		if [[ $proteinSelected == 'yes' ]]; then
@@ -1289,10 +1322,11 @@ if [[ -s $dnaAlnForTree || -s $proteinAlnForTree ]]; then
 			filterShortSeqs $proteinAlnForTree 27 ${gene}.protein.aln.for_tree.fasta
 			echo numbrSeqs: $numbrSeqs
 			if [ "$numbrSeqs" -gt 3 ]; then
-				makeGeneTree protein ${gene}.protein.aln.for_tree.fasta '.' 'JTT+G' 'AA' ''
+				makeGeneTree protein ${gene}.protein.aln.for_tree.fasta '.' $phyloProgramPROT 'JTT+G' 'AA' ''
 				createGeneAlignmentAndTreeImages protein ${gene}.protein.aln.for_tree.fasta ${gene}_codon_gene_tree_USE_THIS.nwk
 			else
 				echo "WARNING: Not able to build a tree for this gene: $gene (less than four sequences)"
+				exit 0	# zero allows Slurm to continue with the dependancies
 			fi
 		fi
 	###else
