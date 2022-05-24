@@ -137,15 +137,15 @@ ALIGNMENT OPTIONS:
 ALIGNMENT FILTERING AND TRIMMING OPTIONS:
   -F <2 integers> 
                 filter sequences option 1 (followed by re-alignment). Format: '<1> <2>' (no default; N.B. values must be quoted)
-                1. filters sequences in gene alignments by coverage, in this option by the percent of well conserved regions (columns) 
-                   in the alignment covered by a sample sequence. A well conserved column is one with > 70 % residue occupancy
+                1. filters sequences in gene alignments by coverage, in this option by the percent of well conserved regions (columns)
+                   in the alignment covered by a sample sequence. A well conserved column is defined as one with > 70 % residue occupancy
                    Minimum percent to tolerate (advised=60; 0 would mean no filtering, i.e. include sequence of any length)
                 2. percent of samples in each gene tree.
                    Minumum percent to tolerate (0 would mean no filtering, include all available samples in each gene tree)
                 Don't use with option -I else option -F only will applied.
 
   -O <integer>
-                mimimum length to tolerate for the conserved region described in -F option 1; 0 would mean allow a gene 
+                mimimum length to tolerate for the conserved region as defined in -F option 1; 0 would mean allow a gene 
                 through even though there is no overlap between the majority (>70%) of sequences, 30 would mean exclude gene from the 
                 analysis if overlapping region is less than 30 columns (default=30)
 
@@ -250,7 +250,7 @@ while getopts "hvat:ug:ijGF:f:m:p:M:q:r:TC:c:d:Q:Y:A:D:O:L:I:JK:R:X:U:V:W:H:o:bs
 	case $OPTION in
 
 		h) usage; exit 1 ;;
-		v) echo "make_species_trees_pipeline.sh version 1.0"; exit ;;
+		v) echo "make_species_trees_pipeline.sh version 3.0_dev"; exit ;;
     #INPUT FILE OPTIONS:
         G) useGenewiseFiles=yes ;;
         g) geneListFile=$OPTARG ;;

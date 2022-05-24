@@ -89,7 +89,7 @@ OPTIONS <value>:
                  Slurm partition (queue) to use (default=medium; select more than one queue with a comma delimited list e.g. medium,long)
  
   -H <integer>
-                 Slurm array throttle (default=1; could set to 1, then increase once happy with run with: scontrol update arraytaskthrottle=<integer> job=<jobId>)
+                 Slurm array throttle (default=1; could keep to 1, then increase once happy with run with: scontrol update arraytaskthrottle=<integer> job=<jobId>)
  
 
 A typical example:
