@@ -312,8 +312,8 @@ makeSpeciesTree () {
 ############
 # Main code:
 ############
-if [[ "$astralSelected" == 'yes' || "$astralmpSelected" == 'yes' || "$astral-proSelected" == 'yes' ]]; then
-    echo "Preparing to run Astral..."
+if [[ "$astralSelected" == 'yes' || "$astralmpSelected" == 'yes' || "$astralproSelected" == 'yes' ]]; then
+    echo "Preparing to run ASTRAL..."
     if [[ $dnaSelected == 'yes' ]]; then
         seqType=dna
         echo dnaSelected: $dnaSelected   
@@ -361,7 +361,7 @@ if [[ "$astralSelected" == 'yes' || "$astralmpSelected" == 'yes' || "$astral-pro
         # Now concatenate the gene trees into a single file:
         cat ${fileNamePrefix}.${seqType}.gene_trees_set_filenames.txt | xargs cat > ${fileNamePrefix}.${seqType}.gene_trees_set.nwk
     fi
-
+    ### 7.5.2022 - codon clause as well here? Shoudl make into a function
 
     # Before running Astral, collapse clades with low bootstrap values (less than $collapseNodes) from all trees at once, if requested.
     # NB - this step collapses nodes whose certainty is not clear by creating multifurcations with a parent node that is well supported.
@@ -382,7 +382,7 @@ if [[ "$astralSelected" == 'yes' || "$astralmpSelected" == 'yes' || "$astral-pro
                 # numbrLowSupportNodesThreshold=`echo $numbrLowSupportNodesThreshold | awk 'fractn=$1/100 {print fractn}' `
                 # echo "\$numbrLowSupportNodesThreshold should now be a fraction for FASTTREE (internal value): $numbrLowSupportNodesThreshold"
             fi
-            collapseNodesD=$collapseNodes    # Required later for remembering the actual value for DNA (It might get changed for prtoein!!!) - 20.7.2021 - pretty sure this doesn't apply now.
+            collapseNodesD=$collapseNodes    # NB - $collapseNodes is also required for the protein trees - will not need converting to a fraction if RAxML is used for protein aln so need temporary variable here.
             #numbrLowSupportNodesThresholdD=$numbrLowSupportNodesThreshold    # Same for this var
             nw_ed  $dnaAstralInFile "i & (b < $collapseNodesD)" o > ${fileNamePrefix}.${seqType}.gene_trees_set.collapse${collapseNodesD}.nwk
             # Also create list of filenames for the collapsed trees for use in creating an archive file:
@@ -392,7 +392,7 @@ if [[ "$astralSelected" == 'yes' || "$astralmpSelected" == 'yes' || "$astral-pro
             cat $dnaGeneTreesSetFilenames | \
             while read file; do
                 filePrefix=`basename -s .nwk $file `
-                cat $file | nw_ed  /dev/fd/0  "i & (b < 30)" o > ${filePrefix}.collapse${collapseNodesD}.nwk 
+                cat $file | nw_ed  /dev/fd/0  "i & (b < $collapseNodesD)" o > ${filePrefix}.collapse${collapseNodesD}.nwk 
             done
             # The set of 'collapsed' files now required for ASTRAL:
             dnaAstralInFile=${fileNamePrefix}.${seqType}.gene_trees_set.collapse${collapseNodesD}.nwk
@@ -419,7 +419,7 @@ if [[ "$astralSelected" == 'yes' || "$astralmpSelected" == 'yes' || "$astral-pro
              cat $proteinGeneTreesSetFilenames | \
             while read file; do
                 filePrefix=`basename -s .nwk $file `
-                cat $file | nw_ed  /dev/fd/0  "i & (b < 30)" o > ${filePrefix}.collapse${collapseNodes}.nwk 
+                cat $file | nw_ed  /dev/fd/0  "i & (b < $collapseNodes)" o > ${filePrefix}.collapse${collapseNodes}.nwk 
             done
             proteinAstralInfile=${fileNamePrefix}.${seqType}.gene_trees_set.collapse${collapseNodes}.nwk
             proteinGeneTreesSetFilenames=${fileNamePrefix}.${seqType}.gene_trees_set_filenames.collapse${collapseNodes}.txt
@@ -433,8 +433,8 @@ if [[ "$astralSelected" == 'yes' || "$astralmpSelected" == 'yes' || "$astral-pro
         #         numbrLowSupportNodesThresholdD=`echo $numbrLowSupportNodesThreshold | awk 'fractn=$1/100 {print fractn}' `
         #         echo "\$numbrLowSupportNodesThreshold should now be a fraction for FASTTREE (internal value): $numbrLowSupportNodesThreshold"
         #     fi
+        ### Does this need a codon clause here as well???? Yes and better still, convert to a function for use with DNA, protein and codon trees         
     fi
-### Does this need a codon clause here as well????
     echo
     echo
     echo #################
@@ -446,7 +446,7 @@ if [[ "$astralSelected" == 'yes' || "$astralmpSelected" == 'yes' || "$astral-pro
         if [[ "$astralSelected" == 'yes' ]]; then
             # Function parameters: residue_type, input_file, outfile_prefix, program, program-specifIC paramters
 ### SHOULD REALLY TRY TO CONVERT PROGRAM PARAMTERS TO A GENERIC STRIGN FOR USE WITH ANY PRGORAM  
-            makeSpeciesTree dna $dnaAstralInFile '.' astral 'GTR+G' 'DNA' '-nt -gtr'
+            makeSpeciesTree dna $dnaAstralInFile '.' astral 'GTR+G' 'DNA' '-nt -gtr'    # 30.4.2022 - Can these last params be removed? - misleading
             # Add tree tip info.
             # NB - for this option, the $treeTipInfoMapFile must have been submitted BUT I'm re-formatting it --> 'tree_tip_info_mapfile.txt'!):
             if [ -s $treeTipInfoMapFile ]; then
@@ -469,11 +469,11 @@ if [[ "$astralSelected" == 'yes' || "$astralmpSelected" == 'yes' || "$astral-pro
     fi
     if [[ $proteinSelected == 'yes' ]]; then
         if [[ "$astralSelected" == 'yes' ]]; then
-            makeSpeciesTree protein $proteinAstralInFile '.' astral 'GTR+G' 'DNA' '-nt -gtr'
+            makeSpeciesTree protein "$proteinAstralInfile" '.' astral 'GTR+G' 'DNA' '-nt -gtr'
             if [ -s $treeTipInfoMapFile ]; then
-                nw_rename -l  ${fileNamePrefix}.dna.species_tree.astral_pp1_value.nwk \
+                nw_rename -l  ${fileNamePrefix}.protein.species_tree.astral_pp1_value.nwk \
                 tree_tip_info_mapfile.txt \
-                > ${fileNamePrefix}.dna.species_tree.astral_USE_THIS.nwk
+                > ${fileNamePrefix}.protein.species_tree.astral_USE_THIS.nwk
             fi
             getTreeStats ${fileNamePrefix}.protein.species_tree.astral_pp1_value.nwk $numbrLowSupportNodesThreshold astral
         elif [[ "$astralmpSelected" == 'yes' ]]; then 
@@ -487,6 +487,7 @@ if [[ "$astralSelected" == 'yes' || "$astralmpSelected" == 'yes' || "$astral-pro
         fi
         ### Astral-Pro can go here
     fi
+    ### 7.5.2022 - shoudln't there be a codon step here?????
 fi # End of Astral step
 
 

@@ -414,14 +414,16 @@ makeGeneTree()	{
 	# $3 = output file prefix including the path to any directory
 	# $4 = phylogeny program to use ($phyloProgramDNA or $phyloProgramPROT)
     # $5 = raxmlng_model e.g. raxmlngModel='GTR+G' - for DNA; for protein raxmlngModel='JTT+G'
-    # $6 = iqtree2_seq_type  iqTree2SeqType='DNA'; for protein iqTree2SeqType='AA'
-    # $7 = fasttreeFlags='-nt -gtr' - for DNA; for protein fasttreeFlags='' - NB - this last flag needs to be last in case it is blank - it needs to be blank for protein analysis)
+    # $6 = iqtree2Model - currently set to JTT+F+G 
+    # $7 = iqtree2_seq_type  iqTree2SeqType='DNA'; for protein iqTree2SeqType='AA'
+    # $8 = fasttreeFlags='-nt -gtr' - for DNA; for protein fasttreeFlags='' - NB - this last flag needs to be last in case it is blank - it needs to be blank for protein analysis)
     ###########
 
     phyloProgramToUse=$4
     raxmlngModel=$5
-    iqTree2SeqType=$6
-    fasttreeFlags=$7
+    iqtree2Model=$6
+    iqTree2SeqType=$7
+    fasttreeFlags=$8
 
     echo phyloProgramToUse: $phyloProgramToUse
 
@@ -473,7 +475,8 @@ makeGeneTree()	{
 		--prefix ${3}/${gene}.${1}.aln_iqtree \
 		-B 1000
 		# Command notes:
-		# -redo			6.11.2021 - removed this parameter - means that IQTREE2 will now use its iqtree.ckp.gz file to re-start the analysis from where it go interupted
+		# -redo			6.11.2021 - removed this parameter - means that IQTREE2 will now use its iqtree.ckp.gz file to re-start the analysis from where it got interupted.
+		#				If the iqtree.ckp.gz file is removed, iqtree2 is ok with that and the analysis will just start from the beginning.
 		# --prefix		you can also add a path and the output files go into the specified directory
 		# -B 			ultrafast bootstrap option (NB - the minimum number you can set is 1000!)
 		# -alrt 		Removed -alrt 1000 option but it is very fast to compute so no real need - BUT it does add an extra value at the node I think
@@ -489,14 +492,14 @@ makeGeneTree()	{
 ###	elif [[ "$phyloProgramDNA" == 'iqtree2-fast-b100' || "$phyloProgramPROT" == 'iqtree2-fast-b100' ]]; then
 	elif [[ "$phyloProgramToUse" == 'iqtree2-fast-b100' ]]; then
 		echo
-		echo Running IQ-Tree on the gene alignment with these options: -fast, -b 100, -m GTR+F+G ...
+		echo Running IQ-Tree on the gene alignment with these options: -fast, -b 100, -m $iqtree2Model ...
 		$exePrefix iqtree2 -T AUTO -ntmax $cpuGeneTree \
 		--seqtype $iqTree2SeqType \
 		-s $2 \
 		--prefix ${3}/${gene}.${1}.aln_iqtree \
 		-b 100 \
 		-fast \
-		-m GTR+F+R
+		-m $iqtree2Model
 		# -m GTR+F+R - default for R if not specified = 4
 		
 		# Rename final tree file to a clearer name:
@@ -506,13 +509,13 @@ makeGeneTree()	{
 ###	elif [[ "$phyloProgramDNA" == 'iqtree2-alrt' || "$phyloProgramPROT" == 'iqtree2-alrt' ]]; then
 	elif [[ "$phyloProgramToUse" == 'iqtree2-alrt' ]]; then
 		echo
-		echo Running IQ-Tree on the gene alignment with these options: -alrt, -m GTR+F+G ...
+		echo Running IQ-Tree on the gene alignment with these options: -alrt, -m $iqtree2Model ...
 		$exePrefix iqtree2 -T AUTO -ntmax $cpuGeneTree \
 		--seqtype $iqTree2SeqType \
 		-s $2 \
 		--prefix ${3}/${gene}.${1}.aln_iqtree \
 		-alrt \
-		-m GTR+F+R
+		-m $iqtree2Model
 		
 		# Rename final tree file to a clearer name:
 		cp -p ${3}/${gene}.${1}.aln_iqtree.contree \
@@ -538,7 +541,7 @@ makeGeneTree()	{
 ###	elif [[ "$phyloProgramDNA" == 'iqtree2-B1000-nm110' || "$phyloProgramPROT" == 'iqtree2-B1000-nm110' ]]; then
 	elif [[ "$phyloProgramToUse" == 'iqtree2-B1000-nm110' ]]; then
 		echo																    # NB max iteration must be > min -nstep iteration! 
-		echo Running IQ-Tree on the gene alignment with these options: -B 1000, -nstep 100, -nm 110, -m GTR+F+G ...
+		echo Running IQ-Tree on the gene alignment with these options: -B 1000, -nstep 100, -nm 110, -m $iqtree2Model ...
 		$exePrefix iqtree2 -T AUTO -ntmax $cpuGeneTree \
 		--seqtype $iqTree2SeqType \
 		-s $2 \
@@ -546,7 +549,7 @@ makeGeneTree()	{
 		-B 1000 \
 		-nstep 100 \
 		-nm 110 \
-		-m GTR+F+R
+		-m $iqtree2Model
 		
 		# Rename final tree file to a clearer name:			
 		cp -p ${3}/${gene}.${1}.aln_iqtree.contree \
@@ -555,7 +558,7 @@ makeGeneTree()	{
 ###	elif [[ "$phyloProgramDNA" == 'iqtree2-B1000-nm200' || "$phyloProgramPROT" == 'iqtree2-B1000-nm200' ]]; then
 	elif [[ "$phyloProgramToUse" == 'iqtree2-B1000-nm200' ]]; then
 		echo																    # NB max iteration must be > min -nstep iteration! 
-		echo Running IQ-Tree on the gene alignment with these options: -B 1000, -nstep 100, -nm 200, -m GTR+F+G ...
+		echo Running IQ-Tree on the gene alignment with these options: -B 1000, -nstep 100, -nm 200, -m $iqtree2Model ...
 		$exePrefix iqtree2 -T AUTO -ntmax $cpuGeneTree \
 		--seqtype $iqTree2SeqType \
 		-s $2 \
@@ -563,7 +566,7 @@ makeGeneTree()	{
 		-B 1000 \
 		-nstep 100 \
 		-nm 200 \
-		-m GTR+F+R
+		-m $iqtree2Model
 		
 		# Rename final tree file to a clearer name:			
 		cp -p ${3}/${gene}.${1}.aln_iqtree.contree \
@@ -574,7 +577,7 @@ makeGeneTree()	{
 ###	elif [[ "$phyloProgramDNA" == 'iqtree2-B1000-nm1000' || "$phyloProgramPROT" == 'iqtree2-B1000-nm1000' ]]; then
 	elif [[ "$phyloProgramToUse" == 'iqtree2-B1000-nm1000' ]]; then
 		echo																   		# NB max iteration must be > min -nstep iteration! 
-		echo Running IQ-Tree on the DNA gene alignment with these options: -B 1000, -nstep 100, -nm 1000, -m GTR+F+G ...
+		echo Running IQ-Tree on the DNA gene alignment with these options: -B 1000, -nstep 100, -nm 1000, -m $iqtree2Model ...
 		$exePrefix iqtree2 -T AUTO -ntmax $cpuGeneTree \
 		--seqtype $iqTree2SeqType \
 		-s $2 \
@@ -582,7 +585,7 @@ makeGeneTree()	{
 		-B 1000 \
 		-nstep 100 \
 		-nm 1000 \
-		-m GTR+F+R
+		-m $iqtree2Model
 		
 		# Rename final tree file to a clearer name:			
 		cp -p ${3}/${gene}.${1}.aln_iqtree.contree \
@@ -1294,10 +1297,10 @@ if [[ -s $dnaAlnForTree || -s $proteinAlnForTree ]]; then
 			# Function parameters: input_fasta_file, minimum_seq_length_to_tolerate, output_fasta_file_for_tree_building					
 			filterShortSeqs $dnaAlnForTree 80 ${gene}.dna.aln.for_tree.fasta	
 			echo numbrSeqs: $numbrSeqs
-			# Function parameters: residue_type, input_fasta_file, out_dir, phylo_program_to_use, raxmlng_model, iqtree2_seq_type, fasttree_flags (NB - this last flag needs to be last - it needs to be blank for protein analysis)
+			# Function parameters: residue_type, input_fasta_file, out_dir, phylo_program_to_use, raxmlng_model, iqtree2_model, iqtree2_seq_type, fasttree_flags (NB - this last flag needs to be last - it needs to be blank for protein analysis)
 ### Still need to confirm file/variable input
 			if [ "$numbrSeqs" -gt 3 ]; then 	# Check goes here after ALL filtering steps
-				makeGeneTree dna ${gene}.dna.aln.for_tree.fasta '.' $phyloProgramDNA 'GTR+G' 'DNA' '-nt -gtr'
+				makeGeneTree dna ${gene}.dna.aln.for_tree.fasta '.' $phyloProgramDNA 'GTR+G' 'GTR+F+G' 'DNA' '-nt -gtr'
 				createGeneAlignmentAndTreeImages dna ${gene}.dna.aln.for_tree.fasta ${gene}_dna_gene_tree_USE_THIS.nwk
 			else
 				echo "WARNING: Not able to build a tree for this gene: $gene (less than four sequences)"
@@ -1309,7 +1312,7 @@ if [[ -s $dnaAlnForTree || -s $proteinAlnForTree ]]; then
 			echo numbrSeqs: $numbrSeqs
 ### Still need to confirm file/variable input
 			if [ "$numbrSeqs" -gt 3 ]; then
-				makeGeneTree codon ${gene}.codon.aln.for_tree.fasta 'codonAln' $phyloProgramDNA 'GTR+G' 'DNA' '-nt -gtr'
+				makeGeneTree codon ${gene}.codon.aln.for_tree.fasta 'codonAln' $phyloProgramDNA 'GTR+G' 'GTR+F+G' 'DNA' '-nt -gtr'
 				createGeneAlignmentAndTreeImages codon ${gene}.codon.aln.for_tree.fasta ${gene}_codon_gene_tree_USE_THIS.nwk
 			else
 				echo "WARNING: Not able to build a tree for this gene: $gene (less than four sequences)"
@@ -1322,7 +1325,7 @@ if [[ -s $dnaAlnForTree || -s $proteinAlnForTree ]]; then
 			filterShortSeqs $proteinAlnForTree 27 ${gene}.protein.aln.for_tree.fasta
 			echo numbrSeqs: $numbrSeqs
 			if [ "$numbrSeqs" -gt 3 ]; then
-				makeGeneTree protein ${gene}.protein.aln.for_tree.fasta '.' $phyloProgramPROT 'JTT+G' 'AA' ''
+				makeGeneTree protein ${gene}.protein.aln.for_tree.fasta '.' $phyloProgramPROT 'JTT+G' 'JTT+F+G' 'AA' ''
 				createGeneAlignmentAndTreeImages protein ${gene}.protein.aln.for_tree.fasta ${gene}_codon_gene_tree_USE_THIS.nwk
 			else
 				echo "WARNING: Not able to build a tree for this gene: $gene (less than four sequences)"
