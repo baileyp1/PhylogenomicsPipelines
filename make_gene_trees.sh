@@ -1037,6 +1037,7 @@ if [[ $proteinSelected == 'yes' || $codonSelected == 'yes' ]]; then
 		echo Creating a DNA alignment guided by the protein alignment...
 		if [[ ! -d codonAln ]]; then mkdir codonAln; fi
 		### Not tested yet - need to check protein fasta header is identical to dna header.
+		### 15.7.2022 - I now suspect that UPP will not work properly as it removes some amin acids from the final alignments
     	pal2nal.pl \
     	-output fasta \
     	${gene}.protein.aln.fasta \
