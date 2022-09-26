@@ -140,12 +140,12 @@ if [ $hybSeqProgram == 'paftools' ]; then
 		if [ -z "$R2FastqFile" ]; then
 			paftools --loglevel INFO addPaftolFastq $externalSequenceID \
 			--fastqPath $paftolDataSymlinksDir \
-			--dataOrigin $usePaftolDb \
+			--dataOrigin $datasetOrigin \
 			$unzippedR1FastqFile
 		else
 			paftools --loglevel INFO addPaftolFastq $externalSequenceID \
 			--fastqPath $paftolDataSymlinksDir \
-			--dataOrigin $usePaftolDb \
+			--dataOrigin $datasetOrigin \
 			$unzippedR1FastqFile  $unzippedR2FastqFile
 		fi
 		# NB - the file name must be of this format e.g. PAFTOL_005853_R1.fastq BUT now only for PAFTOL data
@@ -185,7 +185,7 @@ if [ $hybSeqProgram == 'paftools' ]; then
 			--windowSizeReadOverlap 30 \
 			--relIdentityThresholdReadOverlap 0.9 \
 			--summaryCsv ${sampleId}_summary.csv \
-			$usePaftolDbFlag \
+			$usePaftolDbFlag $recoveryRun \
 			> ${sampleId}_overlapSerial.log 2>&1
 		else
 			$exePrefix  paftools recoverSeqs \
@@ -207,7 +207,7 @@ if [ $hybSeqProgram == 'paftools' ]; then
 			--windowSizeReadOverlap 30 \
 			--relIdentityThresholdReadOverlap 0.9 \
 			--summaryCsv ${sampleId}_summary.csv \
-			$usePaftolDbFlag \
+			$usePaftolDbFlag $recoveryRun \
 			> ${sampleId}_overlapSerial.log 2>&1
 		fi
 		rm $targetsFile	# If write to database fails, this fail doesn't get deleted (c.f. set cmds active), so presence of file is a useful 'marker' for failing to write to db
