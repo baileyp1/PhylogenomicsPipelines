@@ -45,6 +45,7 @@ if [ -z "$R2FastqFile" ]; then
 	ls $paftolDataSymlinksDir/$R1FastqFile
 	echo "No R2FastqFile"
 else
+	ls $paftolDataSymlinksDir/$R1FastqFile
 	ls $paftolDataSymlinksDir/$R2FastqFile
 fi
 
@@ -167,7 +168,7 @@ if [ $hybSeqProgram == 'paftools' ]; then
 		#      The Trimmomatic program name needs to be 
 		export PYTHONPATH=$HOME/lib/python 			# I had to add this for the cluster ONLY - need to. Check it is OK on Macbook, it should be.
 		if [ -z "$R2FastqFile" ]; then
-			$exePrefix  paftools recoverSeqs \
+			$exePrefix paftools recoverSeqs \
 			$targetsFile \
 			${sampleId}.fasta \
 			-f $unzippedR1FastqFile \
