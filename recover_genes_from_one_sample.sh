@@ -168,7 +168,8 @@ if [ $hybSeqProgram == 'paftools' ]; then
 		#      The Trimmomatic program name needs to be 
 		export PYTHONPATH=$HOME/lib/python 			# I had to add this for the cluster ONLY - need to. Check it is OK on Macbook, it should be.
 		if [ -z "$R2FastqFile" ]; then
-			$exePrefix paftools recoverSeqs \
+			### 13.10.2022 - temporary fix - time command doesn't exist on the KewHPC nodes: $exePrefix paftools recoverSeqs \
+			paftools recoverSeqs \
 			$targetsFile \
 			${sampleId}.fasta \
 			-f $unzippedR1FastqFile \
@@ -189,7 +190,8 @@ if [ $hybSeqProgram == 'paftools' ]; then
 			$usePaftolDbFlag $recoveryRun \
 			> ${sampleId}_overlapSerial.log 2>&1
 		else
-			$exePrefix  paftools recoverSeqs \
+			### 13.10.2022 - temporary fix - time command doesn't exist on the KewHPC nodes: $exePrefix  paftools recoverSeqs \
+			paftools recoverSeqs \
 			$targetsFile \
 			${sampleId}.fasta \
 			-f $unzippedR1FastqFile \
