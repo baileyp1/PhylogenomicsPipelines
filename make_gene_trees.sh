@@ -591,6 +591,8 @@ makeGeneTree()	{
 		cp -p ${3}/${gene}.${1}.aln_iqtree.contree \
 		${3}/${gene}_${1}_gene_tree_USE_THIS.nwk
 		rm  ${3}/${gene}.${1}.aln_iqtree.contree
+###6.12.2022 - NBNB - the next two conditions are wrong - need to specify whether DNA or protein, then in the final
+### conditional for protein, -mset needs to have the protein models; these options are specified in cmdline help so OK 
 ###	elif [[ "$phyloProgramDNA" == 'iqtree2-B1000-nm210-MT' ]]; then
 	elif [[ "$phyloProgramToUse" == 'iqtree2-B1000-nm210-MT' ]]; then
 		echo																   		# NB max iteration must be > min iteration! 

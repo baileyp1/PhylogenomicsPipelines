@@ -477,7 +477,7 @@ if [[ "$astralSelected" == 'yes' || "$astralmpSelected" == 'yes' || "$astralproS
             fi
             getTreeStats ${fileNamePrefix}.protein.species_tree.astral_pp1_value.nwk $numbrLowSupportNodesThreshold astral
         elif [[ "$astralmpSelected" == 'yes' ]]; then 
-            makeSpeciesTree protein $proteinAstralInFile '.' astralmp 'GTR+G' 'DNA' '-nt -gtr'
+            makeSpeciesTree protein "$proteinAstralInFile" '.' astralmp 'GTR+G' 'DNA' '-nt -gtr'
             if [ -s $treeTipInfoMapFile ]; then
                 nw_rename -l  ${fileNamePrefix}.protein.species_tree.astralmp_pp1_value.nwk \
                 tree_tip_info_mapfile.txt \
