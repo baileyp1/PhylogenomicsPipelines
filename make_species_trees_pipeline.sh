@@ -626,7 +626,6 @@ fi
 
 
 ####################
-
 # Code for option -t
 ####################
 # First need to determine whether option is even selected.
@@ -658,7 +657,7 @@ if [[ $sampleTableFile != 'no' ]]; then
 fi
 
 
-if [[ -s $geneListFile && speciesTreesOnly == 'no' ]]; then echo ""
+if [[ (-s $geneListFile) && (speciesTreesOnly == 'no') ]]; then echo ""
 	### NB - 26.4.2020 - just realised that the gene names should not contain any dot chars - see note in make_gene_trees.sh ~ line 59
 else echo "ERROR: the gene list file (option -g) does not exist or is empty: $geneListFile"; exit; fi
 
