@@ -45,7 +45,6 @@ echo Preparing to run species trees...
 echo fractnAlnCovrg to use: $fractnAlnCovrg
 echo fractnSpecies to use: $fractnSpecies
 echo numbrSamples: $totalNumbrSamples
-echo numbrSamplesThreshold: $numbrSamplesThreshold
 echo exePrefix: $exePrefix
 echo treeTipInfoMapFile: $treeTipInfoMapFile
 echo dnaSelected: $dnaSelected
@@ -62,6 +61,7 @@ fractnSpecies_pc=`awk -v FRACTN=$fractnSpecies 'BEGIN{printf "%.0f", FRACTN * 10
 # Minimum number of samples to tolerate for including into Astral (9.2.2022 - looks like the number is rounded down!)
 numbrSamplesThreshold=`awk -v FRACTN=$fractnSpecies -v numbrSamples=$totalNumbrSamples 'BEGIN{printf "%.0f", FRACTN * numbrSamples}' `
 # Above awk code is zero proof - can have 0 * 100 - returns zero
+echo numbrSamplesThreshold: $numbrSamplesThreshold
 
 
 # Input checks for the sequence type option:
@@ -493,7 +493,7 @@ fi # End of Astral step
 
 # Creating a zipped tarball for the gene alignments and trees files. 
 # These archives can then be moved around easily and checked with a single checksum.
-# Doing this before the concatenated alignment trees which will take ages!  
+# Doing this before the concatenated alignment trees which will take ages! 
 if [[ $dnaSelected == 'yes' ]]; then
     tar -czf ${fileNamePrefix}.dna.aln.for_tree.fasta.tar.gz  *dna.aln.for_tree.fasta
     # Newick files may not exist if only building a concatenated alignment tree:
