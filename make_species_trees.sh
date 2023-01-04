@@ -393,8 +393,9 @@ if [[ "$astralSelected" == 'yes' || "$astralmpSelected" == 'yes' || "$astralproS
                 filePrefix=`basename -s .nwk $file `
                 cat $file | nw_ed  /dev/fd/0  "i & (b < $collapseNodesD)" o > ${filePrefix}.collapse${collapseNodesD}.nwk 
             done
-            # The set of 'collapsed' files now required for ASTRAL:
+            # The set of 'collapsed' Newick trees now required for ASTRAL:
             dnaAstralInFile=${fileNamePrefix}.${seqType}.gene_trees_set.collapse${collapseNodesD}.nwk
+            # list of filenames for preparing the tarball:
             dnaGeneTreesSetFilenames=${fileNamePrefix}.${seqType}.gene_trees_set_filenames.collapse${collapseNodesD}.txt
         fi
 

@@ -1378,7 +1378,6 @@ elif [ $os == 'Linux' ]; then
       else 
         slurmDependancy=""
       fi
-      echo "Testing exePrefix in species trees bit:" $exePrefix
       sbatch $slurmDependancy -p $partitionForSpeciesTrees -c $cpu -t $speciesTreeSlurmTime --mem=$speciesTreeSlurmMem -o ${fileNamePrefix}_make_species_trees.log -e ${fileNamePrefix}_make_species_trees.log  $pathToScripts/make_species_trees.sh \
       $fractnAlnCovrg \
       $fractnSamples \
