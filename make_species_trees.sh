@@ -23,22 +23,21 @@ fractnAlnCovrg=$1
 fractnSpecies=$2
 totalNumbrSamples=$3
 fileNamePrefix=$4
-geneFile=$5                     ### 27.1.2020 - don't need this var once stats code has been removed
-cpu=$6               ### 28.1.2020 - added this paramter in but not usign it (at the moment - trying to make filenames more generic)
-phyloProgramDNA=$7
-phyloProgramPROT=$8
-exePrefix="$9"
-treeTipInfoMapFile=${10}        # NB - just testing if this filename was submitted, then will add tree tip info to species tree
-dnaSelected=${11}               # NB - for these <seqType>Selected variables, this script should be able to process all three types together OR separately!
-proteinSelected=${12}
-codonSelected=${13}
-collapseNodes=${14}
-alnFileForTreeSuffix=${15}      # Should be generic for dna, protein or codon filenames!  aln.for_tree.fasta
-option_u=${16}
-speciesTreeProgram=${17}
-outgroupRoot=${18}
-speciesTreeSlurmMem=${19}
-numbrBootstraps=${20}
+cpu=$5               ### 28.1.2020 - added this paramter in but not usign it (at the moment - trying to make filenames more generic)
+phyloProgramDNA=$6
+phyloProgramPROT=$7
+exePrefix="$8"
+treeTipInfoMapFile=$9       # NB - just testing if this filename was submitted, then will add tree tip info to species tree
+dnaSelected=${10}               # NB - for these <seqType>Selected variables, this script should be able to process all three types together OR separately!
+proteinSelected=${11}
+codonSelected=${12}
+collapseNodes=${13}
+alnFileForTreeSuffix=${14}      # Should be generic for dna, protein or codon filenames!  aln.for_tree.fasta
+option_u=${15}
+speciesTreeProgram=${16}
+outgroupRoot=${17}
+speciesTreeSlurmMem=${18}
+numbrBootstraps=${19}
 
 
 echo Preparing to run species trees...
