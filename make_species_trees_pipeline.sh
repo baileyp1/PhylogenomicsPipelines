@@ -369,15 +369,15 @@ done
 #echo \$OPTIND == $OPTIND						  # Position of the first free parameter after any options - free parameters must come after any optional parameters.
 #echo 'Value of first free parameter: ' ${@:$OPTIND:1}	# Lists the value of the first free parameter from the $@ variable; ${@:$OPTIND:2} will access the first two free parameters.
 #echo 'Values of all free parameters: '${@:$OPTIND:$#}	# Therefore ${@:$OPTIND:$#} will access all the free parameters
-#echo $(( $# - $OPTIND + 1 ))					# Number of free parameters, in this case the number of samples
+#echo $(( $# - $OPTIND + 1 ))					# Number of free parameters, in this case the number of samples - 19.12.2022 - but what about gene-wise mode? - changed to "files" submitted 
 numbrSamples=$(( $# - $OPTIND + 1 ))
 echo
-echo "Number of samples submitted: $numbrSamples"
+echo "Number of input files submitted: $numbrSamples"
 echo
 
 
 #if [ $(( $# - $OPTIND + 1 )) -lt 4 ]; then				                     ### 30.3.2020 AND speciesTreesOnly == no to handle scritp just processing species trees
-if [[ $(( $# - $OPTIND + 1 )) -lt 4 && $useGenewiseFiles  != 'yes' ]]; then	 ###		Would need to think how to specify the input file(s) !!!!!!!!!!! 
+if [[ $(( $# - $OPTIND + 1 )) -lt 4 && ( $useGenewiseFiles  != 'yes' || $speciesTreesOnly == 'no' ) ]]; then	 ###		Would need to think how to specify the input file(s) !!!!!!!!!!! 
 														                     ### 4.7.2020 AND now if gene-wise files == no are entered - can have less than one of those right?
                                                                              ###     opted for this 17.3.2022 - checks are done later anyway if < 4 species
 														                     ### 12.8.2020 - Just have an if else clause and say: less than 1 files but in gene-wise mode so OK 
@@ -466,7 +466,7 @@ fi
 ####################
 # Code for option -a
 ####################
-if [[ $addSampleName == 'yes' && $useGenewiseFiles  != 'yes' ]]; then
+if [[ $addSampleName == 'yes' && $useGenewiseFiles  != 'yes' && $speciesTreesOnly == 'no' ]]; then
 
 	echo Will add sample name from filename: $addSampleName
 
@@ -508,7 +508,7 @@ if [[ $addSampleName == 'yes' && $useGenewiseFiles  != 'yes' ]]; then
 	geneFile=all_samples_concatenated.fasta
 
 
-elif [[ $useGenewiseFiles == 'yes' && $addSampleName != 'yes' ]]; then
+elif [[ $useGenewiseFiles == 'yes' && $addSampleName != 'yes' && $speciesTreesOnly == 'no' ]]; then
 
 	echo Will use prepared gene-wise files directly: $useGenewiseFiles
 
@@ -541,9 +541,10 @@ and input gene-wise fasta files with a relative path (probably from a previous r
 
 	# Need to recalculate numbrsamples variable here - up till here in script, $numbrSamples contains the number of gene-wise files entered.
 	# NB - Fasta file format here is: >sampelId.
-    # NB - on MacOS awk inserts a blank line between output lines so removing them with grep -v '^$'.
-    numbrSamples=`cat *_dna.fasta | awk '{if($1 ~ /^>/)  {print $1} }' | grep -v  '^$' | sort -u | wc -l `
-else
+  # NB - on MacOS awk inserts a blank line between output lines so removing them with grep -v '^$'.
+  numbrSamples=`cat *_dna.fasta | awk '{if($1 ~ /^>/)  {print $1} }' | grep -v  '^$' | sort -u | wc -l `
+elif [[ $speciesTreesOnly == 'no' ]]
+
 	echo 'Fasta file format of the input files is already the default (>sampleId-geneId).'
    
 	### Still deciding on whether to change to this format completely throughout...
@@ -604,11 +605,26 @@ else
 		cat $fileList | seqtk seq -l 0 /dev/fd/0 > all_samples_concatenated.fasta
 		geneFile=all_samples_concatenated.fasta
 	fi
+else
+  echo "INFO: Command is running in species tree only mode (option -J) - expecting gene alignment files with a file name suffix of 'aln.for_tree.fasta'
+in the current working directory from a previous run.
+NB - alignment filtering and trimming options and option -T are not applicable in this mode."
+
+  # Check whether the gene alignment files exist:
+  if ls *.aln.for_tree.fasta >/dev/null 2>&1; then
+    # Need to calculate $numbrsamples variable properly.
+    # NB - Fasta file format here is: >sampelId.
+    # NB - on MacOS awk inserts a blank line between output lines so removing them with grep -v '^$'.
+    numbrSamples=`cat *.aln.for_tree.fasta | awk '{if($1 ~ /^>/)  {print $1} }' | grep -v  '^$' | sort -u | wc -l `
+  else
+    echo "ERROR: cannot find gene alignment files with a file name suffix of 'aln.for_tree.fasta'. Exiting."
+    exit
 fi
 #exit
 
 
 ####################
+
 # Code for option -t
 ####################
 # First need to determine whether option is even selected.
@@ -640,7 +656,7 @@ if [[ $sampleTableFile != 'no' ]]; then
 fi
 
 
-if [ -s $geneListFile ]; then echo ""
+if [ -s $geneListFile && speciesTreesOnly == no ]; then echo ""
 	### NB - 26.4.2020 - just realised that the gene names should not contain any dot chars - see note in make_gene_trees.sh ~ line 59
 else echo "ERROR: the gene list file (option -g) does not exist or is empty: $geneListFile"; exit; fi
 
@@ -867,7 +883,7 @@ echo
 ### 24.3.2021 - noticed that I also need to remove the *.modified.fasta files if the file names have changed
 ### betwen runs, otherwise all the samples will enter the analysis twice!!
 
-if [[ $checkpointing == 'no' ]]; then
+if [[ $checkpointing == 'no' && speciesTreesOnly == no ]]; then
   echo "Deleting output files if any exist from a previous run of the pipeline."
   if ls *.aln.for_tree.fasta >/dev/null 2>&1; then rm *.aln.for_tree.fasta *gene_tree_USE_THIS.nwk ; fi
   # Also, now I have added filterShortSeqs() function I need to check whether any of the filtered/trimmed fasta files need removing:
@@ -1346,35 +1362,40 @@ if [ $os == 'Darwin' ]; then
 	> ${fileNamePrefix}_make_species_trees.log 2>&1
 elif [ $os == 'Linux' ]; then
 	exePrefix="/usr/bin/time -v"
-    if [ $slurm -eq 1 ]; then
-    	### NB - not sure where to put the $exePrefix!!!!
-    	### One option is to put the "time script" cmd in a wrapper but then I need a log file for this sbatch call and delete it from the script header..
-    	### I think this is the only way without changing the main script itself.
-		echo \$jobId: $jobId - should match previous Slurm step.
-		# NB - previous Slurm jobs have to have an exit code of zero to satisfy Slurm --dependancy afterok:$jobId parameter,
-		# otherwise would need to use --dependancy afterany:$jobId if exit code coudl be > 0.
-		#					12.1.2021 - i still think afterok is Ok here  
-        sbatch --dependency=afterok:$jobId -p $partitionForSpeciesTrees -c $cpu -t $speciesTreeSlurmTime --mem=$speciesTreeSlurmMem -o ${fileNamePrefix}_make_species_trees.log -e ${fileNamePrefix}_make_species_trees.log  $pathToScripts/make_species_trees.sh \
-        $fractnAlnCovrg \
-        $fractnSamples \
-        $numbrSamples \
-        $fileNamePrefix \
-        $geneFile \
-        $cpu \
-        $phyloProgramDNA \
-        $phyloProgramPROT \
-        "$exePrefix" \
-        $sampleTableFile \
-        $dnaSelected \
-		$proteinSelected \
-		$codonSelected \
-		$collapseNodes \
-		aln.for_tree.fasta \
-		$option_u \
-        "$speciesTreeProgram" \
-        "$outgroupRoot" \
-        $speciesTreeSlurmMem \
-        $numbrBootstraps
+  ### NB - not sure where to put the $exePrefix!!!!
+  ### One option is to put the "time script" cmd in a wrapper but then I need a log file for this sbatch call and delete it from the script header..
+  ### I think this is the only way without changing the main script itself.
+  if [ $slurm -eq 1 ]; then
+      if [[ $speciesTreesOnly == 'no' ]]; then
+		    echo \$jobId: $jobId - should match previous Slurm step.
+		    # NB - previous Slurm jobs have to have an exit code of zero to satisfy Slurm --dependancy afterok:$jobId parameter,
+		    # otherwise would need to use --dependancy afterany:$jobId if exit code could be > 0.
+		    #	  12.1.2021 - i still think afterok is Ok here
+        slurmDependancy="--dependency=afterok:$jobId"
+      else 
+        slurmDependancy=""
+      fi
+      sbatch $slurmDependancy -p $partitionForSpeciesTrees -c $cpu -t $speciesTreeSlurmTime --mem=$speciesTreeSlurmMem -o ${fileNamePrefix}_make_species_trees.log -e ${fileNamePrefix}_make_species_trees.log  $pathToScripts/make_species_trees.sh \
+      $fractnAlnCovrg \
+      $fractnSamples \
+      $numbrSamples \
+      $fileNamePrefix \
+      $geneFile \
+      $cpu \
+      $phyloProgramDNA \
+      $phyloProgramPROT \
+      "$exePrefix" \
+      $sampleTableFile \
+      $dnaSelected \
+		  $proteinSelected \
+		  $codonSelected \
+		  $collapseNodes \
+		  aln.for_tree.fasta \
+		  $option_u \
+      "$speciesTreeProgram" \
+      "$outgroupRoot" \
+      $speciesTreeSlurmMem \
+      $numbrBootstraps
 	else
 		$pathToScripts/make_species_trees.sh \
 		$fractnAlnCovrg \
