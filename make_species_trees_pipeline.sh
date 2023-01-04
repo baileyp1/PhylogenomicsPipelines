@@ -32,7 +32,7 @@ sampleTableFile=no			    # 10.5.2020 - only just added in - check - ensures cmdl
 option_u=no
 
 # ALIGNMENT OPTIONS:
-seqType=dna                     # NB - 18.3.2022 - see line 683 - I don't think seqType has a default anymore - it gets wiped out.
+seqType=dna                     # NB - 18.3.2022 - see line 683 - I don't think seqType has a default anymore - it gets wiped out - 4.1.2023 - no I don't think so!
 alnProgram=mafft 				# 27.7.2020 - may want to merge this option with mafftAlgorithm so it woudl be quoted liek so: 'mafft --retree 2'
 mafftAlgorithm='--retree 2'     # '--maxiterate 1000' #'--retree 1'   '--retree 2' - need to ry and merge with the alnProgram option somehow
 alnParams=''                    # General variable for modifiying the MAFFT and UPP options         
@@ -377,7 +377,7 @@ echo
 
 
 #if [ $(( $# - $OPTIND + 1 )) -lt 4 ]; then				                     ### 30.3.2020 AND speciesTreesOnly == no to handle scritp just processing species trees
-if [[ $(( $# - $OPTIND + 1 )) -lt 4 && ( $useGenewiseFiles  != 'yes' && $speciesTreesOnly == 'no' ) ]]; then	 ###		Would need to think how to specify the input file(s) !!!!!!!!!!! 
+if [[ $(( $# - $OPTIND + 1 )) -lt 4 && $useGenewiseFiles  != 'yes' && $speciesTreesOnly == 'no' ]]; then	 ###		Would need to think how to specify the input file(s) !!!!!!!!!!! 
 														                     ### 4.7.2020 AND now if gene-wise files == no are entered - can have less than one of those right?
                                                                              ###     opted for this 17.3.2022 - checks are done later anyway if < 4 species
 														                     ### 12.8.2020 - Just have an if else clause and say: less than 1 files but in gene-wise mode so OK 
