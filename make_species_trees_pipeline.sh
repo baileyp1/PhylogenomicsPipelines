@@ -656,7 +656,7 @@ if [[ $sampleTableFile != 'no' ]]; then
 fi
 
 
-if [ -s $geneListFile && speciesTreesOnly == no ]; then echo ""
+if [[ -s $geneListFile && speciesTreesOnly == 'no' ]]; then echo ""
 	### NB - 26.4.2020 - just realised that the gene names should not contain any dot chars - see note in make_gene_trees.sh ~ line 59
 else echo "ERROR: the gene list file (option -g) does not exist or is empty: $geneListFile"; exit; fi
 
@@ -883,7 +883,7 @@ echo
 ### 24.3.2021 - noticed that I also need to remove the *.modified.fasta files if the file names have changed
 ### betwen runs, otherwise all the samples will enter the analysis twice!!
 
-if [[ $checkpointing == 'no' && speciesTreesOnly == no ]]; then
+if [[ $checkpointing == 'no' && speciesTreesOnly == 'no' ]]; then
   echo "Deleting output files if any exist from a previous run of the pipeline."
   if ls *.aln.for_tree.fasta >/dev/null 2>&1; then rm *.aln.for_tree.fasta *gene_tree_USE_THIS.nwk ; fi
   # Also, now I have added filterShortSeqs() function I need to check whether any of the filtered/trimmed fasta files need removing:
