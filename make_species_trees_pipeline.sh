@@ -372,12 +372,12 @@ done
 #echo $(( $# - $OPTIND + 1 ))					# Number of free parameters, in this case the number of samples - 19.12.2022 - but what about gene-wise mode? - changed to "files" submitted 
 numbrSamples=$(( $# - $OPTIND + 1 ))
 echo
-echo "Number of input files submitted: $numbrSamples"
+echo "Number of input files submitted as free parameters: $numbrSamples"
 echo
 
 
 #if [ $(( $# - $OPTIND + 1 )) -lt 4 ]; then				                     ### 30.3.2020 AND speciesTreesOnly == no to handle scritp just processing species trees
-if [[ $(( $# - $OPTIND + 1 )) -lt 4 && ( $useGenewiseFiles  != 'yes' || $speciesTreesOnly == 'no' ) ]]; then	 ###		Would need to think how to specify the input file(s) !!!!!!!!!!! 
+if [[ $(( $# - $OPTIND + 1 )) -lt 4 && ( $useGenewiseFiles  != 'yes' && $speciesTreesOnly == 'no' ) ]]; then	 ###		Would need to think how to specify the input file(s) !!!!!!!!!!! 
 														                     ### 4.7.2020 AND now if gene-wise files == no are entered - can have less than one of those right?
                                                                              ###     opted for this 17.3.2022 - checks are done later anyway if < 4 species
 														                     ### 12.8.2020 - Just have an if else clause and say: less than 1 files but in gene-wise mode so OK 
@@ -1384,7 +1384,6 @@ elif [ $os == 'Linux' ]; then
       $fractnSamples \
       $numbrSamples \
       $fileNamePrefix \
-      $geneFile \
       $cpu \
       $phyloProgramDNA \
       $phyloProgramPROT \
