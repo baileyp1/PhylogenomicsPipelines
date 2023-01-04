@@ -162,8 +162,10 @@ PHYLOGENY OPTIONS:
   -i               
                 make gene trees only
   -j               
-                make species trees only. Gene trees must already exist in run directory
-  -q <string>      
+                make species trees only. Gene alignments and trees must already exist in directory from a previous run attempt. This option 
+                expects that gene alignment files have a file name suffix of 'aln.for_tree.fasta' and Newick tree files have a file name 
+                suffix of '<sequence_type (Option -D)>_gene_tree_USE_THIS.nwk'
+  -q <string>
                 name of phylogeny program for gene trees from DNA sequences.
                 Options are, fastest to slowest: fasttree, iqtree2-B1000-nm110, iqtree2-B1000-nm200, iqtree2-B1000-nm1000, iqtree2, raxml-ng (default=fasttree)
   -r <string>      
@@ -209,7 +211,7 @@ OTHER OPTIONS:
   -H <integer>     
                 Slurm array throttle for gene trees (default=50; could set to 1, then increase once happy with run with: scontrol update arraytaskthrottle=<integer> job=<jobId>)
 
-A basic example run is described below:
+Example 1 - a basic example run is described below:
 build genes trees from sample fasta files, formatted as described for option -a, by aligning the input
 DNA sequence for each gene with the MAFFT --retree 2 algorithm, building each gene tree with FASTTREE, 
 then reconstructing a species tree with ASTRAL:
@@ -227,6 +229,25 @@ make_species_trees_pipeline.sh \\
 -C 1 \\
 <path_to_recovered_genes_from_samples>/*.fasta \\
 > make_species_trees_pipeline.log 2>&1 &
+
+
+Example 2 - to repeat the run of species tree(s) only (option -j):
+Need to ensure all gene alignment and Newick files are present and
+that file mafft_dna_alns_fasta_file_list.txt contains the names of
+all the gene alignment files.
+
+make_species_trees_pipeline.sh \\
+-j \\
+-D 'dna' \\
+-t ../../release_3.0_samples_for_mapping_file.csv \\
+-L 15 \\
+-s 'astralmp fasttree' \\
+-c 32 \\
+-Y himem \\
+-U 1530000 \\
+-W 0 \\
+-p example_tree \\
+> make_species_trees_only.log 2>&1 &
 
 EOF
 }
