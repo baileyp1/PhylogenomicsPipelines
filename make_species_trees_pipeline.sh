@@ -572,18 +572,19 @@ elif [[ $speciesTreesOnly == 'no' ]]; then
      	if [[ $beforeDashCheck -gt 1 ]]; then echo "ERROR: more than one sample identifier detected on fasta header line (there should only be one sample identifier for the default format) for this sample: $file.
               Also check that fasta header lines have this format: >sampleId-geneId"; exit 1
      	elif [[ $afterDashCheck -gt 1 ]]; then echo "ERROR: gene identfiers should be unique, one or more not unique for this sample: $file \nAlso check that fasta header lines have this format: >sampleId-geneId"; exit 1
-		else cat $file | awk '{if($1 ~ /^>/)  {print $1} else {print $0}}' \
-			| awk -F '-' '{if($1 ~ /^>/) {{gsub(/>/,"",$1)} {print ">" $2 " " $1}} else {print $0}}' \
-			> ${uniqueSampleId}_modified.fasta
-			# NB - fasta format now: >geneId sampleId
+		  else
+        cat $file | awk '{if($1 ~ /^>/)  {print $1} else {print $0}}' \
+			 | awk -F '-' '{if($1 ~ /^>/) {{gsub(/>/,"",$1)} {print ">" $2 " " $1}} else {print $0}}' \
+			 > ${uniqueSampleId}_modified.fasta
+			 # NB - fasta format now: >geneId sampleId
 
-			# If an input fasta file name doesn't exist then the 'modified.fasta' filename created above will not exist.
-			# Testing whether file exists here:
-			if [[ ! -s ${uniqueSampleId}_modified.fasta ]]; then
-				echo "ERROR: this input fasta file does not exist or is empty: ${uniqueSampleId}_modified.fasta"
-				exit 1
-			fi
-		fi
+			 # If an input fasta file name doesn't exist then the 'modified.fasta' filename created above will not exist.
+			 # Testing whether file exists here:
+			 if [[ ! -s ${uniqueSampleId}_modified.fasta ]]; then
+				  echo "ERROR: this input fasta file does not exist or is empty: ${uniqueSampleId}_modified.fasta"
+				  exit 1
+			 fi
+		  fi
 
 		### [[To convert from 'gene species' my format to species-gene format:
 		###cat CKDK_Ochnaceae_Ochna_serrulata.fasta | awk '{if($1 ~ /^>/)  {{gsub(/>/,"",$1)} {print ">" $2 "-" $1}} else {print $0}}' >species-gene-format.fasta ]]
@@ -619,6 +620,7 @@ NB - alignment filtering and trimming options and option -T are not applicable i
   else
     echo "ERROR: cannot find gene alignment files with a file name suffix of 'aln.for_tree.fasta'. Exiting."
     exit
+  fi
 fi
 #exit
 
