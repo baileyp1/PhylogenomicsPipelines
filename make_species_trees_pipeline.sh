@@ -658,7 +658,7 @@ fi
 
 
 if [[ $speciesTreesOnly == 'no' ]]; then
-  if [[ -s $geneListFile) ]]; then echo ""
+  if [[ -s $geneListFile ]]; then echo ""
 	### NB - 26.4.2020 - just realised that the gene names should not contain any dot chars - see note in make_gene_trees.sh ~ line 59
   else echo "ERROR: the gene list file (option -g) does not exist or is empty: $geneListFile"; exit; fi
 fi
