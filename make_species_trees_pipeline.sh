@@ -543,7 +543,7 @@ and input gene-wise fasta files with a relative path (probably from a previous r
 	# NB - Fasta file format here is: >sampelId.
   # NB - on MacOS awk inserts a blank line between output lines so removing them with grep -v '^$'.
   numbrSamples=`cat *_dna.fasta | awk '{if($1 ~ /^>/)  {print $1} }' | grep -v  '^$' | sort -u | wc -l `
-elif [[ $speciesTreesOnly == 'no' ]]
+elif [[ $speciesTreesOnly == 'no' ]]; then
 
 	echo 'Fasta file format of the input files is already the default (>sampleId-geneId).'
    
