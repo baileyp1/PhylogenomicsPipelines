@@ -232,7 +232,7 @@ make_species_trees_pipeline.sh \\
 
 
 Example 2 - to repeat the run of species tree(s) only (option -j):
-Need to ensure all gene alignment and Newick files are present and
+Ensure all gene alignment and Newick files are present and
 that file mafft_dna_alns_fasta_file_list.txt contains the names of
 all the gene alignment files.
 
