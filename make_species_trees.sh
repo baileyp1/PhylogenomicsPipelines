@@ -165,8 +165,9 @@ getTreeStats () {
 
 makeSpeciesTree () {
     ###########
-    # Function: makes a SINGLE species tree from the available methods in this function 
+    # Function: makes a SINGLE species tree from ONE of the available methods in this function 
     #           from a sequence alignment
+    #           NB - all parameters need to have a value but all of them might not be used e.g. option $5 when using ASTRAL
     #
     # Input parameters:
     # $1 = residue type: dna, aa or codon
@@ -495,7 +496,10 @@ fi # End of Astral step
 # These archives can then be moved around easily and checked with a single checksum.
 # Doing this before the concatenated alignment trees which will take ages! 
 if [[ $dnaSelected == 'yes' ]]; then
-    tar -czf ${fileNamePrefix}.dna.aln.for_tree.fasta.tar.gz  *dna.aln.for_tree.fasta
+    # Alignment files might not exist if user just wants to supply Newick file gene trees for an Astral run (it is possible):
+    if ls *dna.aln.for_tree.fasta >/dev/null 2>&1; then
+        tar -czf ${fileNamePrefix}.dna.aln.for_tree.fasta.tar.gz  *dna.aln.for_tree.fasta
+    fi
     # Newick files may not exist if only building a concatenated alignment tree:
     if [[ -s $dnaAstralInFile ]]; then
         # Trees will be collapsed or not according to the use of option -L; $dnaAstralInFile variable 
@@ -505,13 +509,15 @@ if [[ $dnaSelected == 'yes' ]]; then
         # once ARG_MAX is reached)
         tar -czf ${dnaGeneTreesSetFilenames}.tar.gz `cat $dnaGeneTreesSetFilenames`
     fi
-    # Also reating a zipped tarball for the original unaligned gene-wise fasta files.
+    # Also creating a zipped tarball for the original unaligned gene-wise fasta files.
     if ls ../*dna.fasta >/dev/null 2>&1; then
         tar -czf ${fileNamePrefix}.dna.fasta.tar.gz ../*dna.fasta
     fi
 fi
 if [[ $proteinSelected == 'yes' ]]; then
-    tar -czf  ${fileNamePrefix}.protein.aln.for_tree.fasta.tar.gz  *protein.aln.for_tree.fasta
+    if ls *protein.aln.for_tree.fasta >/dev/null 2>&1; then
+        tar -czf  ${fileNamePrefix}.protein.aln.for_tree.fasta.tar.gz  *protein.aln.for_tree.fasta
+    fi
     if [[ -s $proteinAstralInFile ]]; then
         tar -czf ${proteinGeneTreesSetFilenames}.tar.gz `cat $proteinGeneTreesSetFilenames`
     fi
