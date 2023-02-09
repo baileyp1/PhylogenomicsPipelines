@@ -1361,13 +1361,12 @@ if [ $geneTreesOnly == 'yes' ]; then exit; fi
 echo 'Making species tree(s)...'
 ################################
 if [ $os == 'Darwin' ]; then
-	exePrefix="/usr/bin/time -l"		# this time command gets the RSS memory, -l flag doesn't work on Cluster
+    exePrefix="/usr/bin/time -l"		# this time command gets the RSS memory, -l flag doesn't work on Cluster
     $pathToScripts/make_species_trees.sh \
 	$fractnAlnCovrg \
 	$fractnSamples \
 	$numbrSamples \
 	$fileNamePrefix \
-	$geneFile \
 	$cpu \
 	$phyloProgramDNA \
 	$phyloProgramPROT \
@@ -1385,47 +1384,46 @@ if [ $os == 'Darwin' ]; then
     $numbrBootstraps \
 	> ${fileNamePrefix}_make_species_trees.log 2>&1
 elif [ $os == 'Linux' ]; then
-	exePrefix="/usr/bin/time -v"
-  ### NB - not sure where to put the $exePrefix!!!!
-  ### One option is to put the "time script" cmd in a wrapper but then I need a log file for this sbatch call and delete it from the script header..
-  ### I think this is the only way without changing the main script itself.
-  if [ $slurm -eq 1 ]; then
-      if [[ $speciesTreesOnly == 'no' ]]; then
-		    echo \$jobId: $jobId - should match previous Slurm step.
-		    # NB - previous Slurm jobs have to have an exit code of zero to satisfy Slurm --dependancy afterok:$jobId parameter,
+    exePrefix="/usr/bin/time -v"
+    ### NB - not sure where to put the $exePrefix!!!!
+    ### One option is to put the "time script" cmd in a wrapper but then I need a log file for this sbatch call and delete it from the script header..
+    ### I think this is the only way without changing the main script itself.
+    if [ $slurm -eq 1 ]; then
+        if [[ $speciesTreesOnly == 'no' ]]; then
+            echo \$jobId: $jobId - should match previous Slurm step.
+            # NB - previous Slurm jobs have to have an exit code of zero to satisfy Slurm --dependancy afterok:$jobId parameter,
 		    # otherwise would need to use --dependancy afterany:$jobId if exit code could be > 0.
 		    #	  12.1.2021 - i still think afterok is Ok here
-        slurmDependancy="--dependency=afterok:$jobId"
-      else 
-        slurmDependancy=""
-      fi
-      sbatch $slurmDependancy -p $partitionForSpeciesTrees -c $cpu -t $speciesTreeSlurmTime --mem=$speciesTreeSlurmMem -o ${fileNamePrefix}_make_species_trees.log -e ${fileNamePrefix}_make_species_trees.log  $pathToScripts/make_species_trees.sh \
-      $fractnAlnCovrg \
-      $fractnSamples \
-      $numbrSamples \
-      $fileNamePrefix \
-      $cpu \
-      $phyloProgramDNA \
-      $phyloProgramPROT \
-      "$exePrefix" \
-      $sampleTableFile \
-      $dnaSelected \
-		  $proteinSelected \
-		  $codonSelected \
-		  $collapseNodes \
-		  aln.for_tree.fasta \
-		  $option_u \
-      "$speciesTreeProgram" \
-      "$outgroupRoot" \
-      $speciesTreeSlurmMem \
-      $numbrBootstraps
-	else
-		$pathToScripts/make_species_trees.sh \
+            slurmDependancy="--dependency=afterok:$jobId"
+        else 
+            slurmDependancy=""
+        fi
+        sbatch $slurmDependancy -p $partitionForSpeciesTrees -c $cpu -t $speciesTreeSlurmTime --mem=$speciesTreeSlurmMem -o ${fileNamePrefix}_make_species_trees.log -e ${fileNamePrefix}_make_species_trees.log  $pathToScripts/make_species_trees.sh \
+        $fractnAlnCovrg \
+        $fractnSamples \
+        $numbrSamples \
+        $fileNamePrefix \
+        $cpu \
+        $phyloProgramDNA \
+        $phyloProgramPROT \
+        "$exePrefix" \
+        $sampleTableFile \
+        $dnaSelected \
+        $proteinSelected \
+        $codonSelected \
+        $collapseNodes \
+        aln.for_tree.fasta \
+        $option_u \
+        "$speciesTreeProgram" \
+        "$outgroupRoot" \
+        $speciesTreeSlurmMem \
+        $numbrBootstraps
+    else
+        $pathToScripts/make_species_trees.sh \
 		$fractnAlnCovrg \
 		$fractnSamples \
 		$numbrSamples \
 		$fileNamePrefix \
-		$geneFile \
 		$cpu \
 		$phyloProgramDNA \
 		$phyloProgramPROT \
