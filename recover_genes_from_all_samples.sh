@@ -65,7 +65,7 @@ OPTIONS <value>:
                  Hyb-Seq program; options are: paftools, hybpiper, hybpiper-bwa
   -S    
                  calculate statistics for gene recovery from read data (includes per sample reads on-target, read coverage, read depth).
-                 This option can be used separately after the gene recoveries have run (do not specify option -y!) but the path to the
+                 This option can also be used separately after the gene recoveries have run (do not specify option -y!) but the path to the
                  gene recovery fasta files has to be specified with option -P, if not running in the same location as the original gene 
                  recovery run
   -P <string> 
@@ -75,7 +75,7 @@ OPTIONS <value>:
                     i.e. /<path>/<SampleDirPrefix>_<SampleName>/<SampleName>.fasta (directory set up, as used by this pipeline) 
                  2. gene recovery samples all in the same directory
                     i.e. /<path>/<SampleName>.fasta
-                 For either case, type '/<path>'
+                 In both cases, type '/<path>'
                  Note: 'SampleName' needs to match that provided by the sample list in option -s
   -p <string>    
                  directory prefix for each sample (default=Sample)
