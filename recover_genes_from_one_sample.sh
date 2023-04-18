@@ -493,7 +493,7 @@ if [[ $stats != 'no' ]]; then
 			echo "ERROR: Option -S selected but gene recovery fasta file not found or is empty. May need to use option -P. Stats cannot be calculated for sample: ${sampleId}."
 			echo
 			echo
-			continue
+			exit
 		fi
 	else
 		# Try to use path given in option -P:
@@ -522,7 +522,7 @@ if [[ $stats != 'no' ]]; then
 			echo "ERROR: option -P - can't find the correct path to the gene recovery fasta file or the trimmomatic.log file or one or more of them are empty. Stats cannot be calculated for sample: ${sampleId}."
 			echo 
 			echo
-			continue
+			exit
 		fi
 	fi
 
