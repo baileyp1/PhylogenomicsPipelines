@@ -474,7 +474,7 @@ if [[ $stats != 'no' ]]; then
 	if [[ $usePaftolDb != 'no' ]]; then
 
 		echo If using PaftolDB with Paftools, need to run Trimmomatic again as the previous run was only saved to /tmp/ - still to add Trimmomatic step here
-		# NB - in all other case trimmomatic is being run again above
+		# NB - in all other case trimmomatic is being run again above before this clause is reached
 		exit
 	fi	
 
@@ -493,7 +493,7 @@ if [[ $stats != 'no' ]]; then
 			echo "ERROR: Option -S selected but gene recovery fasta file not found or is empty. May need to use option -P. Stats cannot be calculated for sample: ${sampleId}."
 			echo
 			echo
-			exit
+			continue
 		fi
 	else
 		# Try to use path given in option -P:
@@ -502,22 +502,27 @@ if [[ $stats != 'no' ]]; then
 			# Need to copy the gene recovery file to pwd so that the BWA indices go to pwd(!):
 			cp -p  $refFilePathForStats/${samplePrefix}_${sampleId}/${sampleId}.fasta  ${sampleId}.fasta
 			refFileName=${sampleId}.fasta
+			# Also need to create the correct path to the trimmomatic.log file:
+			trimmomaticLogFileName=${samplePrefix}_${sampleId}/${sampleId}_trimmomatic.log
 		elif [[ -s $refFilePathForStats/${sampleId}.fasta ]]; then
 			# Need to copy the gene recovery file to pwd so that the BWA indices go to pwd:
 			cp -p  $refFilePathForStats/${sampleId}.fasta  ${sampleId}.fasta
 			refFileName=${sampleId}.fasta
+			trimmomaticLogFileName=${sampleId}_trimmomatic.log
 		# For HybPiper output:
 		elif [[ -s $refFilePathForStats/${samplePrefix}_${sampleId}/${sampleId}_all_genes.fasta ]]; then
 			cp -p  $refFilePathForStats/${samplePrefix}_${sampleId}/${sampleId}_all_genes.fasta  ${sampleId}_all_genes.fasta
 			refFileName=${sampleId}_all_genes.fasta
+			trimmomaticLogFileName=${samplePrefix}_${sampleId}/${sampleId}_trimmomatic.log
 		elif [[ -s $refFilePathForStats/${sampleId}_all_genes.fasta ]]; then
 			cp -p  $refFilePathForStats/${sampleId}_all_genes.fasta  ${sampleId}_all_genes.fasta
 			refFileName=${sampleId}_all_genes.fasta
+			trimmomaticLogFileName=${sampleId}_trimmomatic.log
 		else 
-			echo "ERROR: option -P - can't find the correct path to the gene recovery fasta file or is empty. Stats cannot be calculated for sample: ${sampleId}."
+			echo "ERROR: option -P - can't find the correct path to the gene recovery fasta file or the trimmomatic.log file or one or more of them are empty. Stats cannot be calculated for sample: ${sampleId}."
 			echo 
 			echo
-			exit
+			continue
 		fi
 	fi
 
@@ -596,8 +601,8 @@ if [[ $stats != 'no' ]]; then
 
 	
 	# Getting contig recovery stats and adding each statistic to a file, one statistic per line.
-	# Then in overall_gene_recovery_stats.sh script, the results can be converted in a table for 
-	# all sample and genes. 
+	# Then in overall_gene_recovery_stats.sh script, the results can be converted to a table for 
+	# all sample and genes.
 	# Number of recovered genes:
 	numbrRecoveredGenes=`cat $refFileName | grep '>' | wc -l `
 	# Sum length of genes :
@@ -610,8 +615,12 @@ sumLengthOfGenes: $sumLengthOfGenes" > ${sampleId}_gene_recovery_stats.txt  # Al
 	###numbrAmbiguityCodesInGenes=`cat $refFileName | grep -v '>' | grep -o '[RYMKSWHBDN]' | wc -l `
 	###echo "numbrAmbiguityCodesInGenes: $numbrAmbiguityCodesInGenes" >> ${sampleId}_gene_recovery_stats.txt
 	### For some reason doesn't work - may have to turn off set +u and +e - see below
-	
 
+	# Count the total number of raw fastq file reads (before any type of trimming this script does)
+	$refFilePathForStats/$trimmomaticLogFileName
+	numbrRawReads=`cat $refFilePathForStats/$trimmomaticLogFileName | grep 'Input Read Pairs:' | awk '{print $4 *2}' ` 
+	echo numbrRawReads: $numbrRawReads >> ${sampleId}_gene_recovery_stats.txt
+	
 	####################################
 	# General stats on the BWA alignment
 	####################################
@@ -653,7 +662,7 @@ sumLengthOfGenes: $sumLengthOfGenes" > ${sampleId}_gene_recovery_stats.txt  # Al
 	| samtools fastq -f4 -1 ${sampleId}_bwa_mem_unmapped_R1.fastq.gz -2 ${sampleId}_bwa_mem_unmapped_R2.fastq.gz \
 	-s ${sampleId}_bwa_mem_unmapped_single_ends.fastq.gz -N
 	# samtools fastq -n - means that /1 and /2 are NOT added to output records - didn't work here
-	# samtools fastq -N - means that /1 and /2 are ALWAYS added to fastq record ids 
+	# samtools fastq -N - means that /1 and /2 are ALWAYS added to fastq record ids
 	#	NB - not sure if this needs to be done - all singleton reads should be unique (would only be a problem if combining the R1 AND R2 read pairs)
 
 	#######################
