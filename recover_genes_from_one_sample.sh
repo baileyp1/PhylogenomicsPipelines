@@ -623,6 +623,7 @@ sumLengthOfGenes: $sumLengthOfGenes" > ${sampleId}_gene_recovery_stats.txt  # Al
 	echo numbrTrimmedReadsInBamInclDups: $numbrTrimmedReadsInBamInclDups  >> ${sampleId}_gene_recovery_stats.txt
 
 	percentTrimmedReads=`echo $numbrTrimmedReadsInBamInclDups $numbrRawReads | awk '{printf "%.0f", (($1 / $2) * 100)}' | awk '{print $1}' ` # Last awk produces the line return
+	echo percentTrimmedReads: $percentTrimmedReads >> ${sampleId}_gene_recovery_stats.txt
 
 	# Count the number of reads in the bam file just after mapping and removing read duplicates.
 	# NB - doesn't quite count all reads in the file.
@@ -676,7 +677,7 @@ sumLengthOfGenes: $sumLengthOfGenes" > ${sampleId}_gene_recovery_stats.txt  # Al
 	echo numbrReadsOnTarget: $numbrReadsOnTarget >> ${sampleId}_gene_recovery_stats.txt
 
 	percentReadsOnTarget=`echo $numbrReadsOnTarget $numbrTrimmedReadsInBam | awk '{printf "%.1", (($1 / $2) * 100)}' | awk '{print $1}' ` # Last awk produces the line return 
-	
+	echo percentReadsOnTarget: $percentReadsOnTarget >> ${sampleId}_gene_recovery_stats.txt
 
 	###############################
 	# Read coverage and depth stats
