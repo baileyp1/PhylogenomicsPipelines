@@ -612,7 +612,7 @@ sumLengthOfGenes: $sumLengthOfGenes" > ${sampleId}_gene_recovery_stats.txt  # Al
 	### For some reason doesn't work - may have to turn off set +u and +e - see below
 
 	# Count the total number of raw fastq file reads (before any type of trimming this script does)
-	numbrRawReads=`cat $refFilePathForStats/$trimmomaticLogFileName | grep 'Input Read Pairs:' | awk '{print $4 *2}' ` 
+	numbrRawReads=`cat $refFilePathForStats/${sampleId}_trimmomatic.log | grep 'Input Read Pairs:' | awk '{print $4 *2}' ` 
 	echo numbrRawReads: $numbrRawReads >> ${sampleId}_gene_recovery_stats.txt
 	
 	####################################
