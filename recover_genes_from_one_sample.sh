@@ -622,7 +622,7 @@ sumLengthOfGenes: $sumLengthOfGenes" > ${sampleId}_gene_recovery_stats.txt  # Al
 	numbrTrimmedReadsInBamInclDups=`samtools view -c $bamFileWithDups `
 	echo numbrTrimmedReadsInBamInclDups: $numbrTrimmedReadsInBamInclDups  >> ${sampleId}_gene_recovery_stats.txt
 
-	percentTrimmedReads=`echo $numbrTrimmedReadsInBamInclDups $numbrRawReads | awk '{printf "%.0f", (($1 / $2) * 100)}' | awk '{print $1}' ` # Last awk produces the line return
+	percentTrimmedReads=`echo $numbrTrimmedReadsInBamInclDups $numbrRawReads | awk '{printf "%.1f", (($1 / $2) * 100)}' | awk '{print $1}' ` # Last awk produces the line return
 	echo percentTrimmedReads: $percentTrimmedReads >> ${sampleId}_gene_recovery_stats.txt
 
 	# Count the number of reads in the bam file just after mapping and removing read duplicates.
@@ -676,7 +676,7 @@ sumLengthOfGenes: $sumLengthOfGenes" > ${sampleId}_gene_recovery_stats.txt  # Al
 	# This value should be the same as $numbrMappedReads as there are no reference bases off target (?) - keep thinking the logic
 	echo numbrReadsOnTarget: $numbrReadsOnTarget >> ${sampleId}_gene_recovery_stats.txt
 
-	percentReadsOnTarget=`echo $numbrReadsOnTarget $numbrTrimmedReadsInBam | awk '{printf "%.1", (($1 / $2) * 100)}' | awk '{print $1}' ` # Last awk produces the line return 
+	percentReadsOnTarget=`echo $numbrReadsOnTarget $numbrTrimmedReadsInBam | awk '{printf "%.1f", (($1 / $2) * 100)}' | awk '{print $1}' ` # Last awk produces the line return 
 	echo percentReadsOnTarget: $percentReadsOnTarget >> ${sampleId}_gene_recovery_stats.txt
 
 	###############################
