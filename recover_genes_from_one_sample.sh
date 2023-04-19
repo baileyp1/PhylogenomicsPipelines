@@ -474,7 +474,7 @@ if [[ $stats != 'no' ]]; then
 	if [[ $usePaftolDb != 'no' ]]; then
 
 		echo If using PaftolDB with Paftools, need to run Trimmomatic again as the previous run was only saved to /tmp/ - still to add Trimmomatic step here
-		# NB - in all other case trimmomatic is being run again above before this clause is reached
+		# NB - in all other cases trimmomatic is being run again above before this clause is reached
 		exit
 	fi	
 
@@ -502,24 +502,19 @@ if [[ $stats != 'no' ]]; then
 			# Need to copy the gene recovery file to pwd so that the BWA indices go to pwd(!):
 			cp -p  $refFilePathForStats/${samplePrefix}_${sampleId}/${sampleId}.fasta  ${sampleId}.fasta
 			refFileName=${sampleId}.fasta
-			# Also need to create the correct path to the trimmomatic.log file:
-			trimmomaticLogFileName=${samplePrefix}_${sampleId}/${sampleId}_trimmomatic.log
 		elif [[ -s $refFilePathForStats/${sampleId}.fasta ]]; then
 			# Need to copy the gene recovery file to pwd so that the BWA indices go to pwd:
 			cp -p  $refFilePathForStats/${sampleId}.fasta  ${sampleId}.fasta
 			refFileName=${sampleId}.fasta
-			trimmomaticLogFileName=${sampleId}_trimmomatic.log
 		# For HybPiper output:
 		elif [[ -s $refFilePathForStats/${samplePrefix}_${sampleId}/${sampleId}_all_genes.fasta ]]; then
 			cp -p  $refFilePathForStats/${samplePrefix}_${sampleId}/${sampleId}_all_genes.fasta  ${sampleId}_all_genes.fasta
 			refFileName=${sampleId}_all_genes.fasta
-			trimmomaticLogFileName=${samplePrefix}_${sampleId}/${sampleId}_trimmomatic.log
 		elif [[ -s $refFilePathForStats/${sampleId}_all_genes.fasta ]]; then
 			cp -p  $refFilePathForStats/${sampleId}_all_genes.fasta  ${sampleId}_all_genes.fasta
 			refFileName=${sampleId}_all_genes.fasta
-			trimmomaticLogFileName=${sampleId}_trimmomatic.log
 		else 
-			echo "ERROR: option -P - can't find the correct path to the gene recovery fasta file or the trimmomatic.log file or one or more of them are empty. Stats cannot be calculated for sample: ${sampleId}."
+			echo "ERROR: option -P - can't find the correct path to the gene recovery fasta file or it is empty. Stats cannot be calculated for sample: ${sampleId}."
 			echo 
 			echo
 			exit
@@ -627,6 +622,8 @@ sumLengthOfGenes: $sumLengthOfGenes" > ${sampleId}_gene_recovery_stats.txt  # Al
 	numbrTrimmedReadsInBamInclDups=`samtools view -c $bamFileWithDups `
 	echo numbrTrimmedReadsInBamInclDups: $numbrTrimmedReadsInBamInclDups  >> ${sampleId}_gene_recovery_stats.txt
 
+	percentTrimmedReads=`echo $numbrTrimmedReadsInBamInclDups $numbrRawReads | awk '{printf "%.0f", (($1 / $2) * 100)}' | awk '{print $1}' ` # Last awk produces the line return
+
 	# Count the number of reads in the bam file just after mapping and removing read duplicates.
 	# NB - doesn't quite count all reads in the file.
 	numbrTrimmedReadsInBam=`samtools view -c ${sampleId}_bwa_mem_sort.bam `
@@ -677,6 +674,8 @@ sumLengthOfGenes: $sumLengthOfGenes" > ${sampleId}_gene_recovery_stats.txt  # Al
 	# -F4 = INT of 4 = unmapped read but -F prints reads that are not INT=4 i.e. mapped - definitely NOT the same as samtools -c.
 	# This value should be the same as $numbrMappedReads as there are no reference bases off target (?) - keep thinking the logic
 	echo numbrReadsOnTarget: $numbrReadsOnTarget >> ${sampleId}_gene_recovery_stats.txt
+
+	percentReadsOnTarget=`echo $numbrReadsOnTarget $numbrTrimmedReadsInBam | awk '{printf "%.1", (($1 / $2) * 100)}' | awk '{print $1}' ` # Last awk produces the line return 
 	
 
 	###############################
