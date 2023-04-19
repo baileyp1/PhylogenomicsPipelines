@@ -591,6 +591,7 @@ if [[ $stats != 'no' ]]; then
 
     if [[ ! -s ${sampleId}_bwa_mem_sort.bam ]]; then
     	echo "ERROR: Picard markduplicates output file doesn't exist or is empty: ${sampleId}_bwa_mem_sort.bam"
+    	### 19.4.2023 - NB - if this file doesn't exist, then PICARD will already have failed and the script will exit then due to 'set -e' being used
     	exit
     fi
 
