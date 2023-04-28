@@ -45,7 +45,8 @@ echo externalSequenceID: $externalSequenceID
 if [[ -s  $paftolDataSymlinksDir/$R1FastqFile ]]; then ls $paftolDataSymlinksDir/$R1FastqFile; fi
 if [ -z "$R2FastqFile" ]; then 
 	echo "No R2FastqFile - read trimming and gene recovery will work in single-end mode"
-else 
+else
+	ls $paftolDataSymlinksDir/$R1FastqFile
 	ls $paftolDataSymlinksDir/$R2FastqFile
 fi
 pwd
@@ -140,12 +141,12 @@ if [ $hybSeqProgram == 'paftools' ]; then
 		if [ -z "$R2FastqFile" ]; then
 			paftools --loglevel INFO addPaftolFastq $externalSequenceID \
 			--fastqPath $paftolDataSymlinksDir \
-			--dataOrigin $usePaftolDb \
+			--dataOrigin $datasetOrigin \
 			$unzippedR1FastqFile
 		else
 			paftools --loglevel INFO addPaftolFastq $externalSequenceID \
 			--fastqPath $paftolDataSymlinksDir \
-			--dataOrigin $usePaftolDb \
+			--dataOrigin $datasetOrigin \
 			$unzippedR1FastqFile  $unzippedR2FastqFile
 		fi
 		# NB - the file name must be of this format e.g. PAFTOL_005853_R1.fastq BUT now only for PAFTOL data
@@ -185,7 +186,7 @@ if [ $hybSeqProgram == 'paftools' ]; then
 			--windowSizeReadOverlap 30 \
 			--relIdentityThresholdReadOverlap 0.9 \
 			--summaryCsv ${sampleId}_summary.csv \
-			$usePaftolDbFlag \
+			$usePaftolDbFlag $recoveryRun \
 			> ${sampleId}_overlapSerial.log 2>&1
 		else
 			$exePrefix  paftools recoverSeqs \
@@ -207,7 +208,7 @@ if [ $hybSeqProgram == 'paftools' ]; then
 			--windowSizeReadOverlap 30 \
 			--relIdentityThresholdReadOverlap 0.9 \
 			--summaryCsv ${sampleId}_summary.csv \
-			$usePaftolDbFlag \
+			$usePaftolDbFlag $recoveryRun \
 			> ${sampleId}_overlapSerial.log 2>&1
 		fi
 		rm $targetsFile	# If write to database fails, this fail doesn't get deleted (c.f. set cmds active), so presence of file is a useful 'marker' for failing to write to db
@@ -473,7 +474,7 @@ if [[ $stats != 'no' ]]; then
 
 	if [[ $usePaftolDb != 'no' ]]; then
 
-		echo If using PaftolDB with Paftools, need to run Trimmomatic again as the previous run was only saved to /tmp/ - still to add Trimmomatic step here
+		echo If using PaftolDB with Paftools (i.e. if hidden option -d is also being used), need to run Trimmomatic again as the previous run was only saved to /tmp/ - still to add Trimmomatic step here
 		# NB - in all other cases trimmomatic is being run again above before this clause is reached
 		exit
 	fi	
