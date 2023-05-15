@@ -474,7 +474,7 @@ if [[ $stats != 'no' ]]; then
 
 	if [[ $usePaftolDb != 'no' ]]; then
 
-		echo If using PaftolDB with Paftools (i.e. if hidden option -d is also being used), need to run Trimmomatic again as the previous run was only saved to /tmp/ - still to add Trimmomatic step here
+		echo "If using PaftolDB with Paftools (i.e. if hidden option -d is also being used), need to run Trimmomatic again as the previous run was only saved to /tmp/ - still to add Trimmomatic step here"
 		# NB - in all other cases trimmomatic is being run again above before this clause is reached
 		exit
 	fi	
