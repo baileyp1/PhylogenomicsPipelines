@@ -1,9 +1,8 @@
 #!/bin/bash
 #SBATCH -J make_gene_trees
 #SBATCH -n 1
-#SBATCH -o make_gene_trees-%a.log		# If this line is not set, default output name is slurm-%A_%a.out: %A = $SLURM_ARRAY_JOB_ID; %a = $SLURM_ARRAY_TASK_ID 		 
-#SBATCH -e make_gene_trees-%a.log 		# NB - if I just specify the %a, then I don't get an accumulation of ouput files for each run of the script
-
+#SBATCH -o make_gene_trees-%A-%a.log	# If this line is not set, default output name is slurm-%A_%a.out: %A = $SLURM_ARRAY_JOB_ID; %a = $SLURM_ARRAY_TASK_ID 		 
+#SBATCH -e make_gene_trees-%A-%a.log
 
 geneFile=$1
 listFile=$2
@@ -13,7 +12,7 @@ phyloProgramDNA=$5
 phyloProgramPROT=$6
 fractnMaxColOcc=$7
 cpuGeneTree=$8
-mafftAlgorithm="$9"
+alnParams="$9"
 exePrefix="${10}"
 alnProgram="${11}"
 dnaSelected="${12}"
@@ -60,7 +59,7 @@ $phyloProgramDNA \
 $phyloProgramPROT \
 $fractnMaxColOcc \
 $cpuGeneTree \
-"$mafftAlgorithm" \
+"$alnParams" \
 "$exePrefix" \
 "$alnProgram" \
 $dnaSelected \

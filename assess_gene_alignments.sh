@@ -298,8 +298,8 @@ fi
 
 echo "
 Number of gene alignments containing >= $fractnSpecies_pc % of the samples after filtering by coverage (will be used in the species tree): $numbrGeneAlnsForSpeciesTree
-Total number of alignment columns in the area of common overlap for these genes: $numbrOverlapColsForSpeciesTree
-Total number of residues in all these genes: $totalBasesInAlnForTree
+Total number of alignment columns in the area of common overlap for these genes (after any gene filtering): $numbrOverlapColsForSpeciesTree
+Total number of residues in all these genes (after any gene filtering): $totalBasesInAlnForTree
 
 After filtering genes by coverage AND/OR by number of samples in each gene tree:
 Number of samples that will be present in final ASTRAL and RaxML trees (total samples submitted): $numbrSamplesInTrees ($totalNumbrSamples)

@@ -21,11 +21,11 @@ with open(sampleTableFile, 'r') as csvfile:
 		uniqId = row.pop(0)
 		#print uniqId, row
 		treeTipInfo = '_'.join(row)
-		treeTipInfo = treeTipInfo.rstrip('_')
+		treeTipInfo = treeTipInfo.rstrip('_')	# i think this just removes any trailing '_' chars - BUT - will it alter the number of fields if the value is missing for the last one or more field(s)? I think so 
 
 		# Need  to strip all chars that interfere with Newick format i.e. ( ) : [ ] and ; any others? Check in Newick definition - see K52.p5 note
 		# NB - spaces must also be converted to satisfy code in sister script, addTreeTipInfoFromTable_PlusL.py line 26
-		treeTipInfo = re.sub(r'[\]\[\)\(:; ]', '_', treeTipInfo)
+		treeTipInfo = re.sub(r'[\]\[\)\(:; ]', '-', treeTipInfo)	### 19.1.2023 - converting all these chars from '_' to '-'
 
 		if uniqId in csvDict:
 			print('ERROR: id in 1st column of csv file is not unique - it MUST be - offending id:', uniqId)

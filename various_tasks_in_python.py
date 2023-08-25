@@ -15,6 +15,7 @@
 
 # Copyright (c) 2020 The Board of Trustees of the Royal Botanic Gardens, Kew
 ############################
+from __future__ import print_function
 import sys
 import os
 import csv
@@ -22,7 +23,6 @@ import re
 from Bio import SeqIO					# https://biopython.org/DIST/docs/api/;  http://biopython.org/DIST/docs/tutorial/Tutorial.html;  https://biopython.org/wiki/SeqIO
 from Bio.SeqRecord import SeqRecord
 from Bio.Seq import Seq
-#import __future__ [as name]
 
 
 method = sys.argv[1]
@@ -51,8 +51,8 @@ def detect_stops(infile, outfilePrefix):
 
 	stopCountr = {}		# Dict to count seqs with x number of stops, each hash key = x number of stops per seq
 	for record in SeqIO.parse(infile, "fasta"):		# returns a SeqRecord object, includes a Seq object called seq
-		print record.id, "\n", record.seq, len(record)
-		print 'Number of stops in seq: ', record.seq.count('*')
+		#print(record.id, "\n", record.seq, len(record))
+		#print('Number of stops in seq: ', record.seq.count('*'))
 		numbrStops = record.seq.count('*')
 
 		if numbrStops in stopCountr:
@@ -63,10 +63,11 @@ def detect_stops(infile, outfilePrefix):
 
 		# If sequence has zero or one stops, print to file (for use in the phylogeny).
 		# NB - one stop might be the real stop codon so it should be allowed through.
-		#      In current work I don;t think the sequences have the end STOP codon and 
+		#      In current work I don't think the sequences have the end STOP codon and 
 		#      in any case one STOP and maybe one or two more in a sequence seem to be 
-		#      in frame aligned well with many other sequences, so should be allowed through.
-		### Might want to increase or decrease the number of stops in seqs to print:
+		#      in frame aligned and well with many other sequences, so should be allowed through.
+		### Might want to increase or decrease the number of stops in seqs to print.
+		### 30.4.2022 - a better idea  might be to let everything through then assess % id of seqs instead
 
 		# UPP refuses to align a sequences containing STOP chars so removing them 
 		# before printing seqs to file - actually converting them to 'X' chars (for now).
@@ -76,11 +77,11 @@ def detect_stops(infile, outfilePrefix):
 
 		if numbrStops == 0 or numbrStops == 1:
 			
-			print 'Print record 0/1 ', record 
+			#print('Print record 0/1 ', record)
 			#SeqIO.write(record, fh, "fasta")	# Need to use a file handle here if printing to file multiple times, otherwise previous write gets overwritten, not appended
 			fh.write(str(recordNoStops))
 		else:
-			print 'Print record ovr1 ', record 
+			#print('Print record ovr1 ', record)
 			#SeqIO.write(record, fh1, "fasta")
 			fh1.write(str(recordNoStops))
 		

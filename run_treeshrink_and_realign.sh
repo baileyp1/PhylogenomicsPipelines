@@ -23,7 +23,7 @@ geneListFile="$5"
 fractnAlnCovrg="$6"
 fractnMaxColOcc="$7"
 fractnSamples="$8"       # Enters this script as a fraction
-mafftAlgorithm="$9"
+alnParams="$9"
 cpuGeneTree="${10}"
 partitionName="${11}"
 pathToScripts="${12}"
@@ -61,7 +61,7 @@ echo "$geneListFile"
 echo "$fractnAlnCovrg"
 echo "$fractnMaxColOcc"
 echo "$fractnSamples"
-echo "$mafftAlgorithm"
+echo "$alnParams"
 echo "$cpuGeneTree"
 echo "$partitionName"
 echo "$pathToScripts"
@@ -292,7 +292,7 @@ reAlignSeqs()   {
     -G \
     -D "$1" \
     -A $alnProgram \
-    -M "$mafftAlgorithm" \
+    -M "$alnParams" \
     -g $geneListFileForReAln \
     -f $fractnSamples \
     -m $fractnMaxColOcc \
@@ -421,7 +421,7 @@ elif [[ $filterSeqs1 != 'no' || $filterSeqs2 != 'no' ]]; then
             ${gene}_${treeType}_tree_leaf_labels.txt \
             > ${gene}_after_filterSeqs.fasta
         done
-        echo Before reAlnSeqs:  seqType: $seqType, mafftAlgorithm: $mafftAlgorithm 
+        echo Before reAlnSeqs:  seqType: $seqType, alnParams: $alnParams 
         reAlignSeqs "$seqType" "$phyloProgramsToUse" "after_filterSeqs"
 ### 9.2.2022 - NB - should above line contain $treeType or $seqType - it might be correct
     elif [[ `echo $seqType | grep -o 'codon' ` == 'codon' ]]; then

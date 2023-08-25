@@ -41,19 +41,18 @@ cd ${samplePrefix}_$sampleId
 echo sampleId: $sampleId
 echo externalSequenceID: $externalSequenceID
 
-if [ -z "$R2FastqFile" ]; then
-	ls $paftolDataSymlinksDir/$R1FastqFile
-	echo "No R2FastqFile"
+
+if [[ -s  $paftolDataSymlinksDir/$R1FastqFile ]]; then ls $paftolDataSymlinksDir/$R1FastqFile; fi
+if [ -z "$R2FastqFile" ]; then 
+	echo "No R2FastqFile - read trimming and gene recovery will work in single-end mode"
 else
 	ls $paftolDataSymlinksDir/$R1FastqFile
 	ls $paftolDataSymlinksDir/$R2FastqFile
 fi
-
 pwd
 
 #if [ $usePaftolDb != 'usePaftolDb' ]; then	- changed - now introducing data set type
 if [[ $usePaftolDb == 'no' ]]; then
-	
   			                                        #--nodelist=kppgenomics01.ad.kew.org  # mem normally set to 80000
 	#  sbatch -J ${samplePrefix}_${sampleId}_fastqToGenes -p main -t 1-0:00 -c $cpu --mem=80000 -o ${samplePrefix}_${sampleId}_fastqToGenes.log   -e ${samplePrefix}_${sampleId}_fastqToGenes.log_err   --wrap "
 	# RUNTIME: For 8 cpu, up to 2 mins; up to 18 GB mem (for 10 samples)
@@ -66,7 +65,7 @@ if [[ $usePaftolDb == 'no' ]]; then
 		### 2.11.2022 - temporary fix - time command doesn't exist after OS updates on the KewHPC nodes: $exePrefix  java -jar $TRIMMOMATIC SE
 		java -jar $TRIMMOMATIC SE \
 		-threads $cpu \
-		-trimlog ${sampleId}_trimmomatic.log \
+		-trimlog ${sampleId}_R1_trimmomatic.log \
 		$paftolDataSymlinksDir/$R1FastqFile \
 		${sampleId}_R1_trimmomatic.fastq.gz \
 		ILLUMINACLIP:${adapterFasta}:2:30:10:2:true \
@@ -96,7 +95,8 @@ if [[ $usePaftolDb == 'no' ]]; then
 
 	# Paftools requires unzipped fastq files (NB - if unzipped files already present, files will not be unzipped again (i.e gzip exits with an error), so I've included the -f flag to force uncompression!):
 	#srun -J ${sampleId}_unzip_R1_R2 -n 1  gunzip -f ${sampleId}_R1_trimmomatic.fq.gz  ${sampleId}_R2_trimmomatic.fq.gz
-	gunzip -f ${sampleId}_R1_trimmomatic.fastq.gz  ${sampleId}_R2_trimmomatic.fastq.gz
+	if [[ -s ${sampleId}_R1_trimmomatic.fastq.gz ]]; then gunzip -f ${sampleId}_R1_trimmomatic.fastq.gz; fi  
+	if [[ -s ${sampleId}_R2_trimmomatic.fastq.gz ]]; then gunzip -f ${sampleId}_R2_trimmomatic.fastq.gz; fi
 fi
 
 
@@ -118,6 +118,7 @@ if [ $hybSeqProgram == 'paftools' ]; then
   		echo "Dataset type: $datasetOrigin"		# Required for addPaftolFastq program
   		echo "Recovery run: $recoveryRun" 		# Required for recoverSeqs program 
 
+### 14.7.2023 - will not need these steps for option -u upload to new paftol db 
 		# Remove the .gz ending from the file name for adding to the pafto_da database
 		unzippedR1FastqFile=`basename -s .gz $paftolDataSymlinksDir/$R1FastqFile `
 
@@ -160,6 +161,7 @@ if [ $hybSeqProgram == 'paftools' ]; then
 		echo "Exit status of paftools addpaftolFastq:" $?
 		### NB - paftools recoverSeqs also runs FastQC stats against the raw reads but this is unnessary.
 		###     Try to delete this step then I can just remove the raw fastqs here.
+### 14.7.2023 - end of requirement for option -d
 
 		# Paftools --usePaftolDb requires the targets filename WITHOUT the path
 		# i.e. it insists that targets file is in the pwd (but I could change that):
@@ -215,10 +217,28 @@ if [ $hybSeqProgram == 'paftools' ]; then
 			$usePaftolDbFlag $recoveryRun \
 			> ${sampleId}_overlapSerial.log 2>&1
 		fi
-		rm $targetsFile	# If write to database fails, this fail doesn't get deleted (c.f. set cmds active), so presence of file is a useful 'marker' for failing to write to db
+
+### 14.7.2023 - write to the db here - e.g.:
+### if option - u is set : 
+### note new flag -u for script here - Python $ENV var instead of creating a file
+### make this into a function so i can call it with HybPipr as well
+#time paftol_db_add_sample_recoveries_batch_upload.py \
+#-c ~/.paftol/paftol_merge_v4_for_recovery_upload_tests.cfg \
+#-p Sample \
+#-a . \
+#-b paftol/AllData_symlinks \
+#-f . \
+#-g paftol/PAFTOL_gene_recovery_and_trees/run1_paftools \
+#-r 1 \
+#-u sampleId \
+#> paftol_da_add_samples_batch_upload.log 2>&1 &
+
+
+		rm $targetsFile	# If write to database fails, this file doesn't get deleted (c.f. set cmds active), so presence of file is a useful 'marker' for failing to write to db
 
 		# Remove the large fastq files::
-		if [[ -s $unzippedR1FastqFile ]]; then rm $unzippedR1FastqFile $unzippedR2FastqFile; fi
+		if [[ -s $unzippedR1FastqFile ]]; then rm $unzippedR1FastqFile; fi
+		if [[ -s $unzippedR2FastqFile ]]; then rm $unzippedR2FastqFile; fi
 	else
 		################
 		# overlapRecover (OLC approach)
@@ -283,11 +303,11 @@ if [ $hybSeqProgram == 'paftools' ]; then
 
 		if [[ $stats == 'no' ]]; then
 			# Remove the large fastq files:
-			if [[ -s ${sampleId}_R1_trimmomatic.fastq ]]; then 
-				rm ${sampleId}_R1_trimmomatic.fastq ${sampleId}_R1_trimmomatic_unpaired.fastq.gz \
-				${sampleId}_R2_trimmomatic.fastq ${sampleId}_R2_trimmomatic_unpaired.fastq.gz \
-				${sampleId}_R1_R2_trimmomatic.log
-			fi
+			if [[ -s ${sampleId}_R1_trimmomatic.fastq ]]; then rm ${sampleId}_R1_trimmomatic.fastq; fi
+			if [[ -s ${sampleId}_R1_trimmomatic_unpaired.fastq.gz ]]; then rm ${sampleId}_R1_trimmomatic_unpaired.fastq.gz; fi
+			if [[ -s ${sampleId}_R2_trimmomatic.fastq ]]; then rm ${sampleId}_R2_trimmomatic.fastq ${sampleId}_R2_trimmomatic_unpaired.fastq.gz; fi
+			if [[ -s ${sampleId}_R1_R2_trimmomatic.log ]];then rm ${sampleId}_R1_R2_trimmomatic.log; fi
+			if [[ -s ${sampleId}_R1_trimmomatic.log ]]; then rm ${sampleId}_R1_trimmomatic.log; fi
 		fi
 	fi
 elif [[ $hybSeqProgram == 'hybpiper'* ]]; then
@@ -299,10 +319,15 @@ elif [[ $hybSeqProgram == 'hybpiper'* ]]; then
 		bwa='--bwa'
 		echo Using HybPiper with the --bwa option...
 	fi
+	# else $bwa remains blank and the default option is used
 
 	# First combine unpaired reads (both single end reads should have unique ids) - but won't I have the same problem as above?!
-	gunzip -fc ${sampleId}_R1_trimmomatic_unpaired.fastq.gz ${sampleId}_R2_trimmomatic_unpaired.fastq.gz \
-	> ${sampleId}_R1_R2_trimmomatic_unpaired.fastq
+	unpairedFastqFile=''
+	if [[ -n "$R2FastqFile" ]]; then
+		gunzip -fc ${sampleId}_R1_trimmomatic_unpaired.fastq.gz ${sampleId}_R2_trimmomatic_unpaired.fastq.gz \
+		> ${sampleId}_R1_R2_trimmomatic_unpaired.fastq
+		unpairedFastqFile="--unpaired ${sampleId}_R1_R2_trimmomatic_unpaired.fastq"
+	fi
 
 	### 2.11.2022 - temporary fix - time command doesn't exist after OS updates on the KewHPC nodes: $exePrefix reads_first.py --cpu $cpu $bwa \
 	reads_first.py --cpu $cpu $bwa \
@@ -310,8 +335,9 @@ elif [[ $hybSeqProgram == 'hybpiper'* ]]; then
 	-r ${sampleId}_R*_trimmomatic.fastq  \
 	--cov_cutoff 4 \
 	--prefix ${sampleId} \
-	--unpaired ${sampleId}_R1_R2_trimmomatic_unpaired.fastq \
+	$unpairedFastqFile \
 	> ${sampleId}_hybpiper.log 2>&1
+	### 11.4.2022 - now using the --unpaired ${sampleId}_R1_R2_trimmomatic_unpaired.fastq \
 	# Output: sampleId/geneId/sampleId/sequences/FNA/geneId.FNA; fasta header line: >sampleId
 	# NBNB - From what I can make out, --cov_cutoff does seem to operate with spades, even though it says 
 	#        flag is for velvetg - set to 4 otherwise default=8
@@ -445,15 +471,28 @@ elif [[ $hybSeqProgram == 'hybpiper'* ]]; then
         # HybPiper cleanup - remvoves the spades dir (Sample_/$sampleId/$geneName/$geneName_spades)
         cleanup.py $sampleId
 
+
+### 14.7.2023 - write to the PAFTOL db here - e.g.: see above for paftools
+### try to keep the unzipped files around for immediate use with script 
+
         if [[ $stats == 'no' ]]; then
 			# Remove the large fastq files:
-			if [[ -s ${sampleId}_R1_trimmomatic.fastq ]]; then 
-				rm ${sampleId}_R1_trimmomatic.fastq ${sampleId}_R1_trimmomatic_unpaired.fastq.gz \
-				${sampleId}_R2_trimmomatic.fastq ${sampleId}_R2_trimmomatic_unpaired.fastq.gz \
-				${sampleId}_R1_R2_trimmomatic_unpaired.fastq \
-				${sampleId}_R1_R2_trimmomatic.log
-			fi
+			if [[ -s ${sampleId}_R1_trimmomatic.fastq ]]; then rm ${sampleId}_R1_trimmomatic.fastq; fi
+			if [[ -s ${sampleId}_R1_trimmomatic_unpaired.fastq.gz ]]; then rm ${sampleId}_R1_trimmomatic_unpaired.fastq.gz; fi
+			if [[ -s ${sampleId}_R2_trimmomatic.fastq ]]; then rm ${sampleId}_R2_trimmomatic.fastq ${sampleId}_R2_trimmomatic_unpaired.fastq.gz; fi
+			if [[ -s ${sampleId}_R1_R2_trimmomatic.log ]];then rm ${sampleId}_R1_R2_trimmomatic.log; fi
+			if [[ -s ${sampleId}_R1_trimmomatic.log ]]; then rm ${sampleId}_R1_trimmomatic.log; fi
+
+			### NEED TO DECIDE HOW TO DEAL WITH THIS:	${sampleId}_R1_R2_trimmomatic_unpaired.fastq 
 		fi
+	fi
+	# Converting to a tarball archive the main HybPiper results directory beneath the main <samplePrefix>_<sampleId> folder.
+	# Reason: its difficult for the file storage system to cope with lots of these directories 
+	# containing many other directories and small files.
+	if [[ -d $sampleId ]]; then
+		tar -cf ${sampleId}.tar ${sampleId}
+		gzip -f ${sampleId}.tar
+		rm -fR $sampleId
 	fi
 else
 	echo "WARNING: If option -y was used, the Hyb-Seq program was not recognised. The options are 'paftools' or 'hybpiper' (without the quotes)."
@@ -467,10 +506,12 @@ if [[ $stats != 'no' ]]; then
 
 	if [[ $usePaftolDb != 'no' ]]; then
 
-		echo If using PaftolDB with Paftools, need to run Trimmomatic again as the previous run was only saved to /tmp/ - still to add Trimmomatic step here
-		# NB - in all other case trimmomatic is being run again above
+		echo "If using PaftolDB with Paftools (i.e. if hidden option -d is also being used), need to run Trimmomatic again as the previous run was only saved to /tmp/ - still to add Trimmomatic step here"
+		# NB - in all other cases trimmomatic is being run again above before this clause is reached
 		exit
-	fi	
+	fi
+
+	### 18.8.2023 - create: mkdir -p recovery_stats/ dir and cd 
 
 	
 	# Find the gene recovery file for indexing with BWA
@@ -478,7 +519,7 @@ if [[ $stats != 'no' ]]; then
 	if [[ $refFilePathForStats == 'default' ]]; then
 		# Try to find file in pwd, as if recoveries have just been done:
 		if [[ -s ${sampleId}.fasta ]]; then 
-			refFileName=${sampleId}.fasta
+			refFileName=${sampleId}.fasta 		### 18.8.2023 - so like for option -P below cop -p from above dir into the recovery_stats dir just made
 			# Gene recovery file is in pwd.
 		elif [[ -s ${sampleId}_all_genes.fasta ]]; then
 			refFileName=${sampleId}_all_genes.fasta
@@ -508,7 +549,7 @@ if [[ $stats != 'no' ]]; then
 			cp -p  $refFilePathForStats/${sampleId}_all_genes.fasta  ${sampleId}_all_genes.fasta
 			refFileName=${sampleId}_all_genes.fasta
 		else 
-			echo "ERROR: option -P - can't find the correct path to the gene recovery fasta file or is empty. Stats cannot be calculated for sample: ${sampleId}."
+			echo "ERROR: option -P - can't find the correct path to the gene recovery fasta file or it is empty. Stats cannot be calculated for sample: ${sampleId}."
 			echo 
 			echo
 			exit
@@ -518,6 +559,7 @@ if [[ $stats != 'no' ]]; then
 	echo "Found gene recovery fasta file: $refFileName"
 
 	# Prepare to map reads for getting stats:
+### 18.8.2023 - change to ../ for fastqs incl SE reads below then that's it I think except for removing fastq files
 	bamFileWithDups=''
 	bwa index $refFileName
 	bwa mem -t $cpu $refFileName \
@@ -585,13 +627,14 @@ if [[ $stats != 'no' ]]; then
 
     if [[ ! -s ${sampleId}_bwa_mem_sort.bam ]]; then
     	echo "ERROR: Picard markduplicates output file doesn't exist or is empty: ${sampleId}_bwa_mem_sort.bam"
+    	### 19.4.2023 - NB - if this file doesn't exist, then PICARD will already have failed and the script will exit then due to 'set -e' being used
     	exit
     fi
 
 	
 	# Getting contig recovery stats and adding each statistic to a file, one statistic per line.
-	# Then in overall_gene_recovery_stats.sh script, the results can be converted in a table for 
-	# all sample and genes. 
+	# Then in overall_gene_recovery_stats.sh script, the results can be converted to a table for 
+	# all sample and genes.
 	# Number of recovered genes:
 	numbrRecoveredGenes=`cat $refFileName | grep '>' | wc -l `
 	# Sum length of genes :
@@ -604,14 +647,20 @@ sumLengthOfGenes: $sumLengthOfGenes" > ${sampleId}_gene_recovery_stats.txt  # Al
 	###numbrAmbiguityCodesInGenes=`cat $refFileName | grep -v '>' | grep -o '[RYMKSWHBDN]' | wc -l `
 	###echo "numbrAmbiguityCodesInGenes: $numbrAmbiguityCodesInGenes" >> ${sampleId}_gene_recovery_stats.txt
 	### For some reason doesn't work - may have to turn off set +u and +e - see below
-	
 
+	# Count the total number of raw fastq file reads (before any type of trimming this script does)
+	numbrRawReads=`cat ${sampleId}_trimmomatic.log | grep 'Input Read Pairs:' | awk '{print $4 *2}' ` 
+	echo numbrRawReads: $numbrRawReads >> ${sampleId}_gene_recovery_stats.txt
+	
 	####################################
 	# General stats on the BWA alignment
 	####################################
 	# Count the number of reads in the bam file just after mapping but before removing read duplicates:
 	numbrTrimmedReadsInBamInclDups=`samtools view -c $bamFileWithDups `
 	echo numbrTrimmedReadsInBamInclDups: $numbrTrimmedReadsInBamInclDups  >> ${sampleId}_gene_recovery_stats.txt
+
+	percentTrimmedReads=`echo $numbrTrimmedReadsInBamInclDups $numbrRawReads | awk '{printf "%.1f", (($1 / $2) * 100)}' | awk '{print $1}' ` # Last awk produces the line return
+	echo percentTrimmedReads: $percentTrimmedReads >> ${sampleId}_gene_recovery_stats.txt
 
 	# Count the number of reads in the bam file just after mapping and removing read duplicates.
 	# NB - doesn't quite count all reads in the file.
@@ -647,7 +696,7 @@ sumLengthOfGenes: $sumLengthOfGenes" > ${sampleId}_gene_recovery_stats.txt  # Al
 	| samtools fastq -f4 -1 ${sampleId}_bwa_mem_unmapped_R1.fastq.gz -2 ${sampleId}_bwa_mem_unmapped_R2.fastq.gz \
 	-s ${sampleId}_bwa_mem_unmapped_single_ends.fastq.gz -N
 	# samtools fastq -n - means that /1 and /2 are NOT added to output records - didn't work here
-	# samtools fastq -N - means that /1 and /2 are ALWAYS added to fastq record ids 
+	# samtools fastq -N - means that /1 and /2 are ALWAYS added to fastq record ids
 	#	NB - not sure if this needs to be done - all singleton reads should be unique (would only be a problem if combining the R1 AND R2 read pairs)
 
 	#######################
@@ -663,7 +712,9 @@ sumLengthOfGenes: $sumLengthOfGenes" > ${sampleId}_gene_recovery_stats.txt  # Al
 	# -F4 = INT of 4 = unmapped read but -F prints reads that are not INT=4 i.e. mapped - definitely NOT the same as samtools -c.
 	# This value should be the same as $numbrMappedReads as there are no reference bases off target (?) - keep thinking the logic
 	echo numbrReadsOnTarget: $numbrReadsOnTarget >> ${sampleId}_gene_recovery_stats.txt
-	
+
+	percentReadsOnTarget=`echo $numbrReadsOnTarget $numbrTrimmedReadsInBam | awk '{printf "%.1f", (($1 / $2) * 100)}' | awk '{print $1}' ` # Last awk produces the line return 
+	echo percentReadsOnTarget: $percentReadsOnTarget >> ${sampleId}_gene_recovery_stats.txt
 
 	###############################
 	# Read coverage and depth stats
@@ -778,12 +829,12 @@ sumLengthOfGenes: $sumLengthOfGenes" > ${sampleId}_gene_recovery_stats.txt  # Al
 	# 2. Read depth across all genes and samples - total mean and median values
 
 	# Remove the large fastq files from any gene recovery method:
-	if [[ -s ${sampleId}_R1_trimmomatic.fastq ]]; then 
-		rm ${sampleId}_R1_trimmomatic.fastq ${sampleId}_R1_trimmomatic_unpaired.fastq.gz \
-		${sampleId}_R2_trimmomatic.fastq ${sampleId}_R2_trimmomatic_unpaired.fastq.gz \
-		${sampleId}_R1_R2_trimmomatic.log
-		# NB - ${sampleId}_R1_R2_trimmomatic_unpaired.fastq is only created in hybpiper mode and has already been removed above
-	fi
+	if [[ -s ${sampleId}_R1_trimmomatic.fastq ]]; then rm ${sampleId}_R1_trimmomatic.fastq; fi
+	if [[ -s ${sampleId}_R1_trimmomatic_unpaired.fastq.gz ]]; then rm ${sampleId}_R1_trimmomatic_unpaired.fastq.gz; fi
+	if [[ -s ${sampleId}_R2_trimmomatic.fastq ]]; then rm ${sampleId}_R2_trimmomatic.fastq ${sampleId}_R2_trimmomatic_unpaired.fastq.gz; fi
+	if [[ -s ${sampleId}_R1_R2_trimmomatic.log ]];then rm ${sampleId}_R1_R2_trimmomatic.log; fi
+	if [[ -s ${sampleId}_R1_trimmomatic.log ]]; then rm ${sampleId}_R1_trimmomatic.log; fi
+	# NB - ${sampleId}_R1_R2_trimmomatic_unpaired.fastq is only created in hybpiper mode and has already been removed above - OK
 fi
 #####cd ../ # Back up to parent dir for next sample - 20.4.2020 - has no effect here now and not required anymore because looping through samples is done outside this script 
 echo 

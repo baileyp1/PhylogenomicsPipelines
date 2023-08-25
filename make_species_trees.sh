@@ -23,29 +23,27 @@ fractnAlnCovrg=$1
 fractnSpecies=$2
 totalNumbrSamples=$3
 fileNamePrefix=$4
-geneFile=$5                     ### 27.1.2020 - don't need this var once stats code has been removed
-cpu=$6               ### 28.1.2020 - added this paramter in but not usign it (at the moment - trying to make filenames more generic)
-phyloProgramDNA=$7
-phyloProgramPROT=$8
-exePrefix="$9"
-treeTipInfoMapFile=${10}        # NB - just testing if this filename was submitted, then will add tree tip info to species tree
-dnaSelected=${11}               # NB - for these <seqType>Selected variables, this script should be able to process all three types together OR separately!
-proteinSelected=${12}
-codonSelected=${13}
-collapseNodes=${14}
-alnFileForTreeSuffix=${15}      # Should be generic for dna, protein or codon filenames!  aln.for_tree.fasta
-option_u=${16}
-speciesTreeProgram=${17}
-outgroupRoot=${18}
-speciesTreeSlurmMem=${19}
-numbrBootstraps=${20}
+cpu=$5               ### 28.1.2020 - added this paramter in but not usign it (at the moment - trying to make filenames more generic)
+phyloProgramDNA=$6
+phyloProgramPROT=$7
+exePrefix="$8"
+treeTipInfoMapFile=$9       # NB - just testing if this filename was submitted, then will add tree tip info to species tree
+dnaSelected=${10}               # NB - for these <seqType>Selected variables, this script should be able to process all three types together OR separately!
+proteinSelected=${11}
+codonSelected=${12}
+collapseNodes=${13}
+alnFileForTreeSuffix=${14}      # Should be generic for dna, protein or codon filenames!  aln.for_tree.fasta
+option_u=${15}
+speciesTreeProgram=${16}
+outgroupRoot=${17}
+speciesTreeSlurmMem=${18}
+numbrBootstraps=${19}
 
 
 echo Preparing to run species trees...
 echo fractnAlnCovrg to use: $fractnAlnCovrg
 echo fractnSpecies to use: $fractnSpecies
 echo numbrSamples: $totalNumbrSamples
-echo numbrSamplesThreshold: $numbrSamplesThreshold
 echo exePrefix: $exePrefix
 echo treeTipInfoMapFile: $treeTipInfoMapFile
 echo dnaSelected: $dnaSelected
@@ -62,6 +60,7 @@ fractnSpecies_pc=`awk -v FRACTN=$fractnSpecies 'BEGIN{printf "%.0f", FRACTN * 10
 # Minimum number of samples to tolerate for including into Astral (9.2.2022 - looks like the number is rounded down!)
 numbrSamplesThreshold=`awk -v FRACTN=$fractnSpecies -v numbrSamples=$totalNumbrSamples 'BEGIN{printf "%.0f", FRACTN * numbrSamples}' `
 # Above awk code is zero proof - can have 0 * 100 - returns zero
+echo numbrSamplesThreshold: $numbrSamplesThreshold
 
 
 # Input checks for the sequence type option:
@@ -96,12 +95,14 @@ numbrLowSupportNodesThreshold=95    # For use with getTreeStats() - if using a p
                                     # outputs support values as fractions, need to convert percent value
                                     # beforehand then import into function - 23.10.2020 - changed logic slightly - too complicated to use this value
 
+# 
 echo "Tree statistics
 ---------------
 Support nodes threshold set to: $numbrLowSupportNodesThreshold
-ASTRAL: local posterior probability (considered to be well supported if >= 95% (Sayyari et al., 2016)
-IQTREE2: ultrafast bootstrap support (considered to be well supported if >= 95% (Minh et al., 2013)
+ASTRAL: local posterior probability (considered to be well supported if >= 95% (Sayyari et al., 2016) Molecular Biology and Evolution https://doi.org/10.1093/molbev/msw079
+IQTREE2: ultrafast bootstrap support (considered to be well supported if >= 95% (Minh et al., 2013) Molecular Biology and Evolution https://doi.org/10.1093/molbev/mst024
 ---------------"> ${fileNamePrefix}_summary_tree_stats.txt  # Wiping out file contents from any previous run 
+
 
 
 getTreeStats () {
@@ -134,7 +135,7 @@ getTreeStats () {
 
     # Count number of low support nodes:
 ### not sure why I'm using -r!!
-    numbrLowSupportNodes=`nw_ed -r $newickTree  "i & b < $bootstrapThreshold" s | wc -l | sed 's/ //g' `
+    numbrLowSupportNodes=`nw_ed -r $newickTree  "i & b >= $bootstrapThreshold" s | wc -l | sed 's/ //g' `
 ### NBNB - 15.10.2020 - this gives '1' even when the file is empty!!!#
     # Count the total number of support nodes with support values:
     ### 23.10.2020 - Astral tree seems to have two root nodes which get printed by "i" (i.e. get 2 more nodes than expected, only can notice with v small trees)
@@ -147,7 +148,7 @@ getTreeStats () {
     # Write summary stats:
     echo >> ${fileNamePrefix}_summary_tree_stats.txt
     if [[ $totalNumbrSupportNodes > 0 ]]; then
-        echo "$newickTree - number of internal nodes with low support values < $bootstrapThreshold (total number of internal nodes): ${numbrLowSupportNodes} (${totalNumbrSupportNodes})" >> ${fileNamePrefix}_summary_tree_stats.txt 
+        echo "$newickTree - number of internal nodes with high support values >= $bootstrapThreshold (total number of internal nodes): ${numbrLowSupportNodes} (${totalNumbrSupportNodes})" >> ${fileNamePrefix}_summary_tree_stats.txt 
     fi
 
     outFilePrefix=`basename $newickTree .nwk`
@@ -164,8 +165,9 @@ getTreeStats () {
 
 makeSpeciesTree () {
     ###########
-    # Function: makes a SINGLE species tree from the available methods in this function 
+    # Function: makes a SINGLE species tree from ONE of the available methods in this function 
     #           from a sequence alignment
+    #           NB - all parameters need to have a value but all of them might not be used e.g. option $5 when using ASTRAL
     #
     # Input parameters:
     # $1 = residue type: dna, aa or codon
@@ -310,8 +312,8 @@ makeSpeciesTree () {
 ############
 # Main code:
 ############
-if [[ "$astralSelected" == 'yes' || "$astralmpSelected" == 'yes' || "$astral-proSelected" == 'yes' ]]; then
-    echo "Preparing to run Astral..."
+if [[ "$astralSelected" == 'yes' || "$astralmpSelected" == 'yes' || "$astralproSelected" == 'yes' ]]; then
+    echo "Preparing to run ASTRAL..."
     if [[ $dnaSelected == 'yes' ]]; then
         seqType=dna
         echo dnaSelected: $dnaSelected   
@@ -359,7 +361,7 @@ if [[ "$astralSelected" == 'yes' || "$astralmpSelected" == 'yes' || "$astral-pro
         # Now concatenate the gene trees into a single file:
         cat ${fileNamePrefix}.${seqType}.gene_trees_set_filenames.txt | xargs cat > ${fileNamePrefix}.${seqType}.gene_trees_set.nwk
     fi
-
+    ### 7.5.2022 - codon clause as well here? Shoudl make into a function
 
     # Before running Astral, collapse clades with low bootstrap values (less than $collapseNodes) from all trees at once, if requested.
     # NB - this step collapses nodes whose certainty is not clear by creating multifurcations with a parent node that is well supported.
@@ -380,7 +382,7 @@ if [[ "$astralSelected" == 'yes' || "$astralmpSelected" == 'yes' || "$astral-pro
                 # numbrLowSupportNodesThreshold=`echo $numbrLowSupportNodesThreshold | awk 'fractn=$1/100 {print fractn}' `
                 # echo "\$numbrLowSupportNodesThreshold should now be a fraction for FASTTREE (internal value): $numbrLowSupportNodesThreshold"
             fi
-            collapseNodesD=$collapseNodes    # Required later for remembering the actual value for DNA (It might get changed for prtoein!!!) - 20.7.2021 - pretty sure this doesn't apply now.
+            collapseNodesD=$collapseNodes    # NB - $collapseNodes is also required for the protein trees - will not need converting to a fraction if RAxML is used for protein aln so need temporary variable here.
             #numbrLowSupportNodesThresholdD=$numbrLowSupportNodesThreshold    # Same for this var
             nw_ed  $dnaAstralInFile "i & (b < $collapseNodesD)" o > ${fileNamePrefix}.${seqType}.gene_trees_set.collapse${collapseNodesD}.nwk
             # Also create list of filenames for the collapsed trees for use in creating an archive file:
@@ -390,10 +392,11 @@ if [[ "$astralSelected" == 'yes' || "$astralmpSelected" == 'yes' || "$astral-pro
             cat $dnaGeneTreesSetFilenames | \
             while read file; do
                 filePrefix=`basename -s .nwk $file `
-                cat $file | nw_ed  /dev/fd/0  "i & (b < 30)" o > ${filePrefix}.collapse${collapseNodesD}.nwk 
+                cat $file | nw_ed  /dev/fd/0  "i & (b < $collapseNodesD)" o > ${filePrefix}.collapse${collapseNodesD}.nwk 
             done
-            # The set of 'collapsed' files now required for ASTRAL:
+            # The set of 'collapsed' Newick trees now required for ASTRAL:
             dnaAstralInFile=${fileNamePrefix}.${seqType}.gene_trees_set.collapse${collapseNodesD}.nwk
+            # list of filenames for preparing the tarball:
             dnaGeneTreesSetFilenames=${fileNamePrefix}.${seqType}.gene_trees_set_filenames.collapse${collapseNodesD}.txt
         fi
 
@@ -417,7 +420,7 @@ if [[ "$astralSelected" == 'yes' || "$astralmpSelected" == 'yes' || "$astral-pro
              cat $proteinGeneTreesSetFilenames | \
             while read file; do
                 filePrefix=`basename -s .nwk $file `
-                cat $file | nw_ed  /dev/fd/0  "i & (b < 30)" o > ${filePrefix}.collapse${collapseNodes}.nwk 
+                cat $file | nw_ed  /dev/fd/0  "i & (b < $collapseNodes)" o > ${filePrefix}.collapse${collapseNodes}.nwk 
             done
             proteinAstralInfile=${fileNamePrefix}.${seqType}.gene_trees_set.collapse${collapseNodes}.nwk
             proteinGeneTreesSetFilenames=${fileNamePrefix}.${seqType}.gene_trees_set_filenames.collapse${collapseNodes}.txt
@@ -431,8 +434,8 @@ if [[ "$astralSelected" == 'yes' || "$astralmpSelected" == 'yes' || "$astral-pro
         #         numbrLowSupportNodesThresholdD=`echo $numbrLowSupportNodesThreshold | awk 'fractn=$1/100 {print fractn}' `
         #         echo "\$numbrLowSupportNodesThreshold should now be a fraction for FASTTREE (internal value): $numbrLowSupportNodesThreshold"
         #     fi
+        ### Does this need a codon clause here as well???? Yes and better still, convert to a function for use with DNA, protein and codon trees         
     fi
-### Does this need a codon clause here as well????
     echo
     echo
     echo #################
@@ -444,7 +447,7 @@ if [[ "$astralSelected" == 'yes' || "$astralmpSelected" == 'yes' || "$astral-pro
         if [[ "$astralSelected" == 'yes' ]]; then
             # Function parameters: residue_type, input_file, outfile_prefix, program, program-specifIC paramters
 ### SHOULD REALLY TRY TO CONVERT PROGRAM PARAMTERS TO A GENERIC STRIGN FOR USE WITH ANY PRGORAM  
-            makeSpeciesTree dna $dnaAstralInFile '.' astral 'GTR+G' 'DNA' '-nt -gtr'
+            makeSpeciesTree dna $dnaAstralInFile '.' astral 'GTR+G' 'DNA' '-nt -gtr'    # 30.4.2022 - Can these last params be removed? - misleading
             # Add tree tip info.
             # NB - for this option, the $treeTipInfoMapFile must have been submitted BUT I'm re-formatting it --> 'tree_tip_info_mapfile.txt'!):
             if [ -s $treeTipInfoMapFile ]; then
@@ -467,15 +470,15 @@ if [[ "$astralSelected" == 'yes' || "$astralmpSelected" == 'yes' || "$astral-pro
     fi
     if [[ $proteinSelected == 'yes' ]]; then
         if [[ "$astralSelected" == 'yes' ]]; then
-            makeSpeciesTree protein $proteinAstralInFile '.' astral 'GTR+G' 'DNA' '-nt -gtr'
+            makeSpeciesTree protein "$proteinAstralInfile" '.' astral 'GTR+G' 'DNA' '-nt -gtr'
             if [ -s $treeTipInfoMapFile ]; then
-                nw_rename -l  ${fileNamePrefix}.dna.species_tree.astral_pp1_value.nwk \
+                nw_rename -l  ${fileNamePrefix}.protein.species_tree.astral_pp1_value.nwk \
                 tree_tip_info_mapfile.txt \
-                > ${fileNamePrefix}.dna.species_tree.astral_USE_THIS.nwk
+                > ${fileNamePrefix}.protein.species_tree.astral_USE_THIS.nwk
             fi
             getTreeStats ${fileNamePrefix}.protein.species_tree.astral_pp1_value.nwk $numbrLowSupportNodesThreshold astral
         elif [[ "$astralmpSelected" == 'yes' ]]; then 
-            makeSpeciesTree protein $proteinAstralInFile '.' astralmp 'GTR+G' 'DNA' '-nt -gtr'
+            makeSpeciesTree protein "$proteinAstralInFile" '.' astralmp 'GTR+G' 'DNA' '-nt -gtr'
             if [ -s $treeTipInfoMapFile ]; then
                 nw_rename -l  ${fileNamePrefix}.protein.species_tree.astralmp_pp1_value.nwk \
                 tree_tip_info_mapfile.txt \
@@ -485,14 +488,18 @@ if [[ "$astralSelected" == 'yes' || "$astralmpSelected" == 'yes' || "$astral-pro
         fi
         ### Astral-Pro can go here
     fi
+    ### 7.5.2022 - shoudln't there be a codon step here?????
 fi # End of Astral step
 
 
 # Creating a zipped tarball for the gene alignments and trees files. 
 # These archives can then be moved around easily and checked with a single checksum.
-# Doing this before the concatenated alignment trees which will take ages!  
+# Doing this before the concatenated alignment trees which will take ages! 
 if [[ $dnaSelected == 'yes' ]]; then
-    tar -czf ${fileNamePrefix}.dna.aln.for_tree.fasta.tar.gz  *dna.aln.for_tree.fasta
+    # Alignment files might not exist if user just wants to supply Newick file gene trees for an Astral run (it is possible):
+    if ls *dna.aln.for_tree.fasta >/dev/null 2>&1; then
+        tar -czf ${fileNamePrefix}.dna.aln.for_tree.fasta.tar.gz  *dna.aln.for_tree.fasta
+    fi
     # Newick files may not exist if only building a concatenated alignment tree:
     if [[ -s $dnaAstralInFile ]]; then
         # Trees will be collapsed or not according to the use of option -L; $dnaAstralInFile variable 
@@ -502,11 +509,20 @@ if [[ $dnaSelected == 'yes' ]]; then
         # once ARG_MAX is reached)
         tar -czf ${dnaGeneTreesSetFilenames}.tar.gz `cat $dnaGeneTreesSetFilenames`
     fi
+    # Also creating a zipped tarball for the original unaligned gene-wise fasta files.
+    if ls ../*dna.fasta >/dev/null 2>&1; then
+        tar -czf ${fileNamePrefix}.dna.fasta.tar.gz ../*dna.fasta
+    fi
 fi
 if [[ $proteinSelected == 'yes' ]]; then
-    tar -czf  ${fileNamePrefix}.protein.aln.for_tree.fasta.tar.gz  *protein.aln.for_tree.fasta
+    if ls *protein.aln.for_tree.fasta >/dev/null 2>&1; then
+        tar -czf  ${fileNamePrefix}.protein.aln.for_tree.fasta.tar.gz  *protein.aln.for_tree.fasta
+    fi
     if [[ -s $proteinAstralInFile ]]; then
         tar -czf ${proteinGeneTreesSetFilenames}.tar.gz `cat $proteinGeneTreesSetFilenames`
+    fi
+    if ls ../*protein.fasta >/dev/null 2>&1; then
+        tar -czf ${fileNamePrefix}.protein.fasta.tar.gz ../*protein.fasta
     fi
 fi
 #### NEED TO ADD CODON CONDITIONAL AS WELL HERE

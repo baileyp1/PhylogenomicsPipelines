@@ -26,24 +26,25 @@ shopt -s failglob
 # is off.
 
 # INPUT FILE OPTIONS:
-useGenewiseFiles=no
+useGenewiseFiles=no             
 addSampleName=no
-sampleTableFile=no			# 10.5.2020 - only just added in - check - ensures cmdline parameter is always accupied which is critical
+sampleTableFile=no			    # 10.5.2020 - only just added in - check - ensures cmdline parameter is always accupied which is critical
 option_u=no
 
 # ALIGNMENT OPTIONS:
-seqType=dna
+seqType=dna                     # NB - 18.3.2022 - see line 683 - I don't think seqType has a default anymore - it gets wiped out - 4.1.2023 - no I don't think so!
 alnProgram=mafft 				# 27.7.2020 - may want to merge this option with mafftAlgorithm so it woudl be quoted liek so: 'mafft --retree 2'
 mafftAlgorithm='--retree 2'     # '--maxiterate 1000' #'--retree 1'   '--retree 2' - need to ry and merge with the alnProgram option somehow
+alnParams=''                    # General variable for modifiying the MAFFT and UPP options         
 
 # FILTERING AND TRIMMING OPTIONS:
-filterSeqs1=no			# My filter sequencing option (option 1)
+filterSeqs1=no			        # My filter sequencing option (option 1)
 filterSeqs2=no
 ### NBNBNB - 12.1.2020 - need to change both these values - for when filtering not used at 2nd aln iteration!!!!!!
-fractnAlnCovrg=0		# NB - variable is used via filterSeqs1, this value is also used when filterSeqs1 is not used and MUST therefore be set to ZERO - needs to have a default value for passing in variable to scripts
-fractnSamples=0			# NB - variable is used via filterSeqs1, this value is also used when filterSeqs1 is not used and MUST therfore be set to ZERO - needs to have a default value for passing in variable to scripts
-trimAln1=no					# Filter alignment columns with optrimAl
-trimAln2=no					# Filter alignment columns to remove rarer insertions; maximum limit of percent occupancy to trim at
+fractnAlnCovrg=0		       # NB - variable is used via filterSeqs1, this value is also used when filterSeqs1 is not used and MUST therefore be set to ZERO - needs to have a default value for passing in variable to scripts
+fractnSamples=0			       # NB - variable is used via filterSeqs1, this value is also used when filterSeqs1 is not used and MUST therfore be set to ZERO - needs to have a default value for passing in variable to scripts
+trimAln1=no			           # Filter alignment columns with optrimAl
+trimAln2=no                    # Filter alignment columns to remove rarer insertions; maximum limit of percent occupancy to trim at
 
 
 maxColOccThreshold=30		### 7.9.2020 - now testing lower values e.g. 30 and 15 - still need to check input value; also should it be 'Number of columns with minColOccLenThreshold'
@@ -126,20 +127,24 @@ ALIGNMENT OPTIONS:
                 codon is input DNA aligned but guided by a protein alignment. NB - the 'protein' and 'codon' options are not finished yet!
   -A <string>      
                 alignment program to use: mafft, upp (UPP is ideal for large alignments) (default=mafft)
-  -M <string>      
-                if using mafft, specify alignment algorithm to use in quotes i.e. '--retree 1', '--retree 2', '--maxiterate 1000' etc (default='--retree 2')
-ALIGNMENT FILTERING AND TRIMMING OPTIONS:
+
+  -M <string:>  
+                options to use with chosen alignment program (they must be quoted and the option flag(s) included). For MAFFT, specify the 
+                alignment algorithm to use in quotes i.e. '--retree 1', '--retree 2', '--maxiterate 1000' etc (default='--retree 2'); for 
+                UPP, choose values for UPP options -M and -T (default='-M 80 -T 0.15'). Note - the value for UPP option -M should be a percentile 
+                of the sequence lengths for each gene which will then get converted to the corresponding length for input into UPP.
+
   -F <2 integers> 
                 filter sequences option 1 (followed by re-alignment). Format: '<1> <2>' (no default; N.B. values must be quoted)
-                1. filters sequences in gene alignments by coverage, in this option by the percent of well conserved regions (columns) 
-                   in the alignment covered by a sample sequence. A well conserved column is one with > 70 % residue occupancy
+                1. filters sequences in gene alignments by coverage, in this option by the percent of well conserved regions (columns)
+                   in the alignment covered by a sample sequence. A well conserved column is defined as one with > 70 % residue occupancy
                    Minimum percent to tolerate (advised=60; 0 would mean no filtering, i.e. include sequence of any length)
                 2. percent of samples in each gene tree.
                    Minumum percent to tolerate (0 would mean no filtering, include all available samples in each gene tree)
                 Don't use with option -I else option -F only will applied.
 
   -O <integer>
-                mimimum length to tolerate for the conserved region described in -F option 1; 0 would mean allow a gene 
+                mimimum length to tolerate for the conserved region as defined in -F option 1; 0 would mean allow a gene 
                 through even though there is no overlap between the majority (>70%) of sequences, 30 would mean exclude gene from the 
                 analysis if overlapping region is less than 30 columns (default=30)
 
@@ -156,8 +161,10 @@ PHYLOGENY OPTIONS:
   -i               
                 make gene trees only
   -j               
-                make species trees only. Gene trees must already exist in run directory
-  -q <string>      
+                make species trees only. Gene alignments and trees must already exist in directory from a previous run attempt. This option 
+                expects that gene alignment files have a file name suffix of 'aln.for_tree.fasta' and Newick tree files have a file name 
+                suffix of '<sequence_type (Option -D)>_gene_tree_USE_THIS.nwk'
+  -q <string>
                 name of phylogeny program for gene trees from DNA sequences.
                 Options are, fastest to slowest: fasttree, iqtree2-B1000-nm110, iqtree2-B1000-nm200, iqtree2-B1000-nm1000, iqtree2, raxml-ng (default=fasttree)
   -r <string>      
@@ -203,7 +210,7 @@ OTHER OPTIONS:
   -H <integer>     
                 Slurm array throttle for gene trees (default=50; could set to 1, then increase once happy with run with: scontrol update arraytaskthrottle=<integer> job=<jobId>)
 
-A basic example run is described below:
+Example 1 - a basic example run is described below:
 build genes trees from sample fasta files, formatted as described for option -a, by aligning the input
 DNA sequence for each gene with the MAFFT --retree 2 algorithm, building each gene tree with FASTTREE, 
 then reconstructing a species tree with ASTRAL:
@@ -222,12 +229,34 @@ make_species_trees_pipeline.sh \\
 <path_to_recovered_genes_from_samples>/*.fasta \\
 > make_species_trees_pipeline.log 2>&1 &
 
+
+Example 2 - to repeat the run of species tree(s) only (option -j):
+Ensure all gene alignment and Newick files are present and
+that file mafft_dna_alns_fasta_file_list.txt contains the names of
+all the gene alignment files.
+
+make_species_trees_pipeline.sh \\
+-j \\
+-D 'dna' \\
+-t ../../release_3.0_samples_for_mapping_file.csv \\
+-L 15 \\
+-s 'astralmp fasttree' \\
+-c 32 \\
+-Y himem \\
+-U 1530000 \\
+-W 0 \\
+-p example_tree \\
+> make_species_trees_only.log 2>&1 &
+
 EOF
 }
 
 
 # Hidden parameters which work if you know about them:
 # -m  <float> maximum column occupancy (default=0.7; 0.7 means that columns with 70 % residue occupancy will be counted)
+# Removed this flag - still under development
+# -P  perform protein family analysis with protein input
+
 
 
 # Extensions to options not inlcuded yet:
@@ -244,7 +273,7 @@ while getopts "hvat:ug:ijGF:f:m:p:M:q:r:TC:c:d:Q:Y:A:D:O:L:I:JK:R:X:U:V:W:H:o:bs
 	case $OPTION in
 
 		h) usage; exit 1 ;;
-		v) echo "make_species_trees_pipeline.sh version 1.0"; exit ;;
+		v) echo "make_species_trees_pipeline.sh version 3.0_dev"; exit ;;
     #INPUT FILE OPTIONS:
         G) useGenewiseFiles=yes ;;
         g) geneListFile=$OPTARG ;;
@@ -255,7 +284,7 @@ while getopts "hvat:ug:ijGF:f:m:p:M:q:r:TC:c:d:Q:Y:A:D:O:L:I:JK:R:X:U:V:W:H:o:bs
     #ALIGNMENT OPTIONS
 		D) seqType=$OPTARG ;;
 		A) alnProgram=$OPTARG ;;
-        M) mafftAlgorithm="$OPTARG" ;;
+        M) alnParams="$OPTARG" ;;
     #FILTERING AND TRIMMING OPTIONS:
 		F) filterSeqs1=$OPTARG ;;
 		f) fractnSamples=$OPTARG ;;
@@ -359,19 +388,22 @@ done
 
 # Check positional parameters are present i.e. the gene recovery fasta file(s) are present:
 # Command line variables summary:
-echo '$# == ' $#										# Total number of all parameters (excludes script name, includes flags and their values, excludes free parameters (ones with no flags)) 
-echo \$OPTIND == $OPTIND								# Position of the first free parameter after any options - free parameters must come after any optional parameters.
-#echo 'Value of first free parameter: ' ${@:$OPTIND:1}	# Lists the value of the first free parameter from the $@ variable; ${@:$OPTIND:2} will access the first two free parameters.
-#echo 'Values of all free parameters: '${@:$OPTIND:$#}	# Therefore ${@:$OPTIND:$#} will access all the free parameters
-echo $(( $# - $OPTIND + 1 ))							# Number of free parameters, in this case the number of samples
+#echo '$# == ' $#				                           # Total number of all parameters (excludes script name, includes flags and their values, excludes free parameters (ones with no flags)) 
+#echo \$OPTIND == $OPTIND		                           # Position of the first free parameter after any options - free parameters must come after any optional parameters.
+#echo 'Value of first free parameter: ' ${@:$OPTIND:1}	   # Lists the value of the first free parameter from the $@ variable; ${@:$OPTIND:2} will access the first two free parameters.
+#echo 'Values of all free parameters: '${@:$OPTIND:$#}	   # Therefore ${@:$OPTIND:$#} will access all the free parameters
+#echo $(( $# - $OPTIND + 1 ))					           # Number of free parameters, in this case the number of samples - 19.12.2022 - but what about gene-wise mode? - changed to "files" submitted 
 numbrSamples=$(( $# - $OPTIND + 1 ))
-echo $numbrSamples
+echo
+echo "Number of input files submitted as free parameters: $numbrSamples"
+echo
 
 
-if [ $(( $# - $OPTIND + 1 )) -lt 4 ]; then				### 30.3.2020 AND speciesTreesOnly == no to handle scritp just processing species trees
-														###		Would need to think how to specify the input file(s) !!!!!!!!!!! 
-														### 4.7.2020 AND now if gene-wise files == no are entered - can have less than one of those right?
-														### 12.8.2020 - Just have an if else clause and say: less than 1 files but in gene-wise mode so OK 
+#if [ $(( $# - $OPTIND + 1 )) -lt 4 ]; then				                     ### 30.3.2020 AND speciesTreesOnly == no to handle scritp just processing species trees
+if [[ $(( $# - $OPTIND + 1 )) -lt 4 && $useGenewiseFiles  != 'yes' && $speciesTreesOnly == 'no' ]]; then	 ###		Would need to think how to specify the input file(s) !!!!!!!!!!! 
+														                     ### 4.7.2020 AND now if gene-wise files == no are entered - can have less than one of those right?
+                                                                             ###     opted for this 17.3.2022 - checks are done later anyway if < 4 species
+														                     ### 12.8.2020 - Just have an if else clause and say: less than 1 files but in gene-wise mode so OK 
     echo
     echo "ERROR: you need to input fasta files containing recovered genes from at least four species!"
     exit 1
@@ -422,11 +454,11 @@ if [[ $numbrDuplicateNames -ge 1 ]]; then echo "ERROR: there are $numbrDuplicate
 # 3. Test that the input files and their paths haven't reached ARG_MAX.
 #    getconf ARG_MAX = 262,144 (Macbook) and 2,097,152 on Hatta cluster
 lengthOfFreeParameters=`echo ${@:$OPTIND:$#} | awk '{sum+=length($0)} END {print sum}' `
-echo lengthOfFreeParameters: $lengthOfFreeParameters
+#echo lengthOfFreeParameters: $lengthOfFreeParameters
 systemARG_MAX=`getconf ARG_MAX `
 if [ $lengthOfFreeParameters -gt $systemARG_MAX ]; then
 	echo
-	echo 'ERROR: the length of the input fasta files and their paths has exceeded the system ARG_MAX variable.'
+	echo "ERROR: the length of the input fasta file names and their paths has exceeded the system ARG_MAX variable: $lengthOfFreeParameters (ARG_MAX=$systemARG_MAX)"
 	echo 'Try to reduce the length of the path to the files or increase the system ARG_MAX value somehow.'
 	exit
 fi
@@ -457,7 +489,7 @@ fi
 ####################
 # Code for option -a
 ####################
-if [[ $addSampleName == 'yes' && $useGenewiseFiles  != 'yes' ]]; then
+if [[ $addSampleName == 'yes' && $useGenewiseFiles  != 'yes' && $speciesTreesOnly == 'no' ]]; then
 
 	echo Will add sample name from filename: $addSampleName
 
@@ -499,7 +531,7 @@ if [[ $addSampleName == 'yes' && $useGenewiseFiles  != 'yes' ]]; then
 	geneFile=all_samples_concatenated.fasta
 
 
-elif [[ $useGenewiseFiles == 'yes' && $addSampleName != 'yes' ]]; then
+elif [[ $useGenewiseFiles == 'yes' && $addSampleName != 'yes' && $speciesTreesOnly == 'no' ]]; then
 
 	echo Will use prepared gene-wise files directly: $useGenewiseFiles
 
@@ -515,8 +547,12 @@ elif [[ $useGenewiseFiles == 'yes' && $addSampleName != 'yes' ]]; then
 		# Get filename and chop off the file ending if there is one:
     	geneName=`basename $file | awk -F '.' '{print $1}' `
     	#echo $geneName
-		cp $file ${geneName}_dna.fasta
-		### 11.8.2020 - consider to reanme to e.g.  ${geneName}_dna_for_aln.fasta and move rather than copy (one less file)
+		#cp $file ${geneName}_dna.fasta
+    # Improved the preparation of gene-wise files from user input. The fasta header is now cut at the first 
+    # space to retain the fasta record id field only, so other info on the fasta header line if it exists is lost.
+    # Otherwise AMAS.py merges all the fields on the fasta header line from .aln.fasta file and then seqtk can't find
+    # those record ids from the aln_ovr[60]pc_aln_covrg.txt file!   
+    cat $file | awk '{if($1 ~ /^>/) {print $1} else {print $0}}' > ${geneName}_dna.fasta
 		if [[ $? == 1 ]]; then
 			### I've kept this in - it avoids _dna.fasta file stamping on itself if these files are submitted by the user 
 			echo "ERROR: if running pipeline (possibly again) in gene-wise mode, please run in a another directory
@@ -528,9 +564,10 @@ and input gene-wise fasta files with a relative path (probably from a previous r
 
 	# Need to recalculate numbrsamples variable here - up till here in script, $numbrSamples contains the number of gene-wise files entered.
 	# NB - Fasta file format here is: >sampelId.
-    # NB - on MacOS awk inserts a blank line between output lines so removing them with grep -v '^$'.
-    numbrSamples=`cat *_dna.fasta | awk '{if($1 ~ /^>/)  {print $1} }' | grep -v  '^$' | sort -u | wc -l `
-else
+  # NB - on MacOS awk inserts a blank line between output lines so removing them with grep -v '^$'.
+  numbrSamples=`cat *_dna.fasta | awk '{if($1 ~ /^>/)  {print $1} }' | grep -v  '^$' | sort -u | wc -l `
+elif [[ $speciesTreesOnly == 'no' ]]; then
+
 	echo 'Fasta file format of the input files is already the default (>sampleId-geneId).'
    
 	### Still deciding on whether to change to this format completely throughout...
@@ -556,20 +593,21 @@ else
      	#echo "beforeDashCheck (sampleId): " $beforeDashCheck 
      	#echo "afterDashCheck (geneId): " $afterDashCheck 
      	if [[ $beforeDashCheck -gt 1 ]]; then echo "ERROR: more than one sample identifier detected on fasta header line (there should only be one sample identifier for the default format) for this sample: $file.
-     		Also check that fasta header lines have this format: >sampleId-geneId"; exit 1
+              Also check that fasta header lines have this format: >sampleId-geneId"; exit 1
      	elif [[ $afterDashCheck -gt 1 ]]; then echo "ERROR: gene identfiers should be unique, one or more not unique for this sample: $file \nAlso check that fasta header lines have this format: >sampleId-geneId"; exit 1
-		else cat $file | awk '{if($1 ~ /^>/)  {print $1} else {print $0}}' \
-			| awk -F '-' '{if($1 ~ /^>/) {{gsub(/>/,"",$1)} {print ">" $2 " " $1}} else {print $0}}' \
-			> ${uniqueSampleId}_modified.fasta
-			# NB - fasta format now: >geneId sampleId
+		  else
+        cat $file | awk '{if($1 ~ /^>/)  {print $1} else {print $0}}' \
+			 | awk -F '-' '{if($1 ~ /^>/) {{gsub(/>/,"",$1)} {print ">" $2 " " $1}} else {print $0}}' \
+			 > ${uniqueSampleId}_modified.fasta
+			 # NB - fasta format now: >geneId sampleId
 
-			# If an input fasta file name doesn't exist then the 'modified.fasta' filename created above will not exist.
-			# Testing whether file exists here:
-			if [[ ! -s ${uniqueSampleId}_modified.fasta ]]; then
-				echo "ERROR: this input fasta file does not exist or is empty: ${uniqueSampleId}_modified.fasta"
-				exit 1
-			fi
-		fi
+			 # If an input fasta file name doesn't exist then the 'modified.fasta' filename created above will not exist.
+			 # Testing whether file exists here:
+			 if [[ ! -s ${uniqueSampleId}_modified.fasta ]]; then
+				  echo "ERROR: this input fasta file does not exist or is empty: ${uniqueSampleId}_modified.fasta"
+				  exit 1
+			 fi
+		  fi
 
 		### [[To convert from 'gene species' my format to species-gene format:
 		###cat CKDK_Ochnaceae_Ochna_serrulata.fasta | awk '{if($1 ~ /^>/)  {{gsub(/>/,"",$1)} {print ">" $2 "-" $1}} else {print $0}}' >species-gene-format.fasta ]]
@@ -591,6 +629,21 @@ else
 		cat $fileList | seqtk seq -l 0 /dev/fd/0 > all_samples_concatenated.fasta
 		geneFile=all_samples_concatenated.fasta
 	fi
+else
+  echo "INFO: Command is running in species tree only mode (option -J) - expecting gene alignment files with a file name suffix of 'aln.for_tree.fasta'
+in the current working directory from a previous run.
+NB - alignment filtering and trimming options and option -T are not applicable in this mode."
+
+  # Check whether the gene alignment files exist:
+  if ls *.aln.for_tree.fasta >/dev/null 2>&1; then
+    # Need to calculate $numbrsamples variable properly.
+    # NB - Fasta file format here is: >sampelId.
+    # NB - on MacOS awk inserts a blank line between output lines so removing them with grep -v '^$'.
+    numbrSamples=`cat *.aln.for_tree.fasta | awk '{if($1 ~ /^>/)  {print $1} }' | grep -v  '^$' | sort -u | wc -l `
+  else
+    echo "ERROR: cannot find gene alignment files with a file name suffix of 'aln.for_tree.fasta'. Exiting."
+    exit
+  fi
 fi
 #exit
 
@@ -627,9 +680,11 @@ if [[ $sampleTableFile != 'no' ]]; then
 fi
 
 
-if [ -s $geneListFile ]; then echo ""
+if [[ $speciesTreesOnly == 'no' ]]; then
+  if [[ -s $geneListFile ]]; then echo ""
 	### NB - 26.4.2020 - just realised that the gene names should not contain any dot chars - see note in make_gene_trees.sh ~ line 59
-else echo "ERROR: the gene list file (option -g) does not exist or is empty: $geneListFile"; exit; fi
+  else echo "ERROR: the gene list file (option -g) does not exist or is empty: $geneListFile"; exit; fi
+fi
 
 
 ### 5.10.2020 - no longer need these two checks - being done further done
@@ -804,12 +859,27 @@ if [[ $extraMem != 'no' && $slurm -eq 1 ]]; then
 fi
 
 
+# Preparing option -M - set to default if not selected by user (i.e. -z $alnParams is zero length):
+# Create default options for mafft and UPP:
+if [[ $alnProgram == 'mafft' &&  -z $alnParams ]]; then
+    alnParams='--retree 2'
+elif [[ $alnProgram == 'upp' &&  -z $alnParams ]]; then
+    alnParams='-M 80 -T 0.15'
+fi
+### Could restrict the length of the $alnParams value:
+###alnParamsLen=`echo $alnParams | awk '{print length($1)}' `
+###if alnParamsLen > 50, exit
+
+
 # Some parameters selected for checking:
 echo "################"
 echo "Options selected"
 echo "################"
 echo dnaSelected: $dnaSelected
 echo proteinSelected: $proteinSelected
+echo alignment program: $alnProgram
+echo alignment parameters: $alnParams
+
 
 echo 'filter sequence option 1 (option -F): ' $filterSeqs1
 echo 'filter sequence option 2 (option -I): ' $filterSeqs2
@@ -839,7 +909,7 @@ echo
 ### 24.3.2021 - noticed that I also need to remove the *.modified.fasta files if the file names have changed
 ### betwen runs, otherwise all the samples will enter the analysis twice!!
 
-if [[ $checkpointing == 'no' ]]; then
+if [[ $checkpointing == 'no' && $speciesTreesOnly == 'no' ]]; then
   echo "Deleting output files if any exist from a previous run of the pipeline."
   if ls *.aln.for_tree.fasta >/dev/null 2>&1; then rm *.aln.for_tree.fasta *gene_tree_USE_THIS.nwk ; fi
   # Also, now I have added filterShortSeqs() function I need to check whether any of the filtered/trimmed fasta files need removing:
@@ -911,7 +981,7 @@ if [[ $os == 'Darwin' && $speciesTreesOnly == 'no' ]]; then
 		$phyloProgramPROT \
 		$fractnMaxColOcc \
 		$cpuGeneTree \
-		"$mafftAlgorithm" \
+		"$alnParams" \
 		"$exePrefix" \
 		"$alnProgram" \
 		$dnaSelected \
@@ -970,7 +1040,7 @@ if [[ $os == 'Darwin' && $speciesTreesOnly == 'no' ]]; then
 		"$fractnAlnCovrg" \
 		"$fractnMaxColOcc" \
 		"$fractnSamples" \
-		"$mafftAlgorithm" \
+		"$alnParams" \
 		"$cpuGeneTree" \
 		"$partitionName" \
 		"$pathToScripts" \
@@ -1034,7 +1104,7 @@ elif [[ $os == 'Linux' && $speciesTreesOnly == 'no' ]]; then
 		$phyloProgramPROT \
 		$fractnMaxColOcc \
 		$cpuGeneTree \
-		"$mafftAlgorithm" \
+		"$alnParams" \
 		"$exePrefix" \
 		"$alnProgram" \
 		$dnaSelected \
@@ -1072,7 +1142,7 @@ elif [[ $os == 'Linux' && $speciesTreesOnly == 'no' ]]; then
 			$phyloProgramPROT \
 			$fractnMaxColOcc \
 			$genesForExtraMem_CpuToUse \
-			"$mafftAlgorithm" \
+			"$alnParams" \
 			"$exePrefix" \
 			"$alnProgram" \
 			$dnaSelected \
@@ -1144,7 +1214,7 @@ elif [[ $os == 'Linux' && $speciesTreesOnly == 'no' ]]; then
 			"$fractnAlnCovrg" \
 			"$fractnMaxColOcc" \
 			"$fractnSamples" \
-			"$mafftAlgorithm" \
+			"$alnParams" \
 			"$cpuGeneTree" \
 			"$partitionName" \
 			"$pathToScripts" \
@@ -1191,7 +1261,7 @@ elif [[ $os == 'Linux' && $speciesTreesOnly == 'no' ]]; then
 			$phyloProgramPROT \
 			$fractnMaxColOcc \
 			$cpuGeneTree \
-			"$mafftAlgorithm" \
+			"$alnParams" \
 			"$exePrefix" \
 			"$alnProgram" \
 			$dnaSelected \
@@ -1249,7 +1319,7 @@ elif [[ $os == 'Linux' && $speciesTreesOnly == 'no' ]]; then
 			"$fractnAlnCovrg" \
 			"$fractnMaxColOcc" \
 			"$fractnSamples" \
-			"$mafftAlgorithm" \
+			"$alnParams" \
 			"$cpuGeneTree" \
 			"$partitionName" \
 			"$pathToScripts" \
@@ -1293,13 +1363,12 @@ if [ $geneTreesOnly == 'yes' ]; then exit; fi
 echo 'Making species tree(s)...'
 ################################
 if [ $os == 'Darwin' ]; then
-	exePrefix="/usr/bin/time -l"		# this time command gets the RSS memory, -l flag doesn't work on Cluster
+    exePrefix="/usr/bin/time -l"		# this time command gets the RSS memory, -l flag doesn't work on Cluster
     $pathToScripts/make_species_trees.sh \
 	$fractnAlnCovrg \
 	$fractnSamples \
 	$numbrSamples \
 	$fileNamePrefix \
-	$geneFile \
 	$cpu \
 	$phyloProgramDNA \
 	$phyloProgramPROT \
@@ -1317,43 +1386,46 @@ if [ $os == 'Darwin' ]; then
     $numbrBootstraps \
 	> ${fileNamePrefix}_make_species_trees.log 2>&1
 elif [ $os == 'Linux' ]; then
-	exePrefix="/usr/bin/time -v"
+    exePrefix="/usr/bin/time -v"
+    ### NB - not sure where to put the $exePrefix!!!!
+    ### One option is to put the "time script" cmd in a wrapper but then I need a log file for this sbatch call and delete it from the script header..
+    ### I think this is the only way without changing the main script itself.
     if [ $slurm -eq 1 ]; then
-    	### NB - not sure where to put the $exePrefix!!!!
-    	### One option is to put the "time script" cmd in a wrapper but then I need a log file for this sbatch call and delete it from the script header..
-    	### I think this is the only way without changing the main script itself.
-		echo \$jobId: $jobId - should match previous Slurm step.
-		# NB - previous Slurm jobs have to have an exit code of zero to satisfy Slurm --dependancy afterok:$jobId parameter,
-		# otherwise would need to use --dependancy afterany:$jobId if exit code coudl be > 0.
-		#					12.1.2021 - i still think afterok is Ok here  
-        sbatch --dependency=afterok:$jobId -p $partitionForSpeciesTrees -c $cpu -t $speciesTreeSlurmTime --mem=$speciesTreeSlurmMem -o ${fileNamePrefix}_make_species_trees.log -e ${fileNamePrefix}_make_species_trees.log  $pathToScripts/make_species_trees.sh \
+        if [[ $speciesTreesOnly == 'no' ]]; then
+            echo \$jobId: $jobId - should match previous Slurm step.
+            # NB - previous Slurm jobs have to have an exit code of zero to satisfy Slurm --dependancy afterok:$jobId parameter,
+		    # otherwise would need to use --dependancy afterany:$jobId if exit code could be > 0.
+		    #	  12.1.2021 - i still think afterok is Ok here
+            slurmDependancy="--dependency=afterok:$jobId"
+        else 
+            slurmDependancy=""
+        fi
+        sbatch $slurmDependancy -p $partitionForSpeciesTrees -c $cpu -t $speciesTreeSlurmTime --mem=$speciesTreeSlurmMem -o ${fileNamePrefix}_make_species_trees.log -e ${fileNamePrefix}_make_species_trees.log  $pathToScripts/make_species_trees.sh \
         $fractnAlnCovrg \
         $fractnSamples \
         $numbrSamples \
         $fileNamePrefix \
-        $geneFile \
         $cpu \
         $phyloProgramDNA \
         $phyloProgramPROT \
         "$exePrefix" \
         $sampleTableFile \
         $dnaSelected \
-		$proteinSelected \
-		$codonSelected \
-		$collapseNodes \
-		aln.for_tree.fasta \
-		$option_u \
+        $proteinSelected \
+        $codonSelected \
+        $collapseNodes \
+        aln.for_tree.fasta \
+        $option_u \
         "$speciesTreeProgram" \
         "$outgroupRoot" \
         $speciesTreeSlurmMem \
         $numbrBootstraps
-	else
-		$pathToScripts/make_species_trees.sh \
+    else
+        $pathToScripts/make_species_trees.sh \
 		$fractnAlnCovrg \
 		$fractnSamples \
 		$numbrSamples \
 		$fileNamePrefix \
-		$geneFile \
 		$cpu \
 		$phyloProgramDNA \
 		$phyloProgramPROT \

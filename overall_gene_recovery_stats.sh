@@ -14,6 +14,7 @@ shopt -s failglob
 
 
 ### Need to bring in the Sample prefix; might vary from 'Sample*'
+### Yes, at the moment script is assuming sample prefix is 'Sample' (option -p default)
 
 
 # Required for the per gene stats (readDepthPerGene_st_depth.txt):
