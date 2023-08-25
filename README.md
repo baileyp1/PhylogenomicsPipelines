@@ -120,7 +120,7 @@ Note that in the above command there must not be a space character after the bac
 
 The Slurm options, -Q, -Y, -V and -W, will need to be altered depending on how Slurm is set up. Slurm memory options, -R and -U, will need to be altered depending on the size of the data set; also refer to option -X which helps with memory efficiency by allowing the user to increase memory for specific genes that require significantly more memory. Note that for one very large gene alignment (Angiosperms353 gene 5921), the memory for PASTA (used by UPP) had to be increased from the default by setting the --max-mem-mb parameter to 10GB (--max-mem-mb=10000) under the '[pasta]' section in the ~/.sepp/upp.config file.
 
-The values set in the above example were appropriate for building gene trees then a species tree with ASTRAL-MP containing up to 10,709 samples over a 6 day period. Refer the citation above for methods and refer to the KewTreeOfLife link above for version 3.0 of the tree display.
+The values set in the above example were appropriate for building gene trees then a species tree with ASTRAL-MP containing up to 10,709 samples over a 6 day period. Refer to the citation above for an overview of the methods used and use the KewTreeOfLife link above to see version 3.0 of the tree display and any method changes that apply to this version of the tree.
 
 ### Outputs from make_species_trees_pipeline.sh  
 The main output files from the phylogenetic analysis pipeline are listed below in output order. Additional files will exist depending on the option(s) used, the option(s) value and the underlying programs triggered by the option(s).
@@ -196,14 +196,14 @@ cat <sample_list_file> | awk '{print "<path_to_files>/" $1 <your_path_to_fasta_f
 * iqtree2<br>
 default IQTREE2 run with model testing (slow for big alignments) and Ufboot bootstrapping<br>
 * iqtree2-B1000-nm1000<br>
-  single model of evolution (GTR for dna, JTT for protein) and Ufboot bootstrapping with 1000 tree iterations<br>
+  single model of evolution (GTR for DNA, JTT for protein) and Ufboot bootstrapping with 1000 tree iterations<br>
 * iqtree2-B1000-nm110<br>
   same as for 'iqtree2-B1000-nm1000’ except number of iterations is set to 110. Approximately 10x faster but less thorough tree search
-* iqtree2-B1000-nm200       
-  same as for 'iqtree2-B1000-nm1000’ except number of iterations is set to 200. Approximately 5x faster but less thorough tree search
+* iqtree2-B1000-nm200 (originally set up for testing run time)    
+  same as for 'iqtree2-B1000-nm1000’ except number of iterations is set to 200. Approximately 5x faster but less thorough tree search (originally set up for testing run time)
 
 **Option -s** name of phylogeny program(s) to use for the species tree(s)
-* When 'astral' is used RAM is fixed to 12GB and is sufficient to build a species tree with approximately 3,200 samples. For larger data sets it would be better to use ASTRAL-MP for faster analysis and use more memory. Memory for ASTRAL-MP should be set via option -U.
+* When 'astral' is used, memory is fixed to 12GB and is sufficient to build a species tree with approximately 3,200 samples. For larger data sets it would be better to use ASTRAL-MP for faster analysis but it will need  more memory. Memory for ASTRAL-MP should be set via option -U.
 
 **Option -H** Slurm array throttle for gene trees<br>
 * By default, this option is set to 1 only (i.e. runs one gene) which is useful to make sure the set up is running as expected for one gene. However, it means that the Slurm throttle has to be altered by hand to run more genes in parallel e.g. for 50 genes:
