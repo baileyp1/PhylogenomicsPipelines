@@ -868,7 +868,7 @@ if [[ $geneFile != 'use_genewise_files' ]]; then
 
 # If an input fasta file name doesn't exist then the 'modified.fasta' created above will not exist.
 ### - 16.4.2022 - I don't understand the above comment now - this is a file for a sample not gene-wise file
-###				  Shouldn't the same test be done on the files creatd in the above conditional?
+###				  Shouldn't the same test be done on the files creatd in the above conditional? 19.12.2022 - they've already been tested in hte wrapper script - note that here.
 # Testing whether the gene-wise file exists here: ${gene}_dna.fasta, 4802_after_treeshrink_dna.fasta or ${gene}_after_filterSeqs_dna.fasta
 #	None of them existing triggers the error.
 elif [[ ! -s $dnaFastaFileForAln ]]; then

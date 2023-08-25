@@ -106,8 +106,6 @@ INPUT FILE OPTIONS:
                 Gene name/identifier must be identical to the fasta file name (minus any [dot] ending suffix e.g. .fasta),
                 else change the gene name list in option -g so that it is.	
                 Fasta header line format MUST BE: >sampleId
-  -P
-                perform protein family analysis with protein input
   -g <file>        
                 file (including path to it) containing list of gene names only (required option)
                 NB - pretty sure that gene names must NOT have '.' characters in them if the suffix is what makes them unique.         
@@ -130,11 +128,12 @@ ALIGNMENT OPTIONS:
   -A <string>      
                 alignment program to use: mafft, upp (UPP is ideal for large alignments) (default=mafft)
 
-  -M <string:>  options to use with chosen alignment program (they must be quoted and the option flag(s) included). For MAFFT, specify the 
+  -M <string:>  
+                options to use with chosen alignment program (they must be quoted and the option flag(s) included). For MAFFT, specify the 
                 alignment algorithm to use in quotes i.e. '--retree 1', '--retree 2', '--maxiterate 1000' etc (default='--retree 2'); for 
                 UPP, choose values for UPP options -M and -T (default='-M 80 -T 0.15'). Note - the value for UPP option -M should be a percentile 
-                of the sequence lengths for each gene which will then get converted to the corresponding length for input into UPP
-ALIGNMENT FILTERING AND TRIMMING OPTIONS:
+                of the sequence lengths for each gene which will then get converted to the corresponding length for input into UPP.
+
   -F <2 integers> 
                 filter sequences option 1 (followed by re-alignment). Format: '<1> <2>' (no default; N.B. values must be quoted)
                 1. filters sequences in gene alignments by coverage, in this option by the percent of well conserved regions (columns)
@@ -255,6 +254,9 @@ EOF
 
 # Hidden parameters which work if you know about them:
 # -m  <float> maximum column occupancy (default=0.7; 0.7 means that columns with 70 % residue occupancy will be counted)
+# Removed this flag - still under development
+# -P  perform protein family analysis with protein input
+
 
 
 # Extensions to options not inlcuded yet:
@@ -386,11 +388,11 @@ done
 
 # Check positional parameters are present i.e. the gene recovery fasta file(s) are present:
 # Command line variables summary:
-#echo '$# == ' $#										  # Total number of all parameters (excludes script name, includes flags and their values, excludes free parameters (ones with no flags)) 
-#echo \$OPTIND == $OPTIND						  # Position of the first free parameter after any options - free parameters must come after any optional parameters.
-#echo 'Value of first free parameter: ' ${@:$OPTIND:1}	# Lists the value of the first free parameter from the $@ variable; ${@:$OPTIND:2} will access the first two free parameters.
-#echo 'Values of all free parameters: '${@:$OPTIND:$#}	# Therefore ${@:$OPTIND:$#} will access all the free parameters
-#echo $(( $# - $OPTIND + 1 ))					# Number of free parameters, in this case the number of samples - 19.12.2022 - but what about gene-wise mode? - changed to "files" submitted 
+#echo '$# == ' $#				                           # Total number of all parameters (excludes script name, includes flags and their values, excludes free parameters (ones with no flags)) 
+#echo \$OPTIND == $OPTIND		                           # Position of the first free parameter after any options - free parameters must come after any optional parameters.
+#echo 'Value of first free parameter: ' ${@:$OPTIND:1}	   # Lists the value of the first free parameter from the $@ variable; ${@:$OPTIND:2} will access the first two free parameters.
+#echo 'Values of all free parameters: '${@:$OPTIND:$#}	   # Therefore ${@:$OPTIND:$#} will access all the free parameters
+#echo $(( $# - $OPTIND + 1 ))					           # Number of free parameters, in this case the number of samples - 19.12.2022 - but what about gene-wise mode? - changed to "files" submitted 
 numbrSamples=$(( $# - $OPTIND + 1 ))
 echo
 echo "Number of input files submitted as free parameters: $numbrSamples"

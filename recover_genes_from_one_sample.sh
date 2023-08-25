@@ -116,6 +116,7 @@ if [ $hybSeqProgram == 'paftools' ]; then
   		echo "Dataset type: $datasetOrigin"		# Required for addPaftolFastq program
   		echo "Recovery run: $recoveryRun" 		# Required for recoverSeqs program 
 
+### 14.7.2023 - will not need these steps for option -u upload to new paftol db 
 		# Remove the .gz ending from the file name for adding to the pafto_da database
 		unzippedR1FastqFile=`basename -s .gz $paftolDataSymlinksDir/$R1FastqFile `
 
@@ -158,6 +159,7 @@ if [ $hybSeqProgram == 'paftools' ]; then
 		echo "Exit status of paftools addpaftolFastq:" $?
 		### NB - paftools recoverSeqs also runs FastQC stats against the raw reads but this is unnessary.
 		###     Try to delete this step then I can just remove the raw fastqs here.
+### 14.7.2023 - end of requirement for option -d
 
 		# Paftools --usePaftolDb requires the targets filename WITHOUT the path
 		# i.e. it insists that targets file is in the pwd (but I could change that):
@@ -211,7 +213,24 @@ if [ $hybSeqProgram == 'paftools' ]; then
 			$usePaftolDbFlag $recoveryRun \
 			> ${sampleId}_overlapSerial.log 2>&1
 		fi
-		rm $targetsFile	# If write to database fails, this fail doesn't get deleted (c.f. set cmds active), so presence of file is a useful 'marker' for failing to write to db
+
+### 14.7.2023 - write to the db here - e.g.:
+### if option - u is set : 
+### note new flag -u for script here - Python $ENV var instead of creating a file
+### make this into a function so i can call it with HybPipr as well
+#time paftol_db_add_sample_recoveries_batch_upload.py \
+#-c ~/.paftol/paftol_merge_v4_for_recovery_upload_tests.cfg \
+#-p Sample \
+#-a . \
+#-b paftol/AllData_symlinks \
+#-f . \
+#-g paftol/PAFTOL_gene_recovery_and_trees/run1_paftools \
+#-r 1 \
+#-u sampleId \
+#> paftol_da_add_samples_batch_upload.log 2>&1 &
+
+
+		rm $targetsFile	# If write to database fails, this file doesn't get deleted (c.f. set cmds active), so presence of file is a useful 'marker' for failing to write to db
 
 		# Remove the large fastq files::
 		if [[ -s $unzippedR1FastqFile ]]; then rm $unzippedR1FastqFile; fi
@@ -294,6 +313,7 @@ elif [[ $hybSeqProgram == 'hybpiper'* ]]; then
 		bwa='--bwa'
 		echo Using HybPiper with the --bwa option...
 	fi
+	# else $bwa remains blank and the default option is used
 
 	# First combine unpaired reads (both single end reads should have unique ids) - but won't I have the same problem as above?!
 	unpairedFastqFile=''
@@ -443,6 +463,10 @@ elif [[ $hybSeqProgram == 'hybpiper'* ]]; then
         # HybPiper cleanup - remvoves the spades dir (Sample_/$sampleId/$geneName/$geneName_spades)
         cleanup.py $sampleId
 
+
+### 14.7.2023 - write to the PAFTOL db here - e.g.: see above for paftools
+### try to keep the unzipped files around for immediate use with script 
+
         if [[ $stats == 'no' ]]; then
 			# Remove the large fastq files:
 			if [[ -s ${sampleId}_R1_trimmomatic.fastq ]]; then rm ${sampleId}_R1_trimmomatic.fastq; fi
@@ -451,7 +475,7 @@ elif [[ $hybSeqProgram == 'hybpiper'* ]]; then
 			if [[ -s ${sampleId}_R1_R2_trimmomatic.log ]];then rm ${sampleId}_R1_R2_trimmomatic.log; fi
 			if [[ -s ${sampleId}_R1_trimmomatic.log ]]; then rm ${sampleId}_R1_trimmomatic.log; fi
 
-			### NEED TO DECIDE HOW TO DEAL WITH THIS:	${sampleId}_R1_R2_trimmomatic_unpaired.fastq \
+			### NEED TO DECIDE HOW TO DEAL WITH THIS:	${sampleId}_R1_R2_trimmomatic_unpaired.fastq 
 		fi
 	fi
 	# Converting to a tarball archive the main HybPiper results directory beneath the main <samplePrefix>_<sampleId> folder.
@@ -477,7 +501,9 @@ if [[ $stats != 'no' ]]; then
 		echo "If using PaftolDB with Paftools (i.e. if hidden option -d is also being used), need to run Trimmomatic again as the previous run was only saved to /tmp/ - still to add Trimmomatic step here"
 		# NB - in all other cases trimmomatic is being run again above before this clause is reached
 		exit
-	fi	
+	fi
+
+	### 18.8.2023 - create: mkdir -p recovery_stats/ dir and cd 
 
 	
 	# Find the gene recovery file for indexing with BWA
@@ -485,7 +511,7 @@ if [[ $stats != 'no' ]]; then
 	if [[ $refFilePathForStats == 'default' ]]; then
 		# Try to find file in pwd, as if recoveries have just been done:
 		if [[ -s ${sampleId}.fasta ]]; then 
-			refFileName=${sampleId}.fasta
+			refFileName=${sampleId}.fasta 		### 18.8.2023 - so like for option -P below cop -p from above dir into the recovery_stats dir just made
 			# Gene recovery file is in pwd.
 		elif [[ -s ${sampleId}_all_genes.fasta ]]; then
 			refFileName=${sampleId}_all_genes.fasta
@@ -525,6 +551,7 @@ if [[ $stats != 'no' ]]; then
 	echo "Found gene recovery fasta file: $refFileName"
 
 	# Prepare to map reads for getting stats:
+### 18.8.2023 - change to ../ for fastqs incl SE reads below then that's it I think except for removing fastq files
 	bamFileWithDups=''
 	bwa index $refFileName
 	bwa mem -t $cpu $refFileName \

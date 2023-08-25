@@ -64,10 +64,9 @@ OPTIONS <value>:
   -y <string>    
                  Hyb-Seq program; options are: paftools, hybpiper, hybpiper-bwa
   -S    
-                 calculate statistics for gene recovery from read data (includes per sample reads on-target, read coverage, read depth).
-                 This option can also be used separately after the gene recoveries have run (do not specify option -y!) but the path to the
-                 gene recovery fasta files has to be specified with option -P, if not running in the same location as the original gene 
-                 recovery run
+                 calculate statistics for gene recovery from read data mapped to all recovered genes per sample (includes per sample reads on-target, read
+                 coverage, read depth). This option can also be used separately after the gene recoveries have run (do not specify option -y!) but the path
+                 to the gene recovery fasta files has to be specified with option -P, if not running in the same location as the original gene recovery run
   -P <string> 
                  Specify FULL path to the gene recovery fasta files (for option -S), but only the part common to all files.
                  This option looks for the first, then the second of these two cases:
