@@ -118,7 +118,7 @@ make_species_trees_pipeline.sh \
 ```
 Note that in the above command there must not be a space character after the back slash, there must be a space before the back slash and any option values that contain spaces need to be quoted e.g. option -F. 
 
-The Slurm options, -Q, -Y, -V and -W, will need to be altered depending on how Slurm is set up. Slurm memory options, -R and -U, will need to be altered depending on the size of the data set; also refer to option -X which helps with memory efficiency by allowing the user to increase memory for specific genes that require significantly more memory. Note that for one very large gene alignment (gene 5921), the memory for PASTA (used by UPP) had to be increased from the default by  setting the --max-mem-mb parameter to 10GB (--max-mem-mb=10000) under the '[pasta]' section in the ~/.sepp/upp.config file.
+The Slurm options, -Q, -Y, -V and -W, will need to be altered depending on how Slurm is set up. Slurm memory options, -R and -U, will need to be altered depending on the size of the data set; also refer to option -X which helps with memory efficiency by allowing the user to increase memory for specific genes that require significantly more memory. Note that for one very large gene alignment (Angiosperms353 gene 5921), the memory for PASTA (used by UPP) had to be increased from the default by setting the --max-mem-mb parameter to 10GB (--max-mem-mb=10000) under the '[pasta]' section in the ~/.sepp/upp.config file.
 
 The values set in the above example were appropriate for building gene trees then a species tree with ASTRAL-MP containing up to 10,709 samples over a 6 day period. Refer the citation above for methods and refer to the KewTreeOfLife link above for version 3.0 of the tree display.
 
