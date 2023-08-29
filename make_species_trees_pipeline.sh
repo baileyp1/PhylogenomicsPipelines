@@ -98,8 +98,10 @@ Program description:
 Usage:          make_species_trees_pipeline.sh [OPTIONS] fastafile1 fastafile2 fastafile3 ...
 
 OPTIONS <required_value>:
-  -h            shows this message
-  -v            program version
+  -h
+                shows this message
+  -v
+                program version
 INPUT FILE OPTIONS:
   -G               
                 make gene trees starting from unaligned gene-wise fasta files rather than files containing all genes per sample.
@@ -179,12 +181,12 @@ PHYLOGENY OPTIONS:
                 number of bootstrap searches for RAxML species tree (default=100)
   -L <integer>     
                 collapse gene tree nodes with bootstrap support less than <integer> percent
-
-  -o <string>   list sample name(s)/identifier(s) for the outgroup/root. Format: 'sampleId1 sampleId2 sampleId3 etc' (N.B. values must be inside quote characters).
+  -o <string>
+                list sample name(s)/identifier(s) for the outgroup/root. Format: 'sampleId1 sampleId2 sampleId3 etc' (N.B. values must be inside quote characters).
                 To mid-point root the trees, type 'mid-point'
 OTHER OPTIONS:
-  -b            Turn on checkpointing i.e. repeat exactly the same run in the same location, reconstructing any gene trees that failed at the first attempt
-
+  -b
+                Turn on checkpointing i.e. repeat exactly the same run in the same location, reconstructing any gene trees that failed at the first attempt
   -C <integer>     
                 number of cpu to use for genetrees; NB - not convinced >1 cpu works robustly for raxml-ng with small datasets! (default=1)
   -c <integer>     
