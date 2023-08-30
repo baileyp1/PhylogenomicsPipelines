@@ -51,7 +51,7 @@ OPTIONS <value>:
   -h   
                  prints usage and description
   -v             
-  program version
+                 program version
   -s <csv file>  
                  add sample name and fastq file names via a csv table file (must have a header line);
                  format: SampleName,R1FastqName,R2FastqName (required option)
@@ -62,7 +62,8 @@ OPTIONS <value>:
   -a <string>    
                  file name of adaptors in fasta format (required option)
   -y <string>    
-                 Hyb-Seq program; options are: paftools, hybpiper, hybpiper-bwa
+                 Hyb-Seq program; options are: paftools, hybpiper, hybpiper-bwa, hybpiper2, hybpiper2-bwa
+                 Note: HybPiper version 1.3 and 2.1.6 only tested with this recovery pipeline 
   -S    
                  calculate statistics for gene recovery from read data mapped to all recovered genes per sample (includes per sample reads on-target, read
                  coverage, read depth). This option can also be used separately after the gene recoveries have run (do not specify option -y!) but the path
@@ -86,9 +87,9 @@ OPTIONS <value>:
                  Slurm time limit, format <days>-<hours>:<minutes> (default=0-36:00 (36 hours)
   -Q <string>    
                  Slurm partition (queue) to use (default=medium; select more than one queue with a comma delimited list e.g. medium,long)
- 
   -H <integer>
                  Slurm array throttle (default=1; could keep to 1, then increase once happy with run with: scontrol update arraytaskthrottle=<integer> job=<jobId>)
+
  
 
 A typical example:
@@ -152,26 +153,32 @@ if [ "$#" -lt 1 ]; then usage; exit 1; fi
 # Only two programs to check currently (Paftools and HybPiper; can use -h and --help, both give a zero exit code)
 ### 29.3.2020 - addpaftolfastqmaybe do this after all other checks so the print out doesn't appear if there is an issue with input parameters
 ### 12.5.2020 - also Trimmomatic is required. Others e.g. fastqc are dependancies of Paftools
-if [[ $hybSeqProgram == 'hybpiper'* ]]; then
-    echo 'Testing HybPiper is installed, will exit now if not found.' 
+if [[ $hybSeqProgram == 'hybpiper' || $hybSeqProgram == 'hybpiper-bwa' ]]; then
+    echo 'Testing HybPiper version 1 is installed, will exit now if there is an issue.' 
     reads_first.py -h >/dev/null 2>&1    # Will exit here if not found!
-    echo 'hybpiper found.'
+    echo 'HybPiper found.'
 
     #echo 'Testing seqtk is installed...'
     #seqtk >/dev/null 2>&1                # Will exit here if not found! NBNB - also exits here IF FOUND !!!!!!!! Need another solution!
                                           # Maybe run program via the $hybSeqProgram as this works in the trees script - maybe bash is unaware that it is runnign a program!?
                                           # NO - I thinks it's becuase of the set options - maybe should remove them !!!!
+elif [[ $hybSeqProgram == 'hybpiper2'* ]]; then
+    echo 'Testing HybPiper version 2 is installed, will exit now if there is an issue.' 
+    export PYTHONPATH=$HOME/lib/python           # Python path required to link to paftools if it is installed in home directory
+    hybpiper assemble --help >/dev/null 2>&1     # Will exit here if not found!
+    echo 'HybPiper version 2 found.'
 elif [[ $hybSeqProgram == 'paftools' ]]; then
-    echo 'Testing paftools is installed, will exit now if not found.' 
+    echo 'Testing paftools is installed, will exit now if there is an issue.' 
     export PYTHONPATH=$HOME/lib/python    # Python path required to link to paftools if it is installed in home directory
     $hybSeqProgram -h >/dev/null 2>&1     # Will exit here if not found!
     echo 'paftools found.'
 fi
-if [[ $? == 127 || $? == 1 ]]; then       # Also added 1 becasue Paftools can be in the path but set up still not correct.
+###if [[ $? == 127 || $? == 1 ]]; then       # Also added 1 becasue Paftools can be in the path but set up still not correct - 29.8.2023 - changed to a more general error
+if [[ $? -ge 1 ]]; then
     # Exit code 127 is for "command not found"
     ### 16.3.2020 - this doesn't work as script exits in the above conditional if program is not found!
     ### Readjusted above conditional instead.
-    ### 13.2.2021 - i think the solution is to turn off set set -e and set -u for this step then back on again.
+    ### 13.2.2021 - i think the solution is to turn off set set -e and set -u for this step ONLY then tunr back on again.
     echo "ERROR: Not available: $hybSeqProgram"
     exit
 fi

@@ -26,6 +26,7 @@ stats=${10}
 refFilePathForStats=${11} 
 
 #echo exePrefix: "$exePrefix"	# check that variable is not split on space
+echo hybSeqProgram: $hybSeqProgram
 echo stats: $stats
 echo refFilePathForStats: $refFilePathForStats
   
@@ -62,8 +63,8 @@ if [[ $usePaftolDb == 'no' ]]; then
 	###pathToTrimmomatic=`which trimmomatic-0.39.jar `		# NB - 'which' requires the file to be executable!
 	###$exePrefix  java -jar $pathToTrimmomatic PE \		# 12.2.2021 - Changed the way java programs are called to using a global variable
 	if [ -z "$R2FastqFile" ]; then
-		### 2.11.2022 - temporary fix - time command doesn't exist after OS updates on the KewHPC nodes: $exePrefix  java -jar $TRIMMOMATIC SE
-		java -jar $TRIMMOMATIC SE \
+		### 2.11.2022 - temporary fix - time command doesn't exist after OS updates on the KewHPC nodes: $exePrefix  java -jar $TRIMMOMATIC SE - OK now so have put back
+		$exePrefix java -jar $TRIMMOMATIC SE \
 		-threads $cpu \
 		-trimlog ${sampleId}_R1_trimmomatic.log \
 		$paftolDataSymlinksDir/$R1FastqFile \
@@ -74,8 +75,8 @@ if [[ $usePaftolDb == 'no' ]]; then
 		SLIDINGWINDOW:4:20 \
 		MINLEN:40 > ${sampleId}_trimmomatic.log 2>&1
 	else
-		### 2.11.2022 - temporary fix - time command doesn't exist after OS updates on the KewHPC nodes: $exePrefix  java -jar $TRIMMOMATIC PE
-		java -jar $TRIMMOMATIC PE \
+		### 2.11.2022 - temporary fix - time command doesn't exist after OS updates on the KewHPC nodes: $exePrefix  java -jar $TRIMMOMATIC PE - OK now so have put back
+		$exePrefix java -jar $TRIMMOMATIC PE \
 		-threads $cpu \
 		-trimlog ${sampleId}_R1_R2_trimmomatic.log \
 		$paftolDataSymlinksDir/$R1FastqFile \
@@ -172,8 +173,8 @@ if [ $hybSeqProgram == 'paftools' ]; then
 		#      The Trimmomatic program name needs to be 
 		export PYTHONPATH=$HOME/lib/python 			# I had to add this for the cluster ONLY - need to. Check it is OK on Macbook, it should be.
 		if [ -z "$R2FastqFile" ]; then
-			### 13.10.2022 - temporary fix - time command doesn't exist after OS updates on the KewHPC nodes: $exePrefix paftools recoverSeqs
-			paftools recoverSeqs \
+			### 13.10.2022 - temporary fix - time command doesn't exist after OS updates on the KewHPC nodes: $exePrefix paftools recoverSeqs - OK now so have put back
+			$exePrefix paftools recoverSeqs \
 			$targetsFile \
 			${sampleId}.fasta \
 			-f $unzippedR1FastqFile \
@@ -194,8 +195,8 @@ if [ $hybSeqProgram == 'paftools' ]; then
 			$usePaftolDbFlag $recoveryRun \
 			> ${sampleId}_overlapSerial.log 2>&1
 		else
-			### 13.10.2022 - temporary fix - time command doesn't exist after OS updates on the KewHPC nodes: $exePrefix  paftools recoverSeqs
-			paftools recoverSeqs \
+			### 13.10.2022 - temporary fix - time command doesn't exist after OS updates on the KewHPC nodes: $exePrefix  paftools recoverSeqs - OK now so have put back
+			$exePrefix paftools recoverSeqs \
 			$targetsFile \
 			${sampleId}.fasta \
 			-f $unzippedR1FastqFile \
@@ -248,8 +249,8 @@ if [ $hybSeqProgram == 'paftools' ]; then
 		#srun -J ${sampleId}_overlapRecover -n 1  -o ${sampleId}_overlapRecover.log  -e ${sampleId}_overlapRecover.log_err \	- issue with srun
 		export PYTHONPATH=$HOME/lib/python 			# I had to add this for the cluster ONLY - need to. check it is OK on Macbook, it should be.
 		if [ -z "$R2FastqFile" ]; then
-			### 2.11.2022 - temporary fix - time command doesn't exist after OS updates on the KewHPC nodes: $exePrefix  paftools recoverSeqs
-			paftools recoverSeqs \
+			### 2.11.2022 - temporary fix - time command doesn't exist after OS updates on the KewHPC nodes: $exePrefix  paftools recoverSeqs - OK now so have put back
+			$exePrefix paftools recoverSeqs \
 			$targetsFile \
 			${sampleId}.fasta \
 			-f ${sampleId}_R1_trimmomatic.fastq \
@@ -265,8 +266,8 @@ if [ $hybSeqProgram == 'paftools' ]; then
 			$usePaftolDbFlag \
 			> ${sampleId}_overlapSerial.log 2>&1
 		else
-			### 2.11.2022 - temporary fix - time command doesn't exist after OS updates on the KewHPC nodes: $exePrefix  paftools recoverSeqs
-			paftools recoverSeqs \
+			### 2.11.2022 - temporary fix - time command doesn't exist after OS updates on the KewHPC nodes: $exePrefix  paftools recoverSeqs - OK now so have put back
+			$exePrefix paftools recoverSeqs \
 			$targetsFile \
 			${sampleId}.fasta \
 			-f ${sampleId}_R1_trimmomatic.fastq \
@@ -313,10 +314,11 @@ if [ $hybSeqProgram == 'paftools' ]; then
 elif [[ $hybSeqProgram == 'hybpiper'* ]]; then
 
 	echo "Running gene recovery with HybPiper..."
-
 	bwa=''
-	if [[ $hybSeqProgram == 'hybpiper-bwa' ]];then 
+	targetFileFlag='--targetfile_aa' # only used by HybPiper2
+	if [[ $hybSeqProgram == 'hybpiper-bwa' || $hybSeqProgram == 'hybpiper2-bwa' ]];then  
 		bwa='--bwa'
+		targetFileFlag='--targetfile_dna'
 		echo Using HybPiper with the --bwa option...
 	fi
 	# else $bwa remains blank and the default option is used
@@ -329,173 +331,215 @@ elif [[ $hybSeqProgram == 'hybpiper'* ]]; then
 		unpairedFastqFile="--unpaired ${sampleId}_R1_R2_trimmomatic_unpaired.fastq"
 	fi
 
-	### 2.11.2022 - temporary fix - time command doesn't exist after OS updates on the KewHPC nodes: $exePrefix reads_first.py --cpu $cpu $bwa \
-	reads_first.py --cpu $cpu $bwa \
-	-b $targetsFile \
-	-r ${sampleId}_R*_trimmomatic.fastq  \
-	--cov_cutoff 4 \
-	--prefix ${sampleId} \
-	$unpairedFastqFile \
-	> ${sampleId}_hybpiper.log 2>&1
-	### 11.4.2022 - now using the --unpaired ${sampleId}_R1_R2_trimmomatic_unpaired.fastq \
-	# Output: sampleId/geneId/sampleId/sequences/FNA/geneId.FNA; fasta header line: >sampleId
-	# NBNB - From what I can make out, --cov_cutoff does seem to operate with spades, even though it says 
-	#        flag is for velvetg - set to 4 otherwise default=8
-	# NB - 11.4.2020 - trialing --length_pct set to 50
+	if [[ $hybSeqProgram == 'hybpiper' ]];then 
+		
+		echo Using HybPiper version 1.3 ...
+		### 2.11.2022 - temporary fix - time command doesn't exist after OS updates on the KewHPC nodes: $exePrefix reads_first.py --cpu $cpu $bwa - OK now so have put back
+		$exePrefix reads_first.py --cpu $cpu $bwa \
+		-b $targetsFile \
+		-r ${sampleId}_R*_trimmomatic.fastq  \
+		--cov_cutoff 4 \
+		--prefix ${sampleId} \
+		$unpairedFastqFile \
+		> ${sampleId}_hybpiper.log 2>&1
+		### 11.4.2022 - now using the --unpaired ${sampleId}_R1_R2_trimmomatic_unpaired.fastq \
+		# Output: sampleId/geneId/sampleId/sequences/FNA/geneId.FNA; fasta header line: >sampleId
+		# NBNB - From what I can make out, --cov_cutoff does seem to operate with spades, even though it says 
+		#        flag is for velvetg - set to 4 otherwise default=8
+		# NB - 11.4.2020 - trialing --length_pct set to 50
 
-	if [ -s ${sampleId}/genes_with_seqs.txt ]; then
-		# Alter the genewise files to be compatible with the make_species_trees_pipeline.sh script,
-		# i.e. create sample fasta file containing all genes with faster header format >sampleId-geneId:
-		for filePath in ${sampleId}/*/*/sequences/FNA/*.FNA; do
-			geneName=`basename $filePath .FNA`
-			cat $filePath \
-			| awk -v gene=$geneName '{if($1 ~ /^>/) {print $1 "-" gene} else {print $0}}'
-		done > ${sampleId}_all_genes.fasta
+		if [ -s ${sampleId}/genes_with_seqs.txt ]; then
+			# Alter the genewise files to be compatible with the make_species_trees_pipeline.sh script,
+			# i.e. create sample fasta file containing all genes with faster header format >sampleId-geneId:
+			for filePath in ${sampleId}/*/*/sequences/FNA/*.FNA; do
+				geneName=`basename $filePath .FNA`
+				cat $filePath \
+				| awk -v gene=$geneName '{if($1 ~ /^>/) {print $1 "-" gene} else {print $0}}'
+			done > ${sampleId}_all_genes.fasta
 
-		### 2.11.2022 - temporary fix - time command doesn't exist after OS updates on the KewHPC nodes: $exePrefix intronerate.py  ...
-		intronerate.py --prefix ${sampleId} --addN > ${sampleId}_intronerate.log 2>&1
-		# Outputs e.g.:
-		# geneId_supercontig.fasta; fasta header line: >sampleId-geneID
-		# geneId_introns.fasta; fasta header line: >sampleId-geneID
+			### 2.11.2022 - temporary fix - time command doesn't exist after OS updates on the KewHPC nodes: $exePrefix intronerate.py  - OK now so have put back
+			$exePrefix intronerate.py --prefix ${sampleId} --addN > ${sampleId}_intronerate.log 2>&1
+			# Outputs e.g.:
+			# geneId_supercontig.fasta; fasta header line: >sampleId-geneID
+			# geneId_introns.fasta; fasta header line: >sampleId-geneID
 
-		# Now concatenate the intronerate outputs:
-		cat ${sampleId}/*/*/sequences/intron/*_supercontig.fasta \
-		> ${sampleId}_all_genes_supercontig.fasta
+			# Now concatenate the intronerate outputs:
+			cat ${sampleId}/*/*/sequences/intron/*_supercontig.fasta \
+			> ${sampleId}_all_genes_supercontig.fasta
 
-		cat ${sampleId}/*/*/sequences/intron/*_introns.fasta \
-		> ${sampleId}_all_genes_introns.fasta
+			cat ${sampleId}/*/*/sequences/intron/*_introns.fasta \
+			> ${sampleId}_all_genes_introns.fasta
 
-		# Create a text file with the sampleId name in it for analysing the outputs for paralogs:
-		echo $sampleId > ${sampleId}_name.txt
-		# Also need a list of gene names:
-		geneList=`cat ${sampleId}/genes_with_seqs.txt | awk '{printf $1 " "}' `
-		# Output any paralogs found for each gene
-		paralog_investigator.py $sampleId > ${sampleId}_paralog_investigator.log 2>&1
-		# Now get all single copy genes AND paralogs into one file and
-		# add any paralog suffixes to the geneId as well e.g. .main, .1.
-		# Genes from geneId.FNA; fasta header line: >geneId
-		# Genes from paralog_retriever.py output: >SampleId.main-geneId NODE_2_length_2887_cov_48.492391,Artocarpus-gene006,0,584,94.83,(-),2346,386
-		### NBNB - the paralogs can come out as .0 or .1 etc even though there is only one paralog so they will be treated as different species in the gene trees.
-		### Need to ensure that these have the same suffix; still need to check how they cluster in the gene trees though for RAxML.
-		### Now need to look out for multiple paralogs...
-		# First NOT including paralog suffixes in the geneId:
-		for geneName in $geneList; do
-			export geneName
-			paralog_retriever.py  ${sampleId}_name.txt  $geneName \
-			| perl -e '
-        	$paralogCountr = 1;
-        	while ($line = <>) {
-        		chomp $line;
-        		# Records with paralogs identified by detecting .main, .0, .1 etc:
-            	if($line =~ /^>/ && $line =~ /\.(main|\d+)/)    {
-            		($sampleParalog, $restOfLine) = split / /, $line;
-                	($sampleId, $paralogId) = split /\./, $sampleParalog;
-                	if($paralogId eq "main")	{
-                		print $sampleId, "_", $paralogId, "-", $ENV{geneName}, " $restOfLine\n"
-                		}
-                	else	{
-                		print $sampleId, "_p", $paralogCountr, "-", $ENV{geneName}, " $restOfLine\n";
-                		$paralogCountr++;
-                	}
-            	}
-            	elsif($line =~ /^>/)    {
-                	print $line, "-", $ENV{geneName}, "\n"
-            	}
-            	else {
-            		print $line, "\n"
-            	}
-        	}' 
-        done > ${sampleId}_all_single_copy_AND_paralogous_genes_NO_paralog_suffix.fasta  2> ${sampleId}_paralog_number.txt
-		# Output fasta header formats in this file:
-		# >sampleId_main-geneId		- main paralog chosen by HybPiper
-		# >sampleId_p1-geneId		- first additional paralog
-		# NB - both paralogs will be used in the make_species_trees_pipeline.sh script (NB - this may break the one gene, one locus assumption for ASTRAL)
+			# Create a text file with the sampleId name in it for analysing the outputs for paralogs:
+			echo $sampleId > ${sampleId}_name.txt
+			# Also need a list of gene names:
+			geneList=`cat ${sampleId}/genes_with_seqs.txt | awk '{printf $1 " "}' `
+			# Output any paralogs found for each gene
+			paralog_investigator.py $sampleId > ${sampleId}_paralog_investigator.log 2>&1
+			# Now get all single copy genes AND paralogs into one file and
+			# add any paralog suffixes to the geneId as well e.g. .main, .1.
+			# Genes from geneId.FNA; fasta header line: >geneId
+			# Genes from paralog_retriever.py output: >SampleId.main-geneId NODE_2_length_2887_cov_48.492391,Artocarpus-gene006,0,584,94.83,(-),2346,386
+			### NBNB - the paralogs can come out as .0 or .1 etc even though there is only one paralog so they will be treated as different species in the gene trees.
+			### Need to ensure that these have the same suffix; still need to check how they cluster in the gene trees though for RAxML.
+			### Now need to look out for multiple paralogs...
+			# First NOT including paralog suffixes in the geneId:
+			for geneName in $geneList; do
+				export geneName
+				paralog_retriever.py  ${sampleId}_name.txt  $geneName \
+				| perl -e '
+	        	$paralogCountr = 1;
+	        	while ($line = <>) {
+	        		chomp $line;
+	        		# Records with paralogs identified by detecting .main, .0, .1 etc:
+	            	if($line =~ /^>/ && $line =~ /\.(main|\d+)/)    {
+	            		($sampleParalog, $restOfLine) = split / /, $line;
+	                	($sampleId, $paralogId) = split /\./, $sampleParalog;
+	                	if($paralogId eq "main")	{
+	                		print $sampleId, "_", $paralogId, "-", $ENV{geneName}, " $restOfLine\n"
+	                		}
+	                	else	{
+	                		print $sampleId, "_p", $paralogCountr, "-", $ENV{geneName}, " $restOfLine\n";
+	                		$paralogCountr++;
+	                	}
+	            	}
+	            	elsif($line =~ /^>/)    {
+	                	print $line, "-", $ENV{geneName}, "\n"
+	            	}
+	            	else {
+	            		print $line, "\n"
+	            	}
+	        	}' 
+	        done > ${sampleId}_all_single_copy_AND_paralogous_genes_NO_paralog_suffix.fasta  2> ${sampleId}_paralog_number.txt
+			# Output fasta header formats in this file:
+			# >sampleId_main-geneId		- main paralog chosen by HybPiper
+			# >sampleId_p1-geneId		- first additional paralog
+			# NB - both paralogs will be used in the make_species_trees_pipeline.sh script (NB - this may break the one gene, one locus assumption for ASTRAL)
 
-		# Now creating geneIds with the paralog suffix, if present, so that no paralogs
-		# will be used in the make_species_trees_pipeline.sh script:
-		### NB - searching for .main or .\d is quite dangerous if sample names/ids also have dots in them! Unless you were to grab the text after the last dot or inform the user.
-		### 17.6.2021 - Instead, you could split into an array, then get the last element (after last dot) and add remainder to $sampleId - easy! Also above file as well
-		for geneName in $geneList; do
-			export geneName
-			paralog_retriever.py  ${sampleId}_name.txt  $geneName \
-			| perl -e '
-			$paralogCountr = 1;
-        	while ($line = <>) {
-        		chomp $line;
-        		# Records with paralogs identified by detecting .main, .0, .1 etc:
-            	if($line =~ /^>/ && $line =~ /\.(main|\d+)/)    {
-            		($sampleParalog, $restOfLine) = split / /, $line;
-                	($sampleId, $paralogId) = split /\./, $sampleParalog;
-                	if($paralogId eq "main")	{
-                		print $sampleId, "_", $paralogId, "-", $ENV{geneName}, "_", $paralogId, " $restOfLine\n"
-                	}
-                	else	{
-                		print $sampleId, "_p", $paralogCountr, "-", $ENV{geneName}, "_p", $paralogCountr, " $restOfLine\n";
-                		$paralogCountr++;
-                	}
-            	}
-            	elsif($line =~ /^>/)    {
-                	print $line, "-", $ENV{geneName}, "\n"
-            	}
-            	else {
-            		print $line, "\n"
-            	}
-        	}' 
-        done > ${sampleId}_all_single_copy_AND_paralogous_genes_PLUS_paralog_suffix.fasta  2> /dev/null
-
-
-        # Can also remove supercontigs with paralogs, by getting a list of ids from the above file (includes paralogs),
-        # then use list to retrieve seqs from the supercontigs file (paralogs will not be retrieved):
-        cat ${sampleId}_all_single_copy_AND_paralogous_genes_PLUS_paralog_suffix.fasta \
-        | grep '>' | sed 's/^>//' \
-        > ${sampleId}_all_single_copy_AND_paralogous_genes_PLUS_paralog_suffix_ids_only.txt
-        
-        seqtk subseq ${sampleId}_all_genes_supercontig.fasta \
-        ${sampleId}_all_single_copy_AND_paralogous_genes_PLUS_paralog_suffix_ids_only.txt \
-        > ${sampleId}_all_genes_supercontig_no_paralogs.fasta
-
-        # Report on genes with paralogs removed:
-        echo "Number of genes: " `cat ${sampleId}_all_genes.fasta | grep '>' | wc -l ` > ${sampleId}_gene_and_paralog_summary.txt
-        echo "Number of gene sequences plus all paralog sequences:" `cat ${sampleId}_all_single_copy_AND_paralogous_genes_PLUS_paralog_suffix.fasta | grep '>' | wc -l ` >> ${sampleId}_gene_and_paralog_summary.txt
-        echo "Number of genes without paralogs:" `cat ${sampleId}_all_genes_supercontig_no_paralogs.fasta | grep '>' | wc -l ` >> ${sampleId}_gene_and_paralog_summary.txt
-
-        # Also report the length of the contigs before and after removing paralogs:
- 		#### NB - this doeesnt work because I'm comparing exon only and supercontigs - sp don't bother!!!! - remove code
-        #echo "Sum length of genes:" `fastalength ${sampleId}_all_genes.fasta | awk '{sum += $1} END {print sum}' ` >> ${sampleId}_gene_and_paralog_summary.txt
-		#echo "Sum length of genes without paralogs:" `fastalength ${sampleId}_all_genes_supercontig_no_paralogs.fasta | awk '{sum += $1} END {print sum}' ` >> ${sampleId}_gene_and_paralog_summary.txt
-
-        # [Outside this script, could also report number of genes affected by paralogs for all samples in the set.
-        #  At same time could also get number of times each gene is found across all samples with 'sort | uniq -c:''
-        #  cat Sample_*/*_all_genes_supercontig_no_paralogs.fasta | grep '>' | awk -F '-' '{print $2}' | sort | uniq -c | wc -l  ]
-
-        # HybPiper cleanup - remvoves the spades dir (Sample_/$sampleId/$geneName/$geneName_spades)
-        cleanup.py $sampleId
+			# Now creating geneIds with the paralog suffix, if present, so that no paralogs
+			# will be used in the make_species_trees_pipeline.sh script:
+			### NB - searching for .main or .\d is quite dangerous if sample names/ids also have dots in them! Unless you were to grab the text after the last dot or inform the user.
+			### 17.6.2021 - Instead, you could split into an array, then get the last element (after last dot) and add remainder to $sampleId - easy! Also above file as well
+			for geneName in $geneList; do
+				export geneName
+				paralog_retriever.py  ${sampleId}_name.txt  $geneName \
+				| perl -e '
+				$paralogCountr = 1;
+	        	while ($line = <>) {
+	        		chomp $line;
+	        		# Records with paralogs identified by detecting .main, .0, .1 etc:
+	            	if($line =~ /^>/ && $line =~ /\.(main|\d+)/)    {
+	            		($sampleParalog, $restOfLine) = split / /, $line;
+	                	($sampleId, $paralogId) = split /\./, $sampleParalog;
+	                	if($paralogId eq "main")	{
+	                		print $sampleId, "_", $paralogId, "-", $ENV{geneName}, "_", $paralogId, " $restOfLine\n"
+	                	}
+	                	else	{
+	                		print $sampleId, "_p", $paralogCountr, "-", $ENV{geneName}, "_p", $paralogCountr, " $restOfLine\n";
+	                		$paralogCountr++;
+	                	}
+	            	}
+	            	elsif($line =~ /^>/)    {
+	                	print $line, "-", $ENV{geneName}, "\n"
+	            	}
+	            	else {
+	            		print $line, "\n"
+	            	}
+	        	}' 
+	        done > ${sampleId}_all_single_copy_AND_paralogous_genes_PLUS_paralog_suffix.fasta  2> /dev/null
 
 
-### 14.7.2023 - write to the PAFTOL db here - e.g.: see above for paftools
-### try to keep the unzipped files around for immediate use with script 
+	        # Can also remove supercontigs with paralogs, by getting a list of ids from the above file (includes paralogs),
+	        # then use list to retrieve seqs from the supercontigs file (paralogs will not be retrieved):
+	        cat ${sampleId}_all_single_copy_AND_paralogous_genes_PLUS_paralog_suffix.fasta \
+	        | grep '>' | sed 's/^>//' \
+	        > ${sampleId}_all_single_copy_AND_paralogous_genes_PLUS_paralog_suffix_ids_only.txt
+	        
+	        seqtk subseq ${sampleId}_all_genes_supercontig.fasta \
+	        ${sampleId}_all_single_copy_AND_paralogous_genes_PLUS_paralog_suffix_ids_only.txt \
+	        > ${sampleId}_all_genes_supercontig_no_paralogs.fasta
 
-        if [[ $stats == 'no' ]]; then
-			# Remove the large fastq files:
-			if [[ -s ${sampleId}_R1_trimmomatic.fastq ]]; then rm ${sampleId}_R1_trimmomatic.fastq; fi
-			if [[ -s ${sampleId}_R1_trimmomatic_unpaired.fastq.gz ]]; then rm ${sampleId}_R1_trimmomatic_unpaired.fastq.gz; fi
-			if [[ -s ${sampleId}_R2_trimmomatic.fastq ]]; then rm ${sampleId}_R2_trimmomatic.fastq ${sampleId}_R2_trimmomatic_unpaired.fastq.gz; fi
-			if [[ -s ${sampleId}_R1_R2_trimmomatic.log ]];then rm ${sampleId}_R1_R2_trimmomatic.log; fi
-			if [[ -s ${sampleId}_R1_trimmomatic.log ]]; then rm ${sampleId}_R1_trimmomatic.log; fi
+	        # Report on genes with paralogs removed:
+	        echo "Number of genes: " `cat ${sampleId}_all_genes.fasta | grep '>' | wc -l ` > ${sampleId}_gene_and_paralog_summary.txt
+	        echo "Number of gene sequences plus all paralog sequences:" `cat ${sampleId}_all_single_copy_AND_paralogous_genes_PLUS_paralog_suffix.fasta | grep '>' | wc -l ` >> ${sampleId}_gene_and_paralog_summary.txt
+	        echo "Number of genes without paralogs:" `cat ${sampleId}_all_genes_supercontig_no_paralogs.fasta | grep '>' | wc -l ` >> ${sampleId}_gene_and_paralog_summary.txt
 
-			### NEED TO DECIDE HOW TO DEAL WITH THIS:	${sampleId}_R1_R2_trimmomatic_unpaired.fastq 
+	        # Also report the length of the contigs before and after removing paralogs:
+	 		#### NB - this doeesnt work because I'm comparing exon only and supercontigs - sp don't bother!!!! - remove code
+	        #echo "Sum length of genes:" `fastalength ${sampleId}_all_genes.fasta | awk '{sum += $1} END {print sum}' ` >> ${sampleId}_gene_and_paralog_summary.txt
+			#echo "Sum length of genes without paralogs:" `fastalength ${sampleId}_all_genes_supercontig_no_paralogs.fasta | awk '{sum += $1} END {print sum}' ` >> ${sampleId}_gene_and_paralog_summary.txt
+
+	        # [Outside this script, could also report number of genes affected by paralogs for all samples in the set.
+	        #  At same time could also get number of times each gene is found across all samples with 'sort | uniq -c:''
+	        #  cat Sample_*/*_all_genes_supercontig_no_paralogs.fasta | grep '>' | awk -F '-' '{print $2}' | sort | uniq -c | wc -l  ]
+
+	        # HybPiper cleanup - remvoves the spades dir (Sample_/$sampleId/$geneName/$geneName_spades)
+	        cleanup.py $sampleId
 		fi
+	elif [[ $hybSeqProgram == 'hybpiper2' ]]; then
+
+		echo Using HybPiper version 2 ...
+		$exePrefix hybpiper assemble  --cpu $cpu $bwa\
+		$targetFileFlag $targetsFile \
+		-r ${sampleId}_R*_trimmomatic.fastq  \
+		--cov_cutoff 4 \
+		--prefix ${sampleId} \
+		$unpairedFastqFile \
+		> ${sampleId}_hybpiper_assemble.log 2>&1
+		# NB - if a DNA targets file is supplied without specifying the --bwa option, the targets will be translated and the blastx  option will proceed.
+		#      Also found that when using --targetfile_aa flag with a DNA targets file (no --bwa flag), the targets gets translated.  
+
+		if [[ -s ${sampleId}/genes_with_seqs.txt ]]; then
+
+			# Need to create a small file containing the sample name for the following steps:
+			echo ${sampleId} > namelist.txt
+
+			# Get stats:
+			hybpiper stats $targetFileFlag $targetsFile  gene  namelist.txt > ${sampleId}_hybpiper_stats.log 2>&1
+
+			# Retrieve all the recovered sequence types:
+			# NB - it seems that --targetfile_aa and --targetfile_dna can both accept the opposite residue type - OK 
+			hybpiper retrieve_sequences dna $targetFileFlag $targetsFile --single_sample_name $sampleId > ${sampleId}_hybpiper_retrieve_sequences_dna.log 2>&1 # Creates file ${sampleId}_FNA.fasta
+			hybpiper retrieve_sequences aa $targetFileFlag $targetsFile --single_sample_name $sampleId > ${sampleId}_hybpiper_retrieve_sequences_aa.log 2>&1 # Creates file ${sampleId}_FAA.fasta
+			hybpiper retrieve_sequences intron $targetFileFlag $targetsFile --single_sample_name $sampleId > ${sampleId}_hybpiper_retrieve_sequences_intron.log 2>&1 # Creates file ${sampleId}_introns.fasta
+			hybpiper retrieve_sequences supercontig $targetFileFlag $targetsFile --single_sample_name $sampleId > ${sampleId}_hybpiper_retrieve_sequences_supercontig.log 2>&1 # Creates file ${sampleId}_supercontigs.fasta
+
+			# Get paralogs:
+			hybpiper paralog_retriever namelist.txt $targetFileFlag $targetsFile
+			# Outputs go to:
+			# paralogs_no_chimeras/gene001_paralogs_no_chimeras.fasta
+			# paralogs_all/gene001_paralogs_all.fasta
+		fi
+	else
+		echo "WARNING: If option -y was used, the HybPiper program was not recognised. The options are hybpiper[-bwa] or hybpiper2[-bwa]."
 	fi
+
 	# Converting to a tarball archive the main HybPiper results directory beneath the main <samplePrefix>_<sampleId> folder.
-	# Reason: its difficult for the file storage system to cope with lots of these directories 
+	# Reason: it's difficult for the file storage system to cope with lots of these directories 
 	# containing many other directories and small files.
 	if [[ -d $sampleId ]]; then
 		tar -cf ${sampleId}.tar ${sampleId}
 		gzip -f ${sampleId}.tar
 		rm -fR $sampleId
 	fi
+
+
+	### 14.7.2023 - write to the PAFTOL db here - e.g.: see above for paftools
+	### and doing before removing the unzipped files - might need to check whether script copes with this
+
+
+	if [[ $stats == 'no' ]]; then
+		# Remove the large fastq files:
+		if [[ -s ${sampleId}_R1_trimmomatic.fastq ]]; then rm ${sampleId}_R1_trimmomatic.fastq; fi
+		if [[ -s ${sampleId}_R1_trimmomatic_unpaired.fastq.gz ]]; then rm ${sampleId}_R1_trimmomatic_unpaired.fastq.gz; fi
+		if [[ -s ${sampleId}_R2_trimmomatic.fastq ]]; then rm ${sampleId}_R2_trimmomatic.fastq ${sampleId}_R2_trimmomatic_unpaired.fastq.gz; fi
+		if [[ -s ${sampleId}_R1_R2_trimmomatic.log ]];then rm ${sampleId}_R1_R2_trimmomatic.log; fi
+		if [[ -s ${sampleId}_R1_trimmomatic.log ]]; then rm ${sampleId}_R1_trimmomatic.log; fi
+		# NB - not deleting this file here in case it is used in the future for the recovery stats: ${sampleId}_R1_R2_trimmomatic_unpaired.fastq
+		#      Could also just get it remade in the stats clause
+	fi
 else
-	echo "WARNING: If option -y was used, the Hyb-Seq program was not recognised. The options are 'paftools' or 'hybpiper' (without the quotes)."
+	echo "WARNING: If option -y was used, the Hyb-Seq program was not recognised. The options are paftools or hybpiper[2[-bwa]]'."
 	#exit
 fi
 
@@ -511,19 +555,27 @@ if [[ $stats != 'no' ]]; then
 		exit
 	fi
 
-	### 18.8.2023 - create: mkdir -p recovery_stats/ dir and cd 
-
+	# Let's put the stats files into a separate directory and work in there:
+	mkdir -p gene_recovery_stats
+	cd gene_recovery_stats
 	
 	# Find the gene recovery file for indexing with BWA
 	refFileName=''
 	if [[ $refFilePathForStats == 'default' ]]; then
-		# Try to find file in pwd, as if recoveries have just been done:
-		if [[ -s ${sampleId}.fasta ]]; then 
-			refFileName=${sampleId}.fasta 		### 18.8.2023 - so like for option -P below cop -p from above dir into the recovery_stats dir just made
-			# Gene recovery file is in pwd.
-		elif [[ -s ${sampleId}_all_genes.fasta ]]; then
+		# Try to find file in ../pwd, as if recoveries have just been done:
+		if [[ -s ../${sampleId}.fasta ]]; then # For Paftools 
+		 	# Need to copy the gene recovery file to pwd so that the BWA indices go to pwd(!):
+			cp -p  ../${sampleId}.fasta  ${sampleId}.fasta
+			refFileName=${sampleId}.fasta
+			# Gene recovery file is now in pwd.
+		elif [[ -s ../${sampleId}_all_genes.fasta ]]; then
+			cp -p  ../${sampleId}_all_genes.fasta  ${sampleId}.fasta
 			refFileName=${sampleId}_all_genes.fasta
-			# Gene recovery file is in pwd.
+			# Gene recovery file is  now in pwd.
+		elif [[ -s ../${sampleId}_FNA.fasta ]]; then
+			cp -p  ../${sampleId}_FNA.fasta  ${sampleId}_FNA.fasta
+			refFileName=${sampleId}_FNA.fasta
+			# Gene recovery file is  now in pwd.
 		else
 			echo "ERROR: Option -S selected but gene recovery fasta file not found or is empty. May need to use option -P. Stats cannot be calculated for sample: ${sampleId}."
 			echo
@@ -548,6 +600,13 @@ if [[ $stats != 'no' ]]; then
 		elif [[ -s $refFilePathForStats/${sampleId}_all_genes.fasta ]]; then
 			cp -p  $refFilePathForStats/${sampleId}_all_genes.fasta  ${sampleId}_all_genes.fasta
 			refFileName=${sampleId}_all_genes.fasta
+		# For HybPiper2 output:
+		elif [[ -s $refFilePathForStats/${samplePrefix}_${sampleId}/${sampleId}_FNA.fasta ]]; then
+			cp -p  $refFilePathForStats/${samplePrefix}_${sampleId}/${sampleId}_FNA.fasta  ${sampleId}_FNA.fasta
+			refFileName=${sampleId}_FNA.fasta
+		elif [[ -s $refFilePathForStats/${sampleId}_FNA.fasta ]]; then
+			cp -p  $refFilePathForStats/${sampleId}_FNA.fasta  ${sampleId}_FNA.fasta
+			refFileName=${sampleId}_FNA.fasta
 		else 
 			echo "ERROR: option -P - can't find the correct path to the gene recovery fasta file or it is empty. Stats cannot be calculated for sample: ${sampleId}."
 			echo 
