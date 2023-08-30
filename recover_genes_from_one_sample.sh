@@ -622,8 +622,8 @@ if [[ $stats != 'no' ]]; then
 	bamFileWithDups=''
 	bwa index $refFileName
 	bwa mem -t $cpu $refFileName \
-	${sampleId}_R1_trimmomatic.fastq \
-	${sampleId}_R2_trimmomatic.fastq \
+	../${sampleId}_R1_trimmomatic.fastq \
+	../${sampleId}_R2_trimmomatic.fastq \
 	> ${sampleId}_bwa_mem_with_dups.sam
 
 	### Don’t forget to pipe in/out files as much as possible to save space
@@ -638,7 +638,7 @@ if [[ $stats != 'no' ]]; then
 		# Also need to map the single end reads file:
 		bwa index $refFileName
 		bwa mem -t $cpu $refFileName \
-		${sampleId}_R1_R2_trimmomatic_unpaired.fastq \
+		../${sampleId}_R1_R2_trimmomatic_unpaired.fastq \
 		> ${sampleId}_bwa_mem_with_dups_unpaired_reads.sam
 
 		samtools view -bS ${sampleId}_bwa_mem_with_dups_unpaired_reads.sam > ${sampleId}_bwa_mem_with_dups_unpaired_reads.bam
@@ -652,7 +652,7 @@ if [[ $stats != 'no' ]]; then
 		bamFileWithDups=${sampleId}_bwa_mem_with_dups_unpaired_reads_sort_merged_resort.bam
 
 		# This file is only created in hybpiper mode:
-		if [[ -s ${sampleId}_R1_R2_trimmomatic_unpaired.fastq ]]; then rm ${sampleId}_R1_R2_trimmomatic_unpaired.fastq; fi 
+		if [[ -s ../${sampleId}_R1_R2_trimmomatic_unpaired.fastq ]]; then rm ../${sampleId}_R1_R2_trimmomatic_unpaired.fastq; fi 
 	fi
 
 
@@ -681,7 +681,7 @@ if [[ $stats != 'no' ]]; then
     # NB - removing duplicates after quality trimming. Duplicates are assessed at 5' end and trimming is more likely to be done towards the 3' end
     #      so 5' read2 (and read1) coordinate should be preserved for duplicate assessment
 
-    ### NB - Picard commandline syntax is changing - new format would look like e.g.:
+    ### NB - Picard commandline syntax is changing - new format would look like e.g.:	- just need add a dash char infront of each flag
     ### MarkDuplicates -INPUT 7210_bwa_mem_with_dups_sort.bam -OUTPUT 7210_bwa_mem_sort.bam -METRICS_FILE 7210_bwa_mem_sort_markdup_metrics -REMOVE_DUPLICATES true -ASSUME_SORT_ORDER coordinate -VALIDATION_STRINGENCY LENIENT -MAX_FILE_HANDLES_FOR_READ_ENDS_MAP 100 -TMP_DIR tmp
 
     if [[ ! -s ${sampleId}_bwa_mem_sort.bam ]]; then
@@ -708,7 +708,7 @@ sumLengthOfGenes: $sumLengthOfGenes" > ${sampleId}_gene_recovery_stats.txt  # Al
 	### For some reason doesn't work - may have to turn off set +u and +e - see below
 
 	# Count the total number of raw fastq file reads (before any type of trimming this script does)
-	numbrRawReads=`cat ${sampleId}_trimmomatic.log | grep 'Input Read Pairs:' | awk '{print $4 *2}' ` 
+	numbrRawReads=`cat ../${sampleId}_trimmomatic.log | grep 'Input Read Pairs:' | awk '{print $4 *2}' ` 
 	echo numbrRawReads: $numbrRawReads >> ${sampleId}_gene_recovery_stats.txt
 	
 	####################################
