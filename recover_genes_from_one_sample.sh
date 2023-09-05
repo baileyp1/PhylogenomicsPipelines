@@ -645,7 +645,7 @@ if [[ $stats != 'no' ]]; then
 		# Need to sort bam before indexing
 		samtools sort ${sampleId}_bwa_mem_with_dups_unpaired_reads.bam > ${sampleId}_bwa_mem_with_dups_unpaired_reads_sort.bam
 		# Merge sorted bam files:
-		samtools merge  ${sampleId}_bwa_mem_with_dups_sort_merged.bam  ${sampleId}_bwa_mem_with_dups_sort.bam  ${sampleId}_bwa_mem_with_dups_unpaired_reads_sort.bam
+		samtools merge -f  ${sampleId}_bwa_mem_with_dups_sort_merged.bam  ${sampleId}_bwa_mem_with_dups_sort.bam  ${sampleId}_bwa_mem_with_dups_unpaired_reads_sort.bam
 		# Resort bam (just in case):
 		samtools sort ${sampleId}_bwa_mem_with_dups_sort_merged.bam > ${sampleId}_bwa_mem_with_dups_unpaired_reads_sort_merged_resort.bam
 		samtools index  ${sampleId}_bwa_mem_with_dups_unpaired_reads_sort_merged_resort.bam
