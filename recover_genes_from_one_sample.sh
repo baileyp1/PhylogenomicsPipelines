@@ -697,7 +697,7 @@ if [[ $stats != 'no' ]]; then
 	# Number of recovered genes:
 	numbrRecoveredGenes=`cat $refFileName | grep '>' | wc -l `
 	# Sum length of genes:
-	if [[ $refFileName == 'hybpiper2' ]]; then
+	if [[ $hybSeqProgram == 'hybpiper2' ]]; then
 		# Remove strings of N's from the sequence line before counting the number of bases
 		# NB - probably could use this code on all recovery methods; but will also remove a very few (?) N's from the assembler - OK I think
 		cat $refFileName \
