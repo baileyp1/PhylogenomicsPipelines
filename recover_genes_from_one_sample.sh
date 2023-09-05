@@ -497,7 +497,7 @@ elif [[ $hybSeqProgram == 'hybpiper'* ]]; then
 			# Get stats:
 			hybpiper stats $targetFileFlag $targetsFile  gene  namelist.txt > ${sampleId}_hybpiper_stats.log 2>&1
 
-			# Retrieve all the recovered sequence types:
+			# Retrieve all the recovered sequence types for this sample:
 			# NB - it seems that --targetfile_aa and --targetfile_dna can both accept the opposite residue type - OK 
 			hybpiper retrieve_sequences dna $targetFileFlag $targetsFile --single_sample_name $sampleId > ${sampleId}_hybpiper_retrieve_sequences_dna.log 2>&1 # Creates file ${sampleId}_FNA.fasta
 			hybpiper retrieve_sequences aa $targetFileFlag $targetsFile --single_sample_name $sampleId > ${sampleId}_hybpiper_retrieve_sequences_aa.log 2>&1 # Creates file ${sampleId}_FAA.fasta
@@ -696,8 +696,20 @@ if [[ $stats != 'no' ]]; then
 	# all sample and genes.
 	# Number of recovered genes:
 	numbrRecoveredGenes=`cat $refFileName | grep '>' | wc -l `
-	# Sum length of genes :
-	sumLengthOfGenes=`fastalength $refFileName | awk '{sum+=$1} END {print sum}' `
+	# Sum length of genes:
+	if [[ $refFileName == 'hybpiper2' ]]; then
+		# Remove strings of N's from the sequence line before counting the number of bases
+		# NB - probably could use this code on all recovery methods; but will also remove a very few (?) N's from the assembler - OK I think
+		cat $refFileName \
+		| awk '{if($1 ~ /^>/) { print $0 } else { {gsub(/[Nn]/,"",$0)} {print $0} } }' \
+		| grep -v ^$ \
+		> $refFileName.Ns_removed_temp
+		sumLengthOfGenes=`fastalength $refFileName.Ns_removed_temp | awk '{sum+=$1} END {print sum}' `
+		ls -l $refFileName.Ns_removed_temp
+		rm $refFileName.Ns_removed_temp
+	else
+		sumLengthOfGenes=`fastalength $refFileName | awk '{sum+=$1} END {print sum}' `
+	fi
 	echo "sampleId: $sampleId
 numbrRecoveredGenes: $numbrRecoveredGenes
 sumLengthOfGenes: $sumLengthOfGenes" > ${sampleId}_gene_recovery_stats.txt  # Also wipes out file contents from any previous run
@@ -756,7 +768,7 @@ sumLengthOfGenes: $sumLengthOfGenes" > ${sampleId}_gene_recovery_stats.txt  # Al
 	-s ${sampleId}_bwa_mem_unmapped_single_ends.fastq.gz -N
 	# samtools fastq -n - means that /1 and /2 are NOT added to output records - didn't work here
 	# samtools fastq -N - means that /1 and /2 are ALWAYS added to fastq record ids
-	#	NB - not sure if this needs to be done - all singleton reads should be unique (would only be a problem if combining the R1 AND R2 read pairs)
+	# 	NB - not sure if this needs to be done - all singleton reads should be unique (would only be a problem if combining the R1 AND R2 read pairs)
 
 	#######################
 	# Reads on-target stats
