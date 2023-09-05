@@ -72,11 +72,11 @@ OPTIONS <value>:
                  Specify FULL path to the gene recovery fasta files (for option -S), but only the part common to all files.
                  This option looks for the first, then the second of these two cases:
                  1. gene recovery samples in each of their own directory
-                    i.e. /<path>/<SampleDirPrefix>_<SampleName>/<SampleName>.fasta (directory set up, as used by this pipeline) 
-                 2. gene recovery samples all in the same directory
+                    i.e. /<path>/<SampleDirPrefix>_<SampleName>/<SampleName>.fasta (directory set up and file name, as used by this pipeline) 
+                 2. gene recovery samples all in the same directory (file name, as used by this pipeline) 
                     i.e. /<path>/<SampleName>.fasta
                  In both cases, type '/<path>'
-                 Note: 'SampleName' needs to match that provided by the sample list in option -s
+                 Note: 'SampleName' needs to match that provided by the sample list in option -s and the file name needs to match the Hyb-Seq program
   -p <string>    
                  directory prefix for each sample (default=Sample)
   -c <integer>   
@@ -164,7 +164,6 @@ if [[ $hybSeqProgram == 'hybpiper' || $hybSeqProgram == 'hybpiper-bwa' ]]; then
                                           # NO - I thinks it's becuase of the set options - maybe should remove them !!!!
 elif [[ $hybSeqProgram == 'hybpiper2'* ]]; then
     echo 'Testing HybPiper version 2 is installed, will exit now if there is an issue.' 
-    export PYTHONPATH=$HOME/lib/python           # Python path required to link to paftools if it is installed in home directory
     hybpiper assemble --help >/dev/null 2>&1     # Will exit here if not found!
     echo 'HybPiper version 2 found.'
 elif [[ $hybSeqProgram == 'paftools' ]]; then
