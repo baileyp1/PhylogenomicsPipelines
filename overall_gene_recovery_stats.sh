@@ -25,7 +25,7 @@ geneList=/data/projects/paftol/PAFTOL_additional_files/Angiosperms353_targetSequ
 
 # Print ALL stats per sample on a single line for producing scatterplots and a table for importing into Excel
 # (printf prints out all values from each sample on a single line.)
-for file in Sample_*/*_gene_recovery_stats.txt; do line=`cat $file | awk '{printf $2 " "}' `; echo "$file $line"; done > gene_recovery_stats_per_sample.txt
+for file in Sample_*/gene_recovery_stats/*_gene_recovery_stats.txt; do line=`cat $file | awk '{printf $2 " "}' `; echo "$file $line"; done > gene_recovery_stats_per_sample.txt
 ### NBNB - don't need $file variable in line now as I have the sampleID in file itself now 
 
 
