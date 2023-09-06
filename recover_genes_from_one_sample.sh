@@ -708,7 +708,7 @@ if [[ $stats != 'no' ]]; then
 		> $refFileName.Ns_removed_temp
 		sumLengthOfGenes=`fastalength $refFileName.Ns_removed_temp | awk '{sum+=$1} END {print sum}' `
 		ls -l $refFileName.Ns_removed_temp
-		rm $refFileName.Ns_removed_temp
+		###rm $refFileName.Ns_removed_temp  ### Delaying removing this file so I can compare it with N's included in the read stats
 	else
 		sumLengthOfGenes=`fastalength $refFileName | awk '{sum+=$1} END {print sum}' `
 	fi
