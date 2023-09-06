@@ -44,43 +44,43 @@ while read gene; do
 	# Read depth after removing duplicate reads:
 	depth=0
 	# Number of recovered bases in ALL samples with read depth >= 0 (i.e. total of all bases):
-	numbrBasesInAllSamples_ReadDepth_min0x=`cat Sample_*/*_bwa_mem_sort_st_depth.txt | grep ^$gene | awk -v depth=$depth '$3 >= depth' | wc -l `
+	numbrBasesInAllSamples_ReadDepth_min0x=`cat Sample_*/gene_recovery_stats/*_bwa_mem_sort_st_depth.txt | grep ^$gene | awk -v depth=$depth '$3 >= depth' | wc -l `
 
 	# Mean read depth for bases with >= 0x depth  across ALL genes:
 	###meanReadDepth1=`cat Sample_*/*_bwa_mem_sort_st_depth.txt | awk -v depth=$depth '$3 >= depth' | awk '{sum+=$3} END {if(sum > 0) {print sum/NR} else {print "0"}}' `	# average
     
-    medianPoint1=`cat Sample_*/*_bwa_mem_sort_st_depth.txt | grep ^$gene | awk -v depth=$depth '$3 >= depth' | awk 'END {printf "%.0f " , NR/2}' `
-    medianValue1=`cat Sample_*/*_bwa_mem_sort_st_depth.txt | grep ^$gene | awk -v depth=$depth '$3 >= depth' | sort -k3n | awk '{print $3}' | head -n $medianPoint1 | tail -n 1 `
+    medianPoint1=`cat Sample_*/gene_recovery_stats/*_bwa_mem_sort_st_depth.txt | grep ^$gene | awk -v depth=$depth '$3 >= depth' | awk 'END {printf "%.0f " , NR/2}' `
+    medianValue1=`cat Sample_*/gene_recovery_stats/*_bwa_mem_sort_st_depth.txt | grep ^$gene | awk -v depth=$depth '$3 >= depth' | sort -k3n | awk '{print $3}' | head -n $medianPoint1 | tail -n 1 `
 	
     depth=1
     # Mean read depth for bases with >= 4x depth  across ALL samples:
 	###meanReadDepth2=`cat Sample_*/*_bwa_mem_sort_st_depth.txt | grep ^$gene | awk -v depth=$depth '$3 >= depth' | awk '{sum+=$3} END {if(sum > 0) {print sum/NR} else {print "0"}}' `	# average
     
-    medianPoint2=`cat Sample_*/*_bwa_mem_sort_st_depth.txt | grep ^$gene | awk -v depth=$depth '$3 >= depth' | awk 'END {printf "%.0f " , NR/2}' `
-    medianValue2=`cat Sample_*/*_bwa_mem_sort_st_depth.txt | grep ^$gene | awk -v depth=$depth '$3 >= depth' | sort -k3n | awk '{print $3}' | head -n $medianPoint2 | tail -n 1 `
+    medianPoint2=`cat Sample_*/gene_recovery_stats/*_bwa_mem_sort_st_depth.txt | grep ^$gene | awk -v depth=$depth '$3 >= depth' | awk 'END {printf "%.0f " , NR/2}' `
+    medianValue2=`cat Sample_*/gene_recovery_stats/*_bwa_mem_sort_st_depth.txt | grep ^$gene | awk -v depth=$depth '$3 >= depth' | sort -k3n | awk '{print $3}' | head -n $medianPoint2 | tail -n 1 `
     
     depth=4
      # Mean read depth concatfor bases with >= 4x depth  across ALL samples:
-	meanReadDepth3=`cat Sample_*/*_bwa_mem_sort_st_depth.txt | grep ^$gene | awk -v depth=$depth '$3 >= depth' | awk '{sum+=$3} END {if(sum > 0) {print sum/NR} else {print "0"}}' `	# average
+	meanReadDepth3=`cat Sample_*/gene_recovery_stats/*_bwa_mem_sort_st_depth.txt | grep ^$gene | awk -v depth=$depth '$3 >= depth' | awk '{sum+=$3} END {if(sum > 0) {print sum/NR} else {print "0"}}' `	# average
 
     ### May need to add for very poor quality samples where some genes might have hardly any coverage:
     ###if [[ $medianPoint4 -eq 0 ]]; then
 	###	echo "medianReadDepth_min4x_(samtools_depth): 0" >> ${sampleId}_gene_recovery_stats.txt
-    medianPoint3=`cat Sample_*/*_bwa_mem_sort_st_depth.txt | grep ^$gene | awk -v depth=$depth '$3 >= depth' | awk 'END {printf "%.0f " , NR/2}' `
-    medianValue3=`cat Sample_*/*_bwa_mem_sort_st_depth.txt | grep ^$gene | awk -v depth=$depth '$3 >= depth' | sort -k3n | awk '{print $3}' | head -n $medianPoint3 | tail -n 1 `
+    medianPoint3=`cat Sample_*/gene_recovery_stats/*_bwa_mem_sort_st_depth.txt | grep ^$gene | awk -v depth=$depth '$3 >= depth' | awk 'END {printf "%.0f " , NR/2}' `
+    medianValue3=`cat Sample_*/gene_recovery_stats/*_bwa_mem_sort_st_depth.txt | grep ^$gene | awk -v depth=$depth '$3 >= depth' | sort -k3n | awk '{print $3}' | head -n $medianPoint3 | tail -n 1 `
     # Read depth without removing duplicate reads:
     depth=4
     # Mean read depth for bases with >= 4x depth across ALL samples:
-	meanReadDepth4=`cat Sample_*/*_bwa_mem_with_dups_sort_st_depth.txt | grep ^$gene |  awk -v depth=$depth '$3 >= depth' | awk '{sum+=$3} END {if(sum > 0) {print sum/NR} else {print "0"}}' `	# average
+	meanReadDepth4=`cat Sample_*/gene_recovery_stats/*_bwa_mem_with_dups_sort_st_depth.txt | grep ^$gene |  awk -v depth=$depth '$3 >= depth' | awk '{sum+=$3} END {if(sum > 0) {print sum/NR} else {print "0"}}' `	# average
 
-    medianPoint4=`cat Sample_*/*_bwa_mem_with_dups_sort_st_depth.txt | grep ^$gene | awk -v depth=$depth '$3 >= depth' | awk 'END {printf "%.0f " , NR/2}' `
-    medianValue4=`cat Sample_*/*_bwa_mem_with_dups_sort_st_depth.txt | grep ^$gene | awk -v depth=$depth '$3 >= depth' | sort -k3n | awk '{print $3}' | head -n $medianPoint4 | tail -n 1 `
+    medianPoint4=`cat Sample_*/gene_recovery_stats/*_bwa_mem_with_dups_sort_st_depth.txt | grep ^$gene | awk -v depth=$depth '$3 >= depth' | awk 'END {printf "%.0f " , NR/2}' `
+    medianValue4=`cat Sample_*/gene_recovery_stats/*_bwa_mem_with_dups_sort_st_depth.txt | grep ^$gene | awk -v depth=$depth '$3 >= depth' | sort -k3n | awk '{print $3}' | head -n $medianPoint4 | tail -n 1 `
 
     # Number of recovered bases in ALL samples with read depth >= 4:
     # Minus read duplicates:
-	numbrBasesInAllSamples_ReadDepth_min4x=`cat Sample_*/*_bwa_mem_sort_st_depth.txt | grep ^$gene | awk -v depth=$depth '$3 >= depth' | wc -l `
+	numbrBasesInAllSamples_ReadDepth_min4x=`cat Sample_*/gene_recovery_stats/*_bwa_mem_sort_st_depth.txt | grep ^$gene | awk -v depth=$depth '$3 >= depth' | wc -l `
 	# Plus read duplicates:
-	numbrBasesInAllSamples_ReadDepthWithDups_min4x=`cat Sample_*/*_bwa_mem_sort_st_depth.txt | grep ^$gene | awk -v depth=$depth '$3 >= depth' | wc -l `
+	numbrBasesInAllSamples_ReadDepthWithDups_min4x=`cat Sample_*/gene_recovery_stats/*_bwa_mem_sort_st_depth.txt | grep ^$gene | awk -v depth=$depth '$3 >= depth' | wc -l `
 	
 
 	# Count number of all ambiguity codes across all samples per gene:
