@@ -22,12 +22,21 @@ geneList=/data/projects/paftol/PAFTOL_additional_files/Angiosperms353_targetSequ
 ### NBNB - maybe use the fasta file so that i get the length of each gene
 
 
+# Output file header for gene_recovery_stats_per_sample.txt
+echo "Sample idSequencing numbrRecoveredGenes sumLengthOfGenes \
+numbrRawReads numbrTrimmedReadsInBamInclDups percentTrimmedReads numbrTrimmedReadsInBam \
+numbrMappedReads numbrMappedReadsProperPairs numbrReadsWithAltHits numbrUnmappedReads \
+numbrReadsOnTarget %on-target meanReadCovrg medianReadCovr \
+meanReadDepth_min0x_(samtools_coverage) medianReadDepth_min0x_(samtools_coverage) meanReadDepth_min0x_(samtools_depth) medianReadDepth_min0x_(samtools_depth) \
+meanReadDepth_min1x_(samtools_depth) medianReadDepth_min1x_(samtools_depth) \
+meanReadDepth_min4x_(samtools_depth) medianReadDepth_min4x_(samtools_depth) \
+meanReadDepthWithDups_min4x_(samtools_depth) medianReadDepthWithDups_min4x_(samtools_depth) \
+NumbrBasesInAllGenes_ReadDepth_min4x_(samtools_depth NumbrBasesInAllGenes_ReadDepthWithDups_min4x_(samtools_depth)" > gene_recovery_stats_per_sample.txt 
 
 # Print ALL stats per sample on a single line for producing scatterplots and a table for importing into Excel
 # (printf prints out all values from each sample on a single line.)
-for file in Sample_*/gene_recovery_stats/*_gene_recovery_stats.txt; do line=`cat $file | awk '{printf $2 " "}' `; echo "$file $line"; done > gene_recovery_stats_per_sample.txt
+for file in Sample_*/gene_recovery_stats/*_gene_recovery_stats.txt; do line=`cat $file | awk '{printf $2 " "}' `; echo "$file $line"; done >> gene_recovery_stats_per_sample.txt
 ### NBNB - don't need $file variable in line now as I have the sampleID in file itself now 
-
 
 
 # Read depth per gene across all samples(from Samtools depth)
