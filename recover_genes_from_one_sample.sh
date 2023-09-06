@@ -232,6 +232,7 @@ if [ $hybSeqProgram == 'paftools' ]; then
 #-g paftol/PAFTOL_gene_recovery_and_trees/run1_paftools \
 #-r 1 \
 #-u sampleId \
+#-C 	#### May want to have this as optional for this parent script as well
 #> paftol_da_add_samples_batch_upload.log 2>&1 &
 
 
@@ -699,7 +700,8 @@ if [[ $stats != 'no' ]]; then
 	# Sum length of genes:
 	if [[ $hybSeqProgram == 'hybpiper2' ]]; then
 		# Remove strings of N's from the sequence line before counting the number of bases
-		# NB - probably could use this code on all recovery methods; but will also remove a very few (?) N's from the assembler - OK I think
+		# NB - probably could use this code on all recovery methods; but will also remove a very 
+		#      few (?) N's from the assembler - OK I think - Paftools overlapSerial produces some.
 		cat $refFileName \
 		| awk '{if($1 ~ /^>/) { print $0 } else { {gsub(/[Nn]/,"",$0)} {print $0} } }' \
 		| grep -v ^$ \
