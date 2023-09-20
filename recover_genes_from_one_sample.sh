@@ -517,7 +517,7 @@ elif [[ $hybSeqProgram == 'hybpiper'* ]]; then
 				geneName=`basename $file | sed 's/_paralogs_no_chimeras.fasta//' `
 	 			cat $file \
 	 			| awk -v gene=$geneName '{if($1 ~ /^>/) {print $1 "-" gene} else {print $0}}' \
-				> ${sampleId}_no_chimeras.fasta
+				> ${sampleId}_paralogs_no_chimeras.fasta
 			done
 			# Create sample file for the paralogs_all:
 			for file in paralogs_all/*_paralogs_all.fasta; do
