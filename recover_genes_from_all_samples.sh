@@ -63,7 +63,7 @@ OPTIONS <value>:
                  file name of adaptors in fasta format (required option)
   -y <string>    
                  Hyb-Seq program; options are: paftools, hybpiper, hybpiper-bwa, hybpiper2, hybpiper2-bwa
-                 Note: HybPiper version 1.3 and 2.1.6 only tested with this recovery pipeline 
+                 Note: HybPiper versions 1.3 and 2.1.6 are the only versions tested with this recovery pipeline do far 
   -S    
                  calculate statistics for gene recovery from read data mapped to all recovered genes per sample (includes per sample reads on-target, read
                  coverage, read depth). This option can also be used separately after the gene recoveries have run (do not specify option -y!) but the path
