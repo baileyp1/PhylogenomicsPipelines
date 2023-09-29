@@ -624,6 +624,11 @@ if [[ $stats != 'no' ]]; then
 		elif [[ -s $refFilePathForStats/${sampleId}_FNA.fasta ]]; then
 			cp -p  $refFilePathForStats/${sampleId}_FNA.fasta  ${sampleId}_FNA.fasta
 			refFileName=${sampleId}_FNA.fasta
+		# For combining nuclear, plastid and barcode genes reference files
+		elif [[ -s $refFilePathForStats/${sampleId}.fasta ]]; then
+			# For the moment only have this file set up, all files in one directory:
+			cp -p  $refFilePathForStats/${sampleId}_nc_pt_nr.fasta  ${sampleId}_nc_pt_nr.fasta
+			refFileName=${sampleId}_nc_pt_nr.fasta
 		else 
 			echo "ERROR: option -P - can't find the correct path to the gene recovery fasta file or it is empty. Stats cannot be calculated for sample: ${sampleId}."
 			echo 
