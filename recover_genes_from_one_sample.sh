@@ -624,7 +624,7 @@ if [[ $stats != 'no' ]]; then
 		elif [[ -s $refFilePathForStats/${sampleId}_FNA.fasta ]]; then
 			cp -p  $refFilePathForStats/${sampleId}_FNA.fasta  ${sampleId}_FNA.fasta
 			refFileName=${sampleId}_FNA.fasta
-		# For combining nuclear, plastid and barcode genes reference files
+		# For combining nuclear, plastid and barcode genes reference files (an internal PAFTOL project reference file)
 		elif [[ -s $refFilePathForStats/${sampleId}_nc_pt_nr.fasta ]]; then
 			# For the moment only have this file set up, all files in one directory:
 			cp -p  $refFilePathForStats/${sampleId}_nc_pt_nr.fasta ${sampleId}_nc_pt_nr.fasta
@@ -929,6 +929,14 @@ sumLengthOfGenes: $sumLengthOfGenes" > ${sampleId}_gene_recovery_stats.txt  # Al
 	if [[ -s ${sampleId}_R1_R2_trimmomatic.log ]];then rm ${sampleId}_R1_R2_trimmomatic.log; fi
 	if [[ -s ${sampleId}_R1_trimmomatic.log ]]; then rm ${sampleId}_R1_trimmomatic.log; fi
 	# NB - ${sampleId}_R1_R2_trimmomatic_unpaired.fastq is only created in hybpiper mode and has already been removed above - OK
+
+	# Finally, remove the largest files created for the stats (they take up TB of disk space if processing 1000's samples)
+	if [[ -s ${sampleId}_bwa_mem_with_dups.sam ]]; then rm ${sampleId}_bwa_mem_with_dups.sam; fi
+	if [[ -s ${sampleId}_bwa_mem_with_dups.bam ]]; then rm ${sampleId}_bwa_mem_with_dups.bam; fi
+	if [[ -s ${sampleId}_bwa_mem_with_dups_sort.bam ]]; then rm ${sampleId}_bwa_mem_with_dups_sort.bam; fi
+	if [[ -s ${sampleId}_bwa_mem_with_dups_sort.bam.bai ]]; then rm ${sampleId}_bwa_mem_with_dups_sort.bam.bai; fi
+	if [[ -d tmp ]]; then rm -fR tmp; fi
+	if [[ -s ${sampleId}_bwa_mem_sort.bam ]]; then rm ${sampleId}_bwa_mem_sort.bam; fi
 fi
 #####cd ../ # Back up to parent dir for next sample - 20.4.2020 - has no effect here now and not required anymore because looping through samples is done outside this script 
 echo 
