@@ -53,8 +53,8 @@ maxColOccThreshold=30		### 7.9.2020 - now testing lower values e.g. 30 and 15 - 
 # PHYLOGENY OPTIONS:
 geneTreesOnly=no
 speciesTreesOnly=no
-phyloProgramDNA=fasttree
-phyloProgramPROT=no			# Work around to specify any program so software testing code will not crash! Ensures cmd parameter is always occupied which is critical
+phyloProgramDNA=fasttree  # option -q 
+phyloProgramPROT=no			  # option -r   Work around to specify any program so software testing code will not crash! Ensures cmd parameter is always occupied which is critical
 speciesTreeProgram=none
 numbrBootstraps=100          # Number of bootstrap searches for RAxML tree (and IQ-Tree when implemented)
 treeshrink=no
@@ -754,7 +754,7 @@ fi
 
 
 # Input checks for the alignment type option -A:
-if [[ "$alnProgram" != 'mafft' && "$alnProgram" != 'upp' ]];then 
+if [[ "$alnProgram" != 'mafft' && "$alnProgram" != 'upp' && "$alnProgram" != 'emma']];then 
 	echo "ERROR: No alignment program (option -A) was entered or recognised."; exit
 fi
 

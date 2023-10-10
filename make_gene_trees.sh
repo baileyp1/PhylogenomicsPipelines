@@ -968,7 +968,25 @@ if [[ $dnaSelected == 'yes' ]]; then
 		fi
 		mv ${gene}.dna.upp_alignment_masked.fasta ${gene}.dna.aln.fasta 
        	dnaAlnToUse=${gene}.dna.aln.fasta
-    fi
+    elif [[ "$alnProgram" == 'emma' ]]; then
+    	echo
+   		echo Creating a DNA alignment with EMMA...
+   		$exePrefix python3 $EMMA -t $cpuGeneTree \
+   		-i $dnaFastaFileForAln -d ${gene}_emma \
+   		--molecule dna \
+   		--legacy \
+   		--use-weight 1 --lower 10 --upper 25 \
+   		-o ${gene}.dna.aln.fasta
+   		### 4.10.2023
+   		### Confirm value for protein residue use below AND FINALIZE
+   		### Check Python 3 will work on Gruffalo and install the modules
+
+   		### Check with my test dataset what happens with a very small data set, then add the 
+   		### WARNING conditional - actaully just for now skip this
+   		### Add in the test for EMMA - in the wrapper - only test it if option is seelted
+   		### FINALLY look at paper and check if the paramters  can be improved for DNA AND protein
+   		dnaAlnToUse=${geneId}_emma/${gene}.dna.aln.fasta
+   	fi
 fi
 
 if [[ $proteinSelected == 'yes' || $codonSelected == 'yes' ]]; then
@@ -1025,7 +1043,17 @@ if [[ $proteinSelected == 'yes' || $codonSelected == 'yes' ]]; then
 		fi
 		mv ${gene}.protein.upp_alignment_masked.fasta ${gene}.protein.aln.fasta
 		proteinAlnToUse=${gene}.protein.aln.fasta
-	fi
+	elif [[ "$alnProgram" == 'emma' ]]; then
+    	echo
+   		echo Creating a protein alignment with EMMA...
+   		$exePrefix python3 $EMMA -t $cpuGeneTree \
+   		-i $dnaFastaFileForAln -d ${gene}_emma \
+   		--molecule amino \
+   		--legacy \
+   		--use-weight 1 --lower 10 --upper 25 \
+   		-o ${gene}.protein.aln.fasta
+   		proteinAlnToUse=${gene}_emma/${gene}.dna.aln.fasta
+   	fi
 
 	if [[ $codonSelected == 'yes' ]]; then
 
