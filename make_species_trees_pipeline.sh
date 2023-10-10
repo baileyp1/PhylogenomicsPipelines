@@ -32,18 +32,18 @@ sampleTableFile=no			    # 10.5.2020 - only just added in - check - ensures cmdl
 option_u=no
 
 # ALIGNMENT OPTIONS:
-seqType=dna                     # NB - 18.3.2022 - see line 683 - I don't think seqType has a default anymore - it gets wiped out - 4.1.2023 - no I don't think so!
-alnProgram=mafft 				# 27.7.2020 - may want to merge this option with mafftAlgorithm so it woudl be quoted liek so: 'mafft --retree 2'
+seqType=dna               # NB - 18.3.2022 - see line 683 - I don't think seqType has a default anymore - it gets wiped out - 4.1.2023 - no I don't think so!
+alnProgram=mafft          # 27.7.2020 - may want to merge this option with mafftAlgorithm so it woudl be quoted liek so: 'mafft --retree 2'
 mafftAlgorithm='--retree 2'     # '--maxiterate 1000' #'--retree 1'   '--retree 2' - need to ry and merge with the alnProgram option somehow
-alnParams=''                    # General variable for modifiying the MAFFT and UPP options         
+alnParams=''              # General variable for modifiying the MAFFT and UPP options; 10.4.2023 - I think I have a way now to leave thee balnk         
 
 # FILTERING AND TRIMMING OPTIONS:
-filterSeqs1=no			        # My filter sequencing option (option 1)
+filterSeqs1=no            # My filter sequencing option (option 1)
 filterSeqs2=no
 ### NBNBNB - 12.1.2020 - need to change both these values - for when filtering not used at 2nd aln iteration!!!!!!
-fractnAlnCovrg=0		       # NB - variable is used via filterSeqs1, this value is also used when filterSeqs1 is not used and MUST therefore be set to ZERO - needs to have a default value for passing in variable to scripts
-fractnSamples=0			       # NB - variable is used via filterSeqs1, this value is also used when filterSeqs1 is not used and MUST therfore be set to ZERO - needs to have a default value for passing in variable to scripts
-trimAln1=no			           # Filter alignment columns with optrimAl
+fractnAlnCovrg=0		      # NB - variable is used via filterSeqs1, this value is also used when filterSeqs1 is not used and MUST therefore be set to ZERO - needs to have a default value for passing in variable to scripts
+fractnSamples=0			      # NB - variable is used via filterSeqs1, this value is also used when filterSeqs1 is not used and MUST therfore be set to ZERO - needs to have a default value for passing in variable to scripts
+trimAln1=no			          # Filter alignment columns with optrimAl
 trimAln2=no                    # Filter alignment columns to remove rarer insertions; maximum limit of percent occupancy to trim at
 
 
@@ -54,11 +54,11 @@ maxColOccThreshold=30		### 7.9.2020 - now testing lower values e.g. 30 and 15 - 
 geneTreesOnly=no
 speciesTreesOnly=no
 phyloProgramDNA=fasttree  # option -q 
-phyloProgramPROT=no			  # option -r   Work around to specify any program so software testing code will not crash! Ensures cmd parameter is always occupied which is critical
+phyloProgramPROT=no	      # option -r   Work around to specify any program so software testing code will not crash! Ensures cmd parameter is always occupied which is critical
 speciesTreeProgram=none
 numbrBootstraps=100          # Number of bootstrap searches for RAxML tree (and IQ-Tree when implemented)
 treeshrink=no
-collapseNodes=no			# option -L
+collapseNodes=no          # option -L
 outgroupRoot=no				# option -o
 
 # OTHER OPTIONS:
@@ -867,7 +867,8 @@ if [[ $alnProgram == 'mafft' &&  -z $alnParams ]]; then
     alnParams='--retree 2'
 elif [[ $alnProgram == 'upp' &&  -z $alnParams ]]; then
     alnParams='-M 80 -T 0.15'
-fi
+elif [[ $alnProgram == 'emma' &&  -z $alnParams ]]; then
+    alnParams='no_values_accepted_yet_for_emma'
 ### Could restrict the length of the $alnParams value:
 ###alnParamsLen=`echo $alnParams | awk '{print length($1)}' `
 ###if alnParamsLen > 50, exit

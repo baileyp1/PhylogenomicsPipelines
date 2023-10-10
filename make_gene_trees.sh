@@ -977,14 +977,6 @@ if [[ $dnaSelected == 'yes' ]]; then
    		--legacy \
    		--use-weight 1 --lower 10 --upper 25 \
    		-o ${gene}.dna.aln.fasta
-   		### 4.10.2023
-   		### Confirm value for protein residue use below AND FINALIZE
-   		### Check Python 3 will work on Gruffalo and install the modules
-
-   		### Check with my test dataset what happens with a very small data set, then add the 
-   		### WARNING conditional - actaully just for now skip this
-   		### Add in the test for EMMA - in the wrapper - only test it if option is seelted
-   		### FINALLY look at paper and check if the paramters  can be improved for DNA AND protein
    		dnaAlnToUse=${geneId}_emma/${gene}.dna.aln.fasta
    	fi
 fi
