@@ -754,7 +754,7 @@ fi
 
 
 # Input checks for the alignment type option -A:
-if [[ "$alnProgram" != 'mafft' && "$alnProgram" != 'upp' && "$alnProgram" != 'emma']];then 
+if [[ "$alnProgram" != 'mafft' && "$alnProgram" != 'upp' && "$alnProgram" != 'emma' ]];then 
 	echo "ERROR: No alignment program (option -A) was entered or recognised."; exit
 fi
 
