@@ -869,6 +869,7 @@ elif [[ $alnProgram == 'upp' &&  -z $alnParams ]]; then
     alnParams='-M 80 -T 0.15'
 elif [[ $alnProgram == 'emma' &&  -z $alnParams ]]; then
     alnParams='no_values_accepted_yet_for_emma'
+fi
 ### Could restrict the length of the $alnParams value:
 ###alnParamsLen=`echo $alnParams | awk '{print length($1)}' `
 ###if alnParamsLen > 50, exit
