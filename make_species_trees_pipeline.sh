@@ -847,7 +847,8 @@ if [[ $extraMem != 'no' && $slurm -eq 1 ]]; then
 	sort $geneListFile > geneListFileForOption-X_sort.txt
 
 	comm -23 geneListFileForOption-X_sort.txt genesForExtraMemOption-X_sort.txt > genesForMainMemoryOption-X.txt
-	geneListFile=genesForMainMemoryOption-X.txt
+	geneListFile=genesForMainMemoryOption-X.txt  # NB - 10.10.2023 - these trees are no longer in user input order. Might be useful to still use input order if genes have been ordered by amount of RAM they are likely to consumed.
+                                               # - how to do that? grep -v with genes with exta memory on the original list.
 	genesForExtraMem=genesForExtraMemOption-X_sort.txt
 	numbrGenesForExtraMem=`cat genesForExtraMemOption-X_sort.txt | wc -l`
 	rm geneListFileForOption-X_sort.txt
