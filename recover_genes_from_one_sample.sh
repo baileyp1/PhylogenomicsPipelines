@@ -480,9 +480,9 @@ elif [[ $hybSeqProgram == 'hybpiper'* ]]; then
 	elif [[ $hybSeqProgram == 'hybpiper2' ]]; then
 
 		echo Using HybPiper version 2 ...
-		$exePrefix hybpiper assemble  --cpu $cpu $bwa\
+		$exePrefix hybpiper assemble  --cpu $cpu $bwa \
 		$targetFileFlag $targetsFile \
-		-r ${sampleId}_R*_trimmomatic.fastq  \
+		-r ${sampleId}_R*_trimmomatic.fastq \
 		--cov_cutoff 4 \
 		--prefix ${sampleId} \
 		$unpairedFastqFile \
