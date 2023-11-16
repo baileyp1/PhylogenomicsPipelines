@@ -765,6 +765,11 @@ sumLengthOfGenes: $sumLengthOfGenes" > ${sampleId}_gene_recovery_stats.txt  # Al
 	numbrMappedReads=`samtools view -c -F4 -q 20 ${sampleId}_bwa_mem_sort.bam `
 	echo numbrMappedReads: $numbrMappedReads  >> ${sampleId}_gene_recovery_stats.txt
 
+	### 16.11.2023 - count the number of secondary alignments here and remove them 
+	### before calculating the remaining stats - e.g.:
+	### samtools view -c -F104 -q 20   27157_bwa_mem_sort.bam
+	### FIRST need to confirm the correct number to use in the -F flag (i.e. not secondary and not unmapped) 
+
 	# Count the number of reads mapped in proper pairs:
 	numbrMappedReadsProperPairs=`samtools view -c -f2 -q 20 ${sampleId}_bwa_mem_sort.bam `
 	echo numbrMappedReadsProperPairs: $numbrMappedReadsProperPairs  >> ${sampleId}_gene_recovery_stats.txt
@@ -788,10 +793,11 @@ sumLengthOfGenes: $sumLengthOfGenes" > ${sampleId}_gene_recovery_stats.txt  # Al
 	# First, sort bam by fastq record id:
 	samtools sort -n ${sampleId}_bwa_mem_sort.bam \
 	| samtools fastq -f4 -1 ${sampleId}_bwa_mem_unmapped_R1.fastq.gz -2 ${sampleId}_bwa_mem_unmapped_R2.fastq.gz \
-	-s ${sampleId}_bwa_mem_unmapped_single_ends.fastq.gz -N
+	-s ${sampleId}_bwa_mem_unmapped_single_ends.fastq.gz -0 /dev/null -N
 	# samtools fastq -n - means that /1 and /2 are NOT added to output records - didn't work here
 	# samtools fastq -N - means that /1 and /2 are ALWAYS added to fastq record ids
-	# 	NB - not sure if this needs to be done - all singleton reads should be unique (would only be a problem if combining the R1 AND R2 read pairs)
+	# NB - not sure if this needs to be done - all singleton reads should be unique (would only be a problem if combining the R1 AND R2 read pairs)
+	# Option -0 captures all other reads i.e. the mapped ones - prevents them going into the log file
 
 	#######################
 	# Reads on-target stats
@@ -937,6 +943,13 @@ sumLengthOfGenes: $sumLengthOfGenes" > ${sampleId}_gene_recovery_stats.txt  # Al
 	if [[ -s ${sampleId}_bwa_mem_with_dups_sort.bam.bai ]]; then rm ${sampleId}_bwa_mem_with_dups_sort.bam.bai; fi
 	if [[ -d tmp ]]; then rm -fR tmp; fi
 	if [[ -s ${sampleId}_bwa_mem_sort.bam ]]; then rm ${sampleId}_bwa_mem_sort.bam; fi
+	### 2.11.2023 - also need to remove these large files!:
+	### 32834_bwa_mem_with_dups_unpaired_reads.sam
+	### 32834_bwa_mem_with_dups_unpaired_reads.bam
+	### 32834_bwa_mem_with_dups_unpaired_reads_sort.bam
+	### 32834_bwa_mem_with_dups_sort_merged.bam
+	### 32834_bwa_mem_with_dups_unpaired_reads_sort_merged_resort.bam
+	### 32834_bwa_mem_with_dups_unpaired_reads_sort_merged_resort.bam.bai
 fi
 #####cd ../ # Back up to parent dir for next sample - 20.4.2020 - has no effect here now and not required anymore because looping through samples is done outside this script 
 echo 
