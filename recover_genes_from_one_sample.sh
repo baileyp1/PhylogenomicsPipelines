@@ -929,27 +929,26 @@ sumLengthOfGenes: $sumLengthOfGenes" > ${sampleId}_gene_recovery_stats.txt  # Al
 	# 2. Read depth across all genes and samples - total mean and median values
 
 	# Remove the large fastq files from any gene recovery method:
-	if [[ -s ${sampleId}_R1_trimmomatic.fastq ]]; then rm ${sampleId}_R1_trimmomatic.fastq; fi
-	if [[ -s ${sampleId}_R1_trimmomatic_unpaired.fastq.gz ]]; then rm ${sampleId}_R1_trimmomatic_unpaired.fastq.gz; fi
-	if [[ -s ${sampleId}_R2_trimmomatic.fastq ]]; then rm ${sampleId}_R2_trimmomatic.fastq ${sampleId}_R2_trimmomatic_unpaired.fastq.gz; fi
-	if [[ -s ${sampleId}_R1_R2_trimmomatic.log ]];then rm ${sampleId}_R1_R2_trimmomatic.log; fi
-	if [[ -s ${sampleId}_R1_trimmomatic.log ]]; then rm ${sampleId}_R1_trimmomatic.log; fi
+	if [[ -s ../${sampleId}_R1_trimmomatic.fastq ]]; then rm ../${sampleId}_R1_trimmomatic.fastq; fi
+	if [[ -s ../${sampleId}_R1_trimmomatic_unpaired.fastq.gz ]]; then rm ../${sampleId}_R1_trimmomatic_unpaired.fastq.gz; fi
+	if [[ -s ../${sampleId}_R2_trimmomatic.fastq ]]; then rm ../${sampleId}_R2_trimmomatic.fastq ${sampleId}_R2_trimmomatic_unpaired.fastq.gz; fi
+	if [[ -s ../${sampleId}_R1_R2_trimmomatic.log ]];then rm ../${sampleId}_R1_R2_trimmomatic.log; fi
+	if [[ -s ../${sampleId}_R1_trimmomatic.log ]]; then rm ../${sampleId}_R1_trimmomatic.log; fi
 	# NB - ${sampleId}_R1_R2_trimmomatic_unpaired.fastq is only created in hybpiper mode and has already been removed above - OK
 
-	# Finally, remove the largest files created for the stats (they take up TB of disk space if processing 1000's samples)
+	# Finally, remove the large files created for the stats (they take up TB of disk space if processing 1000's samples)
 	if [[ -s ${sampleId}_bwa_mem_with_dups.sam ]]; then rm ${sampleId}_bwa_mem_with_dups.sam; fi
 	if [[ -s ${sampleId}_bwa_mem_with_dups.bam ]]; then rm ${sampleId}_bwa_mem_with_dups.bam; fi
 	if [[ -s ${sampleId}_bwa_mem_with_dups_sort.bam ]]; then rm ${sampleId}_bwa_mem_with_dups_sort.bam; fi
 	if [[ -s ${sampleId}_bwa_mem_with_dups_sort.bam.bai ]]; then rm ${sampleId}_bwa_mem_with_dups_sort.bam.bai; fi
 	if [[ -d tmp ]]; then rm -fR tmp; fi
 	if [[ -s ${sampleId}_bwa_mem_sort.bam ]]; then rm ${sampleId}_bwa_mem_sort.bam; fi
-	### 2.11.2023 - also need to remove these large files!:
-	### 32834_bwa_mem_with_dups_unpaired_reads.sam
-	### 32834_bwa_mem_with_dups_unpaired_reads.bam
-	### 32834_bwa_mem_with_dups_unpaired_reads_sort.bam
-	### 32834_bwa_mem_with_dups_sort_merged.bam
-	### 32834_bwa_mem_with_dups_unpaired_reads_sort_merged_resort.bam
-	### 32834_bwa_mem_with_dups_unpaired_reads_sort_merged_resort.bam.bai
+	if [[ -s ${sampleId}_bwa_mem_with_dups_unpaired_reads.sam ]]; then rm ${sampleId}_bwa_mem_with_dups_unpaired_reads.sam; fi
+	if [[ -s ${sampleId}_bwa_mem_with_dups_unpaired_reads.bam ]]; then rm ${sampleId}_bwa_mem_with_dups_unpaired_reads.bam; fi
+	if [[ -s ${sampleId}_bwa_mem_with_dups_unpaired_reads_sort.bam ]]; then rm ${sampleId}_bwa_mem_with_dups_unpaired_reads_sort.bam; fi
+	if [[ -s ${sampleId}_bwa_mem_with_dups_sort_merged.bam ]]; then rm ${sampleId}_bwa_mem_with_dups_sort_merged.bam; fi
+	if [[ -s ${sampleId}_bwa_mem_with_dups_unpaired_reads_sort_merged_resort.bam ]]; then rm ${sampleId}_bwa_mem_with_dups_unpaired_reads_sort_merged_resort.bam; fi
+	if [[ -s ${sampleId}_bwa_mem_with_dups_unpaired_reads_sort_merged_resort.bam.bai ]]; then rm ${sampleId}_bwa_mem_with_dups_unpaired_reads_sort_merged_resort.bam.bai; fi
 fi
 #####cd ../ # Back up to parent dir for next sample - 20.4.2020 - has no effect here now and not required anymore because looping through samples is done outside this script 
 echo 
