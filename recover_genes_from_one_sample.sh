@@ -931,7 +931,8 @@ sumLengthOfGenes: $sumLengthOfGenes" > ${sampleId}_gene_recovery_stats.txt  # Al
 	# Remove the large fastq files from any gene recovery method:
 	if [[ -s ../${sampleId}_R1_trimmomatic.fastq ]]; then rm ../${sampleId}_R1_trimmomatic.fastq; fi
 	if [[ -s ../${sampleId}_R1_trimmomatic_unpaired.fastq.gz ]]; then rm ../${sampleId}_R1_trimmomatic_unpaired.fastq.gz; fi
-	if [[ -s ../${sampleId}_R2_trimmomatic.fastq ]]; then rm ../${sampleId}_R2_trimmomatic.fastq ${sampleId}_R2_trimmomatic_unpaired.fastq.gz; fi
+	if [[ -s ../${sampleId}_R2_trimmomatic.fastq ]]; then rm ../${sampleId}_R2_trimmomatic.fastq; fi
+	if [[ -s ../${sampleId}_R2_trimmomatic_unpaired.fastq.gz ]]; then rm ../${sampleId}_R2_trimmomatic_unpaired.fastq.gz; fi	
 	if [[ -s ../${sampleId}_R1_R2_trimmomatic.log ]];then rm ../${sampleId}_R1_R2_trimmomatic.log; fi
 	if [[ -s ../${sampleId}_R1_trimmomatic.log ]]; then rm ../${sampleId}_R1_trimmomatic.log; fi
 	# NB - ${sampleId}_R1_R2_trimmomatic_unpaired.fastq is only created in hybpiper mode and has already been removed above - OK
