@@ -570,7 +570,7 @@ and input gene-wise fasta files with a relative path (probably from a previous r
   numbrSamples=`cat *_dna.fasta | awk '{if($1 ~ /^>/)  {print $1} }' | grep -v  '^$' | sort -u | wc -l `
 elif [[ $speciesTreesOnly == 'no' ]]; then
 
-	echo 'Fasta file format of the input files is already the default (>sampleId-geneId).'
+	echo 'Fasta file format of the input files is set to the default (>sampleId-geneId).'
    
 	### Still deciding on whether to change to this format completely throughout...
 	### For the moment, altering the ">species-gene" format back to my "gene species" format:
