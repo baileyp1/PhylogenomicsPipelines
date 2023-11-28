@@ -976,8 +976,19 @@ if [[ $dnaSelected == 'yes' ]]; then
    		--molecule dna \
    		--legacy \
    		--use-weight 1 --lower 10 --upper 25 \
+   		--keep-decomposition \
    		-o ${gene}.dna.aln.fasta
    		dnaAlnToUse=${geneId}_emma/${gene}.dna.aln.fasta
+
+   		echo EMMA alignment stats for gene ${gene}:
+   		echo Total number of samples: `cat ${geneId}_emma/${gene}.dna.aln.fasta | grep '>' | wc -l `
+   		echo Number of unique samples: `cat  ${geneId}_emma/${gene}.dna.aln.fasta | grep '>' | sort -u | wc -l `
+   		echo The two numbers above should be identical.
+   		echo
+   		echo Number of sub-alignment fasta files: `ls ${geneId}_emma/sub-alignments/*.fasta | wc -l `
+   		echo Total number of seqs in the sub-alignments: `cat ${geneId}_emma/sub-alignments/*.fasta | grep '>' | wc -l `
+   		echo Number of unique samples in the sub-alignments: `cat ${geneId}_emma/sub-alignments/*.fasta | grep '>' | sort | uniq -c | wc -l `
+   		echo Number of samples in sub-alignments more than one times: `cat ${geneId}_emma/sub-alignments/*.fasta | grep '>' | sort | uniq -c | awk '$1 > 1' | wc -l `
    	fi
 fi
 
@@ -1043,8 +1054,9 @@ if [[ $proteinSelected == 'yes' || $codonSelected == 'yes' ]]; then
    		--molecule amino \
    		--legacy \
    		--use-weight 1 --lower 10 --upper 25 \
+   		--keep-decomposition \
    		-o ${gene}.protein.aln.fasta
-   		proteinAlnToUse=${gene}_emma/${gene}.dna.aln.fasta
+   		proteinAlnToUse=${gene}_emma/${gene}.protein.aln.fasta
    	fi
 
 	if [[ $codonSelected == 'yes' ]]; then
