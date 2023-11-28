@@ -5,7 +5,7 @@
 
 # Author: Paul Bailey
 
-# Copyright © 2020 The Board of Trustees of the Royal Botanic Gardens, Kew
+# Copyright © 2023 The Board of Trustees of the Royal Botanic Gardens, Kew
 ####################
 geneId=$1
 geneFile=$2
@@ -980,11 +980,11 @@ if [[ $dnaSelected == 'yes' ]]; then
    		-o ${gene}.dna.aln.fasta
    		dnaAlnToUse=${geneId}_emma/${gene}.dna.aln.fasta
 
+   		echo
    		echo EMMA alignment stats for gene ${gene}:
    		echo Total number of samples: `cat ${geneId}_emma/${gene}.dna.aln.fasta | grep '>' | wc -l `
    		echo Number of unique samples: `cat  ${geneId}_emma/${gene}.dna.aln.fasta | grep '>' | sort -u | wc -l `
    		echo The two numbers above should be identical.
-   		echo
    		echo Number of sub-alignment fasta files: `ls ${geneId}_emma/sub-alignments/*.fasta | wc -l `
    		echo Total number of seqs in the sub-alignments: `cat ${geneId}_emma/sub-alignments/*.fasta | grep '>' | wc -l `
    		echo Number of unique samples in the sub-alignments: `cat ${geneId}_emma/sub-alignments/*.fasta | grep '>' | sort | uniq -c | wc -l `
