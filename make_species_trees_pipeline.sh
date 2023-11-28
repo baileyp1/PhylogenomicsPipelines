@@ -5,7 +5,7 @@
 
 # Author:   Paul Bailey
 
-# Copyright © 2020 The Board of Trustees of the Royal Botanic Gardens, Kew
+# Copyright © 2023 The Board of Trustees of the Royal Botanic Gardens, Kew
 ################################
 shopt -s failglob
 
