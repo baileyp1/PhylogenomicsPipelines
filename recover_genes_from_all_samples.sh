@@ -58,12 +58,12 @@ OPTIONS <value>:
   -f <string>    
                  FULL path to all sample fastq files; N.B. no filenames, just the full path to them, not a relative path and no wild cards! (required option)
   -t <string>    
-                 file name of target genes in DNA fasta format; NB: option -y 'hybpiper' requires protein fasta format (required option)
+                 file name of target genes in DNA fasta format; Note: option -y 'hybpiper' requires protein fasta format (required option)
   -a <string>    
                  file name of adaptors in fasta format (required option)
   -y <string>    
                  Hyb-Seq program; options are: paftools, hybpiper, hybpiper-bwa, hybpiper2, hybpiper2-bwa
-                 Note: HybPiper versions 1.3 and 2.1.6 are the only versions tested with this recovery pipeline do far 
+                 Note: HybPiper versions 1.3 and 2.1.6 are the only versions tested with this recovery pipeline so far 
   -S    
                  calculate statistics for gene recovery from read data mapped to all recovered genes per sample (includes per sample reads on-target, read
                  coverage, read depth). This option can also be used separately after the gene recoveries have run (do not specify option -y!) but the path
