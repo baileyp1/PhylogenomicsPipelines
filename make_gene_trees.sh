@@ -30,6 +30,10 @@ treeshrink="${20}"
 outgroupRoot="${21}"
 checkpointing="${22}"
 
+
+. $pathToScripts/make_species_trees_pipeline_functions.sh # Sourcing a file of bash functions
+
+
 # Convert $emptyMatchStateFractn to a percent for use in the output files:
 fractnAlnCovrg_pc=`awk -v FRACTN=$fractnAlnCovrg 'BEGIN{printf "%.0f", FRACTN * 100}' `
 
@@ -85,7 +89,7 @@ filterSeqs1()	{
     # $4 = seqLength threshold - 84 for DNA, 28 for protein - deprecated - will rely on a minimum overall seq length to tolerate after all filtering and trimming
     #
     # NB - only importing variables into this function if they vary depending on the residue type of $1,
-    #      all other variables a globally available and do not change during running of this script
+    #      all other variables are globally available and do not change during running of this script
     ###########
     if [[ $2 == 'protein' ]]; then 
     	residueType=aa 
@@ -414,7 +418,7 @@ makeGeneTree()	{
 	# $3 = output file prefix including the path to any directory
 	# $4 = phylogeny program to use ($phyloProgramDNA or $phyloProgramPROT)
     # $5 = raxmlng_model e.g. raxmlngModel='GTR+G' - for DNA; for protein raxmlngModel='JTT+G'
-    # $6 = iqtree2Model - currently set to JTT+F+G 
+    # $6 = iqtree2Model - currently set to JTT+F+G
     # $7 = iqtree2_seq_type  iqTree2SeqType='DNA'; for protein iqTree2SeqType='AA'
     # $8 = fasttreeFlags='-nt -gtr' - for DNA; for protein fasttreeFlags='' - NB - this last flag needs to be last in case it is blank - it needs to be blank for protein analysis)
     ###########
@@ -627,6 +631,10 @@ makeGeneTree()	{
 		cp -p ${3}/${gene}.${1}.aln_iqtree.contree \
 		${3}/${gene}_${1}_gene_tree_USE_THIS.nwk
 		rm  ${3}/${gene}.${1}.aln_iqtree.contree
+	elif [[ "$phyloProgramToUse" == 'gtm' ]]; then
+		echo Creating subalignments and gene trees from the main gene alignment, then running GTM to merge them back into a single gene tree
+		# Function parameters (for the moment, exactly the same as for makeGenetree function): 
+		gtm $1 $2 $3 $4 $5 $6 $7 $8
 
 
 #### 17.10.2020 - could fast bootstraps with raxml and using the CAT model
@@ -726,6 +734,7 @@ createGeneAlignmentAndTreeImages()	{
 			treeFileToUse=gene_alignment_tree_images_$1/${geneNwkFileNoSuffix}_rerooted.nwk
 			if [[ ! -s $treeFileToUse ]]; then
 				echo "WARNING: Outgroup(s) last common ancestor (LCA) is the tree's root - cannot reroot. Will mid-point root instead."
+				### NB - 7.12.2024 - I can now use option -l instead - it's easy to implement and it works
 				nw_reroot $treeFileToUse | nw_order -c a /dev/fd/0 \
 				> gene_alignment_tree_images_$1/${geneNwkFileNoSuffix}_rerooted.nwk 	# NB - same name as just above!
 				### OR alternatively, don't re-root but assign the original tree to $treeFileToUse so at least the alignment can be ordered by the tree.
@@ -978,17 +987,25 @@ if [[ $dnaSelected == 'yes' ]]; then
    		--use-weight 1 --lower 10 --upper 25 \
    		--keep-decomposition \
    		-o ${gene}.dna.aln.fasta
+   		# NB - a directory called '${gene}_emma' is created for the EMMA run and the aligned is used from that location
    		dnaAlnToUse=${geneId}_emma/${gene}.dna.aln.fasta
 
-   		echo
-   		echo EMMA alignment stats for gene ${gene}:
-   		echo Total number of samples: `cat ${geneId}_emma/${gene}.dna.aln.fasta | grep '>' | wc -l `
-   		echo Number of unique samples: `cat  ${geneId}_emma/${gene}.dna.aln.fasta | grep '>' | sort -u | wc -l `
-   		echo The two numbers above should be identical.
-   		echo Number of sub-alignment fasta files: `ls ${geneId}_emma/sub-alignments/*.fasta | wc -l `
-   		echo Total number of seqs in the sub-alignments: `cat ${geneId}_emma/sub-alignments/*.fasta | grep '>' | wc -l `
-   		echo Number of unique samples in the sub-alignments: `cat ${geneId}_emma/sub-alignments/*.fasta | grep '>' | sort | uniq -c | wc -l `
-   		echo Number of samples in sub-alignments more than one times: `cat ${geneId}_emma/sub-alignments/*.fasta | grep '>' | sort | uniq -c | awk '$1 > 1' | wc -l `
+   		> ${gene}.dna.emma_stats.txt	# Compiling stats in this file rather than the log file
+   		echo "##########################################################################" >> ${gene}.dna.emma_stats.txt
+   		echo "EMMA alignment stats for gene ${gene} (before any filtering and trimming!)" >> ${gene}.dna.emma_stats.txt
+   		echo "##########################################################################" >> ${gene}.dna.emma_stats.txt
+   		echo "Total number of residues in starting sequences (before EMMA): "`fastalength  $dnaFastaFileForAln | awk '{sum+=$1} END {print sum}' ` >> ${gene}.dna.emma_stats.txt
+   		echo "Total number of residues in aligned sequences (after EMMA): "`fastalength  $dnaAlnToUse | awk '{sum+=$1} END {print sum}' ` >> ${gene}.dna.emma_stats.txt
+   		echo "Number of gene sequences before EMMA alignment: "`cat $dnaFastaFileForAln | grep '>' | wc -l ` >> ${gene}.dna.emma_stats.txt
+   		echo "Total number of samples in EMMA alignment: "`cat ${geneId}_emma/${gene}.dna.aln.fasta | grep '>' | wc -l ` >> ${gene}.dna.emma_stats.txt
+   		echo "Number of unique samples: "`cat  ${geneId}_emma/${gene}.dna.aln.fasta | grep '>' | sort -u | wc -l ` >> ${gene}.dna.emma_stats.txt
+   		echo "All the above numbers above should be identical." >> ${gene}.dna.emma_stats.txt
+   		echo "Number of EMMA sub-alignment fasta files: "`ls ${geneId}_emma/sub-alignments/*.fasta | wc -l ` >> ${gene}.dna.emma_stats.txt
+   		echo "Total number of seqs in the sub-alignments: "`cat ${geneId}_emma/sub-alignments/*.fasta | grep '>' | wc -l ` >> ${gene}.dna.emma_stats.txt
+   		echo "Number of unique samples in the sub-alignments: "`cat ${geneId}_emma/sub-alignments/*.fasta | grep '>' | sort | uniq -c | wc -l ` >> ${gene}.dna.emma_stats.txt
+   		# Number of unique samples in the sub-alignments printed to file below:
+   		cat ${geneId}_emma/sub-alignments/*.fasta | grep '>' | sort | uniq -c | sed 's/>//' | awk '{print $2}' > ${geneId}_emma/sub-alignments/${geneId}_all_subsets_labels_sort_uniq-c.txt
+   		echo "Number of samples in sub-alignments appearing more than once: "`cat ${geneId}_emma/sub-alignments/*.fasta | grep '>' | sort | uniq -c | awk '$1 > 1' | wc -l ` >> ${gene}.dna.emma_stats.txt
    	fi
 fi
 
