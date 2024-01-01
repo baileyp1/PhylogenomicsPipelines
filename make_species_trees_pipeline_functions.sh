@@ -184,7 +184,7 @@ gtm()	{
 		#$exePrefix fasttree -nt -gtr ${3}/build_subsets_from_tree/${subsetFileName}.fasta > ${3}/build_subsets_from_tree/${subsetFileName}.nwk
 		makeGeneTree $1 "${3}/build_subsets_from_tree/${subsetFileName}.fasta" ${3}/build_subsets_from_tree 'fasttree' $5 $6 $7 $8
 ### 1.1.2024 - need to rename the filename here!!!!
-		###makeGeneTree $1 $2 $3 'iqtree2-B1000-nm1000' $5 $6 $7 $8
+		makeGeneTree $1 $2 $3 'iqtree2-B1000-nm1000' $5 $6 $7 $8
 
 		if [[ ! -s ${3}/build_subsets_from_tree/${gene}_${1}_gene_tree_USE_THIS.nwk ]]; then
 			echo "WARNING: During the GTM method, a subset tree failed to be built for gene $gene: ${3}/build_subsets_from_tree/${geneId}_subset-*-outof-*.txt"
@@ -205,10 +205,10 @@ gtm()	{
 				   done | awk '{sum+=$1} END {print sum/NR}'  `
 	minSubsetSize=`for subsetTree in ${3}/build_subsets_from_tree/${gene}_subset-*-outof-*.nwk; do
 				   nw_labels -I $subsetTree | wc -l
-				   done | sort | head -n 1 `
+				   done | sort -n | head -n 1 `
 	maxSubsetSize=`for subsetTree in ${3}/build_subsets_from_tree/${gene}_subset-*-outof-*.nwk; do
 				   nw_labels -I $subsetTree | wc -l
-				   done | sort | tail -n 1 `
+				   done | sort -n | tail -n 1 `
 
 	echo "Min/avg/max number of seqs in subset(s): ${minSubsetSize}/${avgSubsetSize}/${maxSubsetSize}" >> ${3}/${gene}.dna.gtm_stats.txt 
 
