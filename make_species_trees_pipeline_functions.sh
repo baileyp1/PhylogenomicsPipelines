@@ -72,7 +72,7 @@ gtm()	{
 	
 	echo "Number of seqs in alignment used for the guide tree: $numbrSeqsInAlnForTree" >> ${3}/${gene}.dna.gtm_stats.txt
 	echo "Number of tips in guide tree: $numbrTipsInGuideTree" >> ${3}/${gene}.dna.gtm_stats.txt
-	echo "Note: the two above numbers are very likely to be smaller than the number of seqs in the original alignment from EMMA if any filtering has been applied"
+	echo "Note: the two above numbers are very likely to be smaller than the number of seqs in the original alignment from EMMA if any filtering has been applied" >> ${3}/${gene}.dna.gtm_stats.txt
 	nw_labels -I ${3}/${gene}.${1}.guide_gene_tree.nwk | sort > ${3}/${gene}.${1}.guide_gene_tree.labels_sort.txt
 
 	nw_rename  ${3}/${gene}.${1}.guide_gene_tree.nwk tree_tip_info_mapfile.txt | nw_order -c n - | nw_topology - \
@@ -157,7 +157,7 @@ gtm()	{
 	### It means that the gtm.py script will not work but who knows - NOW Investigate here which ones they are - 28.12.2023 - I think I solved this but not sure what the issue was.
 	# Script outputs a list of tip labels.
 	numbrSubsets=`ls ${3}/build_subsets_from_tree/${geneId}_subset-*-outof-*.txt | wc -l `
-	echo "Number of subsets: $numbrSubsets" >> ${3}/${gene}.dna.gtm_stats.txt
+	echo "Number of subsets created: $numbrSubsets" >> ${3}/${gene}.dna.gtm_stats.txt
 	numbrTipsInAllSubsets=`cat ${3}/build_subsets_from_tree/${geneId}_subset*.txt | sort | wc -l `
 	echo "Number of tips in all subsets: $numbrTipsInAllSubsets" >> ${3}/${gene}.dna.gtm_stats.txt 
 	cat ${3}/build_subsets_from_tree/${geneId}_subset*.txt | sort > ${3}/build_subsets_from_tree/${geneId}_all_subsets_labels_sort.txt
@@ -182,27 +182,39 @@ gtm()	{
 		#subAlnSubNumbr=`echo $aln | awk -F '_' '{print $5}' `
 		# Used for testing subtree building:
 		#$exePrefix fasttree -nt -gtr ${3}/build_subsets_from_tree/${subsetFileName}.fasta > ${3}/build_subsets_from_tree/${subsetFileName}.nwk
-		makeGeneTree $1 $2 $3 'fasttree' $5 $6 $7 $8
+		makeGeneTree $1 "${3}/build_subsets_from_tree/${subsetFileName}.fasta" ${3}/build_subsets_from_tree 'fasttree' $5 $6 $7 $8
+### 1.1.2024 - need to rename the filename here!!!!
 		###makeGeneTree $1 $2 $3 'iqtree2-B1000-nm1000' $5 $6 $7 $8
 
-		if [[ ! -s ${3}/build_subsets_from_tree/${subsetFileName}.nwk ]]; then
+		if [[ ! -s ${3}/build_subsets_from_tree/${gene}_${1}_gene_tree_USE_THIS.nwk ]]; then
 			echo "WARNING: During the GTM method, a subset tree failed to be built for gene $gene: ${3}/build_subsets_from_tree/${geneId}_subset-*-outof-*.txt"
 			echo "WARNING: Therefore the final merged tree should fail to be created."
+		else
+			# The makeGeneTree function renames trees from all phylo methods to: ${gene}_${1}_gene_tree_USE_THIS.nwk
+			# So need to rename Newick file to a subtree name: 
+			mv ${3}/build_subsets_from_tree/${gene}_${1}_gene_tree_USE_THIS.nwk  ${3}/build_subsets_from_tree/${subsetFileName}.nwk
+			### Q: what happens if there is a file from a previous run? This shouldn't happen unless a run is interupted then phylo method fails on the second run 
 		fi
 	done
 
+	numbrSubsetTrees=`ls ${3}/build_subsets_from_tree/${gene}_subset-*-outof-*.nwk | wc -l `
+	echo "Number of subset trees created: $numbrSubsetTrees" >> ${3}/${gene}.dna.gtm_stats.txt
 	# Measuring the subset sizes for the gene:
-	avgSubsetSize=`for subsetTree in ${3}/build_subsets_from_tree/${gene}_*.nwk; do
+	avgSubsetSize=`for subsetTree in ${3}/build_subsets_from_tree/${gene}_subset-*-outof-*.nwk; do
 				   nw_labels -I $subsetTree | wc -l
 				   done | awk '{sum+=$1} END {print sum/NR}'  `
-	minSubsetSize=`for subsetTree in ${3}/build_subsets_from_tree/${gene}_*.nwk; do
+	minSubsetSize=`for subsetTree in ${3}/build_subsets_from_tree/${gene}_subset-*-outof-*.nwk; do
 				   nw_labels -I $subsetTree | wc -l
 				   done | sort | head -n 1 `
-	maxSubsetSize=`for subsetTree in ${3}/build_subsets_from_tree/${gene}_*.nwk; do
+	maxSubsetSize=`for subsetTree in ${3}/build_subsets_from_tree/${gene}_subset-*-outof-*.nwk; do
 				   nw_labels -I $subsetTree | wc -l
 				   done | sort | tail -n 1 `
 
-	echo "Min/avg/max number of seqs in subset size: ${minSubsetSize}/${avgSubsetSize}/${maxSubsetSize}" >> ${3}/${gene}.dna.gtm_stats.txt 
+	echo "Min/avg/max number of seqs in subset(s): ${minSubsetSize}/${avgSubsetSize}/${maxSubsetSize}" >> ${3}/${gene}.dna.gtm_stats.txt 
+
+	if [[ $numbrSubsets	-ne $numbrSubsetTrees ]]; then
+			echo "ERROR: During the GTM method, one or more subset trees failed to be created for gene $gene"
+	fi
 
 	
 
@@ -267,76 +279,6 @@ gtm()	{
 			exit 0	# zero allows Slurm to continue with the dependancies; NB - also exits from make_gene_trees.sh
 		fi
 	fi
-	
-
-	#######################
-	### UPTOHERE 30.12.2023
-	#######################
-	### ASAP get either iqtree, raxml or raxml ng working - might be good to test the recent paper on the ML plateaux (raxml)
-	###		TEST function call
-	###			Need to sort out options -q and -r if value is gtm:
-	###				gtm:fasttree:100  --> need to break this up so that can use extra  
-
-	###		Commit to Git:
-	###		1.In gene_tree script . $pathToScripts/make_species_trees_pipeline_functions.sh # Sourcing a file of bash functions
-	###		2.Set up basic working of this script
-	###		2.Add call to the GTM module
-
-	###		FIRST set up on KewHPC FastTree (as a control) --> iqtree --> raxml(-ng)
-	###			Once I know how long each subset takes for the longest gene and can estimate a time/RAM for a subset size, then this work will be going well 
-	###		Think about how to specify size of subset
-	###		THEN consolidate and plan next dev steps incl sample list + aa alns		
-
-	### 	Also look at other phylo papers for ideas I've forgotten about and my dev notes
-	###		THEN set up on Gruffalo for future repeats e.g. with gene tree backbones
-
-
-	### Further work on the GTM function:
-	### Go through method and tidy up again
-	### Step 2a and 3a - using EMMA subsets - need to remove the dups from the EMMA subsets --> see if trees look any better - DELAY this now
-	### Make sure I record how I've modified the scripts and make a note - e.g. line 154 - 158 - add notes to install.sh script
-	###		Add to bash_profile like so:
-	###		export NJMERGETOOLS=/Users/pba10kg/Documents/ProgramFiles/NJMerge_repository_Erin_and_Tandy_2018/tools
-	###		export GTM=/Users/pba10kg/Documents/ProgramFiles/GTM/gtm.py
-	###		ALSO: add in code to check that the two scripts are installed at the start of the method, else report an error!!!! 
-	
-	
-	### Compile message to Chengze and plan to update the Google doc - looks at the other papers in there
-	### 1. Confirm what the extra subset_*_query_[12345].est.aln.fasta - are those the subaln problem?
-	### 2. Have another go at removing the 'queries' value - just try removing the whole clause --> ask
-	### Duplicate samples
-
-	### Now I'm using outgroup labels, the tree images are NOT being made - need to check first what
-	### what happens when no labels are present + relogic
-
-	###-->Note to try and makeGeneTree() method more flexible w.r.t. model of evolution/residue type
-	### NB - note that the GTM will not work for paralogs instended for ASTRAL-PRO the way I intended to use them
-	### 	Mihgt afterall need to indicate paraologs first but the pipeline would need changing - think
-
-	### NB - I know why the EMMA subalns don't add up to the guide treee: I'm uisng the subalns before any filtering,
-	###		 so you would have to run the filtering on all the EMMA sub alns - possible - but easiest to use my second approach.
-	###		 Actually I think I could just compare a subaln ID list with the guide tree ID list and remove seqs in the sub aln that no longer exist in the guide tree.
-	### 	 Hey, I think this solves the issue of duplicate seqs in the EMMA subalns
-
-	### NB - note to check to test RAxML+CAT model with no bootstrapping for the guide tree - using 10 starting trees - it might not be too slow
-	### Note to think about doing the concatenated aln in the same way, use FastTree or Astral as starting tree, then divide a concatenated aln up into  
-	### subalns and trees using a proper ML method - might want to also consider NJst as the starting tree if Fasttree becomes too slow https://doi.org/10.1093/sysbio/syr027
-
-	###Next action 7:—>Implement filtering and trimming for concatenated aln by using existing methods moved to this script - required by two scripts 
-	
-	###	I could use that R primer from EI to shade the subsets a different colour on the guide tree so I can track where they are in the full tree!!!!!
-	###		https://www.earlham.ac.uk/articles/plotting-phylogenetic-trees-r-alternating-clade-highlights?utm_source=Earlham+Institute+Digital+Updates&utm_campaign=eb7d13f07d-Mailchimp_Nov23&utm_medium=email&utm_term=0_3c2e0987cf-eb7d13f07d-457393009
-	### 	Plotting phylogenetic trees in R: alternating clade highlights - A guide to highlighting clades in phylogenetic trees in R 23 November 2023 Rowena Hill
-
-	### Note to calculate Robinson-Foulds between each gene tree and the species tree - has to be done after the species tree is made:
-	###		Use compare_trees.py
-	###		Try and output to the existing tree stats file
-
-	### Remmber that I can force nw_reroot to use the ingroup to get the tree rooted on the outgroup - see plastid work - alter createGeneAlignmentAndTreeImages function to do this.
-	###		NB - need to catch the error or whether file is empty depending on what happens
-	###		Sometimes no labels given might be in the tree - what happens if some are missing?
-
-	### Look into FastTree MPI - Chengze has it working - compare between 1cpu fasttree and ||el version
 }
 
 
