@@ -631,7 +631,7 @@ makeGeneTree()	{
 		cp -p ${3}/${gene}.${1}.aln_iqtree.contree \
 		${3}/${gene}_${1}_gene_tree_USE_THIS.nwk
 		rm  ${3}/${gene}.${1}.aln_iqtree.contree
-	elif [[ "$phyloProgramToUse" == 'gtm' ]]; then
+	elif [[ "$phyloProgramToUse" == 'gtm'* ]]; then
 		echo Creating subalignments and gene trees from the main gene alignment, then running GTM to merge them back into a single gene tree
 		# Function parameters (for the moment, exactly the same as for makeGenetree function): 
 		gtm $1 $2 $3 $4 $5 $6 $7 $8
