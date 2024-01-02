@@ -182,9 +182,11 @@ gtm()	{
 		#subAlnSubNumbr=`echo $aln | awk -F '_' '{print $5}' `
 		# Used for testing subtree building:
 		#$exePrefix fasttree -nt -gtr ${3}/build_subsets_from_tree/${subsetFileName}.fasta > ${3}/build_subsets_from_tree/${subsetFileName}.nwk
-		makeGeneTree $1 "${3}/build_subsets_from_tree/${subsetFileName}.fasta" ${3}/build_subsets_from_tree 'fasttree' $5 $6 $7 $8
-### 1.1.2024 - need to rename the filename here!!!!
-		makeGeneTree $1 $2 $3 'iqtree2-B1000-nm1000' $5 $6 $7 $8
+		if [[ $4 == 'gtm:fasttree'* ]]; then 
+			makeGeneTree $1 "${3}/build_subsets_from_tree/${subsetFileName}.fasta" ${3}/build_subsets_from_tree 'fasttree' $5 $6 $7 $8
+		elif [[ $4 == 'gtm:iqtree2-B1000-nm1000'* ]]; then 
+			makeGeneTree $1 "${3}/build_subsets_from_tree/${subsetFileName}.fasta" ${3}/build_subsets_from_tree 'iqtree2-B1000-nm1000' $5 $6 $7 $8
+		fi
 
 		if [[ ! -s ${3}/build_subsets_from_tree/${gene}_${1}_gene_tree_USE_THIS.nwk ]]; then
 			echo "WARNING: During the GTM method, a subset tree failed to be built for gene $gene: ${3}/build_subsets_from_tree/${geneId}_subset-*-outof-*.txt"
@@ -193,7 +195,10 @@ gtm()	{
 			# The makeGeneTree function renames trees from all phylo methods to: ${gene}_${1}_gene_tree_USE_THIS.nwk
 			# So need to rename Newick file to a subtree name: 
 			mv ${3}/build_subsets_from_tree/${gene}_${1}_gene_tree_USE_THIS.nwk  ${3}/build_subsets_from_tree/${subsetFileName}.nwk
-			### Q: what happens if there is a file from a previous run? This shouldn't happen unless a run is interupted then phylo method fails on the second run 
+			### Q: what happens if there is a file from a previous run? This shouldn't happen unless a run is interupted then phylo method fails on the second run
+			if [[ -s ${3}/build_subsets_from_tree/${gene}.dna.aln_iqtree.ckp.gz ]]; then		# For iqtree analysis. To activate checkpointing for subtrees, would need to alter how files are named
+				rm ${3}/build_subsets_from_tree/${gene}.dna.aln_iqtree.ckp.gz					# My own version of checkpointing will still work - ok
+			fi
 		fi
 	done
 
