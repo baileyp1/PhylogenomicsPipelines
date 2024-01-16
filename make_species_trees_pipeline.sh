@@ -105,12 +105,11 @@ OPTIONS <required_value>:
 INPUT FILE OPTIONS:
   -G               
                 make gene trees starting from unaligned gene-wise fasta files rather than files containing all genes per sample.
-                Gene name/identifier must be identical to the fasta file name (minus any [dot] ending suffix e.g. .fasta),
-                else change the gene name list in option -g so that it is.	
-                Fasta header line format MUST BE: >sampleId
+                Gene name/identifier must be identical to the fasta file name (minus any [dot] ending suffix e.g. .fasta) - i.e. 
+                file name(s) should be called <geneId>.fasta. Fasta header line format MUST BE: >sampleId. Note: option -a must NOT be used
   -g <file>        
                 file (including path to it) containing list of gene names only (required option)
-                NB - pretty sure that gene names must NOT have '.' characters in them if the suffix is what makes them unique.         
+                Note - pretty sure that gene names must NOT have '.' characters in them if the suffix is what makes them unique.         
   -a               
                 add sample name/identifier onto the fasta header from the input fasta file name.
                 Expected gene identifier format in the input fasta header: >geneId (no hyphen '-' characters allowed)
@@ -126,7 +125,7 @@ INPUT FILE OPTIONS:
 ALIGNMENT OPTIONS:
   -D <string>      
                 sequence type to use: dna, protein, codon (default=dna). N.B. use with multiple types must be quoted (e.g. 'dna protein')
-                codon is input DNA aligned but guided by a protein alignment. NB - the 'protein' and 'codon' options are not finished yet!
+                codon is input DNA aligned but guided by a protein alignment. Note: the 'protein' and 'codon' options are not finished yet!
   -A <string>      
                 alignment program to use: mafft, upp (UPP is ideal for large alignments) (default=mafft)
 
@@ -156,7 +155,7 @@ ALIGNMENT OPTIONS:
                 (no default; advised=60)
   -J               
                 trim alignment option 1. Filter columns with OpTrimAL (after Shee el al 2020, https://doi.org/10.3389/fpls.2020.00258)
-                NB - this option is not ready yet and has been removed!
+                Note: this option is not ready yet and has been removed!
   -K <fraction>    
                 trim alignment option 2. Filter columns to remove rarer insertions (no default; example: 0.003 will remove columns with 0.3 % occupancy)
 PHYLOGENY OPTIONS:
@@ -188,7 +187,7 @@ OTHER OPTIONS:
   -b
                 Turn on checkpointing i.e. repeat exactly the same run in the same location, reconstructing any gene trees that failed at the first attempt
   -C <integer>     
-                number of cpu to use for genetrees; NB - not convinced >1 cpu works robustly for raxml-ng with small datasets! (default=1)
+                number of cpu to use for genetrees; Note: not convinced >1 cpu works robustly for raxml-ng with small datasets! (default=1)
   -c <integer>     
                 number of cpu to use by ASTRAL-MP and/or RAxML for the species tree(s) (default=8)
   -R <integer>     
@@ -198,7 +197,7 @@ OTHER OPTIONS:
                 Slurm extra memory (in MB) and cpu to use with large data sets for specific gene trees named here: Format: <geneId1>,<geneId2><etc>:<cpu>:<mem>
                 Real life examples: Angiosperms353 genes (5921, 5596)
   -U <integer>     
-                Memory to use (in MB) for species trees (default=50000; NB: for option -s ‘astral’, memory is already fixed at 12GB)
+                Memory to use (in MB) for species trees (default=50000; Note: for option -s ‘astral’, memory is already fixed at 12GB)
   -V <string>      
                 Slurm time limit to use for gene trees. Format: <days>-<hours>:<minutes>
                 e.g. 1-0:0 is 1 day (default=0, means no limit is imposed in default Slurm set up)
@@ -275,7 +274,7 @@ while getopts "hvat:ug:ijGF:f:m:p:M:q:r:TC:c:d:Q:Y:A:D:O:L:I:JK:R:X:U:V:W:H:o:bs
 	case $OPTION in
 
 		h) usage; exit 1 ;;
-		v) echo "make_species_trees_pipeline.sh version 3.0_dev"; exit ;;
+		v) echo "make_species_trees_pipeline.sh version 4.0_dev"; exit ;;
     #INPUT FILE OPTIONS:
         G) useGenewiseFiles=yes ;;
         g) geneListFile=$OPTARG ;;
@@ -596,35 +595,36 @@ elif [[ $speciesTreesOnly == 'no' ]]; then
      	#echo "afterDashCheck (geneId): " $afterDashCheck 
      	if [[ $beforeDashCheck -gt 1 ]]; then echo "ERROR: more than one sample identifier detected on fasta header line (there should only be one sample identifier for the default format) for this sample: $file.
               Also check that fasta header lines have this format: >sampleId-geneId"; exit 1
-     	elif [[ $afterDashCheck -gt 1 ]]; then echo "ERROR: gene identfiers should be unique, one or more not unique for this sample: $file \nAlso check that fasta header lines have this format: >sampleId-geneId"; exit 1
-		  else
-        cat $file | awk '{if($1 ~ /^>/)  {print $1} else {print $0}}' \
-			 | awk -F '-' '{if($1 ~ /^>/) {{gsub(/>/,"",$1)} {print ">" $2 " " $1}} else {print $0}}' \
-			 > ${uniqueSampleId}_modified.fasta
-			 # NB - fasta format now: >geneId sampleId
+     	elif [[ $afterDashCheck -gt 1 ]]; then echo "ERROR: gene identfiers should be unique, one or more not unique for this sample: $file
+Also check that fasta header lines have this format: >sampleId-geneId"; exit 1
+		else
+            cat $file | awk '{if($1 ~ /^>/)  {print $1} else {print $0}}' \
+			| awk -F '-' '{if($1 ~ /^>/) {{gsub(/>/,"",$1)} {print ">" $2 " " $1}} else {print $0}}' \
+			> ${uniqueSampleId}_modified.fasta
+			# NB - fasta format now: >geneId sampleId
 
-			 # If an input fasta file name doesn't exist then the 'modified.fasta' filename created above will not exist.
-			 # Testing whether file exists here:
-			 if [[ ! -s ${uniqueSampleId}_modified.fasta ]]; then
-				  echo "ERROR: this input fasta file does not exist or is empty: ${uniqueSampleId}_modified.fasta"
-				  exit 1
-			 fi
-		  fi
+			# If an input fasta file name doesn't exist then the 'modified.fasta' filename created above will not exist.
+			# Testing whether file exists here:
+			if [[ ! -s ${uniqueSampleId}_modified.fasta ]]; then
+				echo "ERROR: this input fasta file does not exist or is empty: ${uniqueSampleId}_modified.fasta"
+				exit 1
+			fi
+		fi
 
 		### [[To convert from 'gene species' my format to species-gene format:
 		###cat CKDK_Ochnaceae_Ochna_serrulata.fasta | awk '{if($1 ~ /^>/)  {{gsub(/>/,"",$1)} {print ">" $2 "-" $1}} else {print $0}}' >species-gene-format.fasta ]]
 		### NB - need to change awk code when altering format in next script
 		### NB - keep an eye on the max line length allowed w.r.t. seqtk
-  done
+    done
 	
-  # Finally, test whether there are the same number of sample identifiers on the fasta header lines as there are samples submitted:
-### 7.10.2019 - NOT YET TESTED ALL SITUATIONS
-  # NB - Fasta file format is now: >geneId sampelId.
-  # NB - on MacOS awk inserts a blank line between output lines so removing them with grep -v '^$'.
-  numbrSamplesInFile=`cat *_modified.fasta | awk '{if($1 ~ /^>/)  {print $2} }' | grep -v  '^$' | sort -u | wc -l `
-  ### NB - if file can get through here with no sample field occupied (it can't I don't think), then you would end up counting genes, then number of genes could equal number of samples (unlikely).
-  if [ $numbrSamples -ne $numbrSamplesInFile ]; then echo "ERROR: number of samples counted according to the fasta header lines is different to the number of input files"; exit 1
-  else
+    # Finally, test whether there are the same number of sample identifiers on the fasta header lines as there are samples submitted:
+    ### 7.10.2019 - NOT YET TESTED ALL SITUATIONS
+    # NB - Fasta file format is now: >geneId sampelId.
+    # NB - on MacOS awk inserts a blank line between output lines so removing them with grep -v '^$'.
+    numbrSamplesInFile=`cat *_modified.fasta | awk '{if($1 ~ /^>/)  {print $2} }' | grep -v  '^$' | sort -u | wc -l `
+    ### NB - if file can get through here with no sample field occupied (it can't I don't think), then you would end up counting genes, then number of genes could equal number of samples (unlikely).
+    if [ $numbrSamples -ne $numbrSamplesInFile ]; then echo "ERROR: number of samples counted according to the fasta header lines is different to the number of input files"; exit 1
+    else
 		# Concatenate fasta files and put seqs on a single line:
 		fileList=`ls *_modified.fasta `
 		#echo $fileList
@@ -632,20 +632,20 @@ elif [[ $speciesTreesOnly == 'no' ]]; then
 		geneFile=all_samples_concatenated.fasta
 	fi
 else
-  echo "INFO: Command is running in species tree only mode (option -J) - expecting gene alignment files with a file name suffix of 'aln.for_tree.fasta'
+    echo "INFO: Command is running in species tree only mode (option -J) - expecting gene alignment files with a file name suffix of 'aln.for_tree.fasta'
 in the current working directory from a previous run.
 NB - alignment filtering and trimming options and option -T are not applicable in this mode."
 
-  # Check whether the gene alignment files exist:
-  if ls *.aln.for_tree.fasta >/dev/null 2>&1; then
-    # Need to calculate $numbrsamples variable properly.
-    # NB - Fasta file format here is: >sampelId.
-    # NB - on MacOS awk inserts a blank line between output lines so removing them with grep -v '^$'.
-    numbrSamples=`cat *.aln.for_tree.fasta | awk '{if($1 ~ /^>/)  {print $1} }' | grep -v  '^$' | sort -u | wc -l `
-  else
-    echo "ERROR: cannot find gene alignment files with a file name suffix of 'aln.for_tree.fasta'. Exiting."
-    exit
-  fi
+    # Check whether the gene alignment files exist:
+    if ls *.aln.for_tree.fasta >/dev/null 2>&1; then
+        # Need to calculate $numbrsamples variable properly.
+        # NB - Fasta file format here is: >sampelId.
+        # NB - on MacOS awk inserts a blank line between output lines so removing them with grep -v '^$'.
+        numbrSamples=`cat *.aln.for_tree.fasta | awk '{if($1 ~ /^>/)  {print $1} }' | grep -v  '^$' | sort -u | wc -l `
+    else
+        echo "ERROR: cannot find gene alignment files with a file name suffix of 'aln.for_tree.fasta'. Exiting."
+        exit
+    fi
 fi
 #exit
 
