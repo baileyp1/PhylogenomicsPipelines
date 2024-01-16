@@ -101,6 +101,20 @@ def detect_stops(infile, outfilePrefix):
 	fh2.close()
 
 
+def bioSeqIOLoop(infile):
+	'''
+	Template use of Bio.SeqIO to manipulate sequence records from a fasta file
+	'''
+
+	for record in SeqIO.parse(infile, "fasta"):     # returns a SeqRecord object, includes a Seq object called seq
+		#print(record.id, "\n", record.seq, len(record) )
+		print(record.description)	# This variable appears to be the full fasta file header
+		# Parse the organism name from the fasta header (2nd field in record.description):
+		headrFields = record.description.split()
+		print('headrFields:', headrFields[1])
+
+
+
 # Main code:
 if method == 'detect_stops':
 	detect_stops(infile, outfilePrefix)
