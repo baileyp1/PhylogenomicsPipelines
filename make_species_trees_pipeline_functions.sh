@@ -196,8 +196,9 @@ gtm()	{
 			# So need to rename Newick file to a subtree name: 
 			mv ${3}/build_subsets_from_tree/${gene}_${1}_gene_tree_USE_THIS.nwk  ${3}/build_subsets_from_tree/${subsetFileName}.nwk
 			### Q: what happens if there is a file from a previous run? This shouldn't happen unless a run is interupted then phylo method fails on the second run
-			if [[ -s ${3}/build_subsets_from_tree/${gene}.dna.aln_iqtree.ckp.gz ]]; then		# For iqtree analysis. To activate checkpointing for subtrees, would need to alter how files are named
-				rm ${3}/build_subsets_from_tree/${gene}.dna.aln_iqtree.ckp.gz					# My own version of checkpointing will still work - ok
+			if [[ -s ${3}/build_subsets_from_tree/${gene}.dna.aln_iqtree.ckp.gz ]]; then	# For iqtree analysis. To activate checkpointing for subtrees, would need to alter how files are named
+				rm ${3}/build_subsets_from_tree/${gene}.dna.aln_iqtree.ckp.gz				# My own version of checkpointing will still work - ok
+																							# Removing the iqtree.ckp.gz file allows the tree to be repeated and old results overwritten
 			fi
 		fi
 	done
