@@ -147,6 +147,12 @@ done
 if [ "$#" -lt 1 ]; then usage; exit 1; fi
 
 
+echo
+echo "Program: $0"
+echo "Command: $0 $@"
+echo 
+
+
 ###################################### 
 # Check required software dependancies
 ######################################
