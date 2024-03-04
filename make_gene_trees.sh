@@ -889,6 +889,7 @@ elif [[ ! -s $dnaFastaFileForAln ]]; then
 		dnaFastaFileForAln=${gene}_after_filterSeqs_dna.fasta
 		echo File for aligning: ${gene}_after_filterSeqs_dna.fasta
 	else
+	### 16.1.2024 - what about protein and codon files??? Also need to extend this list
 		echo "WARNING: the input gene-wise fasta file for this gene does not exist or is empty: $gene - skipping alignment of this gene.
 (It indicates that there are no samples for this gene (possibly after a filtering step),
 or, the gene list is not completely compatible with the input fasta files.)"
@@ -1067,7 +1068,7 @@ if [[ $proteinSelected == 'yes' || $codonSelected == 'yes' ]]; then
     	echo
    		echo Creating a protein alignment with EMMA...
    		$exePrefix python3 $EMMA -t $cpuGeneTree \
-   		-i $dnaFastaFileForAln -d ${gene}_emma \
+   		-i ${gene}.protein.fasta  -d ${gene}_emma \
    		--molecule amino \
    		--legacy \
    		--use-weight 1 --lower 10 --upper 25 \
