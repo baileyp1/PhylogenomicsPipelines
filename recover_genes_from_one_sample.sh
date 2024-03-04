@@ -516,16 +516,14 @@ elif [[ $hybSeqProgram == 'hybpiper'* ]]; then
 			for file in paralogs_no_chimeras/*_paralogs_no_chimeras.fasta; do
 				geneName=`basename $file | sed 's/_paralogs_no_chimeras.fasta//' `
 	 			cat $file \
-	 			| awk -v gene=$geneName '{if($1 ~ /^>/) {print $1 "-" gene} else {print $0}}' \
-				> ${sampleId}_paralogs_no_chimeras.fasta
-			done
+	 			| awk -v gene=$geneName '{if($1 ~ /^>/) {print $1 "-" gene} else {print $0}}'
+			done > ${sampleId}_paralogs_no_chimeras.fasta
 			# Create sample file for the paralogs_all:
 			for file in paralogs_all/*_paralogs_all.fasta; do
 				geneName=`basename $file | sed 's/_paralogs_all.fasta//' `
 	 			cat $file \
-	 			| awk -v gene=$geneName '{if($1 ~ /^>/) {print $1 "-" gene} else {print $0}}' \
- 				> ${sampleId}_paralogs_all.fasta
-			done
+	 			| awk -v gene=$geneName '{if($1 ~ /^>/) {print $1 "-" gene} else {print $0}}'
+			done > ${sampleId}_paralogs_all.fasta
 		fi
 	else
 		echo "WARNING: If option -y was used, the HybPiper program was not recognised. The options are hybpiper[-bwa] or hybpiper2[-bwa]."
@@ -731,7 +729,7 @@ if [[ $stats != 'no' ]]; then
 		#ls -l $refFileName.Ns_removed_temp
 		###rm $refFileName.Ns_removed_temp  ### Delaying removing this file so I can compare it with N's included in the read stats
 	else
-		sumLengthOfGenes=`fastalength $refFileName | awk '{sum+=$1} END {print sum}' `
+		sumLengthOfGenes=`fastalength $refFileName | awk '{sum+=$1} END {print sum}' `	# Applies to Paftools and HybPiper recovery methods so far
 	fi
 	echo "sampleId: $sampleId
 numbrRecoveredGenes: $numbrRecoveredGenes
@@ -797,7 +795,7 @@ sumLengthOfGenes: $sumLengthOfGenes" > ${sampleId}_gene_recovery_stats.txt  # Al
 	# samtools fastq -n - means that /1 and /2 are NOT added to output records - didn't work here
 	# samtools fastq -N - means that /1 and /2 are ALWAYS added to fastq record ids
 	# NB - not sure if this needs to be done - all singleton reads should be unique (would only be a problem if combining the R1 AND R2 read pairs)
-	# Option -0 captures all other reads i.e. the mapped ones - prevents them going into the log file
+	# Option -0 captures all other reads i.e. the mapped ones - prevents them going into the log file!
 
 	#######################
 	# Reads on-target stats
