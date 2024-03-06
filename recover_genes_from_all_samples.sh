@@ -58,7 +58,8 @@ OPTIONS <value>:
   -f <string>    
                  FULL path to all sample fastq files; N.B. no filenames, just the full path to them, not a relative path and no wild cards! (required option)
   -t <string>    
-                 file name of target genes in DNA fasta format; Note: option -y 'hybpiper' requires protein fasta format (required option)
+                 file name of target genes in DNA fasta format (required option);
+                 Note: option -y 'hybpiper' requires target gene protein sequences, option -y 'hybpiper2' can be DNA or protein
   -a <string>    
                  file name of adaptors in fasta format (required option)
   -y <string>    
@@ -151,7 +152,6 @@ echo
 echo "Program: $0"
 echo "Command: $0 $@"
 echo 
-
 
 ###################################### 
 # Check required software dependancies
