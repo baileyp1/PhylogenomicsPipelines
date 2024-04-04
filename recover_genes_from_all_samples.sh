@@ -68,7 +68,9 @@ OPTIONS <value>:
   -S    
                  calculate statistics for gene recovery from read data mapped to all recovered genes per sample (includes per sample reads on-target, read
                  coverage, read depth). This option can also be used separately after the gene recoveries have run (do not specify option -y!) but the path
-                 to the gene recovery fasta files has to be specified with option -P, if not running in the same location as the original gene recovery run
+                 to the gene recovery fasta files has to be specified with option -P, if not running in the same location as the original gene recovery run.
+                 Options are: yes, yes:u (outputs unmapped reads) (default=no)
+
   -P <string> 
                  Specify FULL path to the gene recovery fasta files (for option -S), but only the part common to all files.
                  This option looks for the first, then the second of these two cases:
@@ -111,7 +113,7 @@ EOF
 
 
 #echo User inputs:    ### For testing only 
-while getopts "hvs:t:f:a:y:p:c:d:H:m:T:Q:SP:"  OPTION; do
+while getopts "hvs:t:f:a:y:p:c:d:H:m:T:Q:S:P:"  OPTION; do
  
   #echo -$OPTION $OPTARG    ### For testing only - could try to run through options below 
    
@@ -131,7 +133,7 @@ while getopts "hvs:t:f:a:y:p:c:d:H:m:T:Q:SP:"  OPTION; do
     m) slurmMemory=$OPTARG ;;
     T) slurmTime=$OPTARG ;;
     Q) partitionName=$OPTARG ;; 
-    S) stats=yes ;;
+    S) stats=$OPTARG ;;
     P) refFilePathForStats=$OPTARG ;;
     ?)  echo This option does not exist. Read the usage summary below.
             echo
@@ -228,6 +230,11 @@ elif [[ $usePaftolDb != 'no' ]]; then
   # Not checking the alphanumerical nature of the values.
   # Paftools will let user know if the datasetOrigin and recoveryRun are not found.
 fi
+
+
+# Option -S:
+if [[ $stats != 'no' && $stats != 'yes' && $stats != 'yes:no' ]]; then
+  usage; echo "ERROR: option -S value is not accepted. Possible values are: 'yes', 'yes:u' - exiting "; exit; fi
 
 
 ##########################
