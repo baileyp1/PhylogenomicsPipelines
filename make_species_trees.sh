@@ -373,7 +373,7 @@ if [[ "$astralSelected" == 'yes' || "$astralmpSelected" == 'yes' || "$astralproS
     if [[ $collapseNodes != 'no' ]]; then
         if [[ $dnaSelected == 'yes' ]]; then
             seqType=dna
-            if [[ $phyloProgramDNA == 'fasttree' ]]; then
+            if [[ $phyloProgramDNA == *'fasttree'* ]]; then
                 # For fasttree (only, so far), need to convert $collapseNodes percent value to a fraction and use that in nw_ed. 
                 collapseNodes=`echo $collapseNodes | awk 'fractn=$1/100 {print fractn}' `
                 echo "\$CollapseNodes should now be a fraction for FASTTREE (option -L): $collapseNodes"
@@ -403,7 +403,7 @@ if [[ "$astralSelected" == 'yes' || "$astralmpSelected" == 'yes' || "$astralproS
         if [[ $proteinSelected == 'yes' ]]; then
             seqType=protein
             ### Not tested logic for this conditional yet - I think I need a separate varialbe for DNA and protein - done
-            if [[ $phyloProgramPROT == 'fasttree' ]]; then
+            if [[ $phyloProgramPROT == *'fasttree'* ]]; then
                 # For fasttree (only, so far), need to convert $collapseNodes percent value to a fraction and use that in nw_ed. 
                 collapseNodes=`echo $collapseNodes | awk 'fractn=$1/100 {print fractn}' `
                 echo "\$CollapseNodes should now be a fraction for FASTTREE (option -L): $collapseNodes"
