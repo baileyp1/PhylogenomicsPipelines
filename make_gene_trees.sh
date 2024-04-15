@@ -43,7 +43,8 @@ echo SLURM_ARRAY_JOB_ID: $SLURM_ARRAY_JOB_ID
 echo SLURM_ARRAY_TASK_ID: $SLURM_ARRAY_TASK_ID
 
 
-geneId=`echo $geneId | cut -d ',' -f 1 `		#### 20.8.2019 - does this do anything now? Required only for ${geneId}_aln_summary.txt but I could change that - i.e. USE $gene instead!!
+geneId=`echo $geneId | cut -d ',' -f 1 `		### 20.8.2019 - does this do anything now? 23.3.2024 - yes it does - see next line. Required only for ${geneId}_aln_summary.txt but I could change that - i.e. USE $gene instead!!
+												### $gene is mostly used so I should convert from geneId to gene.
 gene=`echo $geneId | tr -d '\n' `				# Need to remove line return, if present after the first field! Was for the sample- to gene-wise conversion 
 ### Might also be good to have the family
 #genus=`echo $line | cut -d ',' -f 2 `
@@ -238,7 +239,7 @@ elif [[ $maxColOcc -eq 0 && $3 -eq 0 ]]; then
 	# these genes still need to be used but the above if clause is not appropriate. Instead, need to 
 	# use the original alignment file i.e. $1.
     # Copy the original aln.fasta to the filtered name (even though it's not actually filtered! Sorry.)
-    cp -p $1 ${gene}.dna.aln.after_filter1.fasta
+    cp -p $1 ${gene}.${2}.aln.after_filter1.fasta
     echo "WARNING: this gene alignment does not have overlapping sequences at > $fractnMaxColOcc column occupancy: $gene
 (still included in the analysis but with no sequence filtering)"
 
@@ -703,8 +704,8 @@ createGeneAlignmentAndTreeImages()	{
     #
  	# Input parameters:
  	# $1 = residue type: dna, aa or codon (required for specifying the right gene_alignment_images_* dir) 
- 	# $2 = input alignment fasta file		  (currently *.dna.aln.for_tree.fasta)
- 	# $3 = input tree file matching alignment (currently *_dna_gene_tree_USE_THIS.nwk - 22,.4.2021 - this will change to *.dna.gene_tree_USE_THIS.nwk)
+ 	# $2 = input alignment fasta file		  (currently *.aln.for_tree.fasta)
+ 	# $3 = input tree file matching alignment (currently *_gene_tree_USE_THIS.nwk - 22,.4.2021 - this will change to *.dna.gene_tree_USE_THIS.nwk)
     #
     # Note: Jalview fails with large alignment files but have also obtained a corrupt .png file with a long gene aln but only 12 seqs!
     # Note: at the moment MAFFT --reorder flag is re-ordering seqs w.r.t. the info at the alignment step. 
@@ -712,35 +713,37 @@ createGeneAlignmentAndTreeImages()	{
 	if [[ -x $JALVIEW ]]; then
 		if [[ ! -d gene_alignment_tree_images_$1 ]]; then mkdir gene_alignment_tree_images_$1; fi
 		treeFileToUse=$3
-		jalviewTreeFlags="-tree $treeFileToUse -sortbytree"
-		geneNwkFileNoSuffix=`basename -s .nwk $treeFileToUse`
-		if [[ $outgroupRoot != 'no' ]]; then
-			# Root gene trees so that they can be more easily compared:
-			echo "outgroup/root samples: $outgroupRoot"
-			nw_reroot $treeFileToUse $outgroupRoot | nw_order -c a /dev/fd/0 \
-			> gene_alignment_tree_images_$1/${geneNwkFileNoSuffix}_rerooted.nwk
-			### 6.5.2022 - get error "No such file or directory" when file can't be rerooted
-			### but now planning to use gotree to midpoint root.
-			# nw_reroot -c a - orders tips alphabetically - may be easier for comparisons to similar tree label names
-			# NB - 1.if none of the leaf labels is correct (i.e. present), then the tree is rerooted
-			#      on the longest branch - i.e. there is no error to trap
-			#      Also this action looks to be the same as mid-pointing rooting a tree.
-			#      2. If an incorrect sample Id has been added (or is not present, a warning is printed to standard error, 
-			#		  but tree is still produced and rooted on the sampleId(s) that exist in the tree.		  
-			#	   3. If an $outgroupRoot identifer is already in the root position, then rooting fails and file is zero byte.
-			#		  I think this issue will occur when >1 $outgroupRoot identifers are chosen but don't cluster together.
-			#		  Easiest thing to do is to just supply a single root sample or mid-point root instead, in the latter case, 
-			#		  supply a label that doesn't exist e.g. 'midpoint' (as advised in the command line help for option -o (this pipeline))
-			treeFileToUse=gene_alignment_tree_images_$1/${geneNwkFileNoSuffix}_rerooted.nwk
-			if [[ ! -s $treeFileToUse ]]; then
-				echo "WARNING: Outgroup(s) last common ancestor (LCA) is the tree's root - cannot reroot. Will mid-point root instead."
-				### NB - 7.12.2024 - I can now use option -l instead - it's easy to implement and it works
-				nw_reroot $treeFileToUse | nw_order -c a /dev/fd/0 \
-				> gene_alignment_tree_images_$1/${geneNwkFileNoSuffix}_rerooted.nwk 	# NB - same name as just above!
-				### OR alternatively, don't re-root but assign the original tree to $treeFileToUse so at least the alignment can be ordered by the tree.
-			fi
+		jalviewTreeFlags=""
+		if [[ -s $treeFileToUse ]]; then	# Can only use the gene tree in Jalview if it exists. 
 			jalviewTreeFlags="-tree $treeFileToUse -sortbytree"
-
+			geneNwkFileNoSuffix=`basename -s .nwk $treeFileToUse`
+			if [[ $outgroupRoot != 'no' ]]; then
+				# Root gene trees so that they can be more easily compared:
+				echo "outgroup/root samples: $outgroupRoot"
+				nw_reroot $treeFileToUse $outgroupRoot | nw_order -c a /dev/fd/0 \
+				> gene_alignment_tree_images_$1/${geneNwkFileNoSuffix}_rerooted.nwk
+				### 6.5.2022 - get error "No such file or directory" when file can't be rerooted
+				### but now planning to use gotree to midpoint root.
+				# nw_reroot -c a - orders tips alphabetically - may be easier for comparisons to similar tree label names
+				# NB - 1.if none of the leaf labels is correct (i.e. present), then the tree is rerooted
+				#      on the longest branch - i.e. there is no error to trap
+				#      Also this action looks to be the same as mid-pointing rooting a tree.
+				#      2. If an incorrect sample Id has been added (or is not present, a warning is printed to standard error, 
+				#		  but tree is still produced and rooted on the sampleId(s) that exist in the tree.		  
+				#	   3. If an $outgroupRoot identifer is already in the root position, then rooting fails and file is zero byte.
+				#		  I think this issue will occur when >1 $outgroupRoot identifers are chosen but don't cluster together.
+				#		  Easiest thing to do is to just supply a single root sample or mid-point root instead, in the latter case, 
+				#		  supply a label that doesn't exist e.g. 'midpoint' (as advised in the command line help for option -o (this pipeline))
+				treeFileToUse=gene_alignment_tree_images_$1/${geneNwkFileNoSuffix}_rerooted.nwk
+				if [[ ! -s $treeFileToUse ]]; then
+					echo "WARNING: Outgroup(s) last common ancestor (LCA) is the tree's root - cannot reroot. Will mid-point root instead."
+					### NB - 7.12.2024 - I can now use option -l instead - it's easy to implement and it works
+					nw_reroot $treeFileToUse | nw_order -c a /dev/fd/0 \
+					> gene_alignment_tree_images_$1/${geneNwkFileNoSuffix}_rerooted.nwk 	# NB - same name as just above!
+					### OR alternatively, don't re-root but assign the original tree to $treeFileToUse so at least the alignment can be ordered by the tree.
+				fi
+				jalviewTreeFlags="-tree $treeFileToUse -sortbytree"
+			fi
 		fi
 		geneAlnFileNoSuffix=`basename -s .fasta $2`
 		$exePrefix java -Djava.awt.headless=true -jar $JALVIEW  $jalviewTreeFlags \
@@ -854,6 +857,7 @@ if [[ $geneFile != 'use_genewise_files' ]]; then
 	#    NB - using ">" ensures that I don't also grep out a species id: grep -A1 ">$gene" \
 	#	 Improvement: current grep now matches whole words so can have gene identifiers
 	#                 e.g. 50, 506 and 5064 and they won't pick each other out (BUT these chars count as word endings: '.'  '/' ) - NB 26.11.2020 - therefore may want to recheck after this step for multiple seqs with the same gene ID   
+	#                 23.3.2024 - this may be exactly what is required to happen for ASTRAL-Pro format! Need to recheck and think
 	# 2. print seqs for current gene to a separate file
 	# 3. reorganise the fasta header so that species info is next to '>' and the gene id is removed (required to run in coalescence)
 	###gene=`echo $geneId | tr -d '\n' `	# Need to remove line return, if present after the first field! Now moved further up.
@@ -1018,6 +1022,17 @@ if [[ $proteinSelected == 'yes' || $codonSelected == 'yes' ]]; then
 		exit 0
 	fi
 	### NB - 23.6.2021- still need to check that this checkpoint works (and with all permutations of options)
+
+
+	### 23.3.2024 - Remove frameshifts wih MASCE here if that option is on:
+	### if [[ removeFrameshifts ON && iteration == 2 ]];	<-- not sure about iteration - what happens if you already have DNA genewise files and gene trees? 
+	### correct_frameshifts_with_masce $dnaFastaFileForAln
+	### Maybe good to create a new branch here for masce work.
+	### else
+		### fastatranslate
+		### deal with stop codons as below
+	###
+	### In both cases above continue with: ${gene}.protein.fasta 
 
 
 	###if [[ $geneFile != 'use_genewise_files' && proteinSelected != 'proteininput' THISc WILL NOT WORK ]]; then	# i.e. do not translate if input sequence residues are amino acid.
