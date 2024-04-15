@@ -1394,7 +1394,7 @@ if [[ -s $dnaAlnForTree || -s $proteinAlnForTree ]]; then
 			echo numbrSeqs: $numbrSeqs
 			if [ "$numbrSeqs" -gt 3 ]; then
 				makeGeneTree protein ${gene}.protein.aln.for_tree.fasta '.' $phyloProgramPROT 'JTT+G' 'JTT+F+G' 'AA' ''
-				createGeneAlignmentAndTreeImages protein ${gene}.protein.aln.for_tree.fasta ${gene}_codon_gene_tree_USE_THIS.nwk
+				createGeneAlignmentAndTreeImages protein ${gene}.protein.aln.for_tree.fasta ${gene}_protein_gene_tree_USE_THIS.nwk
 			else
 				echo "WARNING: Not able to build a tree for this gene: $gene (less than four sequences)"
 				exit 0	# zero allows Slurm to continue with the dependancies
