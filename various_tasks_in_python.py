@@ -5,15 +5,20 @@
 
 # Purpose: methods to perform various easy tasks in Python rather than in bash
 #
-# Usage: an internal pipeline script
-#        various_tasks_in_python.py <method_name> <infile> <outfile_prefix>
+# Usage: an internal pipeline script with a simple interface (no argparse)
+#        various_tasks_in_python.py <method_name> <option1 e.g. infile>  <option2 e.g. outfile_prefix>  <option3>  <option4> etc
 #
-# Method 1: detect_stops
-# Method 2: etc
-
 # Author: Paul Bailey
-
-# Copyright (c) 2020 The Board of Trustees of the Royal Botanic Gardens, Kew
+#
+# detect_stops
+#	Detects STOP codons in a protein aligment, removes sequences with > 1 STOP codon and create stats
+#
+# orderAlnByTreeOrder():
+#	Orders a sequence alignment by the order in a Newick tree file
+#
+# *** Next method here ***
+#
+# Copyright (c) 2024 The Board of Trustees of the Royal Botanic Gardens, Kew
 ############################
 from __future__ import print_function
 import sys
@@ -25,19 +30,36 @@ from Bio.SeqRecord import SeqRecord
 from Bio.Seq import Seq
 
 
-method = sys.argv[1]
-infile = sys.argv[2]
-outfilePrefix = sys.argv[3]
+if len(sys.argv) == 1:
+	print("ERROR: specify one of more method to use")
+	exit()
+if len(sys.argv) >= 2:
+	method = sys.argv[1]	# method name
+if len(sys.argv) > 2:
+	option1 = sys.argv[2]	# Often the main infile	
+else:
+	print("ERROR: having no infile is set up to exit with an error at the moment")
+	exit()	
+
+option2 = ''					# Defined these vars here so I can test whether option2 onwards is empty or not
+option3 = ''					
+option4 = ''
+if len(sys.argv) > 3:			# Testing whether sys.argv has 3 or more elements (otherwise script crashes)
+	option2 = sys.argv[3]
+if len(sys.argv) > 4:
+	option3 = sys.argv[4]
+if len(sys.argv) > 5:
+	option4 = sys.argv[5]
 
 
 def detect_stops(infile, outfilePrefix):
-	''' Detects STOP codons in a protein aligment, remove sequences with > 1 STOP codon and create stats.
-	    Assumes that a STOP codon is denoted by a '*' char.
+	'''
+	Detects STOP codons in a protein aligment, removes sequences with > 1 STOP codon and create stats
+	Assumes that a STOP codon is denoted by a '*' char.
 
-		Input parameters: filename of sequence records in fasta format and an outfile prefix to use
-		Assumes that a STOP codon is denoted by a '*' char.
+	Usage: various_tasks_in_python.py detect_stops <protein_aln_infile>  <outfile_prefix>
+	Usage example: /Users/pba10kg/Documents/ProgramFiles/PhylogenomicsPipelines/various_tasks_in_python.py  detect_stops  4848.protein.fasta  4848.protein
 
-		Test command and input data: /Users/pba10kg/Documents/ProgramFiles/PhylogenomicsPipelines/various_tasks_in_python.py detect_stops 4848.protein.fasta  4848.protein
 	'''
 
 	# Output files:	
@@ -114,9 +136,39 @@ def bioSeqIOLoop(infile):
 		print('headrFields:', headrFields[1])
 
 
+def orderAlnByTreeOrder(infile, infile1):
+	'''
+	Orders a sequence alignment by the order in a Newick tree file
+
+	Usage: various_tasks_in_python.py orderAlnByTreeOrder <alnfile> <Newick_file_ordered_tip_list>
+	Usage example: various_tasks_in_python.py orderAlnByTreeOrder  6636.protein.aln.for_tree.fasta  6636.protein.guide_gene_tree_labels_test_temp.nwk 
+
+	Ordered tip list can be found e.g. nw_labels -I <Newick_file> > <Newick_file_ordered_tips.txt>
+
+	Tested with Python3
+
+	'''
+
+	fastaFileIndex = SeqIO.index(infile, "fasta")
+	#print(fastaFileIndex["10081"])
+	#print(fastaFileIndex["10081"].id)
+	#print(fastaFileIndex["10081"].seq)
+	#exit()
+	with open(infile1, "r") as fh:
+		for row in fh:
+			row = row.rstrip('\n')
+			print(">" + fastaFileIndex[row].id)
+			print(fastaFileIndex[row].seq)
+
 
 # Main code:
 if method == 'detect_stops':
-	detect_stops(infile, outfilePrefix)
+	detect_stops(option1, option2)
+
+elif method == 'orderTableByTreeTips':
+	orderTableByTreeTips(option1, option2)
+
+else:
+	print('ERROR: you need to specify an existing Python method to use!')
 
 
