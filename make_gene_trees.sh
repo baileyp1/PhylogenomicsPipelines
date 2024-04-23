@@ -736,15 +736,19 @@ createGeneAlignmentAndTreeImages()	{
 				#		  supply a label that doesn't exist e.g. 'midpoint' (as advised in the command line help for option -o (this pipeline))
 				treeFileToUse=gene_alignment_tree_images_$1/${geneNwkFileNoSuffix}_rerooted.nwk
 				if [[ ! -s $treeFileToUse ]]; then
-					echo "WARNING: Outgroup(s) last common ancestor (LCA) is the tree's root - cannot reroot. Will mid-point root instead."
-					### NB - 7.12.2024 - I can now use option -l instead - it's easy to implement and it works
-					nw_reroot $treeFileToUse | nw_order -c a /dev/fd/0 \
+					echo "WARNING: Outgroup(s) last common ancestor (LCA) is the tree's root - cannot reroot. Will try to reroot on the outgroup. (nw_reroot -l)"
+					nw_reroot -l $treeFileToUse | nw_order -c a /dev/fd/0 \
 					> gene_alignment_tree_images_$1/${geneNwkFileNoSuffix}_rerooted.nwk 	# NB - same name as just above!
-					### OR alternatively, don't re-root but assign the original tree to $treeFileToUse so at least the alignment can be ordered by the tree.
+					treeFileToUse=gene_alignment_tree_images_$1/${geneNwkFileNoSuffix}_rerooted.nwk
+					# If this doesn't work either the original tree name should still be assigned to $treeFileToUse so at least the alignment can be ordered by the tree.
+					### 23.4.2024 - NB - still to check the behaviour of nw_reroot -l output if it fails - I assume it's the same as above
 				fi
 				jalviewTreeFlags="-tree $treeFileToUse -sortbytree"
 			fi
 		fi
+
+
+
 		geneAlnFileNoSuffix=`basename -s .fasta $2`
 		$exePrefix java -Djava.awt.headless=true -jar $JALVIEW  $jalviewTreeFlags \
 		-open $2 \
