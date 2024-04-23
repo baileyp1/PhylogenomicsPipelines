@@ -30,6 +30,7 @@ useGenewiseFiles=no
 addSampleName=no
 sampleTableFile=no			    # 10.5.2020 - only just added in - check - ensures cmdline parameter is always accupied which is critical
 option_u=no
+addReferenceTargets=no
 
 # ALIGNMENT OPTIONS:
 seqType=dna               # NB - 18.3.2022 - see line 683 - I don't think seqType has a default anymore - it gets wiped out - 4.1.2023 - no I don't think so!
@@ -267,7 +268,7 @@ EOF
 
 
 #echo User inputs:    ### For testing only 
-while getopts "hvat:ug:ijGF:f:m:p:M:q:r:TC:c:d:Q:Y:A:D:O:L:I:JK:R:X:U:V:W:H:o:bs:B:"  OPTION; do	# 52 letter options available (U and L case) - 39 taken!
+while getopts "hvat:ug:ijGF:f:m:p:M:q:r:TC:c:d:Q:Y:A:D:O:L:I:JK:R:X:U:V:W:H:o:bs:B:x:"  OPTION; do	# 52 letter options available (U and L case) - 39 taken!
 
 	#echo -$OPTION $OPTARG	### For testing only - could try to run through options again below 
 	 
@@ -280,6 +281,7 @@ while getopts "hvat:ug:ijGF:f:m:p:M:q:r:TC:c:d:Q:Y:A:D:O:L:I:JK:R:X:U:V:W:H:o:bs
         g) geneListFile=$OPTARG ;;
         a) addSampleName=yes ;;
 		t) sampleTableFile=$OPTARG ;;
+    x) addReferenceTargets=$OPTARG ;;
 		u) option_u=yes ;;
         p) fileNamePrefix=$OPTARG ;;
     #ALIGNMENT OPTIONS
@@ -537,6 +539,7 @@ elif [[ $useGenewiseFiles == 'yes' && $addSampleName != 'yes' && $speciesTreesOn
 	echo Will use prepared gene-wise files directly: $useGenewiseFiles
 
 	# Copy the fasta files to exactly <geneName>_dna.fasta, then they are ready for the alignment step.
+  ### 16.1.2024 - after filetering and treeshrink steps they are slightly different and designed to be recognised by make_genes script - no other files names are!!!!
 	# The fasta filename (minus the dot suffix) needs to be exactly the name of the gene in the genelist.
 	for file in ${@:$OPTIND:$#}; do
 
@@ -572,7 +575,7 @@ elif [[ $speciesTreesOnly == 'no' ]]; then
 	echo 'Fasta file format of the input files is set to the default (>sampleId-geneId).'
    
 	### Still deciding on whether to change to this format completely throughout...
-	### For the moment, altering the ">species-gene" format back to my "gene species" format:
+	### For the moment, altering the ">species-gene" format back to my ">gene species" format:
 	for file in ${@:$OPTIND:$#}; do 
 
 ### 7.10.2019 - Do I need to do this here????? 
@@ -593,59 +596,77 @@ elif [[ $speciesTreesOnly == 'no' ]]; then
      	afterDashCheck=`cat $file | awk '{if($1 ~ /^>/)  {print $1} }' |  awk -F '-' '{print $2}' | sort | uniq -c | awk '$1 > 1' | wc -l `
      	#echo "beforeDashCheck (sampleId): " $beforeDashCheck 
      	#echo "afterDashCheck (geneId): " $afterDashCheck 
-     	if [[ $beforeDashCheck -gt 1 ]]; then echo "ERROR: more than one sample identifier detected on fasta header line (there should only be one sample identifier for the default format) for this sample: $file.
+    if [[ $beforeDashCheck -gt 1 ]]; then echo "ERROR: more than one sample identifier detected on fasta header line (there should only be one sample identifier for the default format) for this sample: $file.
               Also check that fasta header lines have this format: >sampleId-geneId"; exit 1
-     	elif [[ $afterDashCheck -gt 1 ]]; then echo "ERROR: gene identfiers should be unique, one or more not unique for this sample: $file
+    elif [[ $afterDashCheck -gt 1 ]]; then echo "ERROR: gene identfiers should be unique, one or more not unique for this sample: $file
 Also check that fasta header lines have this format: >sampleId-geneId"; exit 1
-		else
-            cat $file | awk '{if($1 ~ /^>/)  {print $1} else {print $0}}' \
-			| awk -F '-' '{if($1 ~ /^>/) {{gsub(/>/,"",$1)} {print ">" $2 " " $1}} else {print $0}}' \
-			> ${uniqueSampleId}_modified.fasta
-			# NB - fasta format now: >geneId sampleId
-
-			# If an input fasta file name doesn't exist then the 'modified.fasta' filename created above will not exist.
-			# Testing whether file exists here:
-			if [[ ! -s ${uniqueSampleId}_modified.fasta ]]; then
-				echo "ERROR: this input fasta file does not exist or is empty: ${uniqueSampleId}_modified.fasta"
-				exit 1
-			fi
-		fi
-
-		### [[To convert from 'gene species' my format to species-gene format:
-		###cat CKDK_Ochnaceae_Ochna_serrulata.fasta | awk '{if($1 ~ /^>/)  {{gsub(/>/,"",$1)} {print ">" $2 "-" $1}} else {print $0}}' >species-gene-format.fasta ]]
-		### NB - need to change awk code when altering format in next script
-		### NB - keep an eye on the max line length allowed w.r.t. seqtk
-    done
-	
-    # Finally, test whether there are the same number of sample identifiers on the fasta header lines as there are samples submitted:
-    ### 7.10.2019 - NOT YET TESTED ALL SITUATIONS
-    # NB - Fasta file format is now: >geneId sampelId.
-    # NB - on MacOS awk inserts a blank line between output lines so removing them with grep -v '^$'.
-    numbrSamplesInFile=`cat *_modified.fasta | awk '{if($1 ~ /^>/)  {print $2} }' | grep -v  '^$' | sort -u | wc -l `
-    ### NB - if file can get through here with no sample field occupied (it can't I don't think), then you would end up counting genes, then number of genes could equal number of samples (unlikely).
-    if [ $numbrSamples -ne $numbrSamplesInFile ]; then echo "ERROR: number of samples counted according to the fasta header lines is different to the number of input files"; exit 1
     else
-		# Concatenate fasta files and put seqs on a single line:
-		fileList=`ls *_modified.fasta `
-		#echo $fileList
-		cat $fileList | seqtk seq -l 0 /dev/fd/0 > all_samples_concatenated.fasta
-		geneFile=all_samples_concatenated.fasta
+      cat $file | awk '{if($1 ~ /^>/)  {print $1} else {print $0}}' \
+      | awk -F '-' '{if($1 ~ /^>/) {{gsub(/>/,"",$1)} {print ">" $2 " " $1}} else {print $0}}' \
+      > ${uniqueSampleId}_modified.fasta
+		  # NB - fasta format now: >geneId sampleId
+
+		  # If an input fasta file name doesn't exist then the 'modified.fasta' filename created above will not exist.
+      # Testing whether file exists here:
+      if [[ ! -s ${uniqueSampleId}_modified.fasta ]]; then
+        echo "ERROR: this input fasta file does not exist or is empty: ${uniqueSampleId}_modified.fasta"
+        exit 1
+      fi
+    fi
+		### [[To convert from 'gene species' my format to species-gene format:
+    ###cat CKDK_Ochnaceae_Ochna_serrulata.fasta | awk '{if($1 ~ /^>/)  {{gsub(/>/,"",$1)} {print ">" $2 "-" $1}} else {print $0}}' >species-gene-format.fasta ]]
+    ### NB - need to change awk code when altering format in next script
+    ### NB - keep an eye on the max line length allowed w.r.t. seqtk
+  done
+
+  # Finally, test whether there are the same number of sample identifiers on the fasta header lines as there are samples submitted:
+  ### 7.10.2019 - NOT YET TESTED ALL SITUATIONS
+  # NB - Fasta file format is now: >geneId sampelId.
+  # NB - on MacOS awk inserts a blank line between output lines so removing them with grep -v '^$'.
+  numbrSamplesInFile=`cat *_modified.fasta | awk '{if($1 ~ /^>/)  {print $2} }' | grep -v  '^$' | sort -u | wc -l `
+  ### NB - if file can get through here with no sample field occupied (it can't I don't think), then you would end up counting genes, then number of genes could equal number of samples (unlikely).
+  
+  if [ $numbrSamples -ne $numbrSamplesInFile ]; then echo "ERROR: number of samples counted according to the fasta header lines is different to the number of input files"; exit 1
+  else
+    # Concatenate fasta files and put seqs on a single line:
+    fileList=`ls *_modified.fasta `
+    #echo $fileList
+    cat $fileList | seqtk seq -l 0 /dev/fd/0 > all_samples_concatenated.fasta
+    geneFile=all_samples_concatenated.fasta
+
+    if [[ $addReferenceTargets != 'no' && -s $addReferenceTargets ]]; then
+      # Append reference targets to the end of the all_samples_concatenated.fasta
+      # NB - this option is not available if option -G is used but don't have to do anything to check that here. 
+      echo INFO: option -x selected to include reference targets - will use this fasta file: $addReferenceTargets
+      # Following the procedure for the main file i.e.:
+      # 1. remove all text on the fasta header line beyond the first space
+      # 2. Convert the fasta record id to the internal format i.e. >sampleId geneId 
+      # 3. Put seqs on a single line
+      cat $addReferenceTargets \
+      | awk '{if($1 ~ /^>/)  {print $1} else {print $0}}' \
+      | awk -F '-' '{if($1 ~ /^>/) {{gsub(/>/,"",$1)} {print ">" $2 " " $1}} else {print $0}}' \
+      | seqtk seq -l 0 /dev/fd/0 \
+      >> all_samples_concatenated.fasta
+    else 
+      echo "ERROR: the reference target file (from option -x) does not exist. Exiting..."
+      exit 1
+    fi
 	fi
 else
-    echo "INFO: Command is running in species tree only mode (option -J) - expecting gene alignment files with a file name suffix of 'aln.for_tree.fasta'
+  echo "INFO: Command is running in species tree only mode (option -J) - expecting gene alignment files with a file name suffix of 'aln.for_tree.fasta'
 in the current working directory from a previous run.
 NB - alignment filtering and trimming options and option -T are not applicable in this mode."
 
-    # Check whether the gene alignment files exist:
-    if ls *.aln.for_tree.fasta >/dev/null 2>&1; then
-        # Need to calculate $numbrsamples variable properly.
-        # NB - Fasta file format here is: >sampelId.
-        # NB - on MacOS awk inserts a blank line between output lines so removing them with grep -v '^$'.
-        numbrSamples=`cat *.aln.for_tree.fasta | awk '{if($1 ~ /^>/)  {print $1} }' | grep -v  '^$' | sort -u | wc -l `
-    else
-        echo "ERROR: cannot find gene alignment files with a file name suffix of 'aln.for_tree.fasta'. Exiting."
-        exit
-    fi
+  # Check whether the gene alignment files exist:
+  if ls *.aln.for_tree.fasta >/dev/null 2>&1; then
+    # Need to calculate $numbrsamples variable properly.
+    # NB - Fasta file format here is: >sampelId.
+    # NB - on MacOS awk inserts a blank line between output lines so removing them with grep -v '^$'.
+    numbrSamples=`cat *.aln.for_tree.fasta | awk '{if($1 ~ /^>/)  {print $1} }' | grep -v  '^$' | sort -u | wc -l `
+  else
+    echo "ERROR: cannot find gene alignment files with a file name suffix of 'aln.for_tree.fasta'. Exiting."
+    exit
+  fi
 fi
 #exit
 
