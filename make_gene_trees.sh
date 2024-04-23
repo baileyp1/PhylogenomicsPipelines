@@ -712,6 +712,7 @@ createGeneAlignmentAndTreeImages()	{
     ###########
 	if [[ -x $JALVIEW ]]; then
 		if [[ ! -d gene_alignment_tree_images_$1 ]]; then mkdir gene_alignment_tree_images_$1; fi
+		alnFileToUse=$2
 		treeFileToUse=$3
 		jalviewTreeFlags=""
 		if [[ -s $treeFileToUse ]]; then	# Can only use the gene tree in Jalview if it exists. 
@@ -745,14 +746,28 @@ createGeneAlignmentAndTreeImages()	{
 				fi
 				jalviewTreeFlags="-tree $treeFileToUse -sortbytree"
 			fi
+
+			# JalView -sortbytree flag doesn't seem to work so sorting the alignment in tree order in a separate step -
+			# gene tree exists in this clause:
+			# First, get the tree order and label up the alignment with final taxonomy, if supplied:
+			if [[ -s 'tree_tip_info_mapfile.txt' ]]; then
+				nw_labels -I $treeFileToUse  > ${geneNwkFileNoSuffix}.ordered_tree_tips.txt
+				$pathToScripts/various_tasks_in_python.py orderAlnByTreeOrder  $2  ${geneNwkFileNoSuffix}.ordered_tree_tips.txt \
+				| goalign rename --mapfile tree_tip_info_mapfile.txt  - \
+				> ${2}_ordered_by_tree
+				alnFileToUse=${2}_ordered_by_tree
+			fi
 		fi
-
-
-
 		geneAlnFileNoSuffix=`basename -s .fasta $2`
-		$exePrefix java -Djava.awt.headless=true -jar $JALVIEW  $jalviewTreeFlags \
+		# -colour option: for DNA can use 'blosum62', for protein using 'clustal'
+		colour=blosum62
+		if [[ $1 == 'protein' ]]; then
+			colour=clustal
+		fi
+		###$exePrefix java -Djava.awt.headless=true -jar $JALVIEW  $jalviewTreeFlags \  ### Removed $jalviewTreeFlags - not working
+		$exePrefix java -Djava.awt.headless=true -jar $JALVIEW \
 		-open $2 \
-		-colour BLOSUM62 \
+		-colour $colour \
 		-png gene_alignment_tree_images_$1/${geneAlnFileNoSuffix}.png
 		# NBNB - always supplying $treeFileToUse, even if not being re-rooted
 		gzip -f gene_alignment_tree_images_$1/${geneAlnFileNoSuffix}.png 	# -f force overwriting
@@ -788,6 +803,7 @@ createGeneAlignmentAndTreeImages()	{
 		fi
 
 		nw_topology $treeFileToUse \
+		| gotree support round -p 2 -i - \
 		| nw_display -s -w 1500 -v 15  -b 'visibility:hidden' -I r -l 'font-size:small;font-family:Arial' \
 		-i 'font-size:small;font-family:Arial;color:blue' \
  		- \
@@ -799,6 +815,7 @@ createGeneAlignmentAndTreeImages()	{
  		###	| sed "s/<line class/<text x=0 y=15 style=font-size:medium;font-family:Arial;font-weight:bold;fill:black>gene tree $gene<\/text><line class/" \   
  		### 2. Create an svg object outside main one with the same width - doing this - might not always work in which case find how to specify the exact coords:
  		###	   can use nested svg or <g transform> tag
+
 	else
 		echo "WARNING: Jalview not available, gene alignment images will not be created: $JALVIEW "
 	fi
