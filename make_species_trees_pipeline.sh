@@ -114,6 +114,11 @@ INPUT FILE OPTIONS:
   -a               
                 add sample name/identifier onto the fasta header from the input fasta file name.
                 Expected gene identifier format in the input fasta header: >geneId (no hyphen '-' characters allowed)
+
+  -x
+                add reference targets for all genes from a SINGLE fasta file. The fasta header format MUST be: >sampleId-geneId.
+                Note: this option cannot be used with option -G
+                
   -t <csv file>    
                 add sample name/identifier and other info (e.g. taxonomy) from a comma separated value (csv) table file into the tree leaf labels.
                 Format of table row: sample_name/identifier, followed by any information (include sample_name/identifier again if required) 
@@ -640,7 +645,7 @@ Also check that fasta header lines have this format: >sampleId-geneId"; exit 1
       echo INFO: option -x selected to include reference targets - will use this fasta file: $addReferenceTargets
       # Following the procedure for the main file i.e.:
       # 1. remove all text on the fasta header line beyond the first space
-      # 2. Convert the fasta record id to the internal format i.e. >sampleId geneId 
+      # 2. Convert the fasta record id to the internal format i.e. >geneId sampleId
       # 3. Put seqs on a single line
       cat $addReferenceTargets \
       | awk '{if($1 ~ /^>/)  {print $1} else {print $0}}' \
