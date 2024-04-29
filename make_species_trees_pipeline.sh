@@ -112,12 +112,13 @@ INPUT FILE OPTIONS:
                 file (including path to it) containing list of gene names only (required option)
                 Note - pretty sure that gene names must NOT have '.' characters in them if the suffix is what makes them unique.         
   -a               
-                add sample name/identifier onto the fasta header from the input fasta file name.
+                add sample name/identifier onto the fasta header from the input fasta file name
                 Expected gene identifier format in the input fasta header: >geneId (no hyphen '-' characters allowed)
 
   -x
-                add reference targets for all genes from a SINGLE fasta file. The fasta header format MUST be: >sampleId-geneId.
-                Note: this option cannot be used with option -G
+                add reference target sequences (or other desired sequences appropriate to the gene set) from a SINGLE fasta file. The fasta 
+                header format MUST be: >sampleId-geneId and sampleId (outside it's own gene set) should be unique to the input data set 
+                Note: this option is not used when option -G is set.
                 
   -t <csv file>    
                 add sample name/identifier and other info (e.g. taxonomy) from a comma separated value (csv) table file into the tree leaf labels.
