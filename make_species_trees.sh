@@ -470,7 +470,9 @@ if [[ "$astralSelected" == 'yes' || "$astralmpSelected" == 'yes' || "$astralproS
     fi
     if [[ $proteinSelected == 'yes' ]]; then
         if [[ "$astralSelected" == 'yes' ]]; then
-            makeSpeciesTree protein "$proteinAstralInfile" '.' astral 'GTR+G' 'DNA' '-nt -gtr'
+            echo "Testing \$proteinAstralInfile before subR: $proteinAstralInfile"
+            makeSpeciesTree protein $proteinAstralInfile '.' astral 'GTR+G' 'DNA' '-nt -gtr'
+            echo "Testing \$proteinAstralInfile after subR: $proteinAstralInfile"
             if [ -s $treeTipInfoMapFile ]; then
                 nw_rename -l  ${fileNamePrefix}.protein.species_tree.astral_pp1_value.nwk \
                 tree_tip_info_mapfile.txt \
@@ -478,7 +480,9 @@ if [[ "$astralSelected" == 'yes' || "$astralmpSelected" == 'yes' || "$astralproS
             fi
             getTreeStats ${fileNamePrefix}.protein.species_tree.astral_pp1_value.nwk $numbrLowSupportNodesThreshold astral
         elif [[ "$astralmpSelected" == 'yes' ]]; then 
-            makeSpeciesTree protein "$proteinAstralInFile" '.' astralmp 'GTR+G' 'DNA' '-nt -gtr'
+             echo "Testing \$proteinAstralInfile before subR: $proteinAstralInfile " $proteinAstralInfile 
+            makeSpeciesTree protein $proteinAstralInFile '.' astralmp 'GTR+G' 'DNA' '-nt -gtr'
+            echo "Testing \$proteinAstralInfile after subR: $proteinAstralInfile " $proteinAstralInfile
             if [ -s $treeTipInfoMapFile ]; then
                 nw_rename -l  ${fileNamePrefix}.protein.species_tree.astralmp_pp1_value.nwk \
                 tree_tip_info_mapfile.txt \
