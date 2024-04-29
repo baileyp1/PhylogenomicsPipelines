@@ -721,7 +721,7 @@ createGeneAlignmentAndTreeImages()	{
 			if [[ $outgroupRoot != 'no' ]]; then
 				# Root gene trees so that they can be more easily compared:
 				echo "outgroup/root samples: $outgroupRoot"
-				nw_reroot $treeFileToUse $outgroupRoot | nw_order -c a /dev/fd/0 \
+				nw_reroot $treeFileToUse $outgroupRoot | nw_order -c n /dev/fd/0 \
 				> gene_alignment_tree_images_$1/${geneNwkFileNoSuffix}_rerooted.nwk
 				### 6.5.2022 - get error "No such file or directory" when file can't be rerooted
 				### but now planning to use gotree to midpoint root.
@@ -738,22 +738,38 @@ createGeneAlignmentAndTreeImages()	{
 				treeFileToUse=gene_alignment_tree_images_$1/${geneNwkFileNoSuffix}_rerooted.nwk
 				if [[ ! -s $treeFileToUse ]]; then
 					echo "WARNING: Outgroup(s) last common ancestor (LCA) is the tree's root - cannot reroot. Will try to reroot on the outgroup. (nw_reroot -l)"
-					nw_reroot -l $treeFileToUse | nw_order -c a /dev/fd/0 \
+					nw_reroot -l $treeFileToUse | nw_order -c n /dev/fd/0 \
 					> gene_alignment_tree_images_$1/${geneNwkFileNoSuffix}_rerooted.nwk 	# NB - same name as just above!
-					treeFileToUse=gene_alignment_tree_images_$1/${geneNwkFileNoSuffix}_rerooted.nwk
-					# If this doesn't work either the original tree name should still be assigned to $treeFileToUse so at least the alignment can be ordered by the tree.
+					if [[ -s gene_alignment_tree_images_$1/${geneNwkFileNoSuffix}_rerooted.nwk ]]; then
+						treeFileToUse=gene_alignment_tree_images_$1/${geneNwkFileNoSuffix}_rerooted.nwk
+					else
+						echo "WARNING: 2nd attempt - unable to produce a rooted tree for ordering the alignment by tree" 
+						treeFileToUse=$3 # Unable to produced a rooted tree still so need to assign back original file
+					fi
 					### 23.4.2024 - NB - still to check the behaviour of nw_reroot -l output if it fails - I assume it's the same as above
 				fi
 				jalviewTreeFlags="-tree $treeFileToUse -sortbytree"
 			fi
 
 			# JalView -sortbytree flag doesn't seem to work so sorting the alignment in tree order in a separate step -
-			# gene tree exists in this clause:
-			# First, get the tree order and label up the alignment with final taxonomy, if supplied:
-			if [[ -s 'tree_tip_info_mapfile.txt' ]]; then
-				nw_labels -I $treeFileToUse  > ${geneNwkFileNoSuffix}.ordered_tree_tips.txt
-				$pathToScripts/various_tasks_in_python.py orderAlnByTreeOrder  $2  ${geneNwkFileNoSuffix}.ordered_tree_tips.txt \
-				| goalign rename --mapfile tree_tip_info_mapfile.txt  - \
+			# gene tree exists in this clause (either rooted above if possible or not):
+			# Now, get the alignment into tree order and label up the alignment with final taxonomy, if supplied:
+			# First, test goalign is installed:
+			goalign --help >/dev/null 2>&1
+			if [[ $? == 127 ]]; then	# Exit code 127 is for "command not found"
+				echo "INFO: goalign software not installed - gene alignment will not be ordered by the gene tree."
+			elif [[ -s 'tree_tip_info_mapfile.txt' ]]; then
+				# The mapfile needs to be tab-separated for goalign:
+				if [[ ! -s 'tree_tip_info_mapfile.csv' ]]; then # Only have to make this file once for the first gene 
+					cat tree_tip_info_mapfile.txt \
+					| sed 's/ /\t/' \
+					> tree_tip_info_mapfile.csv
+				fi
+				nw_labels -I $treeFileToUse | sed "s/'//g"  > gene_alignment_tree_images_$1/${geneNwkFileNoSuffix}.ordered_tree_tips.txt
+				# NB - output tree from GTM script contains single quotes around the species name like this Myrtales_Myrtaceae_Syzygium_paniculatum_1KP
+				#      but not numerical ids. The quote characters intefere with the next step so were removed above.
+				$pathToScripts/various_tasks_in_python.py orderAlnByTreeOrder  $alnFileToUse  gene_alignment_tree_images_$1/${geneNwkFileNoSuffix}.ordered_tree_tips.txt \
+				| goalign rename --map-file tree_tip_info_mapfile.csv - \
 				> ${2}_ordered_by_tree
 				alnFileToUse=${2}_ordered_by_tree
 			fi
@@ -766,7 +782,7 @@ createGeneAlignmentAndTreeImages()	{
 		fi
 		###$exePrefix java -Djava.awt.headless=true -jar $JALVIEW  $jalviewTreeFlags \  ### Removed $jalviewTreeFlags - not working
 		$exePrefix java -Djava.awt.headless=true -jar $JALVIEW \
-		-open $2 \
+		-open $alnFileToUse \
 		-colour $colour \
 		-png gene_alignment_tree_images_$1/${geneAlnFileNoSuffix}.png
 		# NBNB - always supplying $treeFileToUse, even if not being re-rooted
@@ -803,7 +819,6 @@ createGeneAlignmentAndTreeImages()	{
 		fi
 
 		nw_topology $treeFileToUse \
-		| gotree support round -p 2 -i - \
 		| nw_display -s -w 1500 -v 15  -b 'visibility:hidden' -I r -l 'font-size:small;font-family:Arial' \
 		-i 'font-size:small;font-family:Arial;color:blue' \
  		- \
@@ -815,6 +830,7 @@ createGeneAlignmentAndTreeImages()	{
  		###	| sed "s/<line class/<text x=0 y=15 style=font-size:medium;font-family:Arial;font-weight:bold;fill:black>gene tree $gene<\/text><line class/" \   
  		### 2. Create an svg object outside main one with the same width - doing this - might not always work in which case find how to specify the exact coords:
  		###	   can use nested svg or <g transform> tag
+ 		### Could add: | gotree support round -p 2 -i - \
 
 	else
 		echo "WARNING: Jalview not available, gene alignment images will not be created: $JALVIEW "
