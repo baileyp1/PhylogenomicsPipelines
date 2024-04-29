@@ -143,9 +143,16 @@ def orderAlnByTreeOrder(infile, infile1):
 	Usage: various_tasks_in_python.py orderAlnByTreeOrder <alnfile> <Newick_file_ordered_tip_list>
 	Usage example: various_tasks_in_python.py orderAlnByTreeOrder  6636.protein.aln.for_tree.fasta  6636.protein.guide_gene_tree_labels_test_temp.nwk 
 
-	Ordered tip list can be found e.g. nw_labels -I <Newick_file> > <Newick_file_ordered_tips.txt>
+	Ordered tip list can be found for the input e.g. nw_labels -I <Newick_file> > <Newick_file_ordered_tips.txt>
+
+	Output: fasta records in STDOUT ordered by the tree input
 
 	Tested with Python3
+
+	Possible bug: if the tree labels contain single quote characters (which they do coming out of the GTM program, then
+	              this method will crash. Consider to remove them like so:
+	              row = row.strip(\'\'\').rstrip('\n') - but without the backslashes - NOT TESTED
+	              Removing them outside this method for now. 
 
 	'''
 
@@ -167,6 +174,9 @@ if method == 'detect_stops':
 
 elif method == 'orderTableByTreeTips':
 	orderTableByTreeTips(option1, option2)
+
+elif method == 'orderAlnByTreeOrder':
+	orderAlnByTreeOrder(option1, option2)
 
 else:
 	print('ERROR: you need to specify an existing Python method to use!')
