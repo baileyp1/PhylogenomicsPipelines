@@ -316,11 +316,11 @@ elif [[ $hybSeqProgram == 'hybpiper'* ]]; then
 	if [[ $hybSeqProgram == 'hybpiper-bwa' || $hybSeqProgram == 'hybpiper2-bwa' ]];then  
 		mapReadsProgram='--bwa'
 		targetFileFlag='--targetfile_dna'
-		echo Using HybPiper with the --bwa option...
+		echo "Using HybPiper with the --bwa option ..."
 		# else $mapReadsProgram remains blank and the default option is used
 	elif [[ $hybSeqProgram == 'hybpiper2-diamond' ]];then
 		mapReadsProgram='--diamond  mid-sensitive'
-		echo Using HybPiper version 2 with DIAMOND (mid-sensitive setting) ...
+		echo "Using HybPiper version 2 with DIAMOND (mid-sensitive setting) ..."
 	fi
 	
 	# First combine unpaired reads (both single end reads should have unique ids) - but won't I have the same problem as above?!
