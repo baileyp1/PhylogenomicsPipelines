@@ -63,7 +63,6 @@ if [[ $usePaftolDb == 'no' ]]; then
 	###pathToTrimmomatic=`which trimmomatic-0.39.jar `		# NB - 'which' requires the file to be executable!
 	###$exePrefix  java -jar $pathToTrimmomatic PE \		# 12.2.2021 - Changed the way java programs are called to using a global variable
 	if [ -z "$R2FastqFile" ]; then
-		### 2.11.2022 - temporary fix - time command doesn't exist after OS updates on the KewHPC nodes: $exePrefix  java -jar $TRIMMOMATIC SE - OK now so have put back
 		$exePrefix java -jar $TRIMMOMATIC SE \
 		-threads $cpu \
 		-trimlog ${sampleId}_R1_trimmomatic.log \
@@ -75,7 +74,6 @@ if [[ $usePaftolDb == 'no' ]]; then
 		SLIDINGWINDOW:4:20 \
 		MINLEN:40 > ${sampleId}_trimmomatic.log 2>&1
 	else
-		### 2.11.2022 - temporary fix - time command doesn't exist after OS updates on the KewHPC nodes: $exePrefix  java -jar $TRIMMOMATIC PE - OK now so have put back
 		$exePrefix java -jar $TRIMMOMATIC PE \
 		-threads $cpu \
 		-trimlog ${sampleId}_R1_R2_trimmomatic.log \
@@ -250,7 +248,6 @@ if [ $hybSeqProgram == 'paftools' ]; then
 		#srun -J ${sampleId}_overlapRecover -n 1  -o ${sampleId}_overlapRecover.log  -e ${sampleId}_overlapRecover.log_err \	- issue with srun
 		export PYTHONPATH=$HOME/lib/python 			# I had to add this for the cluster ONLY - need to. check it is OK on Macbook, it should be.
 		if [ -z "$R2FastqFile" ]; then
-			### 2.11.2022 - temporary fix - time command doesn't exist after OS updates on the KewHPC nodes: $exePrefix  paftools recoverSeqs - OK now so have put back
 			$exePrefix paftools recoverSeqs \
 			$targetsFile \
 			${sampleId}.fasta \
@@ -267,7 +264,6 @@ if [ $hybSeqProgram == 'paftools' ]; then
 			$usePaftolDbFlag \
 			> ${sampleId}_overlapSerial.log 2>&1
 		else
-			### 2.11.2022 - temporary fix - time command doesn't exist after OS updates on the KewHPC nodes: $exePrefix  paftools recoverSeqs - OK now so have put back
 			$exePrefix paftools recoverSeqs \
 			$targetsFile \
 			${sampleId}.fasta \
@@ -315,15 +311,18 @@ if [ $hybSeqProgram == 'paftools' ]; then
 elif [[ $hybSeqProgram == 'hybpiper'* ]]; then
 
 	echo "Running gene recovery with HybPiper..."
-	bwa=''
+	mapReadsProgram=''
 	targetFileFlag='--targetfile_aa' # only used by HybPiper2
 	if [[ $hybSeqProgram == 'hybpiper-bwa' || $hybSeqProgram == 'hybpiper2-bwa' ]];then  
-		bwa='--bwa'
+		mapReadsProgram='--bwa'
 		targetFileFlag='--targetfile_dna'
 		echo Using HybPiper with the --bwa option...
+		# else $mapReadsProgram remains blank and the default option is used
+	elif [[ $hybSeqProgram == 'hybpiper2-diamond' ]];then
+		mapReadsProgram='--diamond  mid-sensitive'
+		echo Using HybPiper version 2 with DIAMOND (mid-sensitive setting) ...
 	fi
-	# else $bwa remains blank and the default option is used
-
+	
 	# First combine unpaired reads (both single end reads should have unique ids) - but won't I have the same problem as above?!
 	unpairedFastqFile=''
 	if [[ -n "$R2FastqFile" ]]; then
@@ -335,8 +334,7 @@ elif [[ $hybSeqProgram == 'hybpiper'* ]]; then
 	if [[ $hybSeqProgram == 'hybpiper' ]];then 
 		
 		echo Using HybPiper version 1.3 ...
-		### 2.11.2022 - temporary fix - time command doesn't exist after OS updates on the KewHPC nodes: $exePrefix reads_first.py --cpu $cpu $bwa - OK now so have put back
-		$exePrefix reads_first.py --cpu $cpu $bwa \
+		$exePrefix reads_first.py --cpu $cpu $mapReadsProgram \
 		-b $targetsFile \
 		-r ${sampleId}_R*_trimmomatic.fastq  \
 		--cov_cutoff 4 \
@@ -358,7 +356,6 @@ elif [[ $hybSeqProgram == 'hybpiper'* ]]; then
 				| awk -v gene=$geneName '{if($1 ~ /^>/) {print $1 "-" gene} else {print $0}}'
 			done > ${sampleId}_all_genes.fasta
 
-			### 2.11.2022 - temporary fix - time command doesn't exist after OS updates on the KewHPC nodes: $exePrefix intronerate.py  - OK now so have put back
 			$exePrefix intronerate.py --prefix ${sampleId} --addN > ${sampleId}_intronerate.log 2>&1
 			# Outputs e.g.:
 			# geneId_supercontig.fasta; fasta header line: >sampleId-geneID
@@ -480,7 +477,7 @@ elif [[ $hybSeqProgram == 'hybpiper'* ]]; then
 	elif [[ $hybSeqProgram == 'hybpiper2' ]]; then
 
 		echo Using HybPiper version 2 ...
-		$exePrefix hybpiper assemble  --cpu $cpu $bwa \
+		$exePrefix hybpiper assemble  --cpu $cpu $mapReadsProgram \
 		$targetFileFlag $targetsFile \
 		-r ${sampleId}_R*_trimmomatic.fastq \
 		--cov_cutoff 4 \
@@ -526,7 +523,7 @@ elif [[ $hybSeqProgram == 'hybpiper'* ]]; then
 			done > ${sampleId}_paralogs_all.fasta
 		fi
 	else
-		echo "WARNING: If option -y was used, the HybPiper program was not recognised. The options are hybpiper[-bwa] or hybpiper2[-bwa]."
+		echo "WARNING: If option -y was used, the HybPiper program was not recognised. The options are hybpiper[-bwa], hybpiper2[-bwa] or hybpiper2-diamond"
 	fi
 
 	# Converting to a tarball archive the main HybPiper results directory beneath the main <samplePrefix>_<sampleId> folder.
@@ -554,7 +551,7 @@ elif [[ $hybSeqProgram == 'hybpiper'* ]]; then
 		#      Could also just get it remade in the stats clause
 	fi
 else
-	echo "WARNING: If option -y was used, the Hyb-Seq program was not recognised. The options are paftools or hybpiper[2[-bwa]]'."
+	echo "WARNING: If option -y was used, the Hyb-Seq program was not recognised. The options are paftools or hybpiper[2[-bwa|diamond]]'."
 	#exit
 fi
 
