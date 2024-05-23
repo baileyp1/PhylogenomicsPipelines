@@ -474,7 +474,7 @@ elif [[ $hybSeqProgram == 'hybpiper'* ]]; then
 	        # HybPiper cleanup - remvoves the spades dir (Sample_/$sampleId/$geneName/$geneName_spades)
 	        cleanup.py $sampleId
 		fi
-	elif [[ $hybSeqProgram == 'hybpiper2' ]]; then
+	elif [[ $hybSeqProgram == 'hybpiper2'* ]]; then
 
 		echo Using HybPiper version 2 ...
 		$exePrefix hybpiper assemble  --cpu $cpu $mapReadsProgram \
