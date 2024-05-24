@@ -319,7 +319,7 @@ elif [[ $hybSeqProgram == 'hybpiper'* ]]; then
 		echo "Using HybPiper with the --bwa option ..."
 		# else $mapReadsProgram remains blank and the default option is used
 	elif [[ $hybSeqProgram == 'hybpiper2-diamond' ]];then
-		mapReadsProgram='--diamond  mid-sensitive'
+		mapReadsProgram='--diamond  --diamond_sensitivity mid-sensitive'
 		echo "Using HybPiper version 2 with DIAMOND (mid-sensitive setting) ..."
 	fi
 	
