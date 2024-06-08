@@ -657,7 +657,7 @@ if [[ $stats != 'no' ]]; then
 
 	if [[ $hybSeqProgram == 'hybpiper'* && -n "$R2FastqFile" ]]; then
 		# Also need to map the single end reads file but only if data is pair end:
-		###bwa index $refFileName	### 8.6.2024 - removed indexing here because it's already been done above!
+		###bwa index $refFileName	### 8.6.2024 - removed indexing here because it's already been done above! 
 		bwa mem -t $cpu $refFileName \
 		../${sampleId}_R1_R2_trimmomatic_unpaired.fastq \
 		> ${sampleId}_bwa_mem_with_dups_unpaired_reads.sam
