@@ -638,7 +638,7 @@ if [[ $stats != 'no' ]]; then
 	bamFileWithDups=''
 	bwa index $refFileName
 	bwaMemInFiles=''
-	if [ -z "$R2FastqFile" ]; then
+	if [[ -z "$R2FastqFile" ]]; then
 		bwaMemInFiles="../${sampleId}_R1_trimmomatic.fastq"
 	else
 		bwaMemInFiles="../${sampleId}_R1_trimmomatic.fastq ../${sampleId}_R2_trimmomatic.fastq"
@@ -790,7 +790,7 @@ sumLengthOfGenes: $sumLengthOfGenes" > ${sampleId}_gene_recovery_stats.txt  # Al
 		# samtools view -f4 ${sampleId}_bwa_mem_sort.bam > ${sampleId}_bwa_mem_sort_unmapped.bam
 		# First, sort bam by fastq record id:
 		unmappedOutputFiles=''
-		if [ -n "$R2FastqFile" ]; then
+		if [[ -n "$R2FastqFile" ]]; then
 			unmappedOutputFiles="-1 ${sampleId}_bwa_mem_unmapped_R1.fastq.gz -2 ${sampleId}_bwa_mem_unmapped_R2.fastq.gz -s ${sampleId}_bwa_mem_unmapped_single_ends.fastq.gz"
 		else
 			unmappedOutputFiles="-1 ${sampleId}_bwa_mem_unmapped_R1.fastq.gz"
