@@ -635,12 +635,16 @@ if [[ $stats != 'no' ]]; then
 	echo "Found gene recovery fasta file: $refFileName"
 
 	# Prepare to map reads for getting stats:
-### 18.8.2023 - change to ../ for fastqs incl SE reads below then that's it I think except for removing fastq files
 	bamFileWithDups=''
 	bwa index $refFileName
+	bwaMemInFiles=''
+	if [ -z "$R2FastqFile" ]; then
+		bwaMemInFiles="../${sampleId}_R1_trimmomatic.fastq"
+	else
+		bwaMemInFiles="../${sampleId}_R1_trimmomatic.fastq ../${sampleId}_R2_trimmomatic.fastq"
+	fi
 	bwa mem -t $cpu $refFileName \
-	../${sampleId}_R1_trimmomatic.fastq \
-	../${sampleId}_R2_trimmomatic.fastq \
+	$bwaMemInFiles \
 	> ${sampleId}_bwa_mem_with_dups.sam
 
 	### Don’t forget to pipe in/out files as much as possible to save space
@@ -651,9 +655,9 @@ if [[ $stats != 'no' ]]; then
 	samtools index  ${sampleId}_bwa_mem_with_dups_sort.bam
 	bamFileWithDups=${sampleId}_bwa_mem_with_dups_sort.bam
 
-	if [[ $hybSeqProgram == 'hybpiper'* ]]; then
-		# Also need to map the single end reads file:
-		bwa index $refFileName
+	if [[ $hybSeqProgram == 'hybpiper'* && -n "$R2FastqFile" ]]; then
+		# Also need to map the single end reads file but only if data is pair end:
+		bwa index $refFileName	### 8.6.2024 - removed indexing here because it's already been done above!
 		bwa mem -t $cpu $refFileName \
 		../${sampleId}_R1_R2_trimmomatic_unpaired.fastq \
 		> ${sampleId}_bwa_mem_with_dups_unpaired_reads.sam
@@ -785,9 +789,14 @@ sumLengthOfGenes: $sumLengthOfGenes" > ${sampleId}_gene_recovery_stats.txt  # Al
 		# Not needed now - can select unmapped reads with samtools fastq:
 		# samtools view -f4 ${sampleId}_bwa_mem_sort.bam > ${sampleId}_bwa_mem_sort_unmapped.bam
 		# First, sort bam by fastq record id:
+		unmappedOutputFiles=''
+		if [ -n "$R2FastqFile" ]; then
+			unmappedOutputFiles="-1 ${sampleId}_bwa_mem_unmapped_R1.fastq.gz -2 ${sampleId}_bwa_mem_unmapped_R2.fastq.gz -s ${sampleId}_bwa_mem_unmapped_single_ends.fastq.gz"
+		else
+			unmappedOutputFiles="-1 ${sampleId}_bwa_mem_unmapped_R1.fastq.gz"
+		fi
 		samtools sort -n ${sampleId}_bwa_mem_sort.bam \
-		| samtools fastq -f4 -1 ${sampleId}_bwa_mem_unmapped_R1.fastq.gz -2 ${sampleId}_bwa_mem_unmapped_R2.fastq.gz \
-		-s ${sampleId}_bwa_mem_unmapped_single_ends.fastq.gz -0 /dev/null -N
+		| samtools fastq -f4 $unmappedOutputFiles -0 /dev/null -N
 		# samtools fastq -n - means that /1 and /2 are NOT added to output records - didn't work here
 		# samtools fastq -N - means that /1 and /2 are ALWAYS added to fastq record ids
 		# NB - not sure if this needs to be done - all singleton reads should be unique (would only be a problem if combining the R1 AND R2 read pairs)
