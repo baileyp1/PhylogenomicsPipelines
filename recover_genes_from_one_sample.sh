@@ -323,12 +323,17 @@ elif [[ $hybSeqProgram == 'hybpiper'* ]]; then
 		echo "Using HybPiper version 2 with DIAMOND (mid-sensitive setting) ..."
 	fi
 	
-	# First combine unpaired reads (both single end reads should have unique ids) - but won't I have the same problem as above?!
+	# First combine unpaired reads (both single end reads should have unique ids) - but won't I have the same problem as above? - seems OK for HybPiper (unlike or paftools above)
 	unpairedFastqFile=''
 	if [[ -n "$R2FastqFile" ]]; then
 		gunzip -fc ${sampleId}_R1_trimmomatic_unpaired.fastq.gz ${sampleId}_R2_trimmomatic_unpaired.fastq.gz \
 		> ${sampleId}_R1_R2_trimmomatic_unpaired.fastq
-		unpairedFastqFile="--unpaired ${sampleId}_R1_R2_trimmomatic_unpaired.fastq"
+		# There may be no single surviving reads, in which case don't use file in HybPiper command:
+		if [[ -s ${sampleId}_R1_R2_trimmomatic_unpaired.fastq ]]; then
+			unpairedFastqFile="--unpaired ${sampleId}_R1_R2_trimmomatic_unpaired.fastq"
+		else 
+			echo "INFO: There are no unpaired reads to use after trimming by Trimmomatic for sample ${sampleId}"
+		fi
 	fi
 
 	if [[ $hybSeqProgram == 'hybpiper' ]];then 
