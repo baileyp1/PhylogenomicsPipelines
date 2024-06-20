@@ -318,9 +318,27 @@ elif [[ $hybSeqProgram == 'hybpiper'* ]]; then
 		targetFileFlag='--targetfile_dna'
 		echo "Using HybPiper with the --bwa option ..."
 		# else $mapReadsProgram remains blank and the default option is used
-	elif [[ $hybSeqProgram == 'hybpiper2-diamond' ]];then
-		mapReadsProgram='--diamond  --diamond_sensitivity mid-sensitive'
-		echo "Using HybPiper version 2 with DIAMOND (mid-sensitive setting) ..."
+	elif [[ $hybSeqProgram == 'hybpiper2-diamond'* ]];then
+		# Diamond sensitivity options (mentioned by HybPiper) are: [mid-sensitive|sensitive|more-sensitive|very-sensitive|ultra-sensitive].
+		if [[ $hybSeqProgram == 'hybpiper2-diamond-mid-sensitive' ]];then
+			mapReadsProgram='--diamond  --diamond_sensitivity mid-sensitive'
+			echo "Using HybPiper version 2 with DIAMOND (mid-sensitive setting) ..."
+		elif [[ $hybSeqProgram == 'hybpiper2-diamond-sensitive' ]];then
+			mapReadsProgram='--diamond  --diamond_sensitivity sensitive'
+			echo "Using HybPiper version 2 with DIAMOND (sensitive setting) ..."
+		elif [[ $hybSeqProgram == 'hybpiper2-diamond-more-sensitive' ]];then
+			mapReadsProgram='--diamond  --diamond_sensitivity more-sensitive'
+			echo "Using HybPiper version 2 with DIAMOND (more-sensitive setting) ..."
+		elif [[ $hybSeqProgram == 'hybpiper2-diamond-very-sensitive' ]];then
+			mapReadsProgram='--diamond  --diamond_sensitivity very-sensitive'
+			echo "Using HybPiper version 2 with DIAMOND (very-sensitive setting) ..."
+		elif [[ $hybSeqProgram == 'hybpiper2-diamond-ultra-sensitive' ]];then
+			mapReadsProgram='--diamond  --diamond_sensitivity ultra-sensitive'
+			echo "Using HybPiper version 2 with DIAMOND (ultra-sensitive setting) ..."
+		else
+			echo "ERROR: for option -y, hybpiper2-diamond was selected, but the sensitivity word was not recognised. The sensitivity options are: mid-sensitive, sensitive, more-sensitive, very-sensitive, ultra-sensitive"
+			exit
+		fi
 	fi
 	
 	# First combine unpaired reads (both single end reads should have unique ids) - but won't I have the same problem as above? - seems OK for HybPiper (unlike or paftools above)
@@ -556,7 +574,7 @@ elif [[ $hybSeqProgram == 'hybpiper'* ]]; then
 		#      Could also just get it remade in the stats clause
 	fi
 else
-	echo "WARNING: If option -y was used, the Hyb-Seq program was not recognised. The options are paftools or hybpiper[2[-bwa|diamond]]'."
+	echo "WARNING: If option -y was used, the Hyb-Seq program was not recognised. The options are paftools or hybpiper[2-[bwa|diamond-<sensitivity_option>]]'."
 	#exit
 fi
 
