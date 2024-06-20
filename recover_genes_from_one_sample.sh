@@ -339,6 +339,8 @@ elif [[ $hybSeqProgram == 'hybpiper'* ]]; then
 			echo "ERROR: for option -y, hybpiper2-diamond was selected, but the sensitivity word was not recognised. The sensitivity options are: mid-sensitive, sensitive, more-sensitive, very-sensitive, ultra-sensitive"
 			exit
 		fi
+	else 
+		echo "INFO: HybPiper set to use blastx for read mapping"
 	fi
 	
 	# First combine unpaired reads (both single end reads should have unique ids) - but won't I have the same problem as above? - seems OK for HybPiper (unlike or paftools above)
