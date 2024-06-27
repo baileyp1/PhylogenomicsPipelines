@@ -905,6 +905,9 @@ if [[ $geneFile != 'use_genewise_files' ]]; then
 	| grep -v '^--$' \
 	> $dnaFastaFileForAln
 	# NB - grep -v '^--$' removes output between each set of rows that grep produces.
+	# NB - 18.5.2024 - finally confirmed that there is no line length restriction using this approach
+	#      e.g.: using the file of all concatenated genes together per samples (most extreme example)
+	#      cat dna.alns.concatenated.fasta | seqtk seq -l 0 /dev/fd/0  | grep -v '>' | awk '{print $0}' | wc -L
 
 	# It is possible that this file ${gene}_dna.fasta will be empty if option -a is set but gene-wise files have been input
 	# OR if there are no sequences for this gene
@@ -1033,8 +1036,10 @@ if [[ $dnaSelected == 'yes' ]]; then
    		dnaAlnToUse=${geneId}_emma/${gene}.dna.aln.fasta
 
    		> ${gene}.dna.emma_stats.txt	# Compiling stats in this file rather than the log file
+
+######get_emma_stats()
    		echo "##########################################################################" >> ${gene}.dna.emma_stats.txt
-   		echo "EMMA alignment stats for gene ${gene} (before any filtering and trimming!)" >> ${gene}.dna.emma_stats.txt
+   		echo "EMMA DNA alignment stats for gene ${gene} (before any filtering and trimming!)" >> ${gene}.dna.emma_stats.txt
    		echo "##########################################################################" >> ${gene}.dna.emma_stats.txt
    		echo "Total number of residues in starting sequences (before EMMA): "`fastalength  $dnaFastaFileForAln | awk '{sum+=$1} END {print sum}' ` >> ${gene}.dna.emma_stats.txt
    		echo "Total number of residues in aligned sequences (after EMMA): "`fastalength  $dnaAlnToUse | awk '{sum+=$1} END {print sum}' ` >> ${gene}.dna.emma_stats.txt
@@ -1048,6 +1053,9 @@ if [[ $dnaSelected == 'yes' ]]; then
    		# Number of unique samples in the sub-alignments printed to file below:
    		cat ${geneId}_emma/sub-alignments/*.fasta | grep '>' | sort | uniq -c | sed 's/>//' | awk '{print $2}' > ${geneId}_emma/sub-alignments/${geneId}_all_subsets_labels_sort_uniq-c.txt
    		echo "Number of samples in sub-alignments appearing more than once: "`cat ${geneId}_emma/sub-alignments/*.fasta | grep '>' | sort | uniq -c | awk '$1 > 1' | wc -l ` >> ${gene}.dna.emma_stats.txt
+   	else
+   		echo "No sequence alignment program was selected. A Genewise file will be created for this gene then the progrma will exit: ${gene}"
+   		exit 0
    	fi
 fi
 
@@ -1061,16 +1069,12 @@ if [[ $proteinSelected == 'yes' || $codonSelected == 'yes' ]]; then
 	### NB - 23.6.2021- still need to check that this checkpoint works (and with all permutations of options)
 
 
-	### 23.3.2024 - Remove frameshifts wih MASCE here if that option is on:
-	### if [[ removeFrameshifts ON && iteration == 2 ]];	<-- not sure about iteration - what happens if you already have DNA genewise files and gene trees? 
-	### correct_frameshifts_with_masce $dnaFastaFileForAln
-	### Maybe good to create a new branch here for masce work.
-	### else
-		### fastatranslate
-		### deal with stop codons as below
-	###
-	### In both cases above continue with: ${gene}.protein.fasta 
-
+	# Remove frameshifts wih MASCE here if that option is on:
+	removeFrameshifts=yes	# Temporry variable until option goes into getopts
+	if [[ $removeFrameshifts == 'yes' ]]; then 	# && iteration == 2 ]];	<-- not sure about iteration - what happens if you already have DNA genewise files and gene trees? 
+		correct_frameshifts_with_masce $dnaFastaFileForAln
+	fi
+	
 
 	###if [[ $geneFile != 'use_genewise_files' && proteinSelected != 'proteininput' THISc WILL NOT WORK ]]; then	# i.e. do not translate if input sequence residues are amino acid.
 	###if [[ $geneFile != 'use_genewise_files' && $usrInProt != 'yes' ]]; then 
@@ -1079,11 +1083,24 @@ if [[ $proteinSelected == 'yes' || $codonSelected == 'yes' ]]; then
 		fastatranslate -F 1  $dnaFastaFileForAln \
 		| sed 's/ \[translate(1)\]//' \
 		> ${gene}.protein.fasta
+		# NB - fastatranslate produces '*' for stop codons 
 	###fi
+
+		# Other translation option can go here e.g. MACSE -prog translateNT2AA
+
+
 
 	# Detect STOP codons and create STOPS stats, then switch to use file containing 0 or 1 STOP codons:
 	$pathToScripts/various_tasks_in_python.py detect_stops ${gene}.protein.fasta  ${gene}.protein
-	cp ${gene}.protein.0or1_STOP.fasta ${gene}.protein.fasta
+	### 3.5.2024 - not using ${gene}.protein.0or1_STOP.fasta for the moment!
+	###cp ${gene}.protein.0or1_STOP.fasta ${gene}.protein.fasta
+	### BUT UPP and EMMA can't accept '*' chars so need to remove them:
+	cat ${gene}.protein.fasta \
+	| awk '{if($1 ~ /^>/) { print $0 } else { {gsub(/\*/,"X",$0)} {print $0} } }' \
+	| grep -v ^$ \
+	> ${gene}.protein.stops_to_X.fasta
+	cp ${gene}.protein.stops_to_X.fasta ${gene}.protein.fasta
+
 	if [[ ! -s ${gene}.protein.0or1_STOP.fasta ]]; then 
 	 	echo "WARNING: after checking for sequences with many STOP codons, this gene set is now empty - skipping alignment of $dnaFastaFileForAln"
 	 	exit 0	# zero allows Slurm to continue with the dependancies
@@ -1127,6 +1144,9 @@ if [[ $proteinSelected == 'yes' || $codonSelected == 'yes' ]]; then
    		--keep-decomposition \
    		-o ${gene}.protein.aln.fasta
    		proteinAlnToUse=${gene}_emma/${gene}.protein.aln.fasta
+   	else
+   		echo "No sequence alignment program was selected. A Genewise file will be created for this gene then the progrma will exit: ${gene}"
+   		exit 0
    	fi
 
 	if [[ $codonSelected == 'yes' ]]; then
@@ -1144,12 +1164,17 @@ if [[ $proteinSelected == 'yes' || $codonSelected == 'yes' ]]; then
 		### 15.7.2022 - I now suspect that UPP will not work properly as it removes some amin acids from the final alignments
     	pal2nal.pl \
     	-output fasta \
-    	${gene}.protein.aln.fasta \
+    	$proteinAlnToUse \
     	$dnaFastaFileForAln \
     	> codonAln/${gene}.codon.aln.fasta
     	### From previous notes:
     	### 11.8.2018 - noticed that where there are small repeats for which one is an insertion, 
     	### mafft or pal2nal can misplace repeat seqs that are not actually themselves repeated in the seq in question - see sg312 as an example.
+
+
+    	# Other back translation options can go here e.g. MACSE -prog reportGapsAA2NT  
+
+
     	# This file is almost ready for phylogeny and PAML dN/dS analysis.
     	codonAlnToUse=codonAln/${gene}.codon.aln.fasta
 	fi
@@ -1253,9 +1278,8 @@ if [[ $proteinSelected == 'yes' || $codonSelected == 'yes' ]]; then
     	if [[ $codonSelected == 'yes' ]]; then
     		# Seqs already prepared in filterSeqs* functions when protein has been selected.
     		# Still need to trim them here:
-#### NBNB - need to check the format of codonAlnForTree is consistent i.e. has path or not!!! Have added the path above
-			codonAlnForTree=codonAln/${gene}.codon.aln.after_trim1.fasta	# define output file
-			trimAln1 $gene  $codonAlnForTree  dna  $codonAlnForTree  $pathToScripts
+			trimAln1 $gene  $codonAlnForTree  dna  codonAln/${gene}.codon.aln.after_trim1.fasta  $pathToScripts
+			dnaAlnForTree=${gene}.dna.aln.after_trim1.fasta	
     		echo  codonAlnForTree: $codonAlnForTree
    		fi
     fi
@@ -1282,9 +1306,8 @@ if [[ $proteinSelected == 'yes' || $codonSelected == 'yes' ]]; then
     	if [[ $codonSelected == 'yes' ]]; then
     		# Seqs already prepared in filterSeqs* functions when protein has been selected.
     		# Still need to trim them here:
-#### NBNB - need to check the format of codonAlnForTree is consistent i.e. has path or not!!! Have added the path above
+			trimAln2 $codonAlnForTree dna $trimAln2 codonAln/${gene}.codon.aln.after_trim2.fasta
 			codonAlnForTree=codonAln/${gene}.codon.aln.after_trim2.fasta
-			trimAln2 $codonAlnForTree dna $trimAln2 $codonAlnForTree
     		echo  codonAlnForTree: $codonAlnForTree
    		fi
 
@@ -1413,12 +1436,12 @@ if [[ -s $dnaAlnForTree || -s $proteinAlnForTree ]]; then
 			fi
 		fi
 		if [[ $codonSelected == 'yes' ]]; then
-			filterShortSeqs $codonAlnForTree 80 ${gene}.codon.aln.for_tree.fasta
+			filterShortSeqs $codonAlnForTree 80 codonAln/${gene}.codon.aln.for_tree.fasta
 			echo numbrSeqs: $numbrSeqs
 ### Still need to confirm file/variable input
 			if [ "$numbrSeqs" -gt 3 ]; then
-				makeGeneTree codon ${gene}.codon.aln.for_tree.fasta 'codonAln' $phyloProgramDNA 'GTR+G' 'GTR+F+G' 'DNA' '-nt -gtr'
-				createGeneAlignmentAndTreeImages codon ${gene}.codon.aln.for_tree.fasta ${gene}_codon_gene_tree_USE_THIS.nwk
+				makeGeneTree codon codonAln/${gene}.codon.aln.for_tree.fasta 'codonAln' $phyloProgramDNA 'GTR+G' 'GTR+F+G' 'DNA' '-nt -gtr'
+				createGeneAlignmentAndTreeImages codon codonAln/${gene}.codon.aln.for_tree.fasta codonAln/${gene}_codon_gene_tree_USE_THIS.nwk
 			else
 				echo "WARNING: Not able to build a tree for this gene: $gene (less than four sequences)"
 				exit 0	# zero allows Slurm to continue with the dependancies

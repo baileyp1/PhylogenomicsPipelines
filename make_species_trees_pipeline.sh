@@ -34,7 +34,7 @@ addReferenceTargets=no
 
 # ALIGNMENT OPTIONS:
 seqType=dna               # NB - 18.3.2022 - see line 683 - I don't think seqType has a default anymore - it gets wiped out - 4.1.2023 - no I don't think so!
-alnProgram=mafft          # 27.7.2020 - may want to merge this option with mafftAlgorithm so it woudl be quoted liek so: 'mafft --retree 2'
+alnProgram=no          # 27.7.2020 - may want to merge this option with mafftAlgorithm so it woudl be quoted liek so: 'mafft --retree 2'; 27.6.2024 - removed the default (mafft)
 mafftAlgorithm='--retree 2'     # '--maxiterate 1000' #'--retree 1'   '--retree 2' - need to ry and merge with the alnProgram option somehow
 alnParams=''              # General variable for modifiying the MAFFT and UPP options; 10.4.2023 - I think I have a way now to leave thee balnk         
 
@@ -117,7 +117,7 @@ INPUT FILE OPTIONS:
 
   -x
                 add reference target sequences (or other desired sequences appropriate to the gene set) from a SINGLE fasta file. The fasta 
-                header format MUST be: >sampleId-geneId and sampleId (outside it's own gene set) should be unique to the input data set 
+                header format MUST be >sampleId-geneId and sampleId (outside it's own gene set) should be unique to the input data set 
                 Note: this option is not used when option -G is set.
                 
   -t <csv file>    
@@ -280,7 +280,7 @@ while getopts "hvat:ug:ijGF:f:m:p:M:q:r:TC:c:d:Q:Y:A:D:O:L:I:JK:R:X:U:V:W:H:o:bs
 	 
 	case $OPTION in
 
-		h) usage; exit 1 ;;
+		h) usage; exit;;
 		v) echo "make_species_trees_pipeline.sh version 4.0_dev"; exit ;;
     #INPUT FILE OPTIONS:
         G) useGenewiseFiles=yes ;;
@@ -1032,16 +1032,23 @@ if [[ $os == 'Darwin' && $speciesTreesOnly == 'no' ]]; then
 	#exit
 	if [[ $filterSeqs1 != 'no' ]]; then
 		# Need to name the files to use in the assess script, depends on sequence type selected. 
-		if [[ $proteinSelected == 'yes' || $codonSelected == 'yes' ]]; then
+		if [[ $proteinSelected == 'yes' ]]; then
 			seqType=protein
 			###alnFileSuffix=${seqType}.aln.for_tree.fasta		# before AMAS trim - consider to add this or just do stats at end of all filtering+trimming 
 			alnFileForTreeSuffix=${seqType}.aln.for_tree.fasta  # after AMAS trim
+      alnFilePath='.' 
 			## Could add other filenames used in script (?) 
+    elif [[ $codonSelected == 'yes' ]]; then
+      seqType=codon
+      alnFileForTreeSuffix=${seqType}.aln.for_tree.fasta
+      alnFilePath='codonAln'  # Path variable required because codon aln outputs are in a separate folder!
 		else
 			seqType=dna
 			alnFileForTreeSuffix=${seqType}.aln.for_tree.fasta
+      alnFilePath='.'
 		fi
 		### 6.10.2020 - NBNB - what about codon aln files - I assume they are required as well if used????????
+    ### 4.5.2024 - check logic to above clause
 		echo seqType: $seqType
 		echo alnFileForTreeSuffix: $alnFileForTreeSuffix
     echo numbrSamples: $numbrSamples
@@ -1056,6 +1063,7 @@ if [[ $os == 'Darwin' && $speciesTreesOnly == 'no' ]]; then
 		$option_u \
 		$seqType \
 		$alnFileForTreeSuffix \
+    $alnFilePath \
 		> assess_gene_alns.log 2>&1
 	fi
 
@@ -1199,12 +1207,15 @@ elif [[ $os == 'Linux' && $speciesTreesOnly == 'no' ]]; then
 
 		if [[ $filterSeqs1 != 'no' ]]; then
 			# Need to name the files to use in the assess script, depends on sequence type selected. 
-			if [[ $proteinSelected == 'yes' || $codonSelected == 'yes' ]]; then
+			if [[ $proteinSelected == 'yes' ]]; then
 				seqType=protein
 				###alnFileSuffix=${seqType}.aln.for_tree.fasta		# before AMAS trim - consider to add this or just do stats at end of all filtering+trimming 
 				alnFileForTreeSuffix=${seqType}.aln.for_tree.fasta  # after AMAS trim
 				### Could add other filenames used in script (?) 
-			else
+			elif [[ $codonSelected == 'yes' ]]; then
+        seqType=codon
+        alnFileForTreeSuffix=codonAln/${seqType}.aln.for_tree.fasta
+      else
 				seqType=dna
 				alnFileForTreeSuffix=${seqType}.aln.for_tree.fasta
 			fi
@@ -1312,11 +1323,14 @@ elif [[ $os == 'Linux' && $speciesTreesOnly == 'no' ]]; then
 
 		if [[ $filterSeqs1 != 'no' ]]; then
 			# Need to name the files to use in the assess script, depends on sequence type selected. 
-			if [[ $proteinSelected == 'yes' || $codonSelected == 'yes' ]]; then
+			if [[ $proteinSelected == 'yes' ]]; then
 				seqType=protein
 				###alnFileSuffix=${seqType}.aln.for_tree.fasta		# before AMAS trim - consider to add this or just do stats at end of all filtering+trimming 
 				alnFileForTreeSuffix=${seqType}.aln.for_tree.fasta  # after AMAS trim
-				## Could add other filenames used in script (?) 
+				## Could add other filenames used in script (?)
+      elif [[ $codonSelected == 'yes' ]]; then
+        seqType=codon
+        alnFileForTreeSuffix=codonAln/${seqType}.aln.for_tree.fasta 
 			else
 				seqType=dna
 				alnFileForTreeSuffix=${seqType}.aln.for_tree.fasta
