@@ -134,7 +134,8 @@ ALIGNMENT OPTIONS:
                 sequence type to use: dna, protein, codon (default=dna). N.B. use with multiple types must be quoted (e.g. 'dna protein')
                 codon is input DNA aligned but guided by a protein alignment. Note: the 'protein' and 'codon' options are not finished yet!
   -A <string>      
-                alignment program to use: mafft, upp (UPP is ideal for large alignments) (default=mafft)
+                alignment program to use: mafft, upp (UPP is ideal for large alignments) (no default)
+                If this option is not used (and also not option -G), gene-wise files will be created then the program will exit 
 
   -M <string:>  
                 options to use with chosen alignment program (they must be quoted and the option flag(s) included). For MAFFT, specify the 
@@ -640,22 +641,24 @@ Also check that fasta header lines have this format: >sampleId-geneId"; exit 1
     cat $fileList | seqtk seq -l 0 /dev/fd/0 > all_samples_concatenated.fasta
     geneFile=all_samples_concatenated.fasta
 
-    if [[ $addReferenceTargets != 'no' && -s $addReferenceTargets ]]; then
-      # Append reference targets to the end of the all_samples_concatenated.fasta
-      # NB - this option is not available if option -G is used but don't have to do anything to check that here. 
-      echo INFO: option -x selected to include reference targets - will use this fasta file: $addReferenceTargets
-      # Following the procedure for the main file i.e.:
-      # 1. remove all text on the fasta header line beyond the first space
-      # 2. Convert the fasta record id to the internal format i.e. >geneId sampleId
-      # 3. Put seqs on a single line
-      cat $addReferenceTargets \
-      | awk '{if($1 ~ /^>/)  {print $1} else {print $0}}' \
-      | awk -F '-' '{if($1 ~ /^>/) {{gsub(/>/,"",$1)} {print ">" $2 " " $1}} else {print $0}}' \
-      | seqtk seq -l 0 /dev/fd/0 \
-      >> all_samples_concatenated.fasta
-    else 
-      echo "ERROR: the reference target file (from option -x) does not exist. Exiting..."
-      exit 1
+    if [[ $addReferenceTargets != 'no' ]]; then 
+      if [[ -s $addReferenceTargets ]]; then
+        # Append reference targets to the end of the all_samples_concatenated.fasta
+        # NB - this option is not available if option -G is used but don't have to do anything to check that here. 
+        echo INFO: option -x selected to include reference targets - will use this fasta file: $addReferenceTargets
+        # Following the procedure for the main file i.e.:
+        # 1. remove all text on the fasta header line beyond the first space
+        # 2. Convert the fasta record id to the internal format i.e. >geneId sampleId
+        # 3. Put seqs on a single line
+        cat $addReferenceTargets \
+        | awk '{if($1 ~ /^>/)  {print $1} else {print $0}}' \
+        | awk -F '-' '{if($1 ~ /^>/) {{gsub(/>/,"",$1)} {print ">" $2 " " $1}} else {print $0}}' \
+        | seqtk seq -l 0 /dev/fd/0 \
+        >> all_samples_concatenated.fasta
+      else 
+        echo "ERROR: the reference target file (from option -x) does not exist. Exiting..."
+        exit 1
+      fi
     fi
 	fi
 else
