@@ -45,7 +45,8 @@ cat << EOF
 Copyright © 2020 The Board of Trustees of the Royal Botanic Gardens, Kew
 
 Program description: recovers genes from pair-end fastq files of multiple samples. Paftools or HybPiper can be used to align the reads to a set of
-                     target genes, then assemble the reads for each target gene. If Slurm is available samples will be run in parallel
+                     target genes, assemble the reads for each target gene and join the available exons together to produce the gene.
+                     If Slurm is available samples will be run in parallel
 
 OPTIONS <value>:
   -h   
@@ -64,7 +65,7 @@ OPTIONS <value>:
                  file name of adaptors in fasta format (required option)
   -y <string>    
                  Hyb-Seq program; options are: paftools, hybpiper, hybpiper-bwa, hybpiper2, hybpiper2-bwa,
-                 hybpiper2-diamond-[mid-sensitive|sensitive|more-sensitive|very-sensitive|ultra-sensitive]. For Diamond, choose one of the sensitivity options in square brackets.
+                 hybpiper2-diamond-[mid-sensitive|sensitive|more-sensitive|very-sensitive|ultra-sensitive]. For Diamond, choose one of the sensitivity options shown in square brackets.
                  Note: HybPiper versions 1.3 and 2.1.6 are the only versions tested with this recovery pipeline so far
   -S    
                  calculate statistics for gene recovery from read data mapped to all recovered genes per sample (includes per sample reads on-target, read
