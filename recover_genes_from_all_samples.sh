@@ -54,7 +54,7 @@ OPTIONS <value>:
   -v             
                  program version
   -s <csv file>  
-                 add sample name and fastq file names via a csv table file (must have a header line);
+                 add sample name and fastq file names (assumed to be in compressed gzip format (suffix .gz)) via a csv table file (must have a header line);
                  format: SampleName,R1FastqName,R2FastqName (required option)
   -f <string>    
                  FULL path to all sample fastq files; N.B. no filenames, just the full path to them, not a relative path and no wild cards! (required option)
