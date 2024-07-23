@@ -56,6 +56,7 @@ pwd
 if [[ $usePaftolDb == 'no' ]]; then
 	###	if [[ $hybSeqProgram != *'-start_from-'* || $hybSeqProgram == *'-start_from-map_reads' ]]; then
 	### Can't skip this step when using the --start_from option - fastq files still need to be presented to HybPiper option -r 
+	echo "Inside Trimmomatic step - usePaftolDb = $usePaftolDb "
   			                                        #--nodelist=kppgenomics01.ad.kew.org  # mem normally set to 80000
 		#  sbatch -J ${samplePrefix}_${sampleId}_fastqToGenes -p main -t 1-0:00 -c $cpu --mem=80000 -o ${samplePrefix}_${sampleId}_fastqToGenes.log   -e ${samplePrefix}_${sampleId}_fastqToGenes.log_err   --wrap "
 		# RUNTIME: For 8 cpu, up to 2 mins; up to 18 GB mem (for 10 samples)
