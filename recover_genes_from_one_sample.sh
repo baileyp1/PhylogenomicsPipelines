@@ -54,7 +54,8 @@ pwd
 
 
 if [[ $usePaftolDb == 'no' ]]; then
-#######################	if [[ $hybSeqProgram != *'-start_from-'* || $hybSeqProgram == *'-start_from-map_reads' ]]; then
+	###	if [[ $hybSeqProgram != *'-start_from-'* || $hybSeqProgram == *'-start_from-map_reads' ]]; then
+	### Can't skip this step when using the --start_from option - fastq files still need to be presented to HybPiper option -r 
   			                                        #--nodelist=kppgenomics01.ad.kew.org  # mem normally set to 80000
 		#  sbatch -J ${samplePrefix}_${sampleId}_fastqToGenes -p main -t 1-0:00 -c $cpu --mem=80000 -o ${samplePrefix}_${sampleId}_fastqToGenes.log   -e ${samplePrefix}_${sampleId}_fastqToGenes.log_err   --wrap "
 		# RUNTIME: For 8 cpu, up to 2 mins; up to 18 GB mem (for 10 samples)
@@ -96,7 +97,7 @@ if [[ $usePaftolDb == 'no' ]]; then
 		#srun -J ${sampleId}_unzip_R1_R2 -n 1  gunzip -f ${sampleId}_R1_trimmomatic.fq.gz  ${sampleId}_R2_trimmomatic.fq.gz
 		if [[ -s ${sampleId}_R1_trimmomatic.fastq.gz ]]; then gunzip -f ${sampleId}_R1_trimmomatic.fastq.gz; fi  
 		if [[ -s ${sampleId}_R2_trimmomatic.fastq.gz ]]; then gunzip -f ${sampleId}_R2_trimmomatic.fastq.gz; fi
-########################	fi
+	####fi
 fi
 
 
@@ -346,7 +347,8 @@ elif [[ $hybSeqProgram == 'hybpiper'* ]]; then
 	
 	# First combine unpaired reads (both single end reads should have unique ids) - but won't I have the same problem as above? - seems OK for HybPiper (unlike or paftools above)
 	unpairedFastqFile=''
-#################	if [[ $hybSeqProgram != *'-start_from-'* || $hybSeqProgram == *'-start_from-map_reads' ]]; then
+	###if [[ $hybSeqProgram != *'-start_from-'* || $hybSeqProgram == *'-start_from-map_reads' ]]; then
+	### Not sure if this step can be skipped - see above w.r.t. fastq files for the -r option for which fastq files still need to be presented to HybPiper option -r 
 		if [[ -n "$R2FastqFile" ]]; then
 			gunzip -fc ${sampleId}_R1_trimmomatic_unpaired.fastq.gz ${sampleId}_R2_trimmomatic_unpaired.fastq.gz \
 			> ${sampleId}_R1_R2_trimmomatic_unpaired.fastq
@@ -357,7 +359,7 @@ elif [[ $hybSeqProgram == 'hybpiper'* ]]; then
 				echo "INFO: There are no unpaired reads to use after trimming by Trimmomatic for sample ${sampleId}"
 			fi
 		fi
-##################	fi
+	###fi
 
 	if [[ $hybSeqProgram == 'hybpiper' ]];then 
 		
