@@ -65,7 +65,9 @@ OPTIONS <value>:
                  file name of adaptors in fasta format (required option)
   -y <string>    
                  Hyb-Seq program; options are: paftools, hybpiper, hybpiper-bwa, hybpiper2, hybpiper2-bwa,
-                 hybpiper2-diamond-[mid-sensitive|sensitive|more-sensitive|very-sensitive|ultra-sensitive]. For Diamond, choose one of the sensitivity options shown in square brackets.
+                 hybpiper2-diamond-[mid-sensitive|sensitive|more-sensitive|very-sensitive|ultra-sensitive]. For Diamond, choose one of the sensitivity options 
+                 shown in square brackets. To start HybPiper2 (only) after the first main step, add the following text at the end of the option value:
+                 -start_from-[distribute_reads|assemble_reads|exonerate_contigs] e.g. hybpiper-diamond-mid-sensitive-start_from-exonerate_contigs
                  Note: HybPiper versions 1.3 and 2.1.6 are the only versions tested with this recovery pipeline so far
   -S    
                  calculate statistics for gene recovery from read data mapped to all recovered genes per sample (includes per sample reads on-target, read
@@ -122,7 +124,7 @@ while getopts "hvs:t:f:a:y:p:c:d:H:m:T:Q:S:P:"  OPTION; do
   case $OPTION in
 
     h) usage; exit 0 ;;
-    v) echo "recover_genes_from_all_samples.sh version 1.0"; exit ;;
+    v) echo "recover_genes_from_all_samples.sh version 4.0_dev"; exit ;;
     s) sampleList=$OPTARG ;;
     t) targetsFile=$OPTARG ;;
     f) paftolDataSymlinksDir=$OPTARG ;;

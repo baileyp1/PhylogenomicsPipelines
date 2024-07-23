@@ -52,50 +52,51 @@ else
 fi
 pwd
 
-#if [ $usePaftolDb != 'usePaftolDb' ]; then	- changed - now introducing data set type
-if [[ $usePaftolDb == 'no' ]]; then
-  			                                        #--nodelist=kppgenomics01.ad.kew.org  # mem normally set to 80000
-	#  sbatch -J ${samplePrefix}_${sampleId}_fastqToGenes -p main -t 1-0:00 -c $cpu --mem=80000 -o ${samplePrefix}_${sampleId}_fastqToGenes.log   -e ${samplePrefix}_${sampleId}_fastqToGenes.log_err   --wrap "
-	# RUNTIME: For 8 cpu, up to 2 mins; up to 18 GB mem (for 10 samples)
-	#          For 4 cpu, up to 24 mins; up to 12 GB mem.    - Total # samples to date: ~2500 - would take 14h using 176 cpu (1 node) 
-	#          For 2 cpu, up to 1h50', up to 10 GB mem (tested 40 samples)
-	#          Conclusion: the above stats seems to suggest that running this step separately might be the most efficient
-	###pathToTrimmomatic=`which trimmomatic-0.39.jar `		# NB - 'which' requires the file to be executable!
-	###$exePrefix  java -jar $pathToTrimmomatic PE \		# 12.2.2021 - Changed the way java programs are called to using a global variable
-	if [ -z "$R2FastqFile" ]; then
-		$exePrefix java -jar $TRIMMOMATIC SE \
-		-threads $cpu \
-		-trimlog ${sampleId}_R1_trimmomatic.log \
-		$paftolDataSymlinksDir/$R1FastqFile \
-		${sampleId}_R1_trimmomatic.fastq.gz \
-		ILLUMINACLIP:${adapterFasta}:2:30:10:2:true \
-		LEADING:10 \
-		TRAILING:10 \
-		SLIDINGWINDOW:4:20 \
-		MINLEN:40 > ${sampleId}_trimmomatic.log 2>&1
-	else
-		$exePrefix java -jar $TRIMMOMATIC PE \
-		-threads $cpu \
-		-trimlog ${sampleId}_R1_R2_trimmomatic.log \
-		$paftolDataSymlinksDir/$R1FastqFile \
-		$paftolDataSymlinksDir/$R2FastqFile \
-		${sampleId}_R1_trimmomatic.fastq.gz \
-		${sampleId}_R1_trimmomatic_unpaired.fastq.gz \
-		${sampleId}_R2_trimmomatic.fastq.gz \
-		${sampleId}_R2_trimmomatic_unpaired.fastq.gz \
-		ILLUMINACLIP:${adapterFasta}:2:30:10:2:true \
-		LEADING:10 \
-		TRAILING:10 \
-		SLIDINGWINDOW:4:20 \
-		MINLEN:40 > ${sampleId}_trimmomatic.log 2>&1
-	fi
-	# 8.3.2020 - changed to palidromic mode - confirm that the extra two parameters is Ok still for normal mode
-  
 
-	# Paftools requires unzipped fastq files (NB - if unzipped files already present, files will not be unzipped again (i.e gzip exits with an error), so I've included the -f flag to force uncompression!):
-	#srun -J ${sampleId}_unzip_R1_R2 -n 1  gunzip -f ${sampleId}_R1_trimmomatic.fq.gz  ${sampleId}_R2_trimmomatic.fq.gz
-	if [[ -s ${sampleId}_R1_trimmomatic.fastq.gz ]]; then gunzip -f ${sampleId}_R1_trimmomatic.fastq.gz; fi  
-	if [[ -s ${sampleId}_R2_trimmomatic.fastq.gz ]]; then gunzip -f ${sampleId}_R2_trimmomatic.fastq.gz; fi
+if [[ $usePaftolDb == 'no' ]]; then
+#######################	if [[ $hybSeqProgram != *'-start_from-'* || $hybSeqProgram == *'-start_from-map_reads' ]]; then
+  			                                        #--nodelist=kppgenomics01.ad.kew.org  # mem normally set to 80000
+		#  sbatch -J ${samplePrefix}_${sampleId}_fastqToGenes -p main -t 1-0:00 -c $cpu --mem=80000 -o ${samplePrefix}_${sampleId}_fastqToGenes.log   -e ${samplePrefix}_${sampleId}_fastqToGenes.log_err   --wrap "
+		# RUNTIME: For 8 cpu, up to 2 mins; up to 18 GB mem (for 10 samples)
+		#          For 4 cpu, up to 24 mins; up to 12 GB mem.    - Total # samples to date: ~2500 - would take 14h using 176 cpu (1 node) 
+		#          For 2 cpu, up to 1h50', up to 10 GB mem (tested 40 samples)
+		#          Conclusion: the above stats seems to suggest that running this step separately might be the most efficient
+		###pathToTrimmomatic=`which trimmomatic-0.39.jar `		# NB - 'which' requires the file to be executable!
+		###$exePrefix  java -jar $pathToTrimmomatic PE \		# 12.2.2021 - Changed the way java programs are called to using a global variable
+		if [ -z "$R2FastqFile" ]; then
+			$exePrefix java -jar $TRIMMOMATIC SE \
+			-threads $cpu \
+			-trimlog ${sampleId}_R1_trimmomatic.log \
+			$paftolDataSymlinksDir/$R1FastqFile \
+			${sampleId}_R1_trimmomatic.fastq.gz \
+			ILLUMINACLIP:${adapterFasta}:2:30:10:2:true \
+			LEADING:10 \
+			TRAILING:10 \
+			SLIDINGWINDOW:4:20 \
+			MINLEN:40 > ${sampleId}_trimmomatic.log 2>&1
+		else
+			$exePrefix java -jar $TRIMMOMATIC PE \
+			-threads $cpu \
+			-trimlog ${sampleId}_R1_R2_trimmomatic.log \
+			$paftolDataSymlinksDir/$R1FastqFile \
+			$paftolDataSymlinksDir/$R2FastqFile \
+			${sampleId}_R1_trimmomatic.fastq.gz \
+			${sampleId}_R1_trimmomatic_unpaired.fastq.gz \
+			${sampleId}_R2_trimmomatic.fastq.gz \
+			${sampleId}_R2_trimmomatic_unpaired.fastq.gz \
+			ILLUMINACLIP:${adapterFasta}:2:30:10:2:true \
+			LEADING:10 \
+			TRAILING:10 \
+			SLIDINGWINDOW:4:20 \
+			MINLEN:40 > ${sampleId}_trimmomatic.log 2>&1
+		fi
+		# 8.3.2020 - changed to palidromic mode - confirm that the extra two parameters is Ok still for normal mode
+
+		# Paftools requires unzipped fastq files (NB - if unzipped files already present, files will not be unzipped again (i.e gzip exits with an error), so I've included the -f flag to force uncompression!):
+		#srun -J ${sampleId}_unzip_R1_R2 -n 1  gunzip -f ${sampleId}_R1_trimmomatic.fq.gz  ${sampleId}_R2_trimmomatic.fq.gz
+		if [[ -s ${sampleId}_R1_trimmomatic.fastq.gz ]]; then gunzip -f ${sampleId}_R1_trimmomatic.fastq.gz; fi  
+		if [[ -s ${sampleId}_R2_trimmomatic.fastq.gz ]]; then gunzip -f ${sampleId}_R2_trimmomatic.fastq.gz; fi
+########################	fi
 fi
 
 
@@ -320,19 +321,19 @@ elif [[ $hybSeqProgram == 'hybpiper'* ]]; then
 		# else $mapReadsProgram remains blank and the default option is used
 	elif [[ $hybSeqProgram == 'hybpiper2-diamond'* ]];then
 		# Diamond sensitivity options (mentioned by HybPiper) are: [mid-sensitive|sensitive|more-sensitive|very-sensitive|ultra-sensitive].
-		if [[ $hybSeqProgram == 'hybpiper2-diamond-mid-sensitive' ]];then
+		if [[ $hybSeqProgram == 'hybpiper2-diamond-mid-sensitive'* ]];then
 			mapReadsProgram='--diamond  --diamond_sensitivity mid-sensitive'
 			echo "Using HybPiper version 2 with DIAMOND (mid-sensitive setting) ..."
-		elif [[ $hybSeqProgram == 'hybpiper2-diamond-sensitive' ]];then
+		elif [[ $hybSeqProgram == 'hybpiper2-diamond-sensitive'* ]];then
 			mapReadsProgram='--diamond  --diamond_sensitivity sensitive'
 			echo "Using HybPiper version 2 with DIAMOND (sensitive setting) ..."
-		elif [[ $hybSeqProgram == 'hybpiper2-diamond-more-sensitive' ]];then
+		elif [[ $hybSeqProgram == 'hybpiper2-diamond-more-sensitive'* ]];then
 			mapReadsProgram='--diamond  --diamond_sensitivity more-sensitive'
 			echo "Using HybPiper version 2 with DIAMOND (more-sensitive setting) ..."
-		elif [[ $hybSeqProgram == 'hybpiper2-diamond-very-sensitive' ]];then
+		elif [[ $hybSeqProgram == 'hybpiper2-diamond-very-sensitive'* ]];then
 			mapReadsProgram='--diamond  --diamond_sensitivity very-sensitive'
 			echo "Using HybPiper version 2 with DIAMOND (very-sensitive setting) ..."
-		elif [[ $hybSeqProgram == 'hybpiper2-diamond-ultra-sensitive' ]];then
+		elif [[ $hybSeqProgram == 'hybpiper2-diamond-ultra-sensitive'* ]];then
 			mapReadsProgram='--diamond  --diamond_sensitivity ultra-sensitive'
 			echo "Using HybPiper version 2 with DIAMOND (ultra-sensitive setting) ..."
 		else
@@ -345,16 +346,18 @@ elif [[ $hybSeqProgram == 'hybpiper'* ]]; then
 	
 	# First combine unpaired reads (both single end reads should have unique ids) - but won't I have the same problem as above? - seems OK for HybPiper (unlike or paftools above)
 	unpairedFastqFile=''
-	if [[ -n "$R2FastqFile" ]]; then
-		gunzip -fc ${sampleId}_R1_trimmomatic_unpaired.fastq.gz ${sampleId}_R2_trimmomatic_unpaired.fastq.gz \
-		> ${sampleId}_R1_R2_trimmomatic_unpaired.fastq
-		# There may be no single surviving reads, in which case don't use file in HybPiper command:
-		if [[ -s ${sampleId}_R1_R2_trimmomatic_unpaired.fastq ]]; then
-			unpairedFastqFile="--unpaired ${sampleId}_R1_R2_trimmomatic_unpaired.fastq"
-		else 
-			echo "INFO: There are no unpaired reads to use after trimming by Trimmomatic for sample ${sampleId}"
+#################	if [[ $hybSeqProgram != *'-start_from-'* || $hybSeqProgram == *'-start_from-map_reads' ]]; then
+		if [[ -n "$R2FastqFile" ]]; then
+			gunzip -fc ${sampleId}_R1_trimmomatic_unpaired.fastq.gz ${sampleId}_R2_trimmomatic_unpaired.fastq.gz \
+			> ${sampleId}_R1_R2_trimmomatic_unpaired.fastq
+			# There may be no single surviving reads, in which case don't use file in HybPiper command:
+			if [[ -s ${sampleId}_R1_R2_trimmomatic_unpaired.fastq ]]; then
+				unpairedFastqFile="--unpaired ${sampleId}_R1_R2_trimmomatic_unpaired.fastq"
+			else 
+				echo "INFO: There are no unpaired reads to use after trimming by Trimmomatic for sample ${sampleId}"
+			fi
 		fi
-	fi
+##################	fi
 
 	if [[ $hybSeqProgram == 'hybpiper' ]];then 
 		
@@ -501,8 +504,36 @@ elif [[ $hybSeqProgram == 'hybpiper'* ]]; then
 		fi
 	elif [[ $hybSeqProgram == 'hybpiper2'* ]]; then
 
-		echo Using HybPiper version 2 ...
-		$exePrefix hybpiper assemble  --cpu $cpu $mapReadsProgram \
+		echo "Using HybPiper version 2 ..."
+
+		startFromOption=''
+		if [[ $hybSeqProgram == *'-start_from-'* ]]; then
+			if [[ $hybSeqProgram == 'hybpiper2-start_from-'* ]]; then
+				startFromOption='--start_from '`echo $hybSeqProgram | awk -F '-' '{print $3}' `
+			elif [[ $hybSeqProgram == 'hybpiper2-diamond-'* ]]; then
+				if [[ $hybSeqProgram == 'hybpiper2-diamond-sensitive'* ]]; then # Slight adjustment for e.g. hybpiper2-diamond-sensitive-start_from-exonerate_contigs 
+					startFromOption='--start_from '`echo $hybSeqProgram | awk -F '-' '{print $5}' `
+				else
+					startFromOption='--start_from '`echo $hybSeqProgram | awk -F '-' '{print $6}' `
+				fi
+			fi
+			echo "INFO: starting the pipeline from this given step: "`echo $startFromOption | awk -F '-' '{print $3}' `
+			# Unzip the HybPiper folder if it exists:
+			if [[ -s ${sampleId}.tar.gz ]]; then 
+				tar -xpf ${sampleId}.tar.gz
+			elif [[ ! -d $sampleId || $hybSeqProgram != *'-start_from-map_reads' ]]; then
+				echo "INFO: Main HybPiper folder does not exist so can't start HybPiper from a later step as requested: $hybSeqProgram "
+				exit
+			fi
+		fi
+
+		forceOverwrite=''
+		if [[ `hybpiper --version | tail -n 1` == 'hybpiper 2.2.0' ]]; then
+			forceOverwrite='--force_overwrite'  
+		fi 
+
+		$exePrefix hybpiper assemble  --cpu $cpu $mapReadsProgram  $startFromOption \
+		$forceOverwrite \
 		$targetFileFlag $targetsFile \
 		-r ${sampleId}_R*_trimmomatic.fastq \
 		--cov_cutoff 4 \
@@ -510,7 +541,8 @@ elif [[ $hybSeqProgram == 'hybpiper'* ]]; then
 		$unpairedFastqFile \
 		> ${sampleId}_hybpiper_assemble.log 2>&1
 		# NB - if a DNA targets file is supplied without specifying the --bwa option, the targets will be translated and the blastx  option will proceed.
-		#      Also found that when using --targetfile_aa flag with a DNA targets file (no --bwa flag), the targets gets translated.  
+		#      Also found that when using --targetfile_aa flag with a DNA targets file (no --bwa flag), the targets gets translated
+		# --force_overwrite		a new option from version 2.2.0 
 
 		if [[ -s ${sampleId}/genes_with_seqs.txt ]]; then
 
