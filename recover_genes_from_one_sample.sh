@@ -77,7 +77,8 @@ if [[ $usePaftolDb == 'no' ]]; then
 			SLIDINGWINDOW:4:20 \
 			MINLEN:40 > ${sampleId}_trimmomatic.log 2>&1
 		else
-			$exePrefix java -jar $TRIMMOMATIC PE \
+			###$exePrefix java -jar $TRIMMOMATIC PE \
+			java -jar $TRIMMOMATIC PE \
 			-threads $cpu \
 			-trimlog ${sampleId}_R1_R2_trimmomatic.log \
 			$paftolDataSymlinksDir/$R1FastqFile \
@@ -535,7 +536,8 @@ elif [[ $hybSeqProgram == 'hybpiper'* ]]; then
 			forceOverwrite='--force_overwrite'  
 		fi 
 
-		$exePrefix hybpiper assemble  --cpu $cpu $mapReadsProgram  $startFromOption \
+		###$exePrefix hybpiper assemble  --cpu $cpu $mapReadsProgram  $startFromOption \
+		hybpiper assemble  --cpu $cpu $mapReadsProgram  $startFromOption \
 		$forceOverwrite \
 		$targetFileFlag $targetsFile \
 		-r ${sampleId}_R*_trimmomatic.fastq \
