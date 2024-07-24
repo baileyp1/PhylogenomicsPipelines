@@ -55,8 +55,7 @@ pwd
 
 if [[ $usePaftolDb == 'no' ]]; then
 	###	if [[ $hybSeqProgram != *'-start_from-'* || $hybSeqProgram == *'-start_from-map_reads' ]]; then
-	### Can't skip this step when using the --start_from option - fastq files still need to be presented to HybPiper option -r 
-	echo "Inside Trimmomatic step - usePaftolDb = $usePaftolDb "
+	### Can't skip this step when using the --start_from option - fastq files still need to be presented to HybPiper option -r
   			                                        #--nodelist=kppgenomics01.ad.kew.org  # mem normally set to 80000
 		#  sbatch -J ${samplePrefix}_${sampleId}_fastqToGenes -p main -t 1-0:00 -c $cpu --mem=80000 -o ${samplePrefix}_${sampleId}_fastqToGenes.log   -e ${samplePrefix}_${sampleId}_fastqToGenes.log_err   --wrap "
 		# RUNTIME: For 8 cpu, up to 2 mins; up to 18 GB mem (for 10 samples)
@@ -78,7 +77,7 @@ if [[ $usePaftolDb == 'no' ]]; then
 			MINLEN:40 > ${sampleId}_trimmomatic.log 2>&1
 		else
 			###$exePrefix java -jar $TRIMMOMATIC PE \
-			java -jar $TRIMMOMATIC PE \
+			$exePrefix java -jar $TRIMMOMATIC PE \
 			-threads $cpu \
 			-trimlog ${sampleId}_R1_R2_trimmomatic.log \
 			$paftolDataSymlinksDir/$R1FastqFile \
@@ -537,7 +536,7 @@ elif [[ $hybSeqProgram == 'hybpiper'* ]]; then
 		fi 
 
 		###$exePrefix hybpiper assemble  --cpu $cpu $mapReadsProgram  $startFromOption \
-		hybpiper assemble  --cpu $cpu $mapReadsProgram  $startFromOption \
+		$exePrefix hybpiper assemble  --cpu $cpu $mapReadsProgram  $startFromOption \
 		$forceOverwrite \
 		$targetFileFlag $targetsFile \
 		-r ${sampleId}_R*_trimmomatic.fastq \
