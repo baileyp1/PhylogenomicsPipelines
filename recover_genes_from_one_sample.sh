@@ -571,11 +571,14 @@ elif [[ $hybSeqProgram == 'hybpiper'* ]]; then
 			# The fasta header format is: >[sampleId].[main|0|1|2|etc]	- the geneId is not present so need to add it
 
 			# Create sample file for the paralogs_no_chimeras (trying to make the file compatible with Astral-Pro for the phylo pipeline - still testing):
-			for file in paralogs_no_chimeras/*_paralogs_no_chimeras.fasta; do
-				geneName=`basename $file | sed 's/_paralogs_no_chimeras.fasta//' `
-	 			cat $file \
-	 			| awk -v gene=$geneName '{if($1 ~ /^>/) {print $1 "-" gene} else {print $0}}'
-			done > ${sampleId}_paralogs_no_chimeras.fasta
+			# For HybPiper > v2.2.0, the chimera check is no longer on by default so the "paralogs_no_chimeras" might not exist so check it does:
+			if [[ -d paralogs_no_chimeras ]]; then
+				for file in paralogs_no_chimeras/*_paralogs_no_chimeras.fasta; do
+					geneName=`basename $file | sed 's/_paralogs_no_chimeras.fasta//' `
+	 				cat $file \
+	 				| awk -v gene=$geneName '{if($1 ~ /^>/) {print $1 "-" gene} else {print $0}}'
+				done > ${sampleId}_paralogs_no_chimeras.fasta
+			fi
 			# Create sample file for the paralogs_all:
 			for file in paralogs_all/*_paralogs_all.fasta; do
 				geneName=`basename $file | sed 's/_paralogs_all.fasta//' `
