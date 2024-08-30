@@ -102,10 +102,6 @@ if [[ $usePaftolDb == 'no' ]]; then
 fi
 
 
-### NB - I think that if I check file exists or is zero byte before running this is equivalent to make affect
-### convert script to a makefile
-
-
 usePaftolDbFlag=''
 if [ $hybSeqProgram == 'paftools' ]; then
 
@@ -612,7 +608,7 @@ elif [[ $hybSeqProgram == 'hybpiper'* ]]; then
 		if [[ -s ${sampleId}_R1_R2_trimmomatic.log ]];then rm ${sampleId}_R1_R2_trimmomatic.log; fi
 		if [[ -s ${sampleId}_R1_trimmomatic.log ]]; then rm ${sampleId}_R1_trimmomatic.log; fi
 		# NB - not deleting this file here in case it is used in the future for the recovery stats: ${sampleId}_R1_R2_trimmomatic_unpaired.fastq
-		#      Could also just get it remade in the stats clause
+		#      Could also just get it remade in the stats clause - NB - 30.8.2024 - in stats mode ONLY, isn't Trimmomatic being run again? If so I think this file can be deleted 
 	fi
 else
 	echo "WARNING: If option -y was used, the Hyb-Seq program was not recognised. The options are paftools or hybpiper[2-[bwa|diamond-<sensitivity_option>]]'."
@@ -654,8 +650,17 @@ if [[ $stats != 'no' ]]; then
 			# Gene recovery file is  now in pwd.
 		else
 			echo "ERROR: Option -S selected but gene recovery fasta file not found or is empty. May need to use option -P. Stats cannot be calculated for sample: ${sampleId}."
+			echo "Will tidy up removing the fastq files and exit"
 			echo
 			echo
+			# Remove the large fastq files from any gene recovery method:
+			if [[ -s ../${sampleId}_R1_trimmomatic.fastq ]]; then rm ../${sampleId}_R1_trimmomatic.fastq; fi
+			if [[ -s ../${sampleId}_R1_trimmomatic_unpaired.fastq.gz ]]; then rm ../${sampleId}_R1_trimmomatic_unpaired.fastq.gz; fi
+			if [[ -s ../${sampleId}_R2_trimmomatic.fastq ]]; then rm ../${sampleId}_R2_trimmomatic.fastq; fi
+			if [[ -s ../${sampleId}_R2_trimmomatic_unpaired.fastq.gz ]]; then rm ../${sampleId}_R2_trimmomatic_unpaired.fastq.gz; fi	
+			if [[ -s ../${sampleId}_R1_R2_trimmomatic.log ]];then rm ../${sampleId}_R1_R2_trimmomatic.log; fi
+			if [[ -s ../${sampleId}_R1_trimmomatic.log ]]; then rm ../${sampleId}_R1_trimmomatic.log; fi
+			# NB - ${sampleId}_R1_R2_trimmomatic_unpaired.fastq is only created in hybpiper mode and has already been removed above - OK
 			exit
 		fi
 	else
