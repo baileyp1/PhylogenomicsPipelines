@@ -5,7 +5,7 @@
 
 # Author:   Paul Bailey
 
-# Copyright © 2020 The Board of Trustees of the Royal Botanic Gardens, Kew
+# Copyright © 2024 The Board of Trustees of the Royal Botanic Gardens, Kew
 ###################################
 set -e
 set -u
@@ -42,7 +42,7 @@ function usage  {
 
 cat << EOF
 
-Copyright © 2020 The Board of Trustees of the Royal Botanic Gardens, Kew
+Copyright © 2024 The Board of Trustees of the Royal Botanic Gardens, Kew
 
 Program description: recovers genes from pair-end fastq files of multiple samples. Paftools or HybPiper can be used to align the reads to a set of
                      target genes, assemble the reads for each target gene and join the available exons together to produce the gene.
@@ -83,7 +83,8 @@ OPTIONS <value>:
                  2. gene recovery samples all in the same directory (file name, as used by this pipeline) 
                     i.e. /<path>/<SampleName>.fasta
                  In both cases, type '/<path>'
-                 Note: 'SampleName' needs to match that provided by the sample list in option -s and the file name needs to match the Hyb-Seq program
+                 Note: 'SampleName' needs to match that provided by the sample list in option -s and the fasta file name needs to match the name used by the 
+                       Hyb-Seq program
   -p <string>    
                  directory prefix for each sample (default=Sample)
   -c <integer>   
@@ -112,17 +113,18 @@ A typical example to recover genes:
 > recover_genes_from_all_samples.log 2>&1 &
 
 
-For running only the recovery stats having already run the gene recovery:
-recover_genes_from_all_samples.sh \
--s <sample_table.csv> \
--f /data/projects/paftol/AllData_symlinks_PAFTOL2.0 \
--a <illumina_adaptors.fasta> \
--c 2 \
--m 40000 \
--Q short \
--T 1-00:00 \
--H 1 \
--S \
+For running only the recovery stats (having already run the gene recovery):
+recover_genes_from_all_samples.sh \\
+-s <sample_table.csv> \\
+-f /data/projects/paftol/AllData_symlinks_PAFTOL2.0 \\
+-a <illumina_adaptors.fasta> \\
+-c 2 \\
+-m 40000 \\
+-Q short \\
+-T 1-00:00 \\
+-H 1 \\
+-S \\
+[-P <gene_recovery_fasta_files_path - as required> \\ ]
 > gene_recovery_stats.log 2>&1 &
 
 EOF
