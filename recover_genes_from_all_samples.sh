@@ -98,8 +98,7 @@ OPTIONS <value>:
                  Slurm array throttle (default=1; could keep to 1, then increase once happy with run with: scontrol update arraytaskthrottle=<integer> job=<jobId>)
 
  
-
-A typical example:
+A typical example to recover genes:
 <path to>/recover_genes_from_all_samples.sh \\
 -y paftools \\
 -s <table_file.csv> \\
@@ -111,6 +110,20 @@ A typical example:
 -m 80000 \\
 -Q main \\
 > recover_genes_from_all_samples.log 2>&1 &
+
+
+For running only the recovery stats having already run the gene recovery:
+recover_genes_from_all_samples.sh \
+-s <sample_table.csv> \
+-f /data/projects/paftol/AllData_symlinks_PAFTOL2.0 \
+-a <illumina_adaptors.fasta> \
+-c 2 \
+-m 40000 \
+-Q short \
+-T 1-00:00 \
+-H 1 \
+-S \
+> gene_recovery_stats.log 2>&1 &
 
 EOF
 }
