@@ -106,18 +106,18 @@ OPTIONS <required_value>:
 INPUT FILE OPTIONS:
   -G               
                 make gene trees starting from unaligned gene-wise fasta files rather than files containing all genes per sample.
-                Gene name/identifier must be identical to the fasta file name (minus any [dot] ending suffix e.g. .fasta) - i.e. 
+                Gene name/identifier MUST be identical to the fasta file name (minus any [dot] ending suffix e.g. .fasta) - i.e. 
                 file name(s) should be called <geneId>.fasta. Fasta header line format MUST BE: >sampleId. Note: option -a must NOT be used
   -g <file>        
                 file (including path to it) containing list of gene names only (required option)
-                Note - pretty sure that gene names must NOT have '.' characters in them if the suffix is what makes them unique.         
+                Note: pretty sure that gene names must NOT have '.' characters in them if the suffix is what makes them unique.         
   -a               
                 add sample name/identifier onto the fasta header from the input fasta file name
                 Expected gene identifier format in the input fasta header: >geneId (no hyphen '-' characters allowed)
-
+                Note: the input fasta file name must NOT contain more than one dot character and text before the dot should be unique to each sample!
   -x
                 add reference target sequences (or other desired sequences appropriate to the gene set) from a SINGLE fasta file. The fasta 
-                header format MUST be >sampleId-geneId and sampleId (outside it's own gene set) should be unique to the input data set 
+                header format MUST be >sampleId-geneId and sampleId (outside this gene set) should be unique to the wholeq input data set 
                 Note: this option is not used when option -G is set.
                 
   -t <csv file>    
@@ -134,8 +134,8 @@ ALIGNMENT OPTIONS:
                 sequence type to use: dna, protein, codon (default=dna). N.B. use with multiple types must be quoted (e.g. 'dna protein')
                 codon is input DNA aligned but guided by a protein alignment. Note: the 'protein' and 'codon' options are not finished yet!
   -A <string>      
-                alignment program to use: mafft, upp (UPP is ideal for large alignments) (no default)
-                If this option is not used (and also not option -G), gene-wise files will be created then the program will exit 
+                alignment program to use: mafft, upp (UPP is ideal for large alignments) (no default).
+                Note: if this option is ommitted, gene-wise files will be created (unless option -G is set), then the program will exit 
 
   -M <string:>  
                 options to use with chosen alignment program (they must be quoted and the option flag(s) included). For MAFFT, specify the 
@@ -183,7 +183,8 @@ PHYLOGENY OPTIONS:
                 use TreeShrink on gene trees (followed by re-alignment)  
   -s <string>      
                 name of phylogeny program(s) to use for the species tree(s) if required. Coalescent-based method: astral, astralmp (multi-threaded);
-                using a concatenated set of gene alignments: fasttree, raxml. N.B. using several programs must be quoted (e.g. 'astral fasttree')
+                using a concatenated set of gene alignments: fasttree, raxml[q]. N.B. using several programs must be quoted (e.g. 'astral fasttree');
+                specifying 'raxmlq' will perform partitioned analysis of each gene.
   -B <integer>  
                 number of bootstrap searches for RAxML species tree (default=100)
   -L <integer>     
@@ -256,6 +257,13 @@ make_species_trees_pipeline.sh \\
 -W 0 \\
 -p example_tree \\
 > make_species_trees_only.log 2>&1 &
+
+Example 3 - you might simply want to prepare gene-wise fasta files 
+from files containing all genes per sample:
+make_species_trees_pipeline.sh \\
+-g <geneListFile> \\
+<path_to_recovered_genes_from_samples>/*.fasta \\
+> create_genewise_files_ONLY.log 2>&1 &
 
 EOF
 }
@@ -430,17 +438,32 @@ fi
 #######################
 # Check the input files
 #######################
+# 1. First, check that all fasta file exist!
+for file in ${@:$OPTIND:$#}; do
+    if [[ ! -s $file ]]; then
+        echo "ERROR: this input fasta file does not exist or is empty: $file"
+        exit 1
+    fi
+    ### 2. Second, check that all fasta records contain a sequence and are not empty:
+    ### 1.8.2024 - ready to deploy and test...
+    ###numbrHeaderLines=`cat $fileList | seqtk seq -l 0 /dev/fd/0 | grep '>' | wc -l `
+    ###numbrSeqLines=`cat $fileList | seqtk seq -l 0 /dev/fd/0 | grep -v '>' | wc -l `
+    ###if [[ $numbrHeaderLines -ne $numbrSeqLines ]]; then
+    ###    echo "ERROR: it appears that there are one or more fasta records with no sequence in this input file: ${}file} .
+###Check the fasta format and ensure that there are no blank lines in the file."
+    ###    exit 1
+done
 
-# 1. Check the input files are in fasta format
+# 2. Check the input files are in fasta format
 ###for file in ${@:$OPTIND:$#}; do 
 	###echo "Check fasta file format here - still to do:" $file
 
 	# Still to do:
-	# First just check they are all files - checks commandline parameters haven't leaked through
+	# First just check they are all files - checks commandline parameters haven't leaked through - 1.8.2024 - isn't that check 1 above?
 	# In fact it is really important to check also that file exists and has contents because there may have been no genes recovered!!
 	#	actually it may be ok that the file is empty 
 	# 1.See IT3F_frame.sh script e.g. file needs to start with >
-	# 2.Check there are no empty seq lines - see my 46.notes on assembly checks
+	# 2.Check there are no empty seq lines - see my 46.notes on assembly checks - 1.8.2024 - YES IMPORTANT FOR THE GENEWISING STEP
 	# 3.Check equal # header lines and seq lines
 	# 4.nw_ed doesn't like identifiers containing [ and ] chars so should change them or exit with error
 
@@ -449,19 +472,22 @@ fi
 	### 27.4.2020 - I think gene names mustn't contain dots (for extracting a gene from all samples - see line ~59 in make_gene_trees.sh)
  	###             Also for HybPiper output files, sample names mustn't have dots! 
 
-
-
+# 3. Ensure all filenames supplied are unique:
 ### 7.10.2019 - NOT YET STRESS TESTED ALL SITUATIONS
 ### 16.7.2020 - also does it work for dna-wise files; also go through logic - doesn't make too much sense now.
-# 2. First ensure all filenames supplied are unique:
-numbrDuplicateNames=`for file in ${@:$OPTIND:$#}; do 
-					uniqueSampleId=$(basename $file | awk -F '.' '{print $1}' )
-					done | echo $uniqueSampleId | sort | uniq -c | awk '$1 > 1' | wc -l `
+### 25.7.2024 - checked code again - seems to detect duplicate file names
+numbrDuplicateNames=0
+numbrDuplicateNames=`
+for file in ${@:$OPTIND:$#}; do
+    uniqueSampleId=$(basename $file | awk -F '.' '{print $1}')
+    echo $uniqueSampleId 
+done | sort | uniq -c | awk '$1 > 1' | wc -l ` # Returns file name string up to first dot character 
 #echo numbrDuplicateNames: $numbrDuplicateNames
-if [[ $numbrDuplicateNames -ge 1 ]]; then echo "ERROR: there are $numbrDuplicateNames duplicate names in the input fasta files."; exit 1; fi
+if [[ $numbrDuplicateNames -ge 1 ]]; then echo "ERROR: there are $numbrDuplicateNames duplicate names in the input fasta files.
+       Ensure that file names don't contain more than one dot character which is not allowed."; exit 1; fi
 
 
-# 3. Test that the input files and their paths haven't reached ARG_MAX.
+# 4. Test that the input files and their paths haven't reached ARG_MAX.
 #    getconf ARG_MAX = 262,144 (Macbook) and 2,097,152 on Hatta cluster
 lengthOfFreeParameters=`echo ${@:$OPTIND:$#} | awk '{sum+=length($0)} END {print sum}' `
 #echo lengthOfFreeParameters: $lengthOfFreeParameters
@@ -511,7 +537,19 @@ if [[ $addSampleName == 'yes' && $useGenewiseFiles  != 'yes' && $speciesTreesOnl
  	# Prepare fasta files:
 	for file in ${@:$OPTIND:$#}; do
 
-    	# Get filename and chop off the file ending if there is one:
+        # Get filename and chop off the file ending if there is one.
+        uniqueSampleId=`basename $file`
+        # First, test to see how many dot characters there are - only tolerate one dot for file ending.
+        ### NB - 25.7.2024 - I think sample name could actually be tolerant to dot chars but need to double check w.r.t. paralogs and the genewise conversion.
+        ### A better solution for keeping samples with dots might be to identify the file suffix with awk $NF,
+        ### then use that result in basename -s flag to obtain the filename minus the suffix
+      # Meanwhile, counting the number of dot characters and aborting run if > 1 dot is found in any filename.
+      numbrOfDots=`echo $uniqueSampleId | grep -o '\.' | wc -l`
+      if [[ $numbrOfDots -gt 1 ]]; then
+        echo "ERROR: this input fasta file name contains more than one dot character which is not allowed: $uniqueSampleId
+A typical filename would have a single dot character to separate the name of the file type e.g. <sample_name>.fasta, <sample_name>.fa"
+        exit 1
+      fi
     	uniqueSampleId=`basename $file | awk -F '.' '{print $1}' `
     	#echo $uniqueSampleId
    
@@ -531,7 +569,8 @@ if [[ $addSampleName == 'yes' && $useGenewiseFiles  != 'yes' && $speciesTreesOnl
 			### Consider to add: If it exists and is empty, rename this file so that it is not picked up again e.g. to <prefix>.fasta_not_used"
 			exit 1
 		fi
-    done
+    ### elif 
+  done 
 ### NB - 16.6.2020 - do I need to check the above files like I do for the format below? - I think I do because even though I'm creating it above
 ### they may be in a different format e.g. gene-wise files!!!!!!!! Just need to check with code below # samples in the data set
     # Concatenate fasta files and put seqs on a single line:
@@ -616,7 +655,7 @@ Also check that fasta header lines have this format: >sampleId-geneId"; exit 1
 		  # If an input fasta file name doesn't exist then the 'modified.fasta' filename created above will not exist.
       # Testing whether file exists here:
       if [[ ! -s ${uniqueSampleId}_modified.fasta ]]; then
-        echo "ERROR: this input fasta file does not exist or is empty: ${uniqueSampleId}_modified.fasta"
+        echo "ERROR: this modified input fasta file does not exist or is empty: ${uniqueSampleId}_modified.fasta"
         exit 1
       fi
     fi
@@ -661,6 +700,7 @@ Also check that fasta header lines have this format: >sampleId-geneId"; exit 1
       fi
     fi
 	fi
+
 else
   echo "INFO: Command is running in species tree only mode (option -J) - expecting gene alignment files with a file name suffix of 'aln.for_tree.fasta'
 in the current working directory from a previous run.
@@ -782,11 +822,11 @@ if [[ $dnaSelected == 'no' &&  $proteinSelected == 'no' && $codonSelected == 'no
 	echo "ERROR: No sequence type (option -D) was entered or recognised."; exit
 fi
 
-
-# Input checks for the alignment type option -A:
-if [[ "$alnProgram" != 'mafft' && "$alnProgram" != 'upp' && "$alnProgram" != 'emma' ]];then 
-	echo "ERROR: No alignment program (option -A) was entered or recognised."; exit
-fi
+###28.6.2024 - removed the default for option -A
+# # Input checks for the alignment type option -A:
+# if [[ "$alnProgram" != 'mafft' && "$alnProgram" != 'upp' && "$alnProgram" != 'emma' ]];then 
+# 	echo "ERROR: No alignment program (option -A) was entered or recognised."; exit
+# fi
 
 
 # Check filter sequence options (option -F):
@@ -995,7 +1035,7 @@ fi
 ###cd $tempOutputsDir
 
 ###########################
-echo 'Making gene trees...'
+###echo 'Making gene trees...'
 ###########################
 if [[ $os == 'Darwin' && $speciesTreesOnly == 'no' ]]; then
 
@@ -1409,7 +1449,7 @@ if [ $geneTreesOnly == 'yes' ]; then exit; fi
 
 
 ################################
-echo 'Making species tree(s)...'
+###echo 'Making species tree(s)...'
 ################################
 if [ $os == 'Darwin' ]; then
     exePrefix="/usr/bin/time -l"		# this time command gets the RSS memory, -l flag doesn't work on Cluster
