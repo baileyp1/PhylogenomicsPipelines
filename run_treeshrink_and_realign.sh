@@ -409,7 +409,7 @@ elif [[ $filterSeqs1 != 'no' || $filterSeqs2 != 'no' ]]; then
 
 ### NBNB - only can start realigning seq with script using DNA seq, therefore need to get a list of fasta records from the right residue file,
 ###        otherwise at some point there will be a zero byte file as input which won't work! Done - now checking...
-### Will also need to bring in the path so I can grab the previuous codon file.
+### Will also need to bring in the path so I can grab the previous codon file.
     if [[ `echo $seqType | grep -o 'protein' ` == 'protein' ]]; then
         treeType=protein
         for file in  ../*_${treeType}_gene_tree_USE_THIS.nwk; do
@@ -426,8 +426,8 @@ elif [[ $filterSeqs1 != 'no' || $filterSeqs2 != 'no' ]]; then
 ### 9.2.2022 - NB - should above line contain $treeType or $seqType - it might be correct
     elif [[ `echo $seqType | grep -o 'codon' ` == 'codon' ]]; then
         treeType=codon
-        for file in  ../*_${treeType}_gene_tree_USE_THIS.nwk; do
-            gene=`echo $file | sed "s/_${treeType}_gene_tree_USE_THIS.nwk//" | sed "s/^\.\.\///" `
+        for file in  ../codonAln/*_${treeType}_gene_tree_USE_THIS.nwk; do
+            gene=`echo $file | sed "s/_${treeType}_gene_tree_USE_THIS.nwk//" | sed "s/^\.\.\/codonAln\///" `
             # Get the leaf labels and extract from the unliagned starting DNA file:
             nw_labels -I $file > ${gene}_${treeType}_tree_leaf_labels.txt
             seqtk subseq -l 0 \
@@ -436,7 +436,7 @@ elif [[ $filterSeqs1 != 'no' || $filterSeqs2 != 'no' ]]; then
             > ${gene}_after_filterSeqs.fasta
         done
         reAlignSeqs "$seqType" "$phyloProgramsToUse" "after_filterSeqs"
-     elif [[ `echo $seqType | grep -o 'dna' ` == 'dna' ]]; then 
+     elif [[ `echo $seqType | grep -o 'dna' ` == 'dna' ]]; then  
         treeType=dna
         for file in  ../*_${treeType}_gene_tree_USE_THIS.nwk; do
             gene=`echo $file | sed "s/_${treeType}_gene_tree_USE_THIS.nwk//" | sed "s/^\.\.\///" `

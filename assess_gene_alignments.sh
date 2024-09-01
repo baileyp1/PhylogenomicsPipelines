@@ -28,6 +28,7 @@ treeTipInfoMapFile=$7		# NB - just testing if this filename was submitted, then 
 option_u=$8
 seqType=$9
 alnFileForTreeSuffix=${10}
+alnFilePath=${11}
 
 ### Potential additional (hidden) parameters to set:
 ###minColOccToTolerate
@@ -153,7 +154,7 @@ totalResiduesInMaxColOccRegion=`cat *_aln_summary.txt | grep '^totalResiduesInMa
 
 
 # Total number of ALL residues in the aln for tree (i.e. after filtering):
-totalBasesInAlnForTree=`for file in *.$alnFileForTreeSuffix; do fastalength $file 2>/dev/null ; done | awk '{sum+=$1} END {print sum}' `
+totalBasesInAlnForTree=`for file in ${alnFilePath}/*.$alnFileForTreeSuffix; do fastalength $file 2>/dev/null ; done | awk '{sum+=$1} END {print sum}' `
 
 
 if [[ $seqType == 'protein' ]]; then
@@ -178,13 +179,13 @@ echo 'Table for gene alignments showing numbers per gene for:
 4. Number of parsimonious columns in length of common overlap (ParsimCols)
 5. number of samples (NumberSamples, after filtering sequences by coverage)' > ${fileNamePrefix}_summary_gene_recovery.txt
 echo 'GeneId LenLongestGene LenLongestGeneTrim MedianGeneLength MinColOcc ParsimCols Ratio:Col4/Col5 NumberSamples' | column -t >> ${fileNamePrefix}_summary_gene_recovery.txt
-for file in *.$alnFileForTreeSuffix; do
- 	gene=`echo $file | sed "s/.$alnFileForTreeSuffix//" `
+for file in ${alnFilePath}/*.$alnFileForTreeSuffix; do
+ 	gene=`echo $file | sed "s/.$alnFileForTreeSuffix//" | sed "s/$alnFilePath\///" `
  	numbrSamples=`cat $file | grep '>' | wc -l `
 	lenLongestGene=`fastalength  $file 2>/dev/null | sort -n | tail -n 1 | awk '{print $1}' `				                 # The longest recovered gene in the aln
-    maxColOcc=`fastalength  ${gene}_${seqType}_aln_AMAS_trim_${fractnMaxColOcc}.fasta  2>/dev/null | sort -n | tail -n 1 | awk '{print $1}' `     # minimum column occupancy (aln columns) - NB 24.8.2020 - can't i also get this from the summary.txt file??? And other values - woudl be easier
-    maxColOccP=`fastalength  ${gene}_${seqType}_aln_AMAS_trim_-p_${fractnMaxColOcc}.fasta  2>/dev/null | sort -n | tail -n 1 | awk '{print $1}' ` # minimum column occupancy (parsimonious sites ONLY)
-	lenLongestGeneAfterTrim=`fastalength ${gene}.$alnFileForTreeSuffix 2>/dev/null | sort -n | tail -n 1 | awk '{print $1}' `
+    maxColOcc=`fastalength  ${alnFilePath}/${gene}_${seqType}_aln_AMAS_trim_${fractnMaxColOcc}.fasta  2>/dev/null | sort -n | tail -n 1 | awk '{print $1}' `     # minimum column occupancy (aln columns) - NB 24.8.2020 - can't i also get this from the summary.txt file??? And other values - woudl be easier
+    maxColOccP=`fastalength  ${alnFilePath}/${gene}_${seqType}_aln_AMAS_trim_-p_${fractnMaxColOcc}.fasta  2>/dev/null | sort -n | tail -n 1 | awk '{print $1}' ` # minimum column occupancy (parsimonious sites ONLY)
+	lenLongestGeneAfterTrim=`fastalength ${alnFilePath}/${gene}.$alnFileForTreeSuffix 2>/dev/null | sort -n | tail -n 1 | awk '{print $1}' `
 	medianGeneLength=`cat ${gene}_aln_summary.txt | grep '^medianGeneLength:' | awk '{print $2}' `
 	ratio=`echo  $medianGeneLength  $maxColOcc | awk '{printf "%.2f", $1/$2}' `		# Might be an indicator of overall effectiveness of gene recovery for samples submitted
 	### 27.8.2020 - I think this is sometiems divisible by zero which is fatal!!!!
@@ -197,7 +198,7 @@ done | sort -k5n| column -t >> ${fileNamePrefix}_summary_gene_recovery.txt
 
 
 # Number of gene alignments containing $fractnSpecies_pc % of samples (NB - also after trimming for rare insertions):
-numbrGeneAlnsForSpeciesTree=`for file in *.$alnFileForTreeSuffix; do
+numbrGeneAlnsForSpeciesTree=`for file in ${alnFilePath}/*.$alnFileForTreeSuffix; do
  	numbrSamples=$(cat $file | grep '>' | wc -l)
     echo $numbrSamples
 done \
@@ -206,11 +207,11 @@ done \
 
 
 # Total number of alignment columns in the area of common overlap for these genes (NB - AFTER all filtering and trimming, also after trimming for rare insertions):
-numbrOverlapColsForSpeciesTree=`for file in *.$alnFileForTreeSuffix; do
-	gene=$(echo $file | sed "s/.$alnFileForTreeSuffix//")
+numbrOverlapColsForSpeciesTree=`for file in ${alnFilePath}/*.$alnFileForTreeSuffix; do
+	gene=$(echo $file | sed "s/\.$alnFileForTreeSuffix//" | sed "s/$alnFilePath\///")
  	numbrSamples=$(cat $file | grep '>' | wc -l)
     #lenLongestGene=$(fastalength  $file | sort -n | tail -n 1 | awk '{print $1}')				                 		   # The longest recovered gene in the aln
-    maxColOcc=$(fastalength  ${gene}_${seqType}_aln_AMAS_trim_${fractnMaxColOcc}.fasta  2>/dev/null | sort -n | tail -n 1 | awk '{print $1}')   # maximum column occupancy (aln columns)
+    maxColOcc=$(fastalength  ${alnFilePath}/${gene}_${seqType}_aln_AMAS_trim_${fractnMaxColOcc}.fasta  2>/dev/null | sort -n | tail -n 1 | awk '{print $1}')   # maximum column occupancy (aln columns)
     echo $numbrSamples  " " $maxColOcc
     ####echo 2000  "test" $maxColOcc
 done \
@@ -224,6 +225,8 @@ done \
 ### 20.8.2020 - Need to re-work this section 
 ### Still get the same stats but better now to redo the protein lists in the species tree script i think - the file might not be used
 ### 22.5.2021 - Also, if fasta file has < 4 seqs it should not enter this list beacuse trees are not beign made !!!!
+	### 8.5.2024 - I think the above point is already covered below
+
 
 ################################################################################################################################
 # Create list of gene alns with > ${fractnAlnCovrg_pc} gene coverge AND containing more than the $fractnSpecies % of the samples
@@ -231,7 +234,15 @@ done \
 # NB - also checking whether ther are > 3 species in each gene tree (this check was already made before building each gene tree
 #      but the alignment file still exists so is removed here below.
 ################################################################################################################################
-for file in *.$alnFileForTreeSuffix; do
+
+
+### UPTOHERE 8.5.2024
+####alnFileForTreeSuffix == ${seqType}.aln.for_tree.fasta
+### PrepareGeneAlnsToUse()
+### I think this code can go into the species script
+
+
+for file in ${alnFilePath}/*.$alnFileForTreeSuffix; do
  	gene=`echo $file | sed "s/.$alnFileForTreeSuffix//" `
  	numbrSamples=`cat $file | grep '>' | wc -l `;
     echo $gene " " $numbrSamples

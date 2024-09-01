@@ -28,7 +28,7 @@ phyloProgramDNA=$6
 phyloProgramPROT=$7
 exePrefix="$8"
 treeTipInfoMapFile=$9       # NB - just testing if this filename was submitted, then will add tree tip info to species tree
-dnaSelected=${10}               # NB - for these <seqType>Selected variables, this script should be able to process all three types together OR separately!
+dnaSelected=${10}               # NB - for these <seqType>Selected variables, this script should be able to process all three types together, as required; note the seqType variable is specific to local code and defined from these variables
 proteinSelected=${11}
 codonSelected=${12}
 collapseNodes=${13}
@@ -94,6 +94,9 @@ fi
 numbrLowSupportNodesThreshold=95    # For use with getTreeStats() - if using a program like fasttree that
                                     # outputs support values as fractions, need to convert percent value
                                     # beforehand then import into function - 23.10.2020 - changed logic slightly - too complicated to use this value
+#### NBNB - 16.5.2024 - I think this assignment should also have the clause that's on line 131
+### Best to keep here as it is appended to several times.
+### NB - variable is only used to do conversion for the info at the top!!! Note this in the method header
 
 # 
 echo "Tree statistics
@@ -105,7 +108,7 @@ IQTREE2: ultrafast bootstrap support (considered to be well supported if >= 95% 
 
 
 
-getTreeStats () {
+getTreeStats() {
     ###########
     # Function: for tree stats and tree comparisons
 
@@ -163,7 +166,7 @@ getTreeStats () {
 
 
 
-makeSpeciesTree () {
+makeSpeciesTree() {
     ###########
     # Function: makes a SINGLE species tree from ONE of the available methods in this function 
     #           from a sequence alignment
@@ -306,6 +309,80 @@ makeSpeciesTree () {
 }
 
 
+prepareGeneTreesToUse()   {
+    ###########
+    # Function: Prepares the Newick files to use for ASTRAL
+    #           The trees will contain more than $fractnSpecies of samples (AND with species > 3 ) for use with ASTRAL:
+    #           NB - filenames are generic so that they can be derived from different phylo programs.
+
+    # Input parameters:
+    # $1 = $seqType            - Note: the seqType variable is specific to local code and defined from the three <seqType>Selected variables
+    # $2 = path to files
+    # $3 = file name suffix    - Note: need to use with a wildcard; *$alnFileForTreeSuffix == aln.for_tree.fasta ]
+    ###########
+
+    echo "Number of gene trees (before any filtering): "
+    ls ${2}/*.${1}.$3 | wc -l
+
+    for file in ${2}/*.${1}.$3; do
+        gene=`echo $file | sed "s/.$1.$3//" | sed "s/$2\///" `
+        numbrSamples=`cat $file | grep '>' | wc -l `
+        numbrSamples=`cat $file | grep '>' | wc -l `
+        echo $gene " " $numbrSamples
+    done \
+    | awk -v numbrSamplesThreshold=$numbrSamplesThreshold -v fractnAlnCovrg_pc=${fractnAlnCovrg_pc} -v seqType=$1 -v filePath=$2 \
+    '$2 >= numbrSamplesThreshold && $2 > 3 {print filePath "/" $1 "_" seqType "_gene_tree_USE_THIS.nwk"}' > $2/${fileNamePrefix}.${1}.gene_trees_set_filenames.txt
+
+### 25.5.2024 - Are we no longer using fractnAlnCovrg_pc here?????!!!!
+    # Now concatenate the gene trees into a single file:
+    cat $2/${fileNamePrefix}.${1}.gene_trees_set_filenames.txt | xargs cat > $2/${fileNamePrefix}.${1}.gene_trees_set.nwk
+
+    echo "Number of gene trees for use in ASTRAL (after any filtering): "
+    cat $2/${fileNamePrefix}.${1}.gene_trees_set.nwk | wc -l
+}
+
+
+collapseGeneTreeNodes()   {
+    ###########
+    # Function: Collapses gene tree nodes below a specified bootstrap support value
+
+    # $1 = $seqType            - Note: the seqType variable is specific to local code and defined from the three <seqType>Selected variables
+    # $2 = path to files
+    # $3 = <seqType>AstralInFile
+    # $4 = <seqType>GeneTreesSetFilenames
+    ###########
+
+    if [[ $phyloProgramDNA == *'fasttree'* ]]; then
+        # For fasttree (only, so far), need to convert $collapseNodes percent value to a fraction and use that in nw_ed. 
+        collapseNodesD=`echo $collapseNodes | awk 'fractn=$1/100 {print fractn}' `
+        echo "\$CollapseNodes should now be a fraction for FASTTREE (option -L): $collapseNodesD"
+### 24.5.2024 - don't think I need these lines below
+        # # Also convert $numbrLowSupportNodesThreshold to a fraction for FASTTREE for use in getTreeStats function:
+        # numbrLowSupportNodesThreshold=`echo $numbrLowSupportNodesThreshold | awk 'fractn=$1/100 {print fractn}' `
+        # echo "\$numbrLowSupportNodesThreshold should now be a fraction for FASTTREE (internal value): $numbrLowSupportNodesThreshold"
+    else
+        # Also require to assign the original $collapseNodes value to $collapseNodesD whether or not it is altered above
+        # so that the original value is still available for protein and/or codon clauses (if different programs have been used)
+        collapseNodesD=$collapseNodes
+    fi
+
+    #numbrLowSupportNodesThresholdD=$numbrLowSupportNodesThreshold    # Same for this var
+
+    nw_ed  $2/$3 "i & (b < $collapseNodesD)" o > $2/${fileNamePrefix}.${seqType}.gene_trees_set.collapse${collapseNodesD}.nwk
+    
+    # Also create list of filenames for the collapsed trees for use in creating an archive file:
+    cat $2/$4 \
+    | xargs ls | sed "s/.nwk$/.collapse${collapseNodesD}.nwk/" > $2/${fileNamePrefix}.${seqType}.gene_trees_set_filenames.collapse${collapseNodesD}.txt
+    
+    # Also require separate gene tree files for the Kew Tree of Life Explorer for generating the gene tree tarball (see below):
+    cat $2/$4 | \
+    while read file; do
+        filePrefix=`basename -s .nwk $file `
+        cat $file | nw_ed  /dev/fd/0  "i & (b < $collapseNodesD)" o > $2/${filePrefix}.collapse${collapseNodesD}.nwk 
+    done
+}
+
+
 
 
 
@@ -332,6 +409,10 @@ if [[ "$astralSelected" == 'yes' || "$astralmpSelected" == 'yes' || "$astralproS
         > ${fileNamePrefix}.${seqType}.gene_trees_set_filenames.txt
         # Now concatenate the gene trees into a single file:
         cat ${fileNamePrefix}.${seqType}.gene_trees_set_filenames.txt | xargs cat > ${fileNamePrefix}.${seqType}.gene_trees_set.nwk
+
+        # Finally, assigning these filenames to variables to use later - NB - will only be used if the $seqType is set:
+        dnaGeneTreesSetFilenames=${fileNamePrefix}.${seqType}.gene_trees_set_filenames.txt
+        dnaAstralInFile=${fileNamePrefix}.dna.gene_trees_set.nwk
     fi
     ### NBNB - 2nd -v fractnAlnCovrg_pc not used here anymore! Can delete... - same for protein below
     ###        Also, the above can be made into a function as it can be the same for protein
@@ -360,30 +441,40 @@ if [[ "$astralSelected" == 'yes' || "$astralmpSelected" == 'yes' || "$astralproS
         > ${fileNamePrefix}.${seqType}.gene_trees_set_filenames.txt
         # Now concatenate the gene trees into a single file:
         cat ${fileNamePrefix}.${seqType}.gene_trees_set_filenames.txt | xargs cat > ${fileNamePrefix}.${seqType}.gene_trees_set.nwk
+        proteinGeneTreesSetFilenames=${fileNamePrefix}.${seqType}.gene_trees_set_filenames.txt
+        proteinAstralInfile=${fileNamePrefix}.protein.gene_trees_set.nwk
     fi
-    ### 7.5.2022 - codon clause as well here? Shoudl make into a function
+
+    ### NB - 5.6.2024 - now using a subfunction to process codon data here - should convert the above two clauses for DNA and protein to use this subfunction
+    if [[ $codonSelected == 'yes' ]]; then
+        seqType=codon
+        echo codonSelected: $codonSelected
+        # Function parameters: seqtype  path      file name suffix
+        prepareGeneTreesToUse $seqType  codonAln $alnFileForTreeSuffix
+        # Finally, assigning these file names to variables to use later - NB - will only be used if the $seqType is set to 'yes'.
+        # Note - these variables don't contain the path to the file!
+        codonGeneTreesSetFilenames=${fileNamePrefix}.${seqType}.gene_trees_set_filenames.txt
+        codonAstralInFile=${fileNamePrefix}.${seqType}.gene_trees_set.nwk
+    fi      
+    
 
     # Before running Astral, collapse clades with low bootstrap values (less than $collapseNodes) from all trees at once, if requested.
     # NB - this step collapses nodes whose certainty is not clear by creating multifurcations with a parent node that is well supported.
     # No taxa are removed!
-    dnaAstralInFile=${fileNamePrefix}.dna.gene_trees_set.nwk
-    proteinAstralInfile=${fileNamePrefix}.protein.gene_trees_set.nwk
-    dnaGeneTreesSetFilenames=${fileNamePrefix}.${seqType}.gene_trees_set_filenames.txt
-    proteinGeneTreesSetFilenames=${fileNamePrefix}.${seqType}.gene_trees_set_filenames.txt
     if [[ $collapseNodes != 'no' ]]; then
         if [[ $dnaSelected == 'yes' ]]; then
             seqType=dna
             if [[ $phyloProgramDNA == *'fasttree'* ]]; then
                 # For fasttree (only, so far), need to convert $collapseNodes percent value to a fraction and use that in nw_ed. 
-                collapseNodes=`echo $collapseNodes | awk 'fractn=$1/100 {print fractn}' `
-                echo "\$CollapseNodes should now be a fraction for FASTTREE (option -L): $collapseNodes"
-
-                # # Also convert $numbrLowSupportNodesThreshold to a fraction for FASTTREE for use in getTreeStats function:
-                # numbrLowSupportNodesThreshold=`echo $numbrLowSupportNodesThreshold | awk 'fractn=$1/100 {print fractn}' `
-                # echo "\$numbrLowSupportNodesThreshold should now be a fraction for FASTTREE (internal value): $numbrLowSupportNodesThreshold"
+                #######collapseNodes=`echo $collapseNodes | awk 'fractn=$1/100 {print fractn}' `
+                collapseNodesD=`echo $collapseNodes | awk 'fractn=$1/100 {print fractn}' `
+                echo "\$CollapseNodes should now be a fraction for FASTTREE (option -L): $collapseNodesD"
+            else
+                # Also require to assign the original $collapseNodes value to $collapseNodesD whether or not it is altered above
+                # so that the original value is used for protein and/or codon clauses (if different programs have been used)
+                collapseNodesD=$collapseNodes
             fi
-            collapseNodesD=$collapseNodes    # NB - $collapseNodes is also required for the protein trees - will not need converting to a fraction if RAxML is used for protein aln so need temporary variable here.
-            #numbrLowSupportNodesThresholdD=$numbrLowSupportNodesThreshold    # Same for this var
+
             nw_ed  $dnaAstralInFile "i & (b < $collapseNodesD)" o > ${fileNamePrefix}.${seqType}.gene_trees_set.collapse${collapseNodesD}.nwk
             # Also create list of filenames for the collapsed trees for use in creating an archive file:
             cat $dnaGeneTreesSetFilenames \
@@ -402,28 +493,28 @@ if [[ "$astralSelected" == 'yes' || "$astralmpSelected" == 'yes' || "$astralproS
 
         if [[ $proteinSelected == 'yes' ]]; then
             seqType=protein
-            ### Not tested logic for this conditional yet - I think I need a separate varialbe for DNA and protein - done
+            ### Not tested logic for this conditional yet - I think I need a separate variable for DNA and protein - done
             if [[ $phyloProgramPROT == *'fasttree'* ]]; then
                 # For fasttree (only, so far), need to convert $collapseNodes percent value to a fraction and use that in nw_ed. 
-                collapseNodes=`echo $collapseNodes | awk 'fractn=$1/100 {print fractn}' `
-                echo "\$CollapseNodes should now be a fraction for FASTTREE (option -L): $collapseNodes"
-
-            #    # Also convert $numbrLowSupportNodesThreshold to a fraction for FASTTREE for use in getTreeStats function:
-            #    numbrLowSupportNodesThreshold=`echo $numbrLowSupportNodesThreshold | awk 'fractn=$1/100 {print fractn}' `
-            # echo "\$numbrLowSupportNodesThreshold should now be a fraction for FASTTREE (internal value): $numbrLowSupportNodesThreshold"
-            fi 
+                collapseNodesD=`echo $collapseNodes | awk 'fractn=$1/100 {print fractn}' `
+                echo "\$CollapseNodes should now be a fraction for FASTTREE (option -L): $collapseNodesD"
+            else
+                # Also require to assign the original $collapseNodes value to $collapseNodesD whether or not it is altered above
+                # so that the original value is used for protein and/or codon clauses (if different programs have been used)
+                collapseNodesD=$collapseNodes
+            fi
 
             # Remove clades with low bootstrap values from the protein trees:
-            nw_ed  $proteinAstralInfile "i & (b < $collapseNodes)" o > ${fileNamePrefix}.${seqType}.gene_trees_set.collapse${collapseNodes}.nwk
+            nw_ed  $proteinAstralInfile "i & (b < $collapseNodesD)" o > ${fileNamePrefix}.${seqType}.gene_trees_set.collapse${collapseNodesD}.nwk
             cat $proteinGeneTreesSetFilenames \
-            | xargs ls | sed "s/.nwk$/.collapse${collapseNodes}.nwk/" > ${fileNamePrefix}.${seqType}.gene_trees_set_filenames.collapse${collapseNodes}.txt
+            | xargs ls | sed "s/.nwk$/.collapse${collapseNodesD}.nwk/" > ${fileNamePrefix}.${seqType}.gene_trees_set_filenames.collapse${collapseNodesD}.txt
              cat $proteinGeneTreesSetFilenames | \
             while read file; do
                 filePrefix=`basename -s .nwk $file `
-                cat $file | nw_ed  /dev/fd/0  "i & (b < $collapseNodes)" o > ${filePrefix}.collapse${collapseNodes}.nwk 
+                cat $file | nw_ed  /dev/fd/0  "i & (b < $collapseNodesD)" o > ${filePrefix}.collapse${collapseNodesD}.nwk 
             done
-            proteinAstralInfile=${fileNamePrefix}.${seqType}.gene_trees_set.collapse${collapseNodes}.nwk
-            proteinGeneTreesSetFilenames=${fileNamePrefix}.${seqType}.gene_trees_set_filenames.collapse${collapseNodes}.txt
+            proteinAstralInfile=${fileNamePrefix}.${seqType}.gene_trees_set.collapse${collapseNodesD}.nwk
+            proteinGeneTreesSetFilenames=${fileNamePrefix}.${seqType}.gene_trees_set_filenames.collapse${collapseNodesD}.txt
         fi
         # else
         #     ### NB - 15.10.2020 - need to set these new variables for the rest of the code if collapse nodes is not set!!!
@@ -434,7 +525,18 @@ if [[ "$astralSelected" == 'yes' || "$astralmpSelected" == 'yes' || "$astralproS
         #         numbrLowSupportNodesThresholdD=`echo $numbrLowSupportNodesThreshold | awk 'fractn=$1/100 {print fractn}' `
         #         echo "\$numbrLowSupportNodesThreshold should now be a fraction for FASTTREE (internal value): $numbrLowSupportNodesThreshold"
         #     fi
-        ### Does this need a codon clause here as well???? Yes and better still, convert to a function for use with DNA, protein and codon trees         
+
+        ### NB - 5.6.2024 - now using a subfunction to process codon data here - should convert the above two clauses for DNA and protein to use this subfunction
+        if [[ $codonSelected == 'yes' ]]; then
+            seqType=codon
+            phyloProgramToUse=phyloProgramDNA
+            # Function parameters: seqtype path     file name
+            collapseGeneTreeNodes $seqType codonAln $codonAstralInFile $codonGeneTreesSetFilenames
+            # Assigning the file name PATHS to variables for use below.
+            # NB - collapseNodesD variable is set in collapseGeneTreeNodes function!
+            codonAstralInFile=codonAln/${fileNamePrefix}.${seqType}.gene_trees_set.collapse${collapseNodesD}.nwk  # The (filtered) set of 'collapsed' Newick trees now required for ASTRAL
+            dnaGeneTreesSetFilenames=codonAln/${fileNamePrefix}.${seqType}.gene_trees_set_filenames.collapse${collapseNodesD}.txt  # list of filenames for preparing the tarball
+        fi
     fi
     echo
     echo
@@ -446,7 +548,7 @@ if [[ "$astralSelected" == 'yes' || "$astralmpSelected" == 'yes' || "$astralproS
     if [[ $dnaSelected == 'yes' ]]; then
         if [[ "$astralSelected" == 'yes' ]]; then
             # Function parameters: residue_type, input_file, outfile_prefix, program, program-specifIC paramters
-### SHOULD REALLY TRY TO CONVERT PROGRAM PARAMTERS TO A GENERIC STRIGN FOR USE WITH ANY PRGORAM  
+            ### NB - Should really try to convert program parameters to a generic string for use with any program
             makeSpeciesTree dna $dnaAstralInFile '.' astral 'GTR+G' 'DNA' '-nt -gtr'    # 30.4.2022 - Can these last params be removed? - misleading
             # Add tree tip info.
             # NB - for this option, the $treeTipInfoMapFile must have been submitted BUT I'm re-formatting it --> 'tree_tip_info_mapfile.txt'!):
@@ -492,7 +594,31 @@ if [[ "$astralSelected" == 'yes' || "$astralmpSelected" == 'yes' || "$astralproS
         fi
         ### Astral-Pro can go here
     fi
-    ### 7.5.2022 - shoudln't there be a codon step here?????
+    if [[ $codonSelected == 'yes' ]]; then
+        if [[ "$astralSelected" == 'yes' ]]; then
+            # Function parameters: residue_type, input_file, outfile_prefix, program, program-specifIC parameters 
+            makeSpeciesTree codon $codonAstralInFile '.' astral 'GTR+G' 'DNA' '-nt -gtr'    # 30.4.2022 - Can these last params be removed? - misleading
+            # Add tree tip info.
+            # NB - for this option, the $treeTipInfoMapFile must have been submitted BUT I'm re-formatting it --> 'tree_tip_info_mapfile.txt'!):
+### 28.5.2024 - Start a general Newick annotation function: annotateNewickLabels()
+            if [ -s $treeTipInfoMapFile ]; then
+                nw_rename -l  ${fileNamePrefix}.codon.species_tree.astral_pp1_value.nwk \
+                tree_tip_info_mapfile.txt \
+                > ${fileNamePrefix}.codon.species_tree.astral_USE_THIS.nwk
+            fi
+            getTreeStats ${fileNamePrefix}.codon.species_tree.astral_pp1_value.nwk $numbrLowSupportNodesThreshold astral
+        elif [[ "$astralmpSelected" == 'yes' ]]; then 
+            makeSpeciesTree codon $codonAstralInFile '.' astralmp 'GTR+G' 'DNA' '-nt -gtr'
+            # Add tree tip info.
+            if [ -s $treeTipInfoMapFile ]; then
+                nw_rename -l  ${fileNamePrefix}.codon.species_tree.astralmp_pp1_value.nwk \
+                tree_tip_info_mapfile.txt \
+                > ${fileNamePrefix}.codon.species_tree.astralmp_USE_THIS.nwk
+            fi
+            getTreeStats ${fileNamePrefix}.codon.species_tree.astralmp_pp1_value.nwk $numbrLowSupportNodesThreshold astral
+        fi
+        ### Astral-Pro can go here
+    fi
 fi # End of Astral step
 
 
@@ -513,7 +639,7 @@ if [[ $dnaSelected == 'yes' ]]; then
         # once ARG_MAX is reached)
         tar -czf ${dnaGeneTreesSetFilenames}.tar.gz `cat $dnaGeneTreesSetFilenames`
     fi
-    # Also creating a zipped tarball for the original unaligned gene-wise fasta files.
+    # Also creating a zipped tarball for the ORIGINAL unaligned gene-wise fasta files.
     if ls ../*dna.fasta >/dev/null 2>&1; then
         tar -czf ${fileNamePrefix}.dna.fasta.tar.gz ../*dna.fasta
     fi
@@ -529,7 +655,20 @@ if [[ $proteinSelected == 'yes' ]]; then
         tar -czf ${fileNamePrefix}.protein.fasta.tar.gz ../*protein.fasta
     fi
 fi
-#### NEED TO ADD CODON CONDITIONAL AS WELL HERE
+if [[ $codonSelected == 'yes' ]]; then
+    if ls codonAln/*codon.aln.for_tree.fasta >/dev/null 2>&1; then
+        tar -czf ${fileNamePrefix}.codon.aln.for_tree.fasta.tar.gz  codonAln/*codon.aln.for_tree.fasta
+    fi
+    if [[ -s $codonAstralInFile ]]; then
+        tar -czf ${codonGeneTreesSetFilenames}.tar.gz `cat codonAln/$codonGeneTreesSetFilenames`
+    fi
+    if ls ../*dna.fasta >/dev/null 2>&1; then
+        ### 5.6.2024 - Need to review whether this is the best file.
+        ### Probably the ORIGINAL frameshift-cured seqs are the ones to be presented. 
+        tar -czf ${fileNamePrefix}.dna.fasta.tar.gz ../*dna.fasta
+    fi
+    exit 0 ###  5.6.2024 - temporary exit for codon analysis so script doesn t try to do concatenated aln analysis yet!
+fi
 
 
 if [[ "$fasttreeSelected" == 'yes' || "$raxmlSelected" == 'yes' ]]; then
@@ -581,7 +720,6 @@ if [[ "$fasttreeSelected" == 'yes' || "$raxmlSelected" == 'yes' ]]; then
     ### IF filtewrSeqs1 IS ON
     ###     use filterSeqs() function here
     ### NB TRIMMING SHOUDL ALREADY HAVE BEEN DONE
-
 
 
     if [[ "$fasttreeSelected" == 'yes' ]]; then
