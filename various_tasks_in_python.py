@@ -67,7 +67,7 @@ def detect_stops(infile, outfilePrefix):
 	fh = open(outfile, "w")
 	outfile1 = outfilePrefix + '.ovr1_STOP.fasta'
 	fh1 = open(outfile1, "w")
-	outfile2 = outfilePrefix + '.log'
+	outfile2 = outfilePrefix + '.stats.log'
 	fh2 = open(outfile2, "w")
 
 
