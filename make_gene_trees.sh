@@ -210,9 +210,10 @@ if [[ $maxColOcc -gt $3 ]]; then
 		if [[ $proteinSelected == 'yes' && $dnaSelected == 'yes' ]]; then
 			echo Also preparing the filtered dna aln...
 			seqtk subseq -l $alnLength \
-			${gene}.dna.aln.fasta \
+			$dnaAlnToUse \
 			${gene}_${2}_aln_ovr${fractnAlnCovrg_pc}pc_aln_covrg.txt \
 			> ${gene}.dna.aln.after_filter1.fasta
+			### 2.9.2024 - changed from ${gene}.dna.aln.fasta to use $dnaAlnToUse because the DNA aln can also be in an EMMA folder
 
 			### if aligning the high occupancy columns do above for DNA and protein here - add them to a new directory
 			### if protein and DNA only, need to add above with a condtional for high occ. columns
