@@ -206,8 +206,8 @@ if [[ $maxColOcc -gt $3 ]]; then
 		# Extra steps here to do if DNA and/or codon is also selected.
 		# Prepare protein and codon alns using result of the filtering on the protein aln using this list: 
 		# ${gene}_${2}_aln_ovr${fractnAlnCovrg_pc}pc_aln_covrg.txt
-		echo "proteinSelected == 'yes' && dnaSelected == 'yes'": $proteinSelected $dnaSelected
-		if [[ $proteinSelected == 'yes' && $dnaSelected == 'yes' ]]; then
+		echo "proteinSelected / dnaSelected: $proteinSelected / $dnaSelected"
+		if [[ ( $proteinSelected == 'yes' || $codonSelected == 'yes')  && $dnaSelected == 'yes' ]]; then
 			echo Also preparing the filtered dna aln...
 			seqtk subseq -l $alnLength \
 			$dnaAlnToUse \
