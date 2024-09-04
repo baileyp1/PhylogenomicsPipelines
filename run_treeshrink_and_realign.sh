@@ -98,6 +98,7 @@ runTreeShrink() {
     # Function: prepares files (DNA or protein), runs TreeShrink and 
     #           set up gene-wise files for running make_species_trees_pipeline.sh 
     # $1 = $seqType
+    # $2 = folder to *_${1}_gene_tree_USE_THIS.nwk files (dna and protein == '.', codon == codonAln) [ added 4.9.2024]
     # $2 = $phyloProgramMethod  - not using now
     # All global variables are also available so no need to bring them in as such - keep confirming...
     ###########
@@ -109,16 +110,18 @@ runTreeShrink() {
     # Current aln name: *.${1}.aln.for_tree.fasta
     # Current tree name: *_${1}_gene_tree_USE_THIS.nwk
     if [[ ! -d treeshrink_${1}_gene_trees ]]; then mkdir treeshrink_${1}_gene_trees; fi
-    for file in  ../*_${1}_gene_tree_USE_THIS.nwk; do
-        # Also need to remove the relative path at the front!
-        gene=`echo $file | sed "s/_${1}_gene_tree_USE_THIS.nwk//" | sed "s/^\.\.\///" `
+    for file in  ../${2}/*_${1}_gene_tree_USE_THIS.nwk; do
+        # Also need to remove the relative path at the front here (and also loop futher down):
+        ###gene=`echo $file | sed "s/_${1}_gene_tree_USE_THIS.nwk//" | sed "s/^\.\.\///" `
+        ### 4.9.2024 - including relative path to files that is common to all residue types (codon is in it's own folder)
+        gene=`basename $file | sed "s/_${1}_gene_tree_USE_THIS.nwk//" `
         # echo "gene: $gene"
 
         if [[ ! -d treeshrink_${1}_gene_trees/$gene  ]]; then mkdir treeshrink_${1}_gene_trees/$gene ; fi
 
         # Copy files into the gene directory - need to give them a name common to all the gene tree and aln files:
         cp -p $file  treeshrink_${1}_gene_trees/$gene/${1}_gene_tree_USE_THIS.nwk
-        cp ../${gene}.${1}.aln.for_tree.fasta  treeshrink_${1}_gene_trees/$gene/${1}_gene_tree_aln.fasta 
+        cp ../${2}/${gene}.${1}.aln.for_tree.fasta  treeshrink_${1}_gene_trees/$gene/${1}_gene_tree_aln.fasta 
     done
 
     bParameter=20                                                                                                              # --force only in versions 1.3.5+
@@ -177,9 +180,10 @@ Number of samples removed from any gene tree: $numbrSeqsRemoved " > ${fileNamePr
     # (This approach is now necessary after TreeShrink with protein because we need to start again from DNA but the above code
     # has removed gaps from a protein aln - no good! Could go looking for the DNA aln but 'dna' might not have been seelected.)
     ### NBNB - this means that there is no point in using Treeshrink -a flag, but could just leave as is.
-    for file in  ../*_${1}_gene_tree_USE_THIS.nwk; do
-        gene=`echo $file | sed "s/_${1}_gene_tree_USE_THIS.nwk//" | sed "s/^\.\.\///" `
-        # Get the leaf labels from the TreeShrunk Newick file (could also use the equivalent aln file) then extract from the unaligned starting DNA file:
+    for file in  ../${2}/*_${1}_gene_tree_USE_THIS.nwk; do
+        ###gene=`echo $file | sed "s/_${1}_gene_tree_USE_THIS.nwk//" | sed "s/^\.\.\///" `
+        gene=`basename $file | sed "s/_${1}_gene_tree_USE_THIS.nwk//" `
+        # Get the leaf labels from the TreeShrunk Newick file (could also use the equivalent aln file) then extract from the unaligned starting DNA file (${gene}_dna.fasta):
         ### NB - 21.10.2020 - just realised I have this wrong - need to use the TS output to get the retained labels:
         ### nw_labels -I $file > ${gene}_${1}_tree_leaf_labels.txt
         nw_labels -I treeshrink_${1}_gene_trees/$gene/${1}_gene_tree_treeshrink.nwk > ${gene}_${1}_tree_leaf_labels.txt
@@ -335,9 +339,8 @@ if [[ $treeshrink == 'yes' ]]; then
         cd after_treeshrink_USE_THIS_$seqType
         pwd
         # Function only knows about one alignment filename (the one after all filtering/trimming, if any)
-### There is an issue with codon alns - need to move into the codonAln dir - just need to inlcude 
-### filoe path varible like I've done in makeGeneTree function
-        runTreeShrink $seqType
+        # Parameters: seqType "Newick files folder"
+        runTreeShrink $seqType '.' 
         phyloProgramsToUse="-q $phyloProgramDNA"
         reAlignSeqs "$seqType" "$phyloProgramsToUse" "after_treeshrink"
         cd ../  # Back to main dir to apply TreeShrink to protein seqs if required
@@ -348,7 +351,7 @@ if [[ $treeshrink == 'yes' ]]; then
         if [[ ! -d after_treeshrink_USE_THIS_$seqType ]]; then mkdir after_treeshrink_USE_THIS_$seqType; fi
         cd after_treeshrink_USE_THIS_$seqType
         pwd
-        runTreeShrink $seqType
+        runTreeShrink $seqType '.'
         phyloProgramsToUse="-r $phyloProgramPROT"
         reAlignSeqs "$seqType" "$phyloProgramsToUse" "after_treeshrink"
         cd ../  # Back to main dir to apply TreeShrink to codon seqs if required
@@ -360,7 +363,7 @@ if [[ $treeshrink == 'yes' ]]; then
         cd after_treeshrink_USE_THIS_$seqType
         pwd
 ### NB - see above for change to make for path to codn dir 
-        runTreeShrink $seqType
+        runTreeShrink $seqType 'codonAln'
         phyloProgramsToUse="-q $phyloProgramDNA"
         reAlignSeqs "$seqType" "$phyloProgramsToUse" "after_treeshrink"
         cd ../
