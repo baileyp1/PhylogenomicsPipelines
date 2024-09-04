@@ -1079,22 +1079,22 @@ if [[ $os == 'Darwin' && $speciesTreesOnly == 'no' ]]; then
 			seqType=protein
 			###alnFileSuffix=${seqType}.aln.for_tree.fasta		# before AMAS trim - consider to add this or just do stats at end of all filtering+trimming 
 			alnFileForTreeSuffix=${seqType}.aln.for_tree.fasta  # after AMAS trim
-      alnFilePath='.' 
+            alnFilePath='.' 
 			## Could add other filenames used in script (?) 
-    elif [[ $codonSelected == 'yes' ]]; then
-      seqType=codon
-      alnFileForTreeSuffix=${seqType}.aln.for_tree.fasta
-      alnFilePath='codonAln'  # Path variable required because codon aln outputs are in a separate folder!
+        elif [[ $codonSelected == 'yes' ]]; then
+            seqType=codon
+            alnFileForTreeSuffix=${seqType}.aln.for_tree.fasta
+            alnFilePath='codonAln'  # Path variable required because codon aln outputs are in a separate folder!
 		else
 			seqType=dna
 			alnFileForTreeSuffix=${seqType}.aln.for_tree.fasta
-      alnFilePath='.'
+            alnFilePath='.'
 		fi
 		### 6.10.2020 - NBNB - what about codon aln files - I assume they are required as well if used????????
-    ### 4.5.2024 - check logic to above clause
+        ### 4.5.2024 - check logic to above clause
 		echo seqType: $seqType
 		echo alnFileForTreeSuffix: $alnFileForTreeSuffix
-    echo numbrSamples: $numbrSamples
+        echo numbrSamples: $numbrSamples
 		$pathToScripts/assess_gene_alignments.sh \
 		$fractnAlnCovrg \
 		$fractnMaxColOcc \
@@ -1106,7 +1106,7 @@ if [[ $os == 'Darwin' && $speciesTreesOnly == 'no' ]]; then
 		$option_u \
 		$seqType \
 		$alnFileForTreeSuffix \
-    $alnFilePath \
+        $alnFilePath \
 		> assess_gene_alns.log 2>&1
 	fi
 
@@ -1254,13 +1254,16 @@ elif [[ $os == 'Linux' && $speciesTreesOnly == 'no' ]]; then
 				seqType=protein
 				###alnFileSuffix=${seqType}.aln.for_tree.fasta		# before AMAS trim - consider to add this or just do stats at end of all filtering+trimming 
 				alnFileForTreeSuffix=${seqType}.aln.for_tree.fasta  # after AMAS trim
+                alnFilePath='.'
 				### Could add other filenames used in script (?) 
 			elif [[ $codonSelected == 'yes' ]]; then
-        seqType=codon
-        alnFileForTreeSuffix=codonAln/${seqType}.aln.for_tree.fasta
-      else
+                seqType=codon
+                alnFileForTreeSuffix=codonAln/${seqType}.aln.for_tree.fasta
+                alnFilePath='codonAln'  # Path variable required because codon aln outputs are in a separate folder!
+            else
 				seqType=dna
 				alnFileForTreeSuffix=${seqType}.aln.for_tree.fasta
+                alnFilePath='.'
 			fi
 			echo seqType: $seqType
 			echo alnFileForTreeSuffix: $alnFileForTreeSuffix
@@ -1275,14 +1278,13 @@ elif [[ $os == 'Linux' && $speciesTreesOnly == 'no' ]]; then
 			$sampleTableFile \
 			$option_u \
 			$seqType \
-			$alnFileForTreeSuffix `
+			$alnFileForTreeSuffix \
+            $alnFilePath `
 
-    	echo jobInfo1: $jobInfo1
+            echo jobInfo1: $jobInfo1
 			jobId=`echo $jobInfo1 | cut -d ' ' -f 4 `
 			echo \$jobId: $jobId - from running assess_gene_alignments.sh
 		fi
- 
-
 		echo treeshrink: $treeshrink
 		echo filterSeqs1: $filterSeqs1
 		if [[ $treeshrink == 'yes' || $filterSeqs1 != 'no' ]]; then
@@ -1371,12 +1373,15 @@ elif [[ $os == 'Linux' && $speciesTreesOnly == 'no' ]]; then
 				###alnFileSuffix=${seqType}.aln.for_tree.fasta		# before AMAS trim - consider to add this or just do stats at end of all filtering+trimming 
 				alnFileForTreeSuffix=${seqType}.aln.for_tree.fasta  # after AMAS trim
 				## Could add other filenames used in script (?)
-      elif [[ $codonSelected == 'yes' ]]; then
-        seqType=codon
-        alnFileForTreeSuffix=codonAln/${seqType}.aln.for_tree.fasta 
+                alnFilePath='.'
+            elif [[ $codonSelected == 'yes' ]]; then
+                seqType=codon
+                alnFileForTreeSuffix=codonAln/${seqType}.aln.for_tree.fasta
+                alnFilePath='codonAln'  # Path variable required because codon aln outputs are in a separate folder!
 			else
 				seqType=dna
 				alnFileForTreeSuffix=${seqType}.aln.for_tree.fasta
+                alnFilePath='.' 
 			fi
 			echo seqType for assess script: $seqType
 			echo alnFileForTreeSuffix: $alnFileForTreeSuffix
@@ -1391,6 +1396,7 @@ elif [[ $os == 'Linux' && $speciesTreesOnly == 'no' ]]; then
 			$option_u \
 			$seqType \
 			$alnFileForTreeSuffix \
+            $alnFilePath \
 			> assess_gene_alns.log 2>&1
 		fi
 		echo treeshrink: $treeshrink
