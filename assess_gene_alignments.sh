@@ -236,22 +236,28 @@ done \
 ################################################################################################################################
 
 
-### UPTOHERE 8.5.2024
+### UPTOHERE 8.5.2024 -->6.9.2024
 ####alnFileForTreeSuffix == ${seqType}.aln.for_tree.fasta
 ### PrepareGeneAlnsToUse()
 ### I think this code can go into the species script
+### Thsi definitely needs putting into a function to create whichever mafft_*_alns_fasta_file_list.txt files
+### are required. At the moment, only DNA can be used as input into the reamining stats and for the raxml/fasttree trees
 
 
 for file in ${alnFilePath}/*.$alnFileForTreeSuffix; do
- 	gene=`echo $file | sed "s/.$alnFileForTreeSuffix//" `
+ 	#gene=`echo $file | sed "s/.$alnFileForTreeSuffix//" ` ### 6.9.2024 - added to remove the path
+ 	gene=$(echo $file | sed "s/\.$alnFileForTreeSuffix//" | sed "s/$alnFilePath\///")
  	numbrSamples=`cat $file | grep '>' | wc -l `;
     echo $gene " " $numbrSamples
 done \
 | awk -v alnFileForTreeSuffix=$alnFileForTreeSuffix -v numbrSamplesThreshold=$numbrSamplesThreshold -v fractnAlnCovrg_pc=${fractnAlnCovrg_pc}  '$2 >= numbrSamplesThreshold && $2 > 3 {print $1 "." alnFileForTreeSuffix}' \
 > mafft_dna_alns_fasta_file_list.txt
 
+### 6.9.2024 - creating these files is not a quick fix for codon seqs.
 # For protein file list:
 cat mafft_dna_alns_fasta_file_list.txt | sed 's/dna/protein/' > mafft_protein_alns_fasta_file_list.txt
+#### For codon file list:
+####cat mafft_dna_alns_fasta_file_list.txt | sed 's/dna/protein/' > mafft_protein_alns_fasta_file_list.txt
 
 
 # Count the number of samples in the gene trees being used and place a sorted list into a file:

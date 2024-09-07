@@ -714,12 +714,21 @@ if [[ "$fasttreeSelected" == 'yes' || "$raxmlSelected" == 'yes' ]]; then
         gzip -c protein.alns.concatenated.fasta \
         > ${fileNamePrefix}.protein.alns.concatenated.fasta.gz
     fi
-    #### NEED TO ADD CODON CONDITIONAL AS WELL HERE
+    ### 6.9.2024 - added codon but not tested; won't work until the assess script is sorted
+    if [[ $codonSelected == 'yes' ]]; then
+        AMAS.py concat  -c 1 \
+        -i `cat mafft_codon_alns_fasta_file_list.txt` \
+        --in-format  fasta \
+        -d dna \
+        --out-format fasta \
+        -t codon.alns.concatenated.fasta
+        # NB - also creates a partitions.txt file with coords for each gene - preparing for use with RAxML:
+        cat partitions.txt | awk -F '_' '{print "DNA, " $2}' > ${fileNamePrefix}.codon.alns.partitions.txt
 
-
-    ### IF filtewrSeqs1 IS ON
-    ###     use filterSeqs() function here
-    ### NB TRIMMING SHOUDL ALREADY HAVE BEEN DONE
+        # Compressing file for easier transfer of large alignments:
+        gzip -c codon.alns.concatenated.fasta \
+        > ${fileNamePrefix}.codon.alns.concatenated.fasta.gz
+    fi
 
 
     if [[ "$fasttreeSelected" == 'yes' ]]; then
