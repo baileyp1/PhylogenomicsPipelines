@@ -1258,7 +1258,7 @@ elif [[ $os == 'Linux' && $speciesTreesOnly == 'no' ]]; then
 				### Could add other filenames used in script (?) 
 			elif [[ $codonSelected == 'yes' ]]; then
                 seqType=codon
-                alnFileForTreeSuffix=codonAln/${seqType}.aln.for_tree.fasta
+                alnFileForTreeSuffix=${seqType}.aln.for_tree.fasta
                 alnFilePath='codonAln'  # Path variable required because codon aln outputs are in a separate folder!
             else
 				seqType=dna
@@ -1376,7 +1376,7 @@ elif [[ $os == 'Linux' && $speciesTreesOnly == 'no' ]]; then
                 alnFilePath='.'
             elif [[ $codonSelected == 'yes' ]]; then
                 seqType=codon
-                alnFileForTreeSuffix=codonAln/${seqType}.aln.for_tree.fasta
+                alnFileForTreeSuffix=${seqType}.aln.for_tree.fasta
                 alnFilePath='codonAln'  # Path variable required because codon aln outputs are in a separate folder!
 			else
 				seqType=dna
