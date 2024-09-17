@@ -768,10 +768,11 @@ if [[ "$fasttreeSelected" == 'yes' || "$raxmlSelected" == 'yes' ]]; then
             # else USE existing command below - or use the phyloProgramSwitch variable above and just have ONE call to makeSpeciesTrees()
             ### NB - need to check that the chosen program is installed here
             ### For turning on partitioning or not:     [ also add to protein cmd ]     
-            ### if [[ $speciesTreeProgram == *'raxmlq'* ]];then
-            ###    makeSpeciesTree dna dna.alns.concatenated.fasta '.' raxmlq $RAxML_ModelOfEvolution 'not_required_here' 'not_required_here'
-            ### else
-            makeSpeciesTree dna dna.alns.concatenated.fasta '.' raxml $RAxML_ModelOfEvolution 'not_required_here' 'not_required_here'
+            if [[ $speciesTreeProgram == *'raxmlq'* ]]; then     # NB - 17.9.2024 - added back clause but not tested
+                makeSpeciesTree dna dna.alns.concatenated.fasta '.' raxmlq $RAxML_ModelOfEvolution 'not_required_here' 'not_required_here'
+            else
+                makeSpeciesTree dna dna.alns.concatenated.fasta '.' raxml $RAxML_ModelOfEvolution 'not_required_here' 'not_required_here'
+            fi
             # Add tree tip info:
             if [[ -s $treeTipInfoMapFile ]]; then 
                 nw_rename -l  RAxML_bipartitions.${fileNamePrefix}.dna.raxmlHPC-PTHREADS-SSE \
@@ -785,7 +786,11 @@ if [[ "$fasttreeSelected" == 'yes' || "$raxmlSelected" == 'yes' ]]; then
             if [[ $totalNumbrSamples -lt 200 ]]; then    # 21.4.2020 - set to 200, only really need speed up with larger trees 
                 RAxML_ModelOfEvolution=PROTGAMMAJTT
             fi
-            makeSpeciesTree protein protein.alns.concatenated.fasta '.' raxml $RAxML_ModelOfEvolution 'not_required_here' 'not_required_here'
+            if [[ $speciesTreeProgram == *'raxmlq'* ]];then
+                makeSpeciesTree protein protein.alns.concatenated.fasta '.' raxmlq $RAxML_ModelOfEvolution 'not_required_here' 'not_required_here'
+            else
+                makeSpeciesTree protein protein.alns.concatenated.fasta '.' raxml $RAxML_ModelOfEvolution 'not_required_here' 'not_required_here'
+            fi
             # Add tree tip info:
             if [[ -s $treeTipInfoMapFile ]]; then 
                 nw_rename -l   RAxML_bipartitions.${fileNamePrefix}.protein.raxmlHPC-PTHREADS-SSE \
