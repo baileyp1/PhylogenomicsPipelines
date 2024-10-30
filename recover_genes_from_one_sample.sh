@@ -517,8 +517,8 @@ elif [[ $hybSeqProgram == 'hybpiper'* ]]; then
 				fi
 			fi
 			echo "INFO: starting the pipeline from this given step: "`echo $startFromOption | awk -F '-' '{print $3}' `
-			# Unzip the HybPiper folder if it exists:
-			if [[ -s ${sampleId}.tar.gz && `hybpiper --version | tail -n 1` != 'hybpiper 2.3.0' ]]; then # NB - same will apply to future versions
+			# Unzip the HybPiper folder if it exists, except not in the case of HybPiper >= 2.3.0:
+			if [[ -s ${sampleId}.tar.gz && `hybpiper --version | tail -n 1` == 'hybpiper 2.3.0' ]]; then # NB - same will apply to future versions
 				echo "INFO: Main HybPiper folder exists as a compressed file which HybPiper will unzip and use"
 			elif [[ -s ${sampleId}.tar.gz ]]; then
 				tar -xpf ${sampleId}.tar.gz
