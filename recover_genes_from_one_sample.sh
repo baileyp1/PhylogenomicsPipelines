@@ -518,7 +518,7 @@ elif [[ $hybSeqProgram == 'hybpiper'* ]]; then
 			fi
 			echo "INFO: starting the pipeline from this given step: "`echo $startFromOption | awk -F '-' '{print $3}' `
 			# Unzip the HybPiper folder if it exists:
-			if [[ -s ${sampleId}.tar.gz ]]; then 
+			if [[ -s ${sampleId}.tar.gz && `hybpiper --version | tail -n 1` != 'hybpiper 2.3.0' ]]; then # NB - same will apply to future versions
 				tar -xpf ${sampleId}.tar.gz
 			elif [[ ! -d $sampleId || $hybSeqProgram != *'-start_from-map_reads' ]]; then
 				echo "INFO: Main HybPiper folder does not exist so can't start HybPiper from a later step as requested: $hybSeqProgram "
