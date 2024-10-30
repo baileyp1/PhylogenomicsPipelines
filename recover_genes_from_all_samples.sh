@@ -69,7 +69,7 @@ OPTIONS <value>:
                  sensitivity options shown in square brackets. To start HybPiper2 (only) after the first main step, add the following text at the end 
                  of the option value: -start_from-[distribute_reads|assemble_reads|[exonerate(for HybPiper < v2.3.0)|extract(for HybPiper >= v2.3.0)]_contigs] 
                  e.g. hybpiper2-diamond-mid-sensitive-start_from-exonerate_contigs
-                 Note: HybPiper versions 1.3 and 2.1.6 are the only versions tested with this recovery pipeline so far
+                 Note: HybPiper versions tested with this recovery pipeline: 1.3, 2.1.6, 2.2.0, 2.3.0
   -S    
                  calculate statistics for gene recovery from read data mapped to all recovered genes per sample (includes per sample reads on-target, read
                  coverage, read depth). This option can also be used separately after the gene recoveries have run (do not specify option -y!) but the path
