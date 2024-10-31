@@ -518,8 +518,9 @@ elif [[ $hybSeqProgram == 'hybpiper'* ]]; then
 			fi
 			echo "INFO: starting the pipeline from this given step: "`echo $startFromOption | awk -F '-' '{print $3}' `
 			# Unzip the HybPiper folder if it exists, except not in the case of HybPiper >= 2.3.0:
-			if [[ -s ${sampleId}.tar.gz && `hybpiper --version | tail -n 1` == 'hybpiper 2.3.0' ]]; then # NB - same will apply to future versions
-				echo "INFO: Main HybPiper folder exists as a compressed file which HybPiper will unzip and use"
+			version=`hybpiper --version | tail -n 1 | grep 'hybpiper [234]\.[3456789]\.[0123456789]' ` # Trying to future proof this step.
+			if [[ -s ${sampleId}.tar.gz && -n $version ]]; then
+				echo "INFO: Main HybPiper folder exists as a compressed file which HybPiper versions >= 2.3.0 will unzip and use"
 			elif [[ -s ${sampleId}.tar.gz ]]; then
 				tar -xpf ${sampleId}.tar.gz
 			elif [[ ! -d $sampleId || $hybSeqProgram != *'-start_from-map_reads' ]]; then
@@ -528,12 +529,12 @@ elif [[ $hybSeqProgram == 'hybpiper'* ]]; then
 			fi
 		fi
 
-		forceOverwrite=''
-		if [[ `hybpiper --version | tail -n 1` == 'hybpiper 2.2.0' ]]; then
-			forceOverwrite='--force_overwrite'  
+		forceOverwrite=''	# --force_overwrite option appears from version 2.2.0 onwards
+		version=`hybpiper --version | tail -n 1 | grep 'hybpiper [234]\.[23456789]\.[0123456789]' ` # Trying to future proof this adjustment!
+		if [[ -n $version ]]; then
+			forceOverwrite='--force_overwrite'
 		fi 
 
-		###$exePrefix hybpiper assemble  --cpu $cpu $mapReadsProgram  $startFromOption \
 		$exePrefix hybpiper assemble  --cpu $cpu $mapReadsProgram  $startFromOption \
 		$forceOverwrite \
 		$targetFileFlag $targetsFile \
@@ -544,7 +545,7 @@ elif [[ $hybSeqProgram == 'hybpiper'* ]]; then
 		> ${sampleId}_hybpiper_assemble.log 2>&1
 		# NB - if a DNA targets file is supplied without specifying the --bwa option, the targets will be translated and the blastx  option will proceed.
 		#      Also found that when using --targetfile_aa flag with a DNA targets file (no --bwa flag), the targets gets translated
-		# --force_overwrite		a new option from version 2.2.0 
+		# --force_overwrite		a new option from version 2.2.0 onwards
 
 		if [[ -s ${sampleId}/genes_with_seqs.txt ]]; then
 
