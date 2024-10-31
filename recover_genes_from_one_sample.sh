@@ -524,7 +524,7 @@ elif [[ $hybSeqProgram == 'hybpiper'* ]]; then
 			elif [[ -s ${sampleId}.tar.gz ]]; then
 				tar -xpf ${sampleId}.tar.gz
 			elif [[ ! -d $sampleId || $hybSeqProgram != *'-start_from-map_reads' ]]; then
-				echo "INFO: Main HybPiper folder does not exist so can't start HybPiper from a later step as requested: $hybSeqProgram "ß
+				echo "INFO: Main HybPiper folder does not exist so can't start HybPiper from a later step as requested: $hybSeqProgram "
 				exit
 			fi
 		fi
