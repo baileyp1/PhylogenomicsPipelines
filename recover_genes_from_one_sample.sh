@@ -520,11 +520,13 @@ elif [[ $hybSeqProgram == 'hybpiper'* ]]; then
 			# Unzip the HybPiper folder if it exists, except not in the case of HybPiper >= 2.3.0:
 			version=`hybpiper --version | tail -n 1 | grep 'hybpiper [234]\.[3456789]\.[0123456789]' ` # Trying to future proof this step.
 			if [[ -s ${sampleId}.tar.gz && -n $version ]]; then
-				echo "INFO: Main HybPiper folder exists as a compressed file which HybPiper versions >= 2.3.0 will unzip and use"
+				echo "INFO: main HybPiper folder exists as a compressed file which HybPiper versions >= 2.3.0 will unzip and use"
 			elif [[ -s ${sampleId}.tar.gz ]]; then
 				tar -xpf ${sampleId}.tar.gz
+			elif [[ -d $sampleId ]]; then
+				echo "WARNING: main HybPiper folder alredy exists as an uncompressed folder which HybPiper will use. NB - this shouldn't really happen!"
 			elif [[ ! -d $sampleId || $hybSeqProgram != *'-start_from-map_reads' ]]; then
-				echo "INFO: Main HybPiper folder does not exist so can't start HybPiper from a later step as requested: $hybSeqProgram "
+				echo "INFO: main HybPiper folder does not exist so can't start HybPiper from a later step as requested: $hybSeqProgram "
 				exit
 			fi
 		fi
