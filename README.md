@@ -37,7 +37,7 @@ export ASTRALMPLIB=-Djava.library.path=<path_to_executable>/ASTRAL-MP/Astral/lib
 
 For gene recovery (if known, specific version requirements are shown in brackets; in bold if used in tests):
 * [Trimmomatic](http://www.usadellab.org/cms/?page=trimmomatic)
-* [Paftools](https://github.com/RBGKew/pypaftol), [HybPiper](https://github.com/mossmatters/HybPiper) (version 1.3.1 plus patch for issue [41](https://github.com/mossmatters/HybPiper/issues/41)) or [HybPiper2](https://github.com/mossmatters/HybPiper) (only version 2.1.6 and 2.2.0 have been tested)
+* [Paftools](https://github.com/RBGKew/pypaftol), [HybPiper](https://github.com/mossmatters/HybPiper) (version 1.3.1 plus patch for issue [41](https://github.com/mossmatters/HybPiper/issues/41)) or [HybPiper2](https://github.com/mossmatters/HybPiper) (for versions tested, see the command line help))
 * If using HybPiper 1.3, Perl
 * If using HybPiper 1.3, [seqtk](https://github.com/lh3/seqtk) (version 1.3)
 * If using option -S:
