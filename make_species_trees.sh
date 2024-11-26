@@ -643,6 +643,9 @@ if [[ $dnaSelected == 'yes' ]]; then
     if ls ../*dna.fasta >/dev/null 2>&1; then
         tar -czf ${fileNamePrefix}.dna.fasta.tar.gz ../*dna.fasta
     fi
+
+    ### 26.11.2024 - should also prepare the per sample dna fasta files as well
+
 fi
 if [[ $proteinSelected == 'yes' ]]; then
     if ls *protein.aln.for_tree.fasta >/dev/null 2>&1; then
