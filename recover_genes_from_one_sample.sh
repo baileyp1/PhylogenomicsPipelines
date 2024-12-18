@@ -829,6 +829,10 @@ sumLengthOfGenes: $sumLengthOfGenes" > ${sampleId}_gene_recovery_stats.txt  # Al
 	####################################
 	# General stats on the BWA alignment
 	####################################
+
+	### 12.11.2024 - need to be clear here what these stats are based on, with read duplicates or without - almost certain it is after removing dups but check!
+	### I think I removed them so as not to inflate the read depth stats
+
 	# Count the number of reads in the bam file just after mapping but before removing read duplicates:
 	numbrTrimmedReadsInBamInclDups=`samtools view -c $bamFileWithDups `
 	echo numbrTrimmedReadsInBamInclDups: $numbrTrimmedReadsInBamInclDups  >> ${sampleId}_gene_recovery_stats.txt
