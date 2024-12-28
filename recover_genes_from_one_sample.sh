@@ -62,10 +62,10 @@ if [[ $usePaftolDb == 'no' ]]; then
 		#          For 4 cpu, up to 24 mins; up to 12 GB mem.    - Total # samples to date: ~2500 - would take 14h using 176 cpu (1 node) 
 		#          For 2 cpu, up to 1h50', up to 10 GB mem (tested 40 samples)
 		#          Conclusion: the above stats seems to suggest that running this step separately might be the most efficient
-		###pathToTrimmomatic=`which trimmomatic-0.39.jar `		# NB - 'which' requires the file to be executable!
-		###$exePrefix  java -jar $pathToTrimmomatic PE \		# 12.2.2021 - Changed the way java programs are called to using a global variable
 		if [ -z "$R2FastqFile" ]; then
-			$exePrefix java -jar $TRIMMOMATIC SE \
+			### 13.10.2022 - time command doesn't exist after OS updates on the KewHPC nodes.
+			### Dec 2024 - now the same thing has happened on Gruffalo after an OS upgrade so will remove $exePrefix: $exePrefix java -jar $TRIMMOMATIC SE \
+			java -jar $TRIMMOMATIC SE \
 			-threads $cpu \
 			-trimlog ${sampleId}_R1_trimmomatic.log \
 			$paftolDataSymlinksDir/$R1FastqFile \
@@ -77,7 +77,7 @@ if [[ $usePaftolDb == 'no' ]]; then
 			MINLEN:40 > ${sampleId}_trimmomatic.log 2>&1
 		else
 			###$exePrefix java -jar $TRIMMOMATIC PE \
-			$exePrefix java -jar $TRIMMOMATIC PE \
+			java -jar $TRIMMOMATIC PE \
 			-threads $cpu \
 			-trimlog ${sampleId}_R1_R2_trimmomatic.log \
 			$paftolDataSymlinksDir/$R1FastqFile \
@@ -170,8 +170,9 @@ if [ $hybSeqProgram == 'paftools' ]; then
 		#      The Trimmomatic program name needs to be 
 		export PYTHONPATH=$HOME/lib/python 			# I had to add this for the cluster ONLY - need to. Check it is OK on Macbook, it should be.
 		if [ -z "$R2FastqFile" ]; then
-			### 13.10.2022 - temporary fix - time command doesn't exist after OS updates on the KewHPC nodes: $exePrefix paftools recoverSeqs - OK now so have put back
-			$exePrefix paftools recoverSeqs \
+			### 13.10.2022 - time command doesn't exist after OS updates on the KewHPC nodes.
+			### Dec 2024 - now the same thing has happened on Gruffalo after an OS upgrade so will remove $exePrefix: $exePrefix paftools recoverSeqs
+			paftools recoverSeqs \
 			$targetsFile \
 			${sampleId}.fasta \
 			-f $unzippedR1FastqFile \
@@ -192,8 +193,8 @@ if [ $hybSeqProgram == 'paftools' ]; then
 			$usePaftolDbFlag $recoveryRun \
 			> ${sampleId}_overlapSerial.log 2>&1
 		else
-			### 13.10.2022 - temporary fix - time command doesn't exist after OS updates on the KewHPC nodes: $exePrefix  paftools recoverSeqs - OK now so have put back
-			$exePrefix paftools recoverSeqs \
+			###$exePrefix paftools recoverSeqs
+			paftools recoverSeqs \
 			$targetsFile \
 			${sampleId}.fasta \
 			-f $unzippedR1FastqFile \
@@ -247,7 +248,9 @@ if [ $hybSeqProgram == 'paftools' ]; then
 		#srun -J ${sampleId}_overlapRecover -n 1  -o ${sampleId}_overlapRecover.log  -e ${sampleId}_overlapRecover.log_err \	- issue with srun
 		export PYTHONPATH=$HOME/lib/python 			# I had to add this for the cluster ONLY - need to. check it is OK on Macbook, it should be.
 		if [ -z "$R2FastqFile" ]; then
-			$exePrefix paftools recoverSeqs \
+			### 13.10.2022 - time command doesn't exist after OS updates on the KewHPC nodes.
+			### Dec 2024 - now the same thing has happened on Gruffalo after an OS upgrade so will remove $exePrefix: $exePrefix paftools recoverSeqs \
+			paftools recoverSeqs \
 			$targetsFile \
 			${sampleId}.fasta \
 			-f ${sampleId}_R1_trimmomatic.fastq \
@@ -263,7 +266,8 @@ if [ $hybSeqProgram == 'paftools' ]; then
 			$usePaftolDbFlag \
 			> ${sampleId}_overlapSerial.log 2>&1
 		else
-			$exePrefix paftools recoverSeqs \
+			###$exePrefix paftools recoverSeqs \
+			paftools recoverSeqs \
 			$targetsFile \
 			${sampleId}.fasta \
 			-f ${sampleId}_R1_trimmomatic.fastq \
@@ -361,7 +365,9 @@ elif [[ $hybSeqProgram == 'hybpiper'* ]]; then
 	if [[ $hybSeqProgram == 'hybpiper' ]];then 
 		
 		echo Using HybPiper version 1.3 ...
-		$exePrefix reads_first.py --cpu $cpu $mapReadsProgram \
+		### 13.10.2022 - time command doesn't exist after OS updates on the KewHPC nodes.
+		### Dec 2024 - now the same thing has happened on Gruffalo after an OS upgrade so will remove $exePrefix: $exePrefix reads_first.py --cpu $cpu $mapReadsProgram \
+		reads_first.py --cpu $cpu $mapReadsProgram \
 		-b $targetsFile \
 		-r ${sampleId}_R*_trimmomatic.fastq  \
 		--cov_cutoff 4 \
@@ -383,7 +389,7 @@ elif [[ $hybSeqProgram == 'hybpiper'* ]]; then
 				| awk -v gene=$geneName '{if($1 ~ /^>/) {print $1 "-" gene} else {print $0}}'
 			done > ${sampleId}_all_genes.fasta
 
-			$exePrefix intronerate.py --prefix ${sampleId} --addN > ${sampleId}_intronerate.log 2>&1
+			intronerate.py --prefix ${sampleId} --addN > ${sampleId}_intronerate.log 2>&1
 			# Outputs e.g.:
 			# geneId_supercontig.fasta; fasta header line: >sampleId-geneID
 			# geneId_introns.fasta; fasta header line: >sampleId-geneID
@@ -537,7 +543,9 @@ elif [[ $hybSeqProgram == 'hybpiper'* ]]; then
 			forceOverwrite='--force_overwrite'
 		fi 
 
-		$exePrefix hybpiper assemble  --cpu $cpu $mapReadsProgram  $startFromOption \
+		### 13.10.2022 - time command doesn't exist after OS updates on the KewHPC nodes.
+		### Dec 2024 - now the same thing has happened on Gruffalo after an OS upgrade so will remove $exePrefix: $exePrefix hybpiper assemble  --cpu $cpu $mapReadsProgram  $startFromOption \
+		hybpiper assemble  --cpu $cpu $mapReadsProgram  $startFromOption \
 		$forceOverwrite \
 		$targetFileFlag $targetsFile \
 		-r ${sampleId}_R*_trimmomatic.fastq \
@@ -579,6 +587,10 @@ elif [[ $hybSeqProgram == 'hybpiper'* ]]; then
 	 				cat $file \
 	 				| awk -v gene=$geneName '{if($1 ~ /^>/) {print $1 "-" gene} else {print $0}}'
 				done > ${sampleId}_paralogs_no_chimeras.fasta
+				# Creating a tarball for the HybPiper2 paralogs_no_chimeras folder:
+				tar -cf paralogs_no_chimeras.tar  paralogs_no_chimeras
+				gzip -f paralogs_no_chimeras.tar
+				rm -fR paralogs_no_chimeras
 			fi
 			# Create sample file for the paralogs_all:
 			for file in paralogs_all/*_paralogs_all.fasta; do
@@ -586,6 +598,11 @@ elif [[ $hybSeqProgram == 'hybpiper'* ]]; then
 	 			cat $file \
 	 			| awk -v gene=$geneName '{if($1 ~ /^>/) {print $1 "-" gene} else {print $0}}'
 			done > ${sampleId}_paralogs_all.fasta
+			# Creating a tarball for the HybPiper2 paralogs folder:     
+			if [[ -d paralogs_all ]]; then
+			tar -cf paralogs_all.tar paralogs_all
+			gzip -f paralogs_all.tar
+			rm -fR paralogs_all
 		fi
 	else
 		echo "WARNING: If option -y was used, the HybPiper program was not recognised. The options are hybpiper[-bwa], hybpiper2[-bwa] or hybpiper2-diamond"
@@ -1042,6 +1059,19 @@ sumLengthOfGenes: $sumLengthOfGenes" > ${sampleId}_gene_recovery_stats.txt  # Al
 	if [[ -s ${sampleId}_bwa_mem_with_dups_sort_merged.bam ]]; then rm ${sampleId}_bwa_mem_with_dups_sort_merged.bam; fi
 	if [[ -s ${sampleId}_bwa_mem_with_dups_unpaired_reads_sort_merged_resort.bam ]]; then rm ${sampleId}_bwa_mem_with_dups_unpaired_reads_sort_merged_resort.bam; fi
 	if [[ -s ${sampleId}_bwa_mem_with_dups_unpaired_reads_sort_merged_resort.bam.bai ]]; then rm ${sampleId}_bwa_mem_with_dups_unpaired_reads_sort_merged_resort.bam.bai; fi
+	# Now also removing even the smaller files to reduce the number of files being stored:
+	if [[ -s ${sampleId}_FNA.fasta ]]; then rm ${sampleId}_FNA.fasta; fi
+	if [[ -s ${sampleId}_FNA.fasta.sa ]]; then rm ${sampleId}_FNA.fasta.sa; fi
+	if [[ -s ${sampleId}_FNA.fasta.pac ]]; then rm ${sampleId}_FNA.fasta.pac; fi
+	if [[ -s ${sampleId}_FNA.fasta.bwt ]]; then rm ${sampleId}_FNA.fasta.bwt; fi
+	if [[ -s ${sampleId}_FNA.fasta.ann ]]; then rm ${sampleId}_FNA.fasta.ann; fi
+	if [[ -s ${sampleId}_FNA.fasta.amb ]]; then rm ${sampleId}_FNA.fasta.amb; fi
+	if [[ -s ${sampleId}_bwa_mem_sort_markdup_metrics ]]; then rm ${sampleId}_bwa_mem_sort_markdup_metrics; fi
+	if [[ -s ${sampleId}.bed ]]; then rm ${sampleId}_FNA.fasta; fi
+	if [[ -s ${sampleId}_bwa_mem_sort_st_covrg.txt ]]; then rm ${sampleId}_FNA.fasta; fi
+	if [[ -s ${sampleId}_bwa_mem_sort_st_covrg_-m.txt ]]; then rm ${sampleId}_FNA.fasta; fi
+	if [[ -s ${sampleId}_bwa_mem_sort_st_depth.txt ]]; then rm ${sampleId}_FNA.fasta; fi
+	if [[ -s ${sampleId}_bwa_mem_with_dups_sort_st_depth.txt ]]; then rm ${sampleId}_FNA.fasta; fi
 fi
 #####cd ../ # Back up to parent dir for next sample - 20.4.2020 - has no effect here now and not required anymore because looping through samples is done outside this script 
 echo 
