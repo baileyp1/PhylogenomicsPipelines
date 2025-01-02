@@ -598,8 +598,7 @@ elif [[ $hybSeqProgram == 'hybpiper'* ]]; then
 	 			cat $file \
 	 			| awk -v gene=$geneName '{if($1 ~ /^>/) {print $1 "-" gene} else {print $0}}'
 			done > ${sampleId}_paralogs_all.fasta
-			# Creating a tarball for the HybPiper2 paralogs folder:     
-			if [[ -d paralogs_all ]]; then
+			# Creating a tarball for the HybPiper2 paralogs folder:
 			tar -cf paralogs_all.tar paralogs_all
 			gzip -f paralogs_all.tar
 			rm -fR paralogs_all
@@ -1067,11 +1066,11 @@ sumLengthOfGenes: $sumLengthOfGenes" > ${sampleId}_gene_recovery_stats.txt  # Al
 	if [[ -s ${sampleId}_FNA.fasta.ann ]]; then rm ${sampleId}_FNA.fasta.ann; fi
 	if [[ -s ${sampleId}_FNA.fasta.amb ]]; then rm ${sampleId}_FNA.fasta.amb; fi
 	if [[ -s ${sampleId}_bwa_mem_sort_markdup_metrics ]]; then rm ${sampleId}_bwa_mem_sort_markdup_metrics; fi
-	if [[ -s ${sampleId}.bed ]]; then rm ${sampleId}_FNA.fasta; fi
-	if [[ -s ${sampleId}_bwa_mem_sort_st_covrg.txt ]]; then rm ${sampleId}_FNA.fasta; fi
-	if [[ -s ${sampleId}_bwa_mem_sort_st_covrg_-m.txt ]]; then rm ${sampleId}_FNA.fasta; fi
-	if [[ -s ${sampleId}_bwa_mem_sort_st_depth.txt ]]; then rm ${sampleId}_FNA.fasta; fi
-	if [[ -s ${sampleId}_bwa_mem_with_dups_sort_st_depth.txt ]]; then rm ${sampleId}_FNA.fasta; fi
+	if [[ -s ${sampleId}.bed ]]; then rm ${sampleId}.bed ; fi
+	if [[ -s ${sampleId}_bwa_mem_sort_st_covrg.txt ]]; then rm ${sampleId}_bwa_mem_sort_st_covrg.txt; fi
+	if [[ -s ${sampleId}_bwa_mem_sort_st_covrg_-m.txt ]]; then rm ${sampleId}_bwa_mem_sort_st_covrg_-m.txt; fi
+	if [[ -s ${sampleId}_bwa_mem_sort_st_depth.txt ]]; then rm ${sampleId}_bwa_mem_sort_st_depth.txt; fi
+	if [[ -s ${sampleId}_bwa_mem_with_dups_sort_st_depth.txt ]]; then rm ${sampleId}_bwa_mem_with_dups_sort_st_depth.txt; fi
 fi
 #####cd ../ # Back up to parent dir for next sample - 20.4.2020 - has no effect here now and not required anymore because looping through samples is done outside this script 
 echo 
