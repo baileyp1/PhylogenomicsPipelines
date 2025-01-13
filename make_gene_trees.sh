@@ -1059,7 +1059,7 @@ if [[ $dnaSelected == 'yes' ]]; then
     elif [[ "$alnProgram" == 'emma' ]]; then
     	echo
    		echo Creating a DNA alignment with EMMA...
-   		$exePrefix python3 $EMMA -t $cpuGeneTree \
+   		$exePrefix python $EMMA -t $cpuGeneTree \
    		-i $dnaFastaFileForAln -d ${gene}.dna.emma \
    		--molecule dna \
    		--legacy \
@@ -1177,7 +1177,7 @@ if [[ $proteinSelected == 'yes' || $codonSelected == 'yes' ]]; then
 	elif [[ "$alnProgram" == 'emma' ]]; then
     	echo
    		echo Creating a protein alignment with EMMA...
-   		$exePrefix python3 $EMMA -t $cpuGeneTree \
+   		$exePrefix python $EMMA -t $cpuGeneTree \
    		-i ${gene}.protein.fasta  -d ${gene}.protein.emma \
    		--molecule amino \
    		--legacy \
