@@ -5,7 +5,7 @@
 
 # Author: Paul Bailey
 
-# Copyright © 2020 The Board of Trustees of the Royal Botanic Gardens, Kew
+# Copyright © 2025 The Board of Trustees of the Royal Botanic Gardens, Kew
 ##################################
 set -e
 set -u
@@ -42,8 +42,25 @@ cd ${samplePrefix}_$sampleId
 echo sampleId: $sampleId
 echo externalSequenceID: $externalSequenceID
 
+if [[ -s  $paftolDataSymlinksDir/$R1FastqFile ]]; then 
+	ls $paftolDataSymlinksDir/$R1FastqFile
+else
+	### 10.2.2025 - maybe can assess here whether SRA files need downloading!!!!!
+	### echo "WARNING: R1 fastq.gz file does not exist, will try to download from ENA SRA."
+    ### echo "Note: this will only work if the option -s csv file contains the fastq file names in these formats
+    ### <accession_number>_[12].fastq.gz (pair end reads) or <accession_number>.fastq.gz (single end reads)"
+	### 10.2.2025 - maybe can assess here whether SRA files need downloading!!!!!
+###various_tasks_in_bash.sh wget_sra_download SRR14570809 > wget_SRA_download.log 2>&1 &
+	### UPTOHERE 12.2.2025
+	### Now I think I can just ommit the log files - see tye test logs and check here that stdout and stderr will still be reported
+	### Make sure the R1 file is removed, as normal
+	### Make a note to maybe so the upload immendiately after the recovery e.g. for SRA data then I can use the unzipped file in the db upload.
+	### if fastq file is not found need to exit this script cleanly - maybe the set commands will work here?
+	### OR just test R1 file exists again here and exit if not
+	### 20.2.2025 - also, retry if fastq files fail to download after e.g. 10mins
+fi
 
-if [[ -s  $paftolDataSymlinksDir/$R1FastqFile ]]; then ls $paftolDataSymlinksDir/$R1FastqFile; fi
+
 if [ -z "$R2FastqFile" ]; then 
 	echo "No R2FastqFile - read trimming and gene recovery will work in single-end mode"
 else
@@ -56,8 +73,9 @@ pwd
 if [[ $usePaftolDb == 'no' ]]; then
 	###	if [[ $hybSeqProgram != *'-start_from-'* || $hybSeqProgram == *'-start_from-map_reads' ]]; then
 	### Can't skip this step when using the --start_from option - fastq files still need to be presented to HybPiper option -r
+	### Of course, I could investigate whether HybPiper2 could be re-run without using these flags - trimming the files doesn't takevery long though. 
   			                                        #--nodelist=kppgenomics01.ad.kew.org  # mem normally set to 80000
-		#  sbatch -J ${samplePrefix}_${sampleId}_fastqToGenes -p main -t 1-0:00 -c $cpu --mem=80000 -o ${samplePrefix}_${sampleId}_fastqToGenes.log   -e ${samplePrefix}_${sampleId}_fastqToGenes.log_err   --wrap "
+		# sbatch -J ${samplePrefix}_${sampleId}_fastqToGenes -p main -t 1-0:00 -c $cpu --mem=80000 -o ${samplePrefix}_${sampleId}_fastqToGenes.log   -e ${samplePrefix}_${sampleId}_fastqToGenes.log_err   --wrap "
 		# RUNTIME: For 8 cpu, up to 2 mins; up to 18 GB mem (for 10 samples)
 		#          For 4 cpu, up to 24 mins; up to 12 GB mem.    - Total # samples to date: ~2500 - would take 14h using 176 cpu (1 node) 
 		#          For 2 cpu, up to 1h50', up to 10 GB mem (tested 40 samples)
@@ -512,14 +530,18 @@ elif [[ $hybSeqProgram == 'hybpiper'* ]]; then
 		echo "Using HybPiper version 2 ..."
 
 		startFromOption=''
+		reexonrtOptionLog=''	# string for the log file
 		if [[ $hybSeqProgram == *'-start_from-'* ]]; then
 			if [[ $hybSeqProgram == 'hybpiper2-start_from-'* ]]; then
 				startFromOption='--start_from '`echo $hybSeqProgram | awk -F '-' '{print $3}' `
+				reexonrtOptionLog='_reexnrt'
 			elif [[ $hybSeqProgram == 'hybpiper2-diamond-'* ]]; then
 				if [[ $hybSeqProgram == 'hybpiper2-diamond-sensitive'* ]]; then # Slight adjustment for e.g. hybpiper2-diamond-sensitive-start_from-exonerate_contigs 
 					startFromOption='--start_from '`echo $hybSeqProgram | awk -F '-' '{print $5}' `
+					reexonrtOptionLog='_reexnrt'
 				else
 					startFromOption='--start_from '`echo $hybSeqProgram | awk -F '-' '{print $6}' `
+					reexonrtOptionLog='_reexnrt'
 				fi
 			fi
 			echo "INFO: starting the pipeline from this given step: "`echo $startFromOption | awk -F '-' '{print $3}' `
@@ -552,7 +574,7 @@ elif [[ $hybSeqProgram == 'hybpiper'* ]]; then
 		--cov_cutoff 4 \
 		--prefix ${sampleId} \
 		$unpairedFastqFile \
-		> ${sampleId}_hybpiper_assemble.log 2>&1
+		> ${sampleId}_hybpiper_assemble${reexonrtOptionLog}.log 2>&1
 		# NB - if a DNA targets file is supplied without specifying the --bwa option, the targets will be translated and the blastx  option will proceed.
 		#      Also found that when using --targetfile_aa flag with a DNA targets file (no --bwa flag), the targets gets translated
 		# --force_overwrite		a new option from version 2.2.0 onwards
@@ -625,7 +647,8 @@ elif [[ $hybSeqProgram == 'hybpiper'* ]]; then
 		# Remove the large fastq files:
 		if [[ -s ${sampleId}_R1_trimmomatic.fastq ]]; then rm ${sampleId}_R1_trimmomatic.fastq; fi
 		if [[ -s ${sampleId}_R1_trimmomatic_unpaired.fastq.gz ]]; then rm ${sampleId}_R1_trimmomatic_unpaired.fastq.gz; fi
-		if [[ -s ${sampleId}_R2_trimmomatic.fastq ]]; then rm ${sampleId}_R2_trimmomatic.fastq ${sampleId}_R2_trimmomatic_unpaired.fastq.gz; fi
+		if [[ -s ${sampleId}_R2_trimmomatic.fastq ]]; then rm ${sampleId}_R2_trimmomatic.fastq; fi 
+		if [[ -s ${sampleId}_R2_trimmomatic_unpaired.fastq.gz ]]; then rm ${sampleId}_R2_trimmomatic_unpaired.fastq.gz; fi
 		if [[ -s ${sampleId}_R1_R2_trimmomatic.log ]];then rm ${sampleId}_R1_R2_trimmomatic.log; fi
 		if [[ -s ${sampleId}_R1_trimmomatic.log ]]; then rm ${sampleId}_R1_trimmomatic.log; fi
 		# NB - not deleting this file here in case it is used in the future for the recovery stats: ${sampleId}_R1_R2_trimmomatic_unpaired.fastq
@@ -746,7 +769,7 @@ if [[ $stats != 'no' ]]; then
 	echo "sampleId: $sampleId
 numbrRecoveredGenes: $numbrRecoveredGenes
 sumLengthOfGenesWithNs: $sumLengthOfGenesWithNs
-sumLengthOfGenes: $sumLengthOfGenes" > ${sampleId}_gene_recovery_stats.txt  # Also wipes out file contents from any previous run
+sumLengthOfGenes: $sumLengthOfGenes" > ${sampleId}_gene_recovery_stats${reexonrtOptionLog}.txt  # Also wipes out file contents from any previous run
 
 	# Count number of all ambiguity codes:
 	###numbrAmbiguityCodesInGenes=`cat $refFileName | grep -v '>' | grep -o '[RYMKSWHBDN]' | wc -l `
@@ -757,10 +780,25 @@ sumLengthOfGenes: $sumLengthOfGenes" > ${sampleId}_gene_recovery_stats.txt  # Al
 	numbrRawReads=''
 	if [[ -n "$R2FastqFile" ]]; then
 		numbrRawReads=`cat ../${sampleId}_trimmomatic.log | grep 'Input Read Pairs:' | awk '{print $4 *2}' ` 
-		echo numbrRawReads: $numbrRawReads >> ${sampleId}_gene_recovery_stats.txt
+		echo numbrRawReads: $numbrRawReads >> ${sampleId}_gene_recovery_stats${reexonrtOptionLog}.txt
 	else
 		numbrRawReads=`cat ../${sampleId}_trimmomatic.log | grep 'Input Reads:' | awk '{print $3}' ` 
-		echo numbrRawReads: $numbrRawReads >> ${sampleId}_gene_recovery_stats.txt
+		echo numbrRawReads: $numbrRawReads >> ${sampleId}_gene_recovery_stats${reexonrtOptionLog}.txt
+	fi
+
+	# If HybPiper2 command is set to re-exonerate the assembled contigs, skip the stats that require reads
+	# as they take a longer time than the reexonerating. Redoing the basic stats to a new log file is worthwhile
+	# so that they match the final stats (which may be the the paftol db).  
+	if [[ -n $startFromOption ]]; then
+		# Remove the large fastq files from any gene recovery method:
+		if [[ -s ../${sampleId}_R1_trimmomatic.fastq ]]; then rm ../${sampleId}_R1_trimmomatic.fastq; fi
+		if [[ -s ../${sampleId}_R1_trimmomatic_unpaired.fastq.gz ]]; then rm ../${sampleId}_R1_trimmomatic_unpaired.fastq.gz; fi
+		if [[ -s ../${sampleId}_R2_trimmomatic.fastq ]]; then rm ../${sampleId}_R2_trimmomatic.fastq; fi
+		if [[ -s ../${sampleId}_R2_trimmomatic_unpaired.fastq.gz ]]; then rm ../${sampleId}_R2_trimmomatic_unpaired.fastq.gz; fi	
+		if [[ -s ../${sampleId}_R1_R2_trimmomatic.log ]];then rm ../${sampleId}_R1_R2_trimmomatic.log; fi
+		if [[ -s ../${sampleId}_R1_trimmomatic.log ]]; then rm ../${sampleId}_R1_trimmomatic.log; fi
+		if [[ -s ../${sampleId}_R1_R2_trimmomatic_unpaired.fastq ]]; then rm ../${sampleId}_R1_R2_trimmomatic_unpaired.fastq; fi
+		exit 
 	fi
 
 

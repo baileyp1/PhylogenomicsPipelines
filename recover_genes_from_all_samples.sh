@@ -42,7 +42,7 @@ function usage  {
 
 cat << EOF
 
-Copyright © 2024 The Board of Trustees of the Royal Botanic Gardens, Kew
+Copyright © 2025 The Board of Trustees of the Royal Botanic Gardens, Kew
 
 Program description: recovers genes from pair-end fastq files of multiple samples. Paftools or HybPiper can be used to align the reads to a set of
                      target genes, assemble the reads for each target gene and join the available exons together to produce the gene.
@@ -66,8 +66,9 @@ OPTIONS <value>:
   -y <string>    
                  Hyb-Seq program; options are: paftools, hybpiper, hybpiper-bwa, hybpiper2, hybpiper2-bwa,
                  hybpiper2-diamond-[mid-sensitive|sensitive|more-sensitive|very-sensitive|ultra-sensitive]. For hybpiper2-diamond, choose one of the 
-                 sensitivity options shown in square brackets. To start HybPiper2 (only) after the first main step, add the following text at the end 
-                 of the option value: -start_from-[distribute_reads|assemble_reads|[exonerate(for HybPiper < v2.3.0)|extract(for HybPiper >= v2.3.0)]_contigs] 
+                 sensitivity options shown in square brackets.
+                 To start HybPiper2 (only) after the first main step, run in the same original folder but add the following text at the end of the option value:
+                 -start_from-[distribute_reads|assemble_reads|[exonerate(for HybPiper < v2.3.0)|extract(for HybPiper >= v2.3.0)]_contigs] 
                  e.g. hybpiper2-diamond-mid-sensitive-start_from-exonerate_contigs
                  Note: HybPiper versions tested with this recovery pipeline: 1.3, 2.1.6, 2.2.0, 2.3.x
   -S    
