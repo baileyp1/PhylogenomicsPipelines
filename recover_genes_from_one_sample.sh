@@ -50,6 +50,7 @@ else
     ### echo "Note: this will only work if the option -s csv file contains the fastq file names in these formats
     ### <accession_number>_[12].fastq.gz (pair end reads) or <accession_number>.fastq.gz (single end reads)"
 	### 10.2.2025 - maybe can assess here whether SRA files need downloading!!!!!
+	echo "Setting up download of SRA samples here - work in progress..."
 ###various_tasks_in_bash.sh wget_sra_download SRR14570809 > wget_SRA_download.log 2>&1 &
 	### UPTOHERE 12.2.2025
 	### Now I think I can just ommit the log files - see tye test logs and check here that stdout and stderr will still be reported
