@@ -2,23 +2,38 @@
 
 ############################
 # various_tasks_in_python.py
-
-# Purpose: methods to perform various easy tasks in Python rather than in bash
-#
-# Usage: an internal pipeline script with a simple interface (no argparse)
-#        various_tasks_in_python.py <method_name> <option1 e.g. infile>  <option2 e.g. outfile_prefix>  <option3>  <option4> etc
 #
 # Author: Paul Bailey
 #
-# detect_stops
+# Copyright (c) 2025 The Board of Trustees of the Royal Botanic Gardens, Kew
+#
+# Purpose: code to perform various (routine) tasks with Python, with explanations for learning purposes.
+#		   Tasks fall within discrete methods - see the docstring of each method for more info 
+#
+# Usage: an internal pipeline script with a simple interface (no argparse)
+# 		 various_tasks_in_python.py <method_name> <option1 e.g. infile>  <option2 e.g. outfile_prefix>  <option3>  <option4> etc
+#
+# Procedure for adding a method:
+# 1. write a method decription here below
+# 2. Add extra sys.argv[] variables to an 'option*' variable', as required
+# 3. Write the method at the bottom of the methods section.
+#	 Import any modules within each method rather than outside
+# 4. Copy the method description within the docstring of method itself and elaborate
+#	 Make a note of the Python version required e.g. python 2, 3 etc
+# 4. Add a clause in the main code section for the method - see bottom of this file
+#
+#
+# detect_stops()
 #	Detects STOP codons in a protein aligment, removes sequences with > 1 STOP codon and create stats
 #
-# orderAlnByTreeOrder():
+# orderAlnByTreeOrder()
 #	Orders a sequence alignment by the order in a Newick tree file
+#
+#retrieve_targets_magic():
+#	An internal function for retrieve_targets() in various_tasks_in_bash.sh
 #
 # *** Next method here ***
 #
-# Copyright (c) 2024 The Board of Trustees of the Royal Botanic Gardens, Kew
 ############################
 from __future__ import print_function
 import sys
@@ -32,6 +47,10 @@ from Bio.Seq import Seq
 
 if len(sys.argv) == 1:
 	print("ERROR: specify one of more method to use")
+	print('List of popular functions available:')
+	print('1. detect_stops')
+	print('2. orderAlnByTreeOrder')
+	print('3. retrieve_targets_magic')
 	exit()
 if len(sys.argv) >= 2:
 	method = sys.argv[1]	# method name
@@ -52,6 +71,8 @@ if len(sys.argv) > 5:
 	option4 = sys.argv[5]
 
 
+
+# Methods section:
 def detect_stops(infile, outfilePrefix):
 	'''
 	Detects STOP codons in a protein aligment, removes sequences with > 1 STOP codon and create stats
@@ -138,6 +159,9 @@ def bioSeqIOLoop(infile):
 
 def orderAlnByTreeOrder(infile, infile1):
 	'''
+
+	***** 7.5.2025 - REMEMBER TO UPDATE A STABLE VERSION TO BIN FOLDER *****
+
 	Orders a sequence alignment by the order in a Newick tree file
 
 	Usage: various_tasks_in_python.py orderAlnByTreeOrder <alnfile> <Newick_file_ordered_tip_list>
@@ -168,17 +192,132 @@ def orderAlnByTreeOrder(infile, infile1):
 			print(fastaFileIndex[row].seq)
 
 
+def retrieve_targets_magic(sampleId, blast_output_file, fasta_file_for_blast_db, blastProgram):
+	'''
+
+	***** 7.5.2025 - REMEMBER TO UPDATE STABLE VERSION TO BIN FOLDER *****
+
+	Python3+
+	Purpose: Takes BLAST results of hits to the reference targets and organises the fasta header line 
+			 main id to refer to the reference gene and the sample id in HybPiper fasta format
+
+	An internal function for retrieve_targets() in various_tasks_in_bash.sh
+
+	Usage: various_tasks_in_python retrieve_targets_magic  <blast_output.tab>  <fasta_file_for_blast_db> 
+
+	Format of blast_output_file: qaccver saccver pident length mismatch gapopen qstart qend qlen sstart send slen evalue bitscore"
+	Example: BEFC-5406	JAMXDD010000010.1_cds_KAI6674735.1_2641	95.286	297	14	0	203	499	499	1	891	1005	0.0	592
+
+	Output file  of fasta records: <sampleId>.fasta
+	'''
+
+	# Modules required (for when I put them within each method):
+	#from Bio import SeqIO
+
+
+	# Index the  <fasta_file_for_blast_db> file:
+	fastaFileBlastDBDict = SeqIO.index(fasta_file_for_blast_db, "fasta")
+	#print(vars(fastaFileBlastDBDict))
+	#print(dir(fastaFileBlastDBDict))
+	#for key in fastaFileBlastDBDict:
+	#	print(fastaFileBlastDBDict[key])
+	#	print(fastaFileBlastDBDict[key].seq)  
+		#exit()
+	#print(fasta_file_for_blast_db['JAMXDD010000010.1_cds_KAI6672684.1_590'])  # use any record ID
+	# #print record_dict["JAMXDD010000005.1_cds_KAI6692379.1_20089"].id 
+	# #print record_dict["Q39056"].annotations['gene_name']
+	# #exit() 
+
+
+	# Main output file:
+	outfile=sampleId + '.fasta'
+	fh1 = open(outfile, "w")
+
+
+	geneHitDict = {}	# Stores the top matching gene coding or transcritome hit from the BLAST subject
+	with open(blast_output_file, "r") as fh:
+		for row in fh:
+			row = row.rstrip('\n')
+			# Split the tsv row, add geneName to key and row to a nested dict with gene coding seq/transcriptome id as key
+			rowArray = row.split('\t')
+			(refSpecies, refGeneName) = rowArray[0].split('-')
+			#print(refGeneName)
+			if refGeneName not in geneHitDict:
+				#print(refGeneName)
+				geneHitDict[refGeneName] = {}
+				# Indicate that gene coding/transcript sequence has been selected:
+				row = row + '\tselected'
+				geneHitDict[refGeneName][rowArray[1]] = row
+				#print(geneHitDict)
+				#print seq to the main outfile in new fasta header format: >geneName <reftarg> <original CDS/transcriptomeId pcid lenHSP qlen slen evalue
+				qlen = rowArray[8]
+				slen = rowArray[11]
+				if blastProgram == 'tblastn' or blastProgram == 'blastx':
+					# slen is in bases! Makes sense as the input is DNA
+					slen = round(int(rowArray[11]) / 3) # Dividing by 3 to fit the rest of the numbers (amino acids)
+
+
+				#print(refGeneName + " " + rowArray[1])	
+				#print(fastaFileBlastDBDict[rowArray[1]].id)
+				#print(fastaFileBlastDBDict[rowArray[1]].seq)
+				#print(fastaFileBlastDBDict[rowArray[1]].description)
+				#print('>' + refGeneName + " " + rowArray[0] + " " + rowArray[1] + "\n" + fastaFileBlastDBDict[rowArray[1]].seq + "\n")
+				lineToWrite = '>' + sampleId + "-" + refGeneName + " " + rowArray[0] + " " + rowArray[1] + " " \
++ 'pcid=' + rowArray[2] + ' lenHSP=' + rowArray[3] + ' qlen=' + rowArray[8] + ' slen=' + str(slen) + ' evalue=' + rowArray[12] + "\n" + fastaFileBlastDBDict[rowArray[1]].seq + "\n"
+				#Writing to file using an F string (much easier syntax!)
+
+				fh1.write(str(lineToWrite))
+
+				# Now store the gene coding seq/transcriptome hit in a separate hash for testing
+				# whether the same id appears 
+			  
+			else:
+
+				### 8.5.2025 - if collecting start end coord of top hit, can do that here I think
+
+				# Now add all the remaining subject hits for the same gene (but different ref target))
+				### This is not an essential step but would store the different hits for comparison.
+				### Instead have improved the sort step in the bash script so probably don't need to know about these.
+				if rowArray[1] not in geneHitDict[refGeneName]:
+					geneHitDict[refGeneName][rowArray[1]] = {}
+					geneHitDict[refGeneName][rowArray[1]] = row
+				else:
+					geneHitDict[refGeneName][rowArray[1]] = row
+					### This is still incorrect - I need to append rows to an array that have the same subj hit.
+					### As it is, the last subj overwriting any previous hit, including the selected one!!!
+					### Actually, also onlt need to store the top row hit for each subj hit come across
+					### These could be paralogs which we might want.
+					###		A more thorough extension of this is to assess the top 10 hits but I happily I think
+					###		the code would stay the same.
+	####close(fh1)
+
+    # Loop through the geneHitDict which is now filled with selected and failed hits:
+	#for geneName in geneHitDict:
+		#print(geneName) 	# just testing whether geneHitDict is an ordered dict - yes it is! I think all dicts are now ordered above a certain python version (3.6+?)
+
+		
+		#if len(geneHitDict[geneName]) > 0:
+			#print(geneHitDict[geneName])
+    		###	print assosicated stats to a file for each selected hit
+    		### THEN: If geneHitDict[geneName] contains more than 2 entries, print to a warnings file with the output stats 
+
+
+
 # Main code:
 if method == 'detect_stops':
 	detect_stops(option1, option2)
 
-elif method == 'orderTableByTreeTips':
-	orderTableByTreeTips(option1, option2)
-
 elif method == 'orderAlnByTreeOrder':
 	orderAlnByTreeOrder(option1, option2)
 
+elif method == 'retrieve_targets_magic':
+	retrieve_targets_magic(option1, option2, option3, option4)
+
 else:
 	print('ERROR: you need to specify an existing Python method to use!')
+	print('List of popular functions available:')
+	print('1. detect_stops')
+	print('2. orderAlnByTreeOrder')
+	print('3. retrieve_targets_magic')
 
 
