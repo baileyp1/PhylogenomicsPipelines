@@ -7,7 +7,7 @@
 #
 # Copyright (c) 2025 The Board of Trustees of the Royal Botanic Gardens, Kew
 #
-# Purpose: code to perform various (routine) tasks with Python, with explanations for learning purposes.
+# Purpose: code to perform various (routine) tasks with Python (with explanations for learning purposes).
 #		   Tasks fall within discrete methods - see the docstring of each method for more info 
 #
 # Usage: an internal pipeline script with a simple interface (no argparse)
