@@ -513,7 +513,7 @@ retrieve_targets()	{
 	> ${sampleId}.fasta.Ns_removed_temp
 	sumLengthOfGenes=`fastalength ${sampleId}.fasta.Ns_removed_temp | awk '{sum+=$1} END {print sum}' `
 	rm ${sampleId}.fasta.Ns_removed_temp
-	sumLengthHSPs=`cat ${sampleId}.fasta | grep '>' | awk '{print $5}' | sed 's/lenHSP=//' | awk '{sum+=$1} END {print sum}' `
+	sumLengthOfHSPs=`cat ${sampleId}.fasta | grep '>' | awk '{print $5}' | sed 's/lenHSP=//' | awk '{sum+=$1} END {print sum}' `
 	avPcIdAcrossTopHSP=`cat ${sampleId}.fasta | grep '>' | awk '{print $4}' | sed 's/pcid=//' | awk '{sum+=$1} END {if(sum > 0) {print sum/NR} else {print "0"}}' `
 	minPcIdAcrossTopHSP=`cat ${sampleId}.fasta | grep '>' | awk '{print $4}' | sed 's/pcid=//' | sort -n | head -n 1 `
 	maxPcIdAcrossTopHSP=`cat ${sampleId}.fasta | grep '>' | awk '{print $4}' | sed 's/pcid=//' | sort -n | tail -n 1 `
@@ -531,7 +531,7 @@ echo "sampleId: $sampleId
 numbrRecoveredGenes: $numbrRecoveredGenes
 sumLengthOfGenesWithNs: $sumLengthOfGenesWithNs
 sumLengthOfGenes: $sumLengthOfGenes
-sumLengthHSPs: $sumLengthHSPs
+sumLengthOfHSPs: $sumLengthOfHSPs
 avPcIdAcrossTopHSP: $avPcIdAcrossTopHSP
 minPcIdAcrossTopHSP (min % allowed, 55%): $minPcIdAcrossTopHSP
 maxPcIdAcrossTopHSP: $maxPcIdAcrossTopHSP
