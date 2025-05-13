@@ -340,6 +340,11 @@ retrieve_targets()	{
 #
 #
 ### UPTOHERE 13.5.2025 - things to do
+
+###Still have an error but can get SP0164 working with this version.
+### Just need to remove blast step, then take out the lines near the stats line and see what works  
+
+
 ### Now check with Slurm on Gruffalo (Measure how much RAM is used)
 	#####--exclude=node005,node010,node012,node002,node009,node007
 ### Also Test: ($hybSeqProgram != 'no' || $retrieveTargets != 'no') - line 240 in wrpper --> now check it's Ok for option -y
@@ -542,8 +547,7 @@ maxPcHSPCovrgToQueryLen (might be > 100% if gaps present): $maxPcHSPCovrgToQuery
 avPcQueryCovrgToSubjectLen: $avPcQueryCovrgToSubjectLen" > ${sampleId}_stats.txt
 
 echo "$sampleId $numbrRecoveredGenes $sumLengthOfGenesWithNs $sumLengthOfGenes $avPcIdAcrossTopHSP $minPcIdAcrossTopHSP $maxPcIdAcrossTopHSP \
-$avPcHSPCovrgToQueryLen $medianPcHSPCovrgToQueryLen $minPcHSPCovrgToQueryLen $maxPcHSPCovrgToQueryLen $avPcQueryCovrgToSubjectLen \
-" > ${sampleId}_stats_by_row.txt
+$avPcHSPCovrgToQueryLen $medianPcHSPCovrgToQueryLen $minPcHSPCovrgToQueryLen $maxPcHSPCovrgToQueryLen $avPcQueryCovrgToSubjectLen" > ${sampleId}_stats_by_row.txt
 
 
 	# Remove the files no longer required:
@@ -551,7 +555,6 @@ $avPcHSPCovrgToQueryLen $medianPcHSPCovrgToQueryLen $minPcHSPCovrgToQueryLen $ma
 	###GCA_024733475.1_tblastn.tab
 	###GCA_024733475.1_queries.pep
 	### geneSeqsToSearch ???
-
 }
 #################
 
