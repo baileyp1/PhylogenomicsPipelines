@@ -340,29 +340,24 @@ retrieve_targets()	{
 #
 #
 ### UPTOHERE 13.5.2025 - things to do
-### Add stats sumHSPlength - done - now check
-
-
 ### Now check with Slurm on Gruffalo (Measure how much RAM is used)
+	#####--exclude=node005,node010,node012,node002,node009,node007
 ### Also Test: ($hybSeqProgram != 'no' || $retrieveTargets != 'no') - line 240 in wrpper --> now check it's Ok for option -y
 ### Also there was an error on line ~592 w.r.t. --start-from-- - 
+### Add stats sumHSPlength - done - now check
 
 ###	Also - Note to extract the busco genes and create an R plot of the pcIds - FIRST make a file with values ready for a histogram. (single column?)
 
-
 ### Added sort -4gr - make a note of this functionality in Linux notes
 
-### Now test with the Arabidopsis genome
-### 	Work out whether the fasta file is gz or not and unzip -f as required - test with gthe Arabidospis genome  - copy other AG's over to Macbook and test in a loop
-### 		Also test with the annotated genomes - and compare with existing data
-###				Prepare test data sets for PP repo
-###				Once up to here report to Berta
-### 		Also test with Angio353_v2 interim and mega353
-### 		Repeat and complete stats +/- filtering, blast vs tblastn and with paftools and Captus
+###	Prepare test data sets for PP repo
+###	Once up to here report to Berta
+### Also test with Angio353_v2 interim and mega353
+### Repeat and complete stats +/- filtering, blast vs tblastn and with paftools and Captus
 
-### Remove the files no longer required - consider to put stats per line into the log file
-### Also print out the table header as well and convert to csv format
-
+### Remove the files no longer required consider to put stats per line into the log file
+### Also print out the by-row table header in csv format and put it in the log file
+### ALSO, still need to check the fasta file header  - see lines ~438-441
 
 
 ### Next week Tue 13th May onwards / Future tasks for later:
@@ -415,23 +410,22 @@ retrieve_targets()	{
 	# the database files in the original location:
 	cp $2 .
 	geneSeqsToSearch=`basename $2`
-	echo Gene sequences to search: $geneSeqsToSearch
+	echo File of gene sequences to search: $geneSeqsToSearch
 	echo
 
-
-	# Check that the fasta file is zipped or not and decompress as required:
-	###if [[ $geneSeqsToSearch == *'.gz' ]]; then
-		#### basename here and add filename to below 
-		#### FIRST check whether makeblastdb can accept a gz file - surelt it can?
-	#	gunzip -cf $geneSeqsToSearch > fasta_file_of_gene_sequences_to_search>
-	# fi
-	
+	# Check that the fasta file is zipped or not and decompress as required.
+	# makeblastdb requires unzipped files.
+	if [[ $geneSeqsToSearch == *'.gz' ]]; then
+		geneSeqsToSearch=`basename -s .gz $2`
+		gunzip -cf ${geneSeqsToSearch}.gz > $geneSeqsToSearch
+	fi
 
 
 	### NB - FIRST will need to examine the fasta header line to make sure that BLAST can use it:
 	#1. pipe clean - just replace with an underscore
 	#2. check fasta id has less than 50 chars for the main id!!! - see sygenium notes - exit if so with error
 	#3. check all seqs have fasta records in them - what did I mean here
+
 
 	echo "Making the BLAST db index of the gene sequences to search..."
 	makeblastdb \
@@ -519,7 +513,7 @@ retrieve_targets()	{
 	> ${sampleId}.fasta.Ns_removed_temp
 	sumLengthOfGenes=`fastalength ${sampleId}.fasta.Ns_removed_temp | awk '{sum+=$1} END {print sum}' `
 	rm ${sampleId}.fasta.Ns_removed_temp
-	sumLengthHSPs=`cat ${sampleId}.fasta | grep '>' | awk '{print $5}' | sed 's/lenHSP=//' | awk '{sum+=$1} END {if(sum > 0) {print sum/NR} else {print "0"}}' `
+	sumLengthHSPs=`cat ${sampleId}.fasta | grep '>' | awk '{print $5}' | sed 's/lenHSP=//' | awk '{sum+=$1} END {print sum}' `
 	avPcIdAcrossTopHSP=`cat ${sampleId}.fasta | grep '>' | awk '{print $4}' | sed 's/pcid=//' | awk '{sum+=$1} END {if(sum > 0) {print sum/NR} else {print "0"}}' `
 	minPcIdAcrossTopHSP=`cat ${sampleId}.fasta | grep '>' | awk '{print $4}' | sed 's/pcid=//' | sort -n | head -n 1 `
 	maxPcIdAcrossTopHSP=`cat ${sampleId}.fasta | grep '>' | awk '{print $4}' | sed 's/pcid=//' | sort -n | tail -n 1 `
@@ -537,6 +531,7 @@ echo "sampleId: $sampleId
 numbrRecoveredGenes: $numbrRecoveredGenes
 sumLengthOfGenesWithNs: $sumLengthOfGenesWithNs
 sumLengthOfGenes: $sumLengthOfGenes
+sumLengthHSPs: $sumLengthHSPs
 avPcIdAcrossTopHSP: $avPcIdAcrossTopHSP
 minPcIdAcrossTopHSP (min % allowed, 55%): $minPcIdAcrossTopHSP
 maxPcIdAcrossTopHSP: $maxPcIdAcrossTopHSP
