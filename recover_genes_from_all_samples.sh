@@ -50,7 +50,7 @@ Program description: recovers genes from pair-end of single-end fastq files of m
                      If Slurm is available samples will be run in parallel
 
                      Using option -x, gene orthologs corresponding to a set of reference target genes can be retrieved from a set of gene coding sequences or 
-                     contigs of transcriptome assembly. A TBLASTN search is performed between both sets, the hits are filtered by evalue (0.0001), then by 
+                     contigs from a transcriptome assembly. A TBLASTN search is performed between both sets, the hits are filtered by evalue (0.0001), then by 
                      % id (55%), then by HSP length and the output fasta record id of each gene coding sequence or transcriptome assembly contig is reformed to
                      include the corresponding reference target gene name in 'HybPiper' format: >sampleId-geneId
 
