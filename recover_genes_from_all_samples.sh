@@ -19,6 +19,7 @@ shopt -s failglob
 
 # Variables for any command line flags needing a default value:
 hybSeqProgram=no            # Removed the default for now: paftools
+retrieveTargets=no
 targetsFile='no'
 adapterFasta='no'
 samplePrefix=Sample
@@ -44,9 +45,14 @@ cat << EOF
 
 Copyright © 2025 The Board of Trustees of the Royal Botanic Gardens, Kew
 
-Program description: recovers genes from pair-end fastq files of multiple samples. Paftools or HybPiper can be used to align the reads to a set of
-                     target genes, assemble the reads for each target gene and join the available exons together to produce the gene.
+Program description: recovers genes from pair-end of single-end fastq files of multiple samples. Paftools or HybPiper can be used to align the reads to a set of
+                     reference target genes, assemble the reads for each target gene and join the available exons together to produce the gene.
                      If Slurm is available samples will be run in parallel
+
+                     Using option -x, gene orthologs corresponding to a set of reference target genes can be retrieved from a set of gene coding sequences or 
+                     contigs of transcriptome assembly. A TBLASTN search is performed between both sets, the hits are filtered by evalue (0.0001), then by 
+                     % id (55%), then by HSP length and the output fasta record id of each gene coding sequence or transcriptome assembly contig is reformed to
+                     include the corresponding reference target gene name in 'HybPiper' format: >sampleId-geneId
 
 OPTIONS <value>:
   -h   
@@ -54,15 +60,15 @@ OPTIONS <value>:
   -v             
                  program version
   -s <csv file>  
-                 add sample name and fastq file names (assumed to be in compressed gzip format (suffix .gz)) via a csv table file (must have a header line);
+                 add sample name and fastq file names (assumed to be in compressed gzip format (suffix .gz); fasta format for option -x) via a csv table file (must have a header line);
                  format: SampleName,R1FastqName,R2FastqName (required option)
   -f <string>    
-                 FULL path to all sample fastq files; N.B. no filenames, just the full path to them, not a relative path and no wild cards! (required option)
+                 FULL path to all sample fastq files (DNA fasta files if using option -x) N.B. no filenames, just the full path to them, not a relative path and no wild cards! (required option)
   -t <string>    
                  file name of target genes in DNA fasta format (required option);
-                 Note: option -y 'hybpiper' requires target gene protein sequences, option -y 'hybpiper2' can be DNA or protein
+                 Note: option -y 'hybpiper' requires target gene protein sequences, option -y 'hybpiper2' can be DNA or protein, option -x requires DNA
   -a <string>    
-                 file name of adaptors in fasta format (required option)
+                 file name of adaptors in fasta format (required option for option -y)
   -y <string>    
                  Hyb-Seq program; options are: paftools, hybpiper, hybpiper-bwa, hybpiper2, hybpiper2-bwa,
                  hybpiper2-diamond-[mid-sensitive|sensitive|more-sensitive|very-sensitive|ultra-sensitive]. For hybpiper2-diamond, choose one of the 
@@ -71,11 +77,14 @@ OPTIONS <value>:
                  -start_from-[distribute_reads|assemble_reads|[exonerate(for HybPiper < v2.3.0)|extract(for HybPiper >= v2.3.0)]_contigs] 
                  e.g. hybpiper2-diamond-mid-sensitive-start_from-exonerate_contigs
                  Note: HybPiper versions tested with this recovery pipeline: 1.3, 2.1.6, 2.2.0, 2.3.x
+  -x <string>    
+                 retrieve gene orthologs corresponding to a set of targets genes from gene coding sequences or a transcriptome assembly in DNA fasta file format. 
+                 Method options are: retrieve_targets (this repository), captus_extract (not added yet) (default=retrieve_targets)   
   -S    
                  calculate statistics for gene recovery from read data mapped to all recovered genes per sample (includes per sample reads on-target, read
                  coverage, read depth). This option can also be used separately after the gene recoveries have run (do not specify option -y!) but the path
                  to the gene recovery fasta files has to be specified with option -P, if not running in the same location as the original gene recovery run.
-                 Options are: yes, yes:u (also outputs unmapped reads) (default=no)
+                 Options are: yes, yes:u (also outputs unmapped reads) (default=no; for use with option -y only)
 
   -P <string> 
                  Specify FULL path to the gene recovery fasta files (for option -S), but only the part common to all files.
@@ -102,7 +111,7 @@ OPTIONS <value>:
 
  
 A typical example to recover genes:
-<path to>/recover_genes_from_all_samples.sh \\
+recover_genes_from_all_samples.sh \\
 -y paftools \\
 -s <table_file.csv> \\
 -t <angiosperms353TargetsFile.fasta> \\
@@ -129,12 +138,23 @@ recover_genes_from_all_samples.sh \\
 [-P <gene_recovery_fasta_files_path - as required> \\ ]
 > gene_recovery_stats.log 2>&1 &
 
+To retrieve gene orthologs corresponding to a set of targets genes from gene coding sequences or a transcriptome assembly:
+recover_genes_from_all_samples.sh \\
+-x retrieve_targets \\
+-s <table_file.csv> \\
+-t <angiosperms353TargetsFile.fasta> \\
+-f <fasta_files_path> \\
+-p Sample \\
+-c 4 \\
+-m 10000 \\
+-Q main \\
+> retrieve_genes_from_all_samples.log 2>&1 &
 EOF
 }
 
 
 #echo User inputs:    ### For testing only 
-while getopts "hvs:t:f:a:y:p:c:d:H:m:T:Q:S:P:"  OPTION; do
+while getopts "hvs:t:f:a:y:p:c:d:H:m:T:Q:S:P:x:"  OPTION; do
  
   #echo -$OPTION $OPTARG    ### For testing only - could try to run through options below 
    
@@ -156,6 +176,7 @@ while getopts "hvs:t:f:a:y:p:c:d:H:m:T:Q:S:P:"  OPTION; do
     Q) partitionName=$OPTARG ;; 
     S) stats=$OPTARG ;;
     P) refFilePathForStats=$OPTARG ;;
+    x) retrieveTargets=$OPTARG ;;
     ?)  echo This option does not exist. Read the usage summary below.
             echo
             usage; exit 1 ;;
@@ -172,7 +193,7 @@ if [ "$#" -lt 1 ]; then usage; exit 1; fi
 
 
 echo
-echo "Program: $0"
+#echo "Program: $0"
 echo "Command: $0 $@"
 echo 
 
@@ -218,11 +239,10 @@ fi
 
 if [ ! -s $sampleList ]; then usage; echo; echo "ERROR: the samples table file (option -s) does not exist or is empty: $sampleList"; exit; fi
 
-if [[ ! -s "$targetsFile" && $hybSeqProgram != 'no' ]]; then usage; echo; echo "ERROR: the target genes file (option -t) does not exist or is empty: $targetsFile"; exit; fi
+if [[ ! -s "$targetsFile" && ($hybSeqProgram != 'no' || $retrieveTargets != 'no') ]]; then usage; echo; echo "ERROR: the target genes file (option -t) does not exist or is empty: $targetsFile"; exit; fi
 ### 12.5.2020 - Just realsied that I can determine the full path to fiel here then the user just needs to supply relative path - ditto for paftoldataasymlinkdir
 ###             NB - I have no test for the fastq dir exisitng! NB - I think this harder than i realised - how do you get the full path from a partial path - 8.1.2020 - I think I know this now - see species tree script 
-
-if [[ ! -s "$adapterFasta" ]]; then usage; echo; echo "ERROR: the adaptor file (option -a) does not exist or is empty: $adapterFasta"; exit; fi
+if [[ ! -s "$adapterFasta" && $hybSeqProgram == 'no' && $retrieveTargets == 'no' ]]; then usage; echo; echo "ERROR: the adaptor file (option -a) does not exist or is empty: $adapterFasta"; exit; fi
 
 if [ -z $samplePrefix ]; then echo ""
   usage; echo "ERROR: option -p used but an output file name prefix string was not supplied - exiting"
@@ -307,7 +327,20 @@ if [ $os == 'Darwin' ]; then
 	while read line; do
   	### Keep an eye on whether the $line variable value can break up with any chars
     echo $line
-  	$pathToScripts/recover_genes_from_one_sample.sh "$line"  $targetsFile  $paftolDataSymlinksDir  $adapterFasta  $samplePrefix  $cpu  "$exePrefix" $hybSeqProgram $usePaftolDb $stats $refFilePathForStats 
+  	$pathToScripts/recover_genes_from_one_sample.sh \
+    "$line" \
+    $targetsFile \
+    $paftolDataSymlinksDir \
+    $adapterFasta \
+    $samplePrefix \
+    $cpu \
+    $pathToScripts \
+    "$exePrefix" \
+    $hybSeqProgram \
+    $usePaftolDb \
+    $stats \
+    $refFilePathForStats \
+    $retrieveTargets
   done
 elif [ $os == 'Linux' ]; then
   exePrefix="/usr/bin/time -v"	# PYTHONPATH works on the Cluster, but on Macbook, it deosn't need to be set (only really need to alter the flag char!)
@@ -346,7 +379,8 @@ elif [ $os == 'Linux' ]; then
     $hybSeqProgram \
     $usePaftolDb \
     $stats \
-    $refFilePathForStats `
+    $refFilePathForStats \
+    $retrieveTargets `
    	echo jobInfo: $jobInfo			# NB - Don’t need to remember the jobId - unless want to merge with tree pipeline
     jobId=`echo $jobInfo | cut -d ' ' -f 4 `
     echo \$jobId: $jobId - same id as \$SLURM_ARRAY_JOB_ID 
@@ -355,7 +389,20 @@ elif [ $os == 'Linux' ]; then
     tail -n+2 $sampleList | \
 		while read line; do
       ### Keep an eye on whether this variable value can break up with any chars
-  		$pathToScripts/recover_genes_from_one_sample.sh "$line"  $targetsFile  $paftolDataSymlinksDir  $adapterFasta  $samplePrefix  $cpu  "$exePrefix" $hybSeqProgram $usePaftolDb $stats $refFilePathForStats 
+  		$pathToScripts/recover_genes_from_one_sample.sh \
+        "$line" \
+        $targetsFile \
+        $paftolDataSymlinksDir \
+        $adapterFasta \
+        $samplePrefix \
+        $cpu \
+        $pathToScripts \
+        "$exePrefix" \
+        $hybSeqProgram \
+        $usePaftolDb \
+        $stats \
+        $refFilePathForStats \
+        $retrieveTargets
   	done
   fi
 fi

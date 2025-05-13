@@ -12,26 +12,62 @@ set -u
 set -o pipefail
 shopt -s failglob
 
-
 line="$1"
 targetsFile=$2
 paftolDataSymlinksDir=$3
 adapterFasta=$4
 samplePrefix=$5
 cpu=$6
-exePrefix="$7"
-hybSeqProgram=$8
-usePaftolDb=$9
-stats=${10}
-refFilePathForStats=${11} 
+pathToScript=$7
+exePrefix="$8"
+hybSeqProgram=$9
+usePaftolDb=${10}
+stats=${11}
+refFilePathForStats=${12}
+retrieveTargets=${13}
 
 #echo exePrefix: "$exePrefix"	# check that variable is not split on space
-echo hybSeqProgram: $hybSeqProgram
-echo stats: $stats
-echo refFilePathForStats: $refFilePathForStats
-  
+echo 'Hyb-Seq program:' $hybSeqProgram
+echo 'Hyb-Seq stats:' $stats
+echo 'refFilePathForStats:' $refFilePathForStats
+echo 'Retrieve targets (option -x):' $retrieveTargets
 
-sampleId=`echo $line | cut -d ',' -f 1 `    		# I think this will be the PAFTOL_xxxxxx id - same as in the read file names
+
+if [[ $retrieveTargets == 'retrieve_targets' ]]; then
+
+	sampleId=`echo $line | cut -d ',' -f 1 `
+	fastaFile=`echo $line | cut -d ',' -f 2 `
+
+	if [[ ! -d ${samplePrefix}_$sampleId ]]; then mkdir ${samplePrefix}_$sampleId; fi
+	cd ${samplePrefix}_$sampleId
+	echo Working dir: `pwd`
+	echo sampleId: $sampleId
+	if [[ -s  $paftolDataSymlinksDir/$fastaFile ]]; then 
+		echo sample input file: `ls $paftolDataSymlinksDir/$fastaFile`
+		echo
+	else
+		echo "ERROR: sample fasta file not found, exiting now"
+		# else could chck NCBI for new genomes???
+		### 7.5.2025 - could proceed with a genome search and download but only only if requested.
+		exit
+	fi
+
+	export pathToScript # NB - variable required in this child script for various_tasks_in_python.py: 
+	$pathToScript/various_tasks_in_bash.sh retrieve_targets \
+	$targetsFile \
+	$paftolDataSymlinksDir/$fastaFile \
+	$sampleId \
+	tblastn \
+	nucl \
+	$cpu
+	####> ${sampleId}_retrieve_targets.tblastn.log 2>&1
+	exit
+elif [[ $hybSeqProgram == 'no' && $stats == 'no' ]];then
+	echo "ERROR: options -y, -s or -x are not set (correctly) - exiting now"
+fi
+
+
+sampleId=`echo $line | cut -d ',' -f 1 `
 R1FastqFile=`echo $line | cut -d ',' -f 2 `
 R2FastqFile=`echo $line | cut -d ',' -f 3 `
 externalSequenceID=`echo $line | cut -d ',' -f 4 `	# For adding the external sequence Id to the paftol_da db
@@ -45,7 +81,10 @@ echo externalSequenceID: $externalSequenceID
 if [[ -s  $paftolDataSymlinksDir/$R1FastqFile ]]; then 
 	ls $paftolDataSymlinksDir/$R1FastqFile
 else
+	echo "ERROR: R1 fastq.gz file not found or is empty, exiting now"
+	exit
 	### 10.2.2025 - maybe can assess here whether SRA files need downloading!!!!!
+	### 	7.5.2025 - I guess there should be a flag here to proceed with SRA download only if requested.
 	### echo "WARNING: R1 fastq.gz file does not exist, will try to download from ENA SRA."
     ### echo "Note: this will only work if the option -s csv file contains the fastq file names in these formats
     ### <accession_number>_[12].fastq.gz (pair end reads) or <accession_number>.fastq.gz (single end reads)"
@@ -549,7 +588,7 @@ elif [[ $hybSeqProgram == 'hybpiper'* ]]; then
 			# Unzip the HybPiper folder if it exists, except not in the case of HybPiper >= 2.3.0:
 			echo "INFO TEST: hello 1"
 			# Trying to future proof this step:
-			version='' # Added - temp
+			version='' # Added - temp - NBNB - 18.3.2025 - Copied the version line from below which works - PUSHED to GitHub but still not pulled on KewHPC as recoveries are running !!!!!!!
 			version=`hybpiper --version | tail -n 1 | grep 'hybpiper [234]\.[23456789]\.[0123456789]' ` # Trying to future proof this adjustment!
 			echo "INFO TEST: hello 2 BBBBB${version}BBBBB"
 			if [[ -s ${sampleId}.tar.gz && -n $version ]]; then
@@ -979,7 +1018,7 @@ sumLengthOfGenes: $sumLengthOfGenes" > ${sampleId}_gene_recovery_stats${reexonrt
 	####################
 	samtools coverage -q 20 -Q 20 ${sampleId}_bwa_mem_sort.bam > ${sampleId}_bwa_mem_sort_st_covrg.txt
 	# Removed --reference $refFileName - I don't think it is required - not sure why you need to supply it - same for samtools depth
-	# NB - It is necessary to implement a mapping quality threshold e.g. 20 would be OK - otherwise valeu a very high
+	# NB - It is necessary to implement a mapping quality threshold e.g. 20 would be OK - otherwise value a very high
 	# -q 20 base quality - NBNB - on closer inspection there is an error in the samtools view command line docs - -q and -Q could be the other way round - Ok for now if I use 20 for each.
 	# -Q 20 mapping quality
 

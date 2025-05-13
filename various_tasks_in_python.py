@@ -262,10 +262,11 @@ def retrieve_targets_magic(sampleId, blast_output_file, fasta_file_for_blast_db,
 				#print(fastaFileBlastDBDict[rowArray[1]].seq)
 				#print(fastaFileBlastDBDict[rowArray[1]].description)
 				#print('>' + refGeneName + " " + rowArray[0] + " " + rowArray[1] + "\n" + fastaFileBlastDBDict[rowArray[1]].seq + "\n")
-				lineToWrite = '>' + sampleId + "-" + refGeneName + " " + rowArray[0] + " " + rowArray[1] + " " \
-+ 'pcid=' + rowArray[2] + ' lenHSP=' + rowArray[3] + ' qlen=' + rowArray[8] + ' slen=' + str(slen) + ' evalue=' + rowArray[12] + "\n" + fastaFileBlastDBDict[rowArray[1]].seq + "\n"
-				#Writing to file using an F string (much easier syntax!)
-
+				#lineToWrite = '>' + sampleId + "-" + refGeneName + " " + rowArray[0] + " " + rowArray[1] + " " \
+#+ 'pcid=' + rowArray[2] + ' lenHSP=' + rowArray[3] + ' qlen=' + rowArray[8] + ' slen=' + str(slen) + ' evalue=' + rowArray[12] + "\n" + fastaFileBlastDBDict[rowArray[1]].seq + "\n"
+				# Now writing as an f-string (much easier syntax!)
+				lineToWrite = f'>{sampleId}-{refGeneName} query={rowArray[0]} subject={rowArray[1]} \
+pcid={rowArray[2]} lenHSP={rowArray[3]} qlen={rowArray[8]} slen={str(slen)} evalue={rowArray[12]}\n{fastaFileBlastDBDict[rowArray[1]].seq}\n'
 				fh1.write(str(lineToWrite))
 
 				# Now store the gene coding seq/transcriptome hit in a separate hash for testing
