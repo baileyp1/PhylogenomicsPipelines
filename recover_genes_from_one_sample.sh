@@ -81,23 +81,14 @@ echo externalSequenceID: $externalSequenceID
 if [[ -s  $paftolDataSymlinksDir/$R1FastqFile ]]; then 
 	ls $paftolDataSymlinksDir/$R1FastqFile
 else
-	echo "ERROR: R1 fastq.gz file not found or is empty, exiting now"
+	#echo "ERROR: R1 fastq.gz file not found or is empty, exiting now"
+	#exit
+	echo "WARNING: R1 fastq.gz file does not exist, will try to download from ENA SRA."
+    echo "INFO: this step will only work if the option -s csv file contains the fastq file names in these formats:"
+    echo "      <accession_number>_[12].fastq.gz (pair end reads) or <accession_number>.fastq.gz (single end reads)"
+
+	various_tasks_in_bash.sh wget_sra_download $sampleId > wget_SRA_download.log 2>&1 &
 	exit
-	### 10.2.2025 - maybe can assess here whether SRA files need downloading!!!!!
-	### 	7.5.2025 - I guess there should be a flag here to proceed with SRA download only if requested.
-	### echo "WARNING: R1 fastq.gz file does not exist, will try to download from ENA SRA."
-    ### echo "Note: this will only work if the option -s csv file contains the fastq file names in these formats
-    ### <accession_number>_[12].fastq.gz (pair end reads) or <accession_number>.fastq.gz (single end reads)"
-	### 10.2.2025 - maybe can assess here whether SRA files need downloading!!!!!
-	echo "Setting up download of SRA samples here - work in progress..."
-###various_tasks_in_bash.sh wget_sra_download SRR14570809 > wget_SRA_download.log 2>&1 &
-	### UPTOHERE 12.2.2025
-	### Now I think I can just ommit the log files - see tye test logs and check here that stdout and stderr will still be reported
-	### Make sure the R1 file is removed, as normal
-	### Make a note to maybe so the upload immendiately after the recovery e.g. for SRA data then I can use the unzipped file in the db upload.
-	### if fastq file is not found need to exit this script cleanly - maybe the set commands will work here?
-	### OR just test R1 file exists again here and exit if not
-	### 20.2.2025 - also, retry if fastq files fail to download after e.g. 10mins
 fi
 
 
