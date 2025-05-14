@@ -324,9 +324,9 @@ retrieve_targets()	{
 #	various_tasks_in_python.py retrieve_targets_magic 
 # 		Python modules:
 #		from Bio import SeqIO
-
 #
-#	Notes:
+#
+#	Notes (see K67.P3.retrieve_targets_devel for further tasks):
 #	1. tblastn requires the query sequence input files to be translated
 #   2. One issue with the approach is that only the 1st HSP of the top hit is evaluated which might be an issue if the gene 
 #      translation goes out of frame. This should be OK but the top HSP might be shorter than another one but still have made 
@@ -336,65 +336,6 @@ retrieve_targets()	{
 #	3. Would it be worth to take the best of all 6 translations? Actually, no - tblastn will reveal hits from all frames
 #	4. NB - Diamond sequence searcher only uses blastx and blastp - so maybe I should adapt for use with blastx
 #	5. Could allow user to select the evalue and % id filters
-#
-#
-#
-### UPTOHERE 13.5.2025 - things to do
-
-###Still have an error but can get SP0164 working with this version.
-### Just need to remove blast step, then take out the lines near the stats line and see what works  
-
-
-### Now check with Slurm on Gruffalo (Measure how much RAM is used)
-	#####--exclude=node005,node010,node012,node002,node009,node007
-### Also Test: ($hybSeqProgram != 'no' || $retrieveTargets != 'no') - line 240 in wrpper --> now check it's Ok for option -y
-### Also there was an error on line ~592 w.r.t. --start-from-- - 
-### Add stats sumHSPlength - done - now check
-
-###	Also - Note to extract the busco genes and create an R plot of the pcIds - FIRST make a file with values ready for a histogram. (single column?)
-
-### Added sort -4gr - make a note of this functionality in Linux notes
-
-###	Prepare test data sets for PP repo
-###	Once up to here report to Berta
-### Also test with Angio353_v2 interim and mega353
-### Repeat and complete stats +/- filtering, blast vs tblastn and with paftools and Captus
-
-### Remove the files no longer required consider to put stats per line into the log file
-### Also print out the by-row table header in csv format and put it in the log file
-### ALSO, still need to check the fasta file header  - see lines ~438-441
-
-
-### Next week Tue 13th May onwards / Future tasks for later:
-### Add in my thoughts on how to get coord for all HSPs of a top hit - another dict is required for this I think 
-###		{gene}{top query id}{genome contig}{lowest start} - start and end filled in in both parts of the condtional .. if .. and  else
-###										   {highest end}
-### 	Investigate Diamond to make it quicker - would enable testing on Macbook
-### 	Use via HybPiper-2.2.0; can only use blastx so would have to transfer to use blastx - so delay for now
-###		Probably is Ok but would need to check for hits in the other direction??? Should check for that anyway?
-
-### Quickly investigate again to pull out genomes from ncbi genome website --> start method pseudocode to do this --> on hold 
-
-### Try out Captus again - can use the extract command - could be method 2!!!
-
-### Investigate Diamond to make it quicker - would enable testing on Macbook
-### 	Use via HybPiper-2.2.0; can only use blastx so would have to transfer to use blastx - so delay for now
-###		Probably is Ok but would need to check for hits in the other direction??? Should check for that anyway?
-
-### Is it worth reporting multiple contigs for the same gene? Code is in place for that but need to finish it off:
-### Need to create an array and append each row - actually, again just need to keep the best hit for each subj hit 
-### This would be worthwhile doing as these would be the ||ogs!
-###		See HybPiper option --paralog_min_length_percentage for length filter of 0.75
-
-### There are 619 bad hits involving 73 genes so it shows that these ref targs do have significant homologs outside the 
-### orthologous clade (they are < 55% identical so cannot be paralogs)
-### more  ../testing_orig_angios353_my_subroutine/GCA_024733475.1_tblastn.sort-k13g_bad_hits.tab | awk '{print $1}' | awk -F '-' '{print $2}' | sort | wc -l
-### THINK further - would I need to assess all contigs coming from each query seq - I think so - 
-### makes it more difficult to code - at the moment it's by chance or not that I can see them with different query hits
-### but it might not be accessing all the subject hits in the data if the paralog is never the top hit!!!
-
-### Review whether any more input checks are required 
-
 #################
 
 	set -e
@@ -496,6 +437,7 @@ retrieve_targets()	{
 	#echo numbrMultiGeneHits: $numbrMultiGeneHits
 	echo
 	echo "INFO: BLAST hits filtered out with evalue of > 0.0001 and % id of < 55"
+	echo "INFO: Where not stated, numerical values on the fasta header line correspond to amino acids if tblastn, bases if blastn is used"
 	echo
 	if [[ $numbrMultiGeneHits -gt 0 ]]; then
 		echo 'WARNING: Hits to the same contig (BLAST subject) found for more than one gene:'
@@ -518,7 +460,11 @@ retrieve_targets()	{
 	> ${sampleId}.fasta.Ns_removed_temp
 	sumLengthOfGenes=`fastalength ${sampleId}.fasta.Ns_removed_temp | awk '{sum+=$1} END {print sum}' `
 	rm ${sampleId}.fasta.Ns_removed_temp
-	sumLengthOfHSPs=`cat ${sampleId}.fasta | grep '>' | awk '{print $5}' | sed 's/lenHSP=//' | awk '{sum+=$1} END {print sum}' `
+	if [[ $blastProgram == 'tblastn' || $blastProgram == 'blastx' ]]; then
+		sumLengthOfHSPs=`cat ${sampleId}.fasta | grep '>' | awk '{print $5}' | sed 's/lenHSP=//' | awk '{sum+=$1} END {print sum * 3}' `
+	else 
+		sumLengthOfHSPs=`cat ${sampleId}.fasta | grep '>' | awk '{print $5}' | sed 's/lenHSP=//' | awk '{sum+=$1} END {print sum}' `
+	fi
 	avPcIdAcrossTopHSP=`cat ${sampleId}.fasta | grep '>' | awk '{print $4}' | sed 's/pcid=//' | awk '{sum+=$1} END {if(sum > 0) {print sum/NR} else {print "0"}}' `
 	minPcIdAcrossTopHSP=`cat ${sampleId}.fasta | grep '>' | awk '{print $4}' | sed 's/pcid=//' | sort -n | head -n 1 `
 	maxPcIdAcrossTopHSP=`cat ${sampleId}.fasta | grep '>' | awk '{print $4}' | sed 's/pcid=//' | sort -n | tail -n 1 `
@@ -534,9 +480,9 @@ retrieve_targets()	{
 
 echo "sampleId: $sampleId
 numbrRecoveredGenes: $numbrRecoveredGenes
-sumLengthOfGenesWithNs: $sumLengthOfGenesWithNs
-sumLengthOfGenes: $sumLengthOfGenes
-sumLengthOfHSPs: $sumLengthOfHSPs
+sumLengthOfGenesWithNs (bp): $sumLengthOfGenesWithNs
+sumLengthOfGenes (bp): $sumLengthOfGenes
+sumLengthOfHSPs (bp): $sumLengthOfHSPs
 avPcIdAcrossTopHSP: $avPcIdAcrossTopHSP
 minPcIdAcrossTopHSP (min % allowed, 55%): $minPcIdAcrossTopHSP
 maxPcIdAcrossTopHSP: $maxPcIdAcrossTopHSP
@@ -546,8 +492,16 @@ minPcHSPCovrgToQueryLen: $minPcHSPCovrgToQueryLen
 maxPcHSPCovrgToQueryLen (might be > 100% if gaps present): $maxPcHSPCovrgToQueryLen
 avPcQueryCovrgToSubjectLen: $avPcQueryCovrgToSubjectLen" > ${sampleId}_stats.txt
 
-echo "$sampleId $numbrRecoveredGenes $sumLengthOfGenesWithNs $sumLengthOfGenes $avPcIdAcrossTopHSP $minPcIdAcrossTopHSP $maxPcIdAcrossTopHSP \
+
+	# Output stats by row (for later concatenation across all samples):
+echo "$sampleId $numbrRecoveredGenes $sumLengthOfGenesWithNs $sumLengthOfGenes $sumLengthOfHSPs $avPcIdAcrossTopHSP $minPcIdAcrossTopHSP $maxPcIdAcrossTopHSP \
 $avPcHSPCovrgToQueryLen $medianPcHSPCovrgToQueryLen $minPcHSPCovrgToQueryLen $maxPcHSPCovrgToQueryLen $avPcQueryCovrgToSubjectLen" > ${sampleId}_stats_by_row.txt
+
+
+	# Output avPcIdAcrossTopHSP stat for each gene per column (for later histogram after concatenation across all samples):
+	###grep '>' Sample_Marchantia_polymorpha/Marchantia_polymorpha.fasta | awk -F '-' '{print $3}' | awk '{print $1 " "  $3}' | sed 's/pcid=//' | sort -k2n | wc -l
+	### now use printf to get on one row for all genes, one gene per column
+
 
 
 	# Remove the files no longer required:
