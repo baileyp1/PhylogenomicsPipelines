@@ -51,8 +51,8 @@ Program description: recovers genes from pair-end of single-end fastq files of m
 
                      Using option -x, gene orthologs corresponding to a set of reference target genes can be retrieved from a set of gene coding sequences or 
                      contigs from a transcriptome assembly. A TBLASTN search is performed between both sets, the hits are filtered by evalue (0.0001), then by 
-                     % id (55%), then by HSP length and the output fasta record id of each gene coding sequence or transcriptome assembly contig is reformed to
-                     include the corresponding reference target gene name in 'HybPiper' format: >sampleId-geneId
+                     % id (55%), then by HSP length, the first hit for each gene in the BLAST output list is chosen and the output fasta record id of each gene 
+                     coding sequence or transcriptome assembly contig is reformed to include the corresponding reference target gene name in 'HybPiper' format: >sampleId-geneId
 
 OPTIONS <value>:
   -h   
@@ -60,8 +60,8 @@ OPTIONS <value>:
   -v             
                  program version
   -s <csv file>  
-                 add sample name and fastq file names (assumed to be in compressed gzip format (suffix .gz); fasta format for option -x) via a csv table file (must have a header line);
-                 format: SampleName,R1FastqName,R2FastqName (required option)
+                 add sample name and fastq/fasta file name(s) via a csv table file which must have a header line with this format: SampleName,R1FastqName,R2FastqName (required option)
+                 The files (fastq for option y, fasta for option x) are assumed to be in compressed gzip format (suffix .gz)
   -f <string>    
                  FULL path to all sample fastq files (DNA fasta files if using option -x) N.B. no filenames, just the full path to them, not a relative path and no wild cards! (required option)
   -t <string>    
@@ -236,7 +236,8 @@ fi
 ### Check fasta file format here - see species tree script
 ### For Hybpiper need to ensure there are no period chars (.) in the sample name/ids - for the paralog code
 
-
+echo $sampleList
+exit
 if [ ! -s $sampleList ]; then usage; echo; echo "ERROR: the samples table file (option -s) does not exist or is empty: $sampleList"; exit; fi
 
 if [[ ! -s "$targetsFile" && ($hybSeqProgram != 'no' || $retrieveTargets != 'no') ]]; then usage; echo; echo "ERROR: the target genes file (option -t) does not exist or is empty: $targetsFile"; exit; fi
