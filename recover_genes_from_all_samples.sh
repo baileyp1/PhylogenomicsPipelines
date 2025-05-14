@@ -237,7 +237,7 @@ fi
 ### For Hybpiper need to ensure there are no period chars (.) in the sample name/ids - for the paralog code
 
 echo $sampleList
-exit
+#sexit
 if [ ! -s $sampleList ]; then usage; echo; echo "ERROR: the samples table file (option -s) does not exist or is empty: $sampleList"; exit; fi
 
 if [[ ! -s "$targetsFile" && ($hybSeqProgram != 'no' || $retrieveTargets != 'no') ]]; then usage; echo; echo "ERROR: the target genes file (option -t) does not exist or is empty: $targetsFile"; exit; fi
