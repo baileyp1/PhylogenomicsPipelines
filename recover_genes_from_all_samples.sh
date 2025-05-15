@@ -146,7 +146,7 @@ recover_genes_from_all_samples.sh \\
 -f <fasta_files_path> \\
 -p Sample \\
 -c 4 \\
--m 10000 \\
+-m 4000 \\
 -Q main \\
 > retrieve_genes_from_all_samples.log 2>&1 &
 EOF
@@ -236,8 +236,7 @@ fi
 ### Check fasta file format here - see species tree script
 ### For Hybpiper need to ensure there are no period chars (.) in the sample name/ids - for the paralog code
 
-echo $sampleList
-#sexit
+
 if [ ! -s $sampleList ]; then usage; echo; echo "ERROR: the samples table file (option -s) does not exist or is empty: $sampleList"; exit; fi
 
 if [[ ! -s "$targetsFile" && ($hybSeqProgram != 'no' || $retrieveTargets != 'no') ]]; then usage; echo; echo "ERROR: the target genes file (option -t) does not exist or is empty: $targetsFile"; exit; fi
