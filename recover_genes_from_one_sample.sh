@@ -79,24 +79,46 @@ echo sampleId: $sampleId
 echo externalSequenceID: $externalSequenceID
 
 if [[ -s  $paftolDataSymlinksDir/$R1FastqFile ]]; then 
-	ls $paftolDataSymlinksDir/$R1FastqFile
+	#ls $paftolDataSymlinksDir/$R1FastqFile
+	# Assign full path to these variables for the rest of this script
+	R1FastqFile=$paftolDataSymlinksDir/$R1FastqFile
+	# However, if R2FastqFile is NULL, then don't assign so it reamins NULL(important!)
+	if [[ -n "$R2FastqFile" ]]; then  
+		R2FastqFile=$paftolDataSymlinksDir/$R2FastqFile
+	fi
 else
 	#echo "ERROR: R1 fastq.gz file not found or is empty, exiting now"
 	#exit
 	echo "WARNING: R1 fastq.gz file does not exist, will try to download from ENA SRA."
-    echo "INFO: this step will only work if the option -s csv file contains the fastq file names in these formats:"
-    echo "      <accession_number>_[12].fastq.gz (pair end reads) or <accession_number>.fastq.gz (single end reads)"
+    echo "INFO: this step will only work if the option -s csv file contains the ExternalSequenceID in column 4:"
+    echo "      Expected file names: <accession_number>_[12].fastq.gz (pair end reads) or <accession_number>.fastq.gz (single end reads)"
 
-	various_tasks_in_bash.sh wget_sra_download $sampleId > wget_SRA_download.log 2>&1 &
-	exit
+	various_tasks_in_bash.sh wget_sra_download $externalSequenceID
+	# The above script obtains files called <ENA_run_accesison>_1.fastq.gz and <ENA_run_accesison>_2.fastq.gz (pair end)
+	# or <ENA_run_accesison>.fastq.gz (single end)
+	# Change these fastq file name variables to use the file names from the ENA download instead (names to R1FastqFile and R2FastqFile (R1FastqFile only if single end)
+	if [[ -s ${externalSequenceID}_1.fastq.gz ]]; then
+		R1FastqFile=${externalSequenceID}_1.fastq.gz
+	else 
+		echo "WARNING: R1FastqFile not found at ENA." 
+	fi
+	if [[ -s ${externalSequenceID}_2.fastq.gz ]]; then  
+		R2FastqFile=${externalSequenceID}_2.fastq.gz
+	elif [[ -s ${externalSequenceID}.fastq.gz ]]; then
+		R1FastqFile=${externalSequenceID}.fastq.gz
+	else
+		echo "ERROR: Neither R2FastqFile found for pair end data nor a single end fastq file at ENA; can't do gene recovery for this sample: $sampleId"
+		exit
+	fi 
 fi
 
-
-if [ -z "$R2FastqFile" ]; then 
+if [[ -z "$R2FastqFile" ]]; then
 	echo "No R2FastqFile - read trimming and gene recovery will work in single-end mode"
 else
-	ls $paftolDataSymlinksDir/$R1FastqFile
-	ls $paftolDataSymlinksDir/$R2FastqFile
+	#ls $paftolDataSymlinksDir/$R1FastqFile
+	#ls $paftolDataSymlinksDir/$R2FastqFile
+	ls -l $R1FastqFile
+	ls -l $R2FastqFile
 fi
 pwd
 
@@ -117,7 +139,7 @@ if [[ $usePaftolDb == 'no' ]]; then
 			java -jar $TRIMMOMATIC SE \
 			-threads $cpu \
 			-trimlog ${sampleId}_R1_trimmomatic.log \
-			$paftolDataSymlinksDir/$R1FastqFile \
+			$R1FastqFile \
 			${sampleId}_R1_trimmomatic.fastq.gz \
 			ILLUMINACLIP:${adapterFasta}:2:30:10:2:true \
 			LEADING:10 \
@@ -129,8 +151,8 @@ if [[ $usePaftolDb == 'no' ]]; then
 			java -jar $TRIMMOMATIC PE \
 			-threads $cpu \
 			-trimlog ${sampleId}_R1_R2_trimmomatic.log \
-			$paftolDataSymlinksDir/$R1FastqFile \
-			$paftolDataSymlinksDir/$R2FastqFile \
+			$R1FastqFile \
+			$R2FastqFile \
 			${sampleId}_R1_trimmomatic.fastq.gz \
 			${sampleId}_R1_trimmomatic_unpaired.fastq.gz \
 			${sampleId}_R2_trimmomatic.fastq.gz \
@@ -170,12 +192,12 @@ if [ $hybSeqProgram == 'paftools' ]; then
 		unzippedR1FastqFile=`basename -s .gz $paftolDataSymlinksDir/$R1FastqFile `
 
 		# Need to uncompress raw fastq files to get FastQCStats and upload into the paftol_da database:
-		gunzip -f -c $paftolDataSymlinksDir/$R1FastqFile > $unzippedR1FastqFile
+		gunzip -f -c $R1FastqFile > $unzippedR1FastqFile
 		if [ -z "$R2FastqFile" ]; then
 			echo "No R2FastqFile"
 		else
-			unzippedR2FastqFile=`basename -s .gz $paftolDataSymlinksDir/$R2FastqFile `
-			gunzip -f -c $paftolDataSymlinksDir/$R2FastqFile > $unzippedR2FastqFile
+			unzippedR2FastqFile=`basename -s .gz $R2FastqFile `
+			gunzip -f -c $R2FastqFile > $unzippedR2FastqFile
 		fi
 		
 		
@@ -358,6 +380,10 @@ if [ $hybSeqProgram == 'paftools' ]; then
 			if [[ -s ${sampleId}_R2_trimmomatic.fastq ]]; then rm ${sampleId}_R2_trimmomatic.fastq ${sampleId}_R2_trimmomatic_unpaired.fastq.gz; fi
 			if [[ -s ${sampleId}_R1_R2_trimmomatic.log ]];then rm ${sampleId}_R1_R2_trimmomatic.log; fi
 			if [[ -s ${sampleId}_R1_trimmomatic.log ]]; then rm ${sampleId}_R1_trimmomatic.log; fi
+			# If the fastq files were downloaded from ENA near the start of this script:
+			if [[ -s ${externalSequenceID}_1.fastq.gz ]]; then rm ${externalSequenceID}_1.fastq.gz; fi # if pair end data
+			if [[ -s ${externalSequenceID}_2.fastq.gz ]]; then rm ${externalSequenceID}_2.fastq.gz; fi # if pair end data 
+			if [[ -s ${externalSequenceID}.fastq.gz ]]; then rm ${externalSequenceID}.fastq.gz; fi     # if single end data
 		fi
 	fi
 elif [[ $hybSeqProgram == 'hybpiper'* ]]; then
@@ -688,7 +714,11 @@ elif [[ $hybSeqProgram == 'hybpiper'* ]]; then
 		if [[ -s ${sampleId}_R1_R2_trimmomatic.log ]];then rm ${sampleId}_R1_R2_trimmomatic.log; fi
 		if [[ -s ${sampleId}_R1_trimmomatic.log ]]; then rm ${sampleId}_R1_trimmomatic.log; fi
 		# NB - not deleting this file here in case it is used in the future for the recovery stats: ${sampleId}_R1_R2_trimmomatic_unpaired.fastq
-		#      Could also just get it remade in the stats clause - NB - 30.8.2024 - in stats mode ONLY, isn't Trimmomatic being run again? If so I think this file can be deleted 
+		#      Could also just get it remade in the stats clause - NB - 30.8.2024 - in stats mode ONLY, isn't Trimmomatic being run again? If so I think this file can be deleted
+		# If the fastq files were downloaded from ENA near the start of this script:
+		if [[ -s ${externalSequenceID}_1.fastq.gz ]]; then rm ${externalSequenceID}_1.fastq.gz; fi # if pair end data
+		if [[ -s ${externalSequenceID}_2.fastq.gz ]]; then rm ${externalSequenceID}_2.fastq.gz; fi # if pair end data 
+		if [[ -s ${externalSequenceID}.fastq.gz ]]; then rm ${externalSequenceID}.fastq.gz; fi     # if single end data
 	fi
 else
 	echo "WARNING: If option -y was used, the Hyb-Seq program was not recognised. The options are paftools or hybpiper[2-[bwa|diamond-<sensitivity_option>]]'."
@@ -741,6 +771,10 @@ if [[ $stats != 'no' ]]; then
 			if [[ -s ../${sampleId}_R1_R2_trimmomatic.log ]];then rm ../${sampleId}_R1_R2_trimmomatic.log; fi
 			if [[ -s ../${sampleId}_R1_trimmomatic.log ]]; then rm ../${sampleId}_R1_trimmomatic.log; fi
 			# NB - ${sampleId}_R1_R2_trimmomatic_unpaired.fastq is only created in hybpiper mode and has already been removed above - OK
+			# If the fastq files were downloaded from ENA near the start of this script:
+			if [[ -s ${externalSequenceID}_1.fastq.gz ]]; then rm ${externalSequenceID}_1.fastq.gz; fi # if pair end data
+			if [[ -s ${externalSequenceID}_2.fastq.gz ]]; then rm ${externalSequenceID}_2.fastq.gz; fi # if pair end data 
+			if [[ -s ${externalSequenceID}.fastq.gz ]]; then rm ${externalSequenceID}.fastq.gz; fi     # if single end data
 			exit
 		fi
 	else
@@ -822,11 +856,11 @@ sumLengthOfGenes: $sumLengthOfGenes" > ${sampleId}_gene_recovery_stats${reexonrt
 		echo numbrRawReads: $numbrRawReads >> ${sampleId}_gene_recovery_stats${reexonrtOptionLog}.txt
 	fi
 
-	# If HybPiper2 command is set to re-exonerate the assembled contigs, skip the stats that require reads
-	# as they take a longer time than the reexonerating. Redoing the basic stats to a new log file is worthwhile
+	# If HybPiper2 command is set to re-exonerate the assembled contigs, skip the stats done next that require reads
+	# as they take a longer time than the reexonerating. Redoing the basic stats to a new log file, as doen above, is worthwhile
 	# so that they match the final stats (which may be the the paftol db).  
 	if [[ -n $startFromOption ]]; then
-		# Remove the large fastq files from any gene recovery method:
+		# So, now remove the large fastq files from any gene recovery method and exit:
 		if [[ -s ../${sampleId}_R1_trimmomatic.fastq ]]; then rm ../${sampleId}_R1_trimmomatic.fastq; fi
 		if [[ -s ../${sampleId}_R1_trimmomatic_unpaired.fastq.gz ]]; then rm ../${sampleId}_R1_trimmomatic_unpaired.fastq.gz; fi
 		if [[ -s ../${sampleId}_R2_trimmomatic.fastq ]]; then rm ../${sampleId}_R2_trimmomatic.fastq; fi
@@ -834,6 +868,10 @@ sumLengthOfGenes: $sumLengthOfGenes" > ${sampleId}_gene_recovery_stats${reexonrt
 		if [[ -s ../${sampleId}_R1_R2_trimmomatic.log ]];then rm ../${sampleId}_R1_R2_trimmomatic.log; fi
 		if [[ -s ../${sampleId}_R1_trimmomatic.log ]]; then rm ../${sampleId}_R1_trimmomatic.log; fi
 		if [[ -s ../${sampleId}_R1_R2_trimmomatic_unpaired.fastq ]]; then rm ../${sampleId}_R1_R2_trimmomatic_unpaired.fastq; fi
+		# If the fastq files were downloaded from ENA near the start of this script:
+		if [[ -s ${externalSequenceID}_1.fastq.gz ]]; then rm ${externalSequenceID}_1.fastq.gz; fi # if pair end data
+		if [[ -s ${externalSequenceID}_2.fastq.gz ]]; then rm ${externalSequenceID}_2.fastq.gz; fi # if pair end data 
+		if [[ -s ${externalSequenceID}.fastq.gz ]]; then rm ${externalSequenceID}.fastq.gz; fi     # if single end data
 		exit 
 	fi
 
@@ -1118,6 +1156,10 @@ sumLengthOfGenes: $sumLengthOfGenes" > ${sampleId}_gene_recovery_stats${reexonrt
 	if [[ -s ../${sampleId}_R1_R2_trimmomatic.log ]];then rm ../${sampleId}_R1_R2_trimmomatic.log; fi
 	if [[ -s ../${sampleId}_R1_trimmomatic.log ]]; then rm ../${sampleId}_R1_trimmomatic.log; fi
 	# NB - ${sampleId}_R1_R2_trimmomatic_unpaired.fastq is only created in hybpiper mode and has already been removed above - OK
+	# If the fastq files were downloaded from ENA near the start of this script:
+	if [[ -s ${externalSequenceID}_1.fastq.gz ]]; then rm ${externalSequenceID}_1.fastq.gz; fi # if pair end data
+	if [[ -s ${externalSequenceID}_2.fastq.gz ]]; then rm ${externalSequenceID}_2.fastq.gz; fi # if pair end data 
+	if [[ -s ${externalSequenceID}.fastq.gz ]]; then rm ${externalSequenceID}.fastq.gz; fi     # if single end data
 
 	# Finally, remove the large files created for the stats (they take up TB of disk space if processing 1000's samples)
 	if [[ -s ${sampleId}_bwa_mem_with_dups.sam ]]; then rm ${sampleId}_bwa_mem_with_dups.sam; fi

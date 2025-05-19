@@ -90,22 +90,15 @@ wget_sra_download()	{
 #			  cat <accn_list_file> | while read accn; do \
 #				various_tasks_in_bash.sh wget_sra_download $accn > wget_SRA_download.log 2>&1
 #			  done
-
-### To do - UPTOHERE 10.2.2025
-### READY to add method to recovery pipeline
-### --> Review how SRA fastq files are removed afterwards - is this already set up in the main pipeline?
-### --> Could have an option to download fastq files in main pipeline then exit!!
-### Add documentation for this function in the PP readme and cmd line help; mention in the README that you need wget installed
-###		--> THEN merge this various_tasks_in_bash.sh code with script of same name in PhyloPipeline repo and commit to PP repo
-### Look at wget to see whether it can assess download - doesn't seem to but could look at the exit signal 
-#			  
-
+#
+#
 # 	Usage example (via Slurm): sbatch -J sra_download -p long -c 1 -n 1  --mem=5000  -o wget_SRA_download.log  -e wget_SRA_download.err  --wrap  "
 #							   various_tasks_in_bash.sh wget_sra_download <accn_list_file> "
 #							   NB - probably best not to parallelize these downloads!
+#
 #	Note: 1. it is strongly recommended to downoad files into a fresh/empty directory because the script tests whether files are absent or not
 #		  2. the wget_SRA_download_[PE|SE]_fastqs.log files are appended to
-#		  3. There is a change that what I think in the log e.g. [157921666/157921666] is bytes downloaded out of the total is not what I think it is.
+#		  3. There is a chance that what I think in the log e.g. [157921666/157921666] is bytes downloaded out of the total is not what I think it is.
 #		  		BUT the info for the remote file size does seem available but only in the verbose wget output but I just haven't been able to test I can use it.
 #				e.g.:
 #			    wget http://ftp.sra.ebi.ac.uk/vol1/fastq/SRR145/009/SRR14570809/SRR14570809_1.fastq.gz
@@ -275,7 +268,9 @@ fastq_integrity_test()	{
 	fastqR1FileSize=`ls -l $1 | awk '{print $5}' `
 	if [[ $bytesDownloadable -gt 0 && $fastqR1FileSize -gt 0 && $bytesDownloadable -eq $fastqR1FileSize ]]; then
 		echo "INFO: Download successful: $fastqR1FileSize of $bytesDownloadable bytes downloaded for $1"
-		rm $2
+		###rm $2 - changed to:
+		# Remove ALL wget log files for this sample:
+		rm *fastq_wget_SRA_download.log 
 	else
 		echo "ERROR: Download unsuccessful: $fastqR1FileSize of $bytesDownloadable bytes downloaded for $1"
 		# Log file stays around
@@ -462,6 +457,8 @@ retrieve_targets()	{
 	rm ${sampleId}.fasta.Ns_removed_temp
 	if [[ $blastProgram == 'tblastn' || $blastProgram == 'blastx' ]]; then
 		sumLengthOfHSPs=`cat ${sampleId}.fasta | grep '>' | awk '{print $5}' | sed 's/lenHSP=//' | awk '{sum+=$1} END {print sum * 3}' `
+		### NB - I think lenHSP might also include gaps - check - so is not a perfect comparison to sumLengthOfGenes.
+		### However, there don't appear to be any big gaps, just a few more for seqs with good matches but percent id < 55%
 	else 
 		sumLengthOfHSPs=`cat ${sampleId}.fasta | grep '>' | awk '{print $5}' | sed 's/lenHSP=//' | awk '{sum+=$1} END {print sum}' `
 	fi
