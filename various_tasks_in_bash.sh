@@ -144,7 +144,7 @@ wget_sra_download()	{
 #	https://www.ebi.ac.uk/ena/browser/downloading-data
 #	https://ena-docs.readthedocs.io/en/latest/retrieval/file-download/sra-ftp-structure.html
 # 	https://ena-docs.readthedocs.io/en/latest/faq/archive-generated-files.html#archive-generated-files
-###################
+##################
 
 	echo
 	echo "Command: $0 $@"
