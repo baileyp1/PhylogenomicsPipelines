@@ -226,7 +226,7 @@ wget_sra_download()	{
 		echo "WARNING: unable find an R2 fastq file name for accession $accn in the default location, will try this location:"
 		# $innerFolder is sometimes the last two digits of the accession number:
 		echo URL_link: $urlPrefix/$outerFolder/$innerFolder0XX/$accn/${accn}_2.fastq.gz
-		time wget --no-verbose -o wget_SRA_download_PE_fastqs.log $urlPrefix/$outerFolder/$innerFolder0XX/$accn/${accn}_2.fastq.gz
+		time wget --no-verbose -o ${accn}_2.fastq_wget_SRA_download.log $urlPrefix/$outerFolder/$innerFolder0XX/$accn/${accn}_2.fastq.gz
 		if [[ -s ${accn}_2.fastq.gz ]]; then
 			fastq_integrity_test  ${accn}_2.fastq.gz  ${accn}_2.fastq_wget_SRA_download.log
 		else
@@ -264,15 +264,13 @@ fastq_integrity_test()	{
 	# NB - might not be using the perfect line identifier.
 	bytesDownloadable=0
 	bytesDownloadable=`tail -n 1 $2 |  grep  '[][] ->' | awk '{print $4}' | sed 's/[][]//g' | awk -F '/' '{print $2}' `
-	fastqR1FileSize=0
-	fastqR1FileSize=`ls -l $1 | awk '{print $5}' `
-	if [[ $bytesDownloadable -gt 0 && $fastqR1FileSize -gt 0 && $bytesDownloadable -eq $fastqR1FileSize ]]; then
-		echo "INFO: Download successful: $fastqR1FileSize of $bytesDownloadable bytes downloaded for $1"
-		###rm $2 - changed to:
-		# Remove ALL wget log files for this sample:
-		rm *fastq_wget_SRA_download.log 
+	fastqFileSize=0
+	fastqFileSize=`ls -l $1 | awk '{print $5}' `
+	if [[ $bytesDownloadable -gt 0 && $fastqFileSize -gt 0 && $bytesDownloadable -eq $fastqFileSize ]]; then
+		echo "INFO: Download successful: $fastqFileSize of $bytesDownloadable bytes downloaded for $1"
+		rm $2
 	else
-		echo "ERROR: Download unsuccessful: $fastqR1FileSize of $bytesDownloadable bytes downloaded for $1"
+		echo "ERROR: Download unsuccessful: $fastqFileSize of $bytesDownloadable bytes downloaded for $1"
 		# Log file stays around
 	fi
 }
@@ -381,8 +379,8 @@ retrieve_targets()	{
 	# Translate the blast query sequences if using tblastn:
 	queryFile=$1
 	if [[ $blastProgram == 'tblastn' ]];then
-		fastatranslate -F 1 $1 > ${sampleId}_queries.pep
-		queryFile=${sampleId}_queries.pep
+		fastatranslate -F 1 $1 > reference_target_queries.pep
+		queryFile=reference_target_queries.pep
 	fi
 
 	echo "Blasting with $blastProgram..."
