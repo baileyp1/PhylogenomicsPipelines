@@ -38,7 +38,7 @@ if [[ $retrieveTargets == 'retrieve_targets' ]]; then
 	sampleId=`echo $line | cut -d ',' -f 1 `
 	fastaFile=`echo $line | cut -d ',' -f 2 `
 
-	if [[ ! -d ${samplePrefix}_$sampleId ]]; then mkdir ${samplePrefix}_$sampleId; fi
+	mkdir -p ${samplePrefix}_$sampleId
 	cd ${samplePrefix}_$sampleId
 	echo Working dir: `pwd`
 	echo sampleId: $sampleId
@@ -57,7 +57,7 @@ if [[ $retrieveTargets == 'retrieve_targets' ]]; then
 	$targetsFile \
 	$paftolDataSymlinksDir/$fastaFile \
 	$sampleId \
-	tblastn \
+	blastn \
 	nucl \
 	$cpu
 	####> ${sampleId}_retrieve_targets.tblastn.log 2>&1
@@ -73,7 +73,7 @@ R2FastqFile=`echo $line | cut -d ',' -f 3 `
 externalSequenceID=`echo $line | cut -d ',' -f 4 `	# For adding the external sequence Id to the paftol_da db
 
   
-if [[ ! -d ${samplePrefix}_$sampleId ]]; then mkdir ${samplePrefix}_$sampleId; fi
+mkdir -p ${samplePrefix}_$sampleId
 cd ${samplePrefix}_$sampleId
 echo sampleId: $sampleId
 echo externalSequenceID: $externalSequenceID
