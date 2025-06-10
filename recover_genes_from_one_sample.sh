@@ -46,7 +46,8 @@ if [[ $retrieveTargets == 'retrieve_targets' ]]; then
 		echo sample input file: `ls $paftolDataSymlinksDir/$fastaFile`
 		echo
 	else
-		echo "ERROR: sample fasta file not found, exiting now"
+		echo "ERROR: sample fasta file not found, exiting now:"
+		echo $paftolDataSymlinksDir/$fastaFile
 		# else could chck NCBI for new genomes???
 		### 7.5.2025 - could proceed with a genome search and download but only only if requested.
 		exit
@@ -70,11 +71,12 @@ elif [[ $retrieveTargets == 'captus_extract' ]]; then
 	cd ${samplePrefix}_$sampleId
 	echo Working dir: `pwd`
 	echo sampleId: $sampleId
-	if [[ -s  $paftolDataSymlinksDir/$fastaFile/ ]]; then 
+	if [[ -s  $paftolDataSymlinksDir/$fastaFile ]]; then 
 		echo sample input file: `ls $paftolDataSymlinksDir/$fastaFile`
 		echo
 	else
-		echo "ERROR: sample fasta file not found, exiting now"
+		echo "ERROR: sample fasta file not found, exiting now:"
+		echo $paftolDataSymlinksDir/$fastaFile
 		# else could chck NCBI for new genomes???
 		### 7.5.2025 - could proceed with a genome search and download but only only if requested.
 		exit
