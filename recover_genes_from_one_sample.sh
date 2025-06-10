@@ -94,7 +94,7 @@ elif [[ $retrieveTargets == 'captus_extract' ]]; then
 	captus extract --overwrite \
 	--threads 4 \
 	-a in_fasta \
-	-f ${sampleId}_input_sequence.fasta \
+	-f ${sampleId}_in_seqs.fasta \
 	--nuc_refs $targetsFileLocalCopy \
 	--nuc_min_identity 55 \
 	--out outputs
