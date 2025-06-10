@@ -45,7 +45,7 @@ cat << EOF
 
 Copyright © 2025 The Board of Trustees of the Royal Botanic Gardens, Kew
 
-Program description: recovers genes from pair-end of single-end fastq files of multiple samples. Paftools or HybPiper can be used to align the reads to a set of
+Program description: recovers genes from pair-end or single-end fastq files of multiple samples. Paftools or HybPiper can be used to align the reads to a set of
                      reference target genes, assemble the reads for each target gene and join the available exons together to produce the gene.
                      If Slurm is available samples will be run in parallel
 
@@ -61,7 +61,7 @@ OPTIONS <value>:
                  program version
   -s <csv file>  
                  add sample name and fastq/fasta file name(s) via a csv table file which must have a header line with this format: SampleName,R1FastqName,R2FastqName (required option)
-                 The files (fastq for option y, fasta for option x) are assumed to be in compressed gzip format (suffix .gz)
+                 The R2FastqName field should be left blank for single end read data. The files (fastq for option y, fasta for option x) are assumed to be in compressed gzip format (suffix .gz)
   -f <string>    
                  FULL path to all sample fastq files (DNA fasta files if using option -x) N.B. no filenames, just the full path to them, not a relative path and no wild cards! (required option)
   -t <string>    

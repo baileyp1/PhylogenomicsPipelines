@@ -60,7 +60,101 @@ if [[ $retrieveTargets == 'retrieve_targets' ]]; then
 	blastn \
 	nucl \
 	$cpu
-	####> ${sampleId}_retrieve_targets.tblastn.log 2>&1
+	exit
+elif [[ $retrieveTargets == 'captus_extract' ]]; then
+
+	sampleId=`echo $line | cut -d ',' -f 1 `
+	fastaFile=`echo $line | cut -d ',' -f 2 `
+
+	mkdir -p ${samplePrefix}_$sampleId
+	cd ${samplePrefix}_$sampleId
+	echo Working dir: `pwd`
+	echo sampleId: $sampleId
+	if [[ -s  $paftolDataSymlinksDir/$fastaFile/ ]]; then 
+		echo sample input file: `ls $paftolDataSymlinksDir/$fastaFile`
+		echo
+	else
+		echo "ERROR: sample fasta file not found, exiting now"
+		# else could chck NCBI for new genomes???
+		### 7.5.2025 - could proceed with a genome search and download but only only if requested.
+		exit
+	fi
+
+	# Not sure how $targetsFile is handled by Captus (it seems to want to alter the file!), especially for running multiple samples
+	# in ||el, so will copy it over and use in pwd:
+	targetsFileLocalCopy=`basename $targetsFile`
+	cp -p $targetsFile $targetsFileLocalCopy
+
+	# Also need to copy and rename the raw sample contigs file and replace with $sampleId so that
+	# Captus uses $sampleId (a predicable name for the Captus folder structure) rather whatever the raw filenames are:
+	cp -p $paftolDataSymlinksDir/$fastaFile ${sampleId}_in_seqs.fasta
+
+	captus extract --overwrite \
+	--threads 4 \
+	-a in_fasta \
+	-f ${sampleId}_input_sequence.fasta \
+	--nuc_refs $targetsFileLocalCopy \
+	--nuc_min_identity 55 \
+	--out outputs
+	# Removed: --max_paralogs 0 \
+	# Notes:
+	# 1.Within 'outputs' folder, the extracted markers/genes go to a folder called <idSequence>__captus-ext
+	#	The output file required is: outputs/${sampleId}__captus-ext/01_coding_NUC/NUC_coding_NT.fna
+
+
+	# Now extract just the best hit, reform the fasta file with seqtk subseq and Remove the '_in_seqs' text from the original file name.
+	# NB - hopefully '_in_seqs__' will never appear a sequence!
+	grep '>' outputs/${sampleId}__captus-ext/01_coding_NUC/NUC_coding_NT.fna | grep '\[hit=00\]' | awk '{print $1}' | sed 's/^>//' > NUC_coding_NT.main_seqIds_ONLY.txt
+	seqtk subseq outputs/${sampleId}__captus-ext/01_coding_NUC/NUC_coding_NT.fna NUC_coding_NT.main_seqIds_ONLY.txt \
+	| sed 's/_in_seqs__/-/' | awk -F '__' '{print $1 "-" $2 " " $3}' \
+	> ${sampleId}_NUC_coding_NT.main_seqIds_ONLY.fasta
+
+	# Paralogs only"
+	grep '>' outputs/${sampleId}__captus-ext/01_coding_NUC/NUC_coding_NT.fna | grep -v '\[hit=00\]' | awk '{print $1}' | sed 's/^>//' > NUC_coding_NT.paralog_seqIds_ONLY.txt
+	seqtk subseq outputs/${sampleId}__captus-ext/01_coding_NUC/NUC_coding_NT.fna NUC_coding_NT.paralog_seqIds_ONLY.txt \
+	| sed 's/_in_seqs__/-/' | awk -F '__' '{print $1 "-" $2 " " $3}' \
+	> ${sampleId}_NUC_coding_NT.paralog_seqIds_ONLY.fasta
+
+	# Main plus paralogs:
+	cat outputs/${sampleId}__captus-ext/01_coding_NUC/NUC_coding_NT.fna \
+	| sed 's/_in_seqs__/-/' | awk -F '__' '{print $1 "-" $2 " " $3}' \
+	> ${sampleId}_NUC_coding_NT.all_seqIds.fasta
+	
+	if [[ -s ../${sampleId}.fasta ]]; then echo "ERROR: sample fasta file already found in folder, exiting now"; exit; fi
+
+	# Copy the main ${sampleId}_NUC_coding_NT.main_seqIds_ONLY.fasta (no paralogs) file to the top level folder in line with the organisation of these
+	# data sources: OneKP, annotated and unannotated genomes: 
+	cp -p ${sampleId}_NUC_coding_NT.main_seqIds_ONLY.fasta ../${sampleId}.fasta
+
+	# Recovery stats:
+	numbrRecoveredGenes=`cat ${sampleId}_NUC_coding_NT.main_seqIds_ONLY.fasta | grep '>' | wc -l `
+	sumLengthOfGenesWithNs=`fastalength ${sampleId}_NUC_coding_NT.main_seqIds_ONLY.fasta | awk '{sum+=$1} END {print sum}' `
+	# Also removing strings of N's from the sequence line before counting the number of bases:
+	cat ${sampleId}_NUC_coding_NT.main_seqIds_ONLY.fasta \
+	| awk '{if($1 ~ /^>/) { print $0 } else { {gsub(/[Nn]/,"",$0)} {print $0} } }' \
+	| grep -v ^$ \
+	> ${sampleId}_NUC_coding_NT.main_seqIds_ONLY.fasta.Ns_removed_temp
+	sumLengthOfGenes=`fastalength ${sampleId}_NUC_coding_NT.main_seqIds_ONLY.fasta.Ns_removed_temp | awk '{sum+=$1} END {print sum}' `
+	rm ${sampleId}_NUC_coding_NT.main_seqIds_ONLY.fasta.Ns_removed_temp
+	avPcId=`cat ${sampleId}_NUC_coding_NT.main_seqIds_ONLY.fasta | grep '>' | awk '{print $6}' | sed 's/\[ident=//' | sed 's/\]//' | awk '{sum+=$1} END {if(sum > 0) {print sum/NR} else {print "0"}}' `
+	minPcId=`cat ${sampleId}_NUC_coding_NT.main_seqIds_ONLY.fasta | grep '>' | awk '{print $6}' | sed 's/\[ident=//' | sed 's/\]//' | sort -n | head -n 1 `
+	maxPcId=`cat ${sampleId}_NUC_coding_NT.main_seqIds_ONLY.fasta | grep '>' | awk '{print $6}' | sed 's/\[ident=//' | sed 's/\]//' | sort -n | tail -n 1 `
+	numbrSTOPs=`fastatranslate -F 1 fastatranslate -F 1  NUC_coding_NT.main_seqIds_ONLY.fasta | grep '\*' | wc -l`
+	
+	echo "sampleId: $sampleId
+numbrRecoveredGenes: $numbrRecoveredGenes
+sumLengthOfGenesWithNs (bp): $sumLengthOfGenesWithNs
+sumLengthOfGenes (bp): $sumLengthOfGenes
+avPcId: $avPcIdAcrossTopHSP
+minPcId: $minPcIdAcrossTopHSP
+maxPcId: $maxPcIdAcrossTopHSP
+numbrSTOPs: numbrSTOPs" > ${sampleId}_stats.txt
+
+	# Remove non-essential files:
+	if [[ -s $targetsFileLocalCopy ]]; then rm $targetsFileLocalCopy; fi
+	if [[ -s ${sampleId}_input_sequence.fasta ]]; then rm ${sampleId}_input_sequence.fasta; fi
+	if [[ -s NUC_coding_NT.main_seqIds_ONLY.txt ]]; then rm NUC_coding_NT.main_seqIds_ONLY.txt; fi 
+	if [[ -s NUC_coding_NT.paralog_seqIds_ONLY.txt ]]; then rm NUC_coding_NT.paralog_seqIds_ONLY.txt; fi 
 	exit
 elif [[ $hybSeqProgram == 'no' && $stats == 'no' ]];then
 	echo "ERROR: options -y, -s or -x are not set (correctly) - exiting now"
@@ -856,9 +950,9 @@ sumLengthOfGenes: $sumLengthOfGenes" > ${sampleId}_gene_recovery_stats${reexonrt
 		echo numbrRawReads: $numbrRawReads >> ${sampleId}_gene_recovery_stats${reexonrtOptionLog}.txt
 	fi
 
-	# If HybPiper2 command is set to re-exonerate the assembled contigs, skip the stats done next that require reads
-	# as they take a longer time than the reexonerating. Redoing the basic stats to a new log file, as doen above, is worthwhile
-	# so that they match the final stats (which may be the the paftol db).  
+	# If HybPiper2 command is set to re-exonerate the assembled contigs, skip the stats done below that require reads
+	# as they take a longer time than the reexonerating. Redoing the basic stats to a new log file, as done above, is worthwhile
+	# so that they match the final stats (which may be in the paftol db).  
 	if [[ -n $startFromOption ]]; then
 		# So, now remove the large fastq files from any gene recovery method and exit:
 		if [[ -s ../${sampleId}_R1_trimmomatic.fastq ]]; then rm ../${sampleId}_R1_trimmomatic.fastq; fi
