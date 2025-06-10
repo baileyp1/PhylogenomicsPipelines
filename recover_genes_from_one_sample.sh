@@ -89,12 +89,14 @@ elif [[ $retrieveTargets == 'captus_extract' ]]; then
 
 	# Also need to copy and rename the raw sample contigs file and replace with $sampleId so that
 	# Captus uses $sampleId (a predicable name for the Captus folder structure) rather whatever the raw filenames are:
-	cp $paftolDataSymlinksDir/$fastaFile ${sampleId}_in_seqs.fasta # NB: cp -p will not work if original file is not writeable, then it can't overwritten here if run is repeated!  
+	cp $paftolDataSymlinksDir/$fastaFile ${sampleId}_in_seqs.fasta.gz # NB: cp -p will not work if original file is not writeable, then it can't overwritten here if run is repeated!  
+
+	##### NBNB 10.6.2025 - need to test for whether gz of not I think!!!!
 
 	captus extract --overwrite \
 	--threads 4 \
 	-a in_fasta \
-	-f ${sampleId}_in_seqs.fasta \
+	-f ${sampleId}_in_seqs.fasta.gz \
 	--nuc_refs $targetsFileLocalCopy \
 	--nuc_min_identity 55 \
 	--out outputs
