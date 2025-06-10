@@ -85,11 +85,11 @@ elif [[ $retrieveTargets == 'captus_extract' ]]; then
 	# Not sure how $targetsFile is handled by Captus (it seems to want to alter the file!), especially for running multiple samples
 	# in ||el, so will copy it over and use in pwd:
 	targetsFileLocalCopy=`basename $targetsFile`
-	cp -p $targetsFile $targetsFileLocalCopy
+	cp $targetsFile $targetsFileLocalCopy
 
 	# Also need to copy and rename the raw sample contigs file and replace with $sampleId so that
 	# Captus uses $sampleId (a predicable name for the Captus folder structure) rather whatever the raw filenames are:
-	cp -p $paftolDataSymlinksDir/$fastaFile ${sampleId}_in_seqs.fasta
+	cp $paftolDataSymlinksDir/$fastaFile ${sampleId}_in_seqs.fasta # NB: cp -p will not work if original file is not writeable, then it can't overwritten here if run is repeated!  
 
 	captus extract --overwrite \
 	--threads 4 \
