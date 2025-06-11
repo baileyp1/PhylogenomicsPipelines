@@ -108,19 +108,19 @@ elif [[ $retrieveTargets == 'captus_extract' ]]; then
 
 	# Now extract just the best hit, reform the fasta file with seqtk subseq and Remove the '_in_seqs' text from the original file name.
 	# NB - hopefully '_in_seqs__' will never appear a sequence!
-	grep '>' outputs/${sampleId}__captus-ext/01_coding_NUC/NUC_coding_NT.fna | grep '\[hit=00\]' | awk '{print $1}' | sed 's/^>//' > NUC_coding_NT.main_seqIds_ONLY.txt
-	seqtk subseq outputs/${sampleId}__captus-ext/01_coding_NUC/NUC_coding_NT.fna NUC_coding_NT.main_seqIds_ONLY.txt \
+	grep '>' outputs/${sampleId}_in_seqs__captus-ext/01_coding_NUC/NUC_coding_NT.fna | grep '\[hit=00\]' | awk '{print $1}' | sed 's/^>//' > NUC_coding_NT.main_seqIds_ONLY.txt
+	seqtk subseq outputs/${sampleId}_in_seqs__captus-ext/01_coding_NUC/NUC_coding_NT.fna NUC_coding_NT.main_seqIds_ONLY.txt \
 	| sed 's/_in_seqs__/-/' | awk -F '__' '{print $1 "-" $2 " " $3}' \
 	> ${sampleId}_NUC_coding_NT.main_seqIds_ONLY.fasta
 
 	# Paralogs only"
-	grep '>' outputs/${sampleId}__captus-ext/01_coding_NUC/NUC_coding_NT.fna | grep -v '\[hit=00\]' | awk '{print $1}' | sed 's/^>//' > NUC_coding_NT.paralog_seqIds_ONLY.txt
-	seqtk subseq outputs/${sampleId}__captus-ext/01_coding_NUC/NUC_coding_NT.fna NUC_coding_NT.paralog_seqIds_ONLY.txt \
+	grep '>' outputs/${sampleId}_in_seqs__captus-ext/01_coding_NUC/NUC_coding_NT.fna | grep -v '\[hit=00\]' | awk '{print $1}' | sed 's/^>//' > NUC_coding_NT.paralog_seqIds_ONLY.txt
+	seqtk subseq outputs/${sampleId}_in_seqs__captus-ext/01_coding_NUC/NUC_coding_NT.fna NUC_coding_NT.paralog_seqIds_ONLY.txt \
 	| sed 's/_in_seqs__/-/' | awk -F '__' '{print $1 "-" $2 " " $3}' \
 	> ${sampleId}_NUC_coding_NT.paralog_seqIds_ONLY.fasta
 
 	# Main plus paralogs:
-	cat outputs/${sampleId}__captus-ext/01_coding_NUC/NUC_coding_NT.fna \
+	cat outputs/${sampleId}_in_seqs__captus-ext/01_coding_NUC/NUC_coding_NT.fna \
 	| sed 's/_in_seqs__/-/' | awk -F '__' '{print $1 "-" $2 " " $3}' \
 	> ${sampleId}_NUC_coding_NT.all_seqIds.fasta
 	
