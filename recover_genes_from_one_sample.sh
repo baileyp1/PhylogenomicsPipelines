@@ -155,7 +155,7 @@ elif [[ $retrieveTargets == 'captus_extract' ]]; then
 	echo "minPcId: $minPcId"
 	maxPcId=`cat ${sampleId}_NUC_coding_NT.main_seqIds_ONLY.fasta | grep '>' | awk '{print $6}' | sed 's/\[ident=//' | sed 's/\]//' | sort -n | tail -n 1 `
 	echo "maxPcId: $maxPcId"
-	numbrSTOPs=`fastatranslate -F 1 fastatranslate -F 1  NUC_coding_NT.main_seqIds_ONLY.fasta | grep '\*' | wc -l`
+	numbrSTOPs=`fastatranslate -F 1 NUC_coding_NT.main_seqIds_ONLY.fasta | grep '\*' | wc -l`
 	echo "numbrSTOPs: $numbrSTOPs"
 	
 	echo "sampleId: $sampleId
