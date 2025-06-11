@@ -118,25 +118,29 @@ elif [[ $retrieveTargets == 'captus_extract' ]]; then
 	# NB - hopefully '_in_seqs__' will never appear a sequence!
 	grep '>' outputs/${sampleId}_in_seqs__captus-ext/01_coding_NUC/NUC_coding_NT.fna | grep '\[hit=00\]' | awk '{print $1}' | sed 's/^>//' > NUC_coding_NT.main_seqIds_ONLY.txt
 	seqtk subseq outputs/${sampleId}_in_seqs__captus-ext/01_coding_NUC/NUC_coding_NT.fna NUC_coding_NT.main_seqIds_ONLY.txt \
-	| sed 's/_in_seqs__/-/' | awk -F '__' '{print $1 "-" $2 " " $3}' \
+	| sed 's/_in_seqs__/-/' | sed 's/__[0-9][0-9] / /' \
 	> ${sampleId}_NUC_coding_NT.main_seqIds_ONLY.fasta
 
 	# Paralogs only"
 	grep '>' outputs/${sampleId}_in_seqs__captus-ext/01_coding_NUC/NUC_coding_NT.fna | grep -v '\[hit=00\]' | awk '{print $1}' | sed 's/^>//' > NUC_coding_NT.paralog_seqIds_ONLY.txt
 	seqtk subseq outputs/${sampleId}_in_seqs__captus-ext/01_coding_NUC/NUC_coding_NT.fna NUC_coding_NT.paralog_seqIds_ONLY.txt \
-	| sed 's/_in_seqs__/-/' | awk -F '__' '{print $1 "-" $2 " " $3}' \
+	| sed 's/_in_seqs__/-/' | sed 's/__[0-9][0-9] / /' \
 	> ${sampleId}_NUC_coding_NT.paralog_seqIds_ONLY.fasta
 
 	# Main plus paralogs:
 	cat outputs/${sampleId}_in_seqs__captus-ext/01_coding_NUC/NUC_coding_NT.fna \
-	| sed 's/_in_seqs__/-/' | awk -F '__' '{print $1 "-" $2 " " $3}' \
+	| sed 's/_in_seqs__/-/' | sed 's/__[0-9][0-9] / /' \
 	> ${sampleId}_NUC_coding_NT.all_seqIds.fasta
 
 	# Recovery stats:
 	if [[ "$assembledContigsLocalCopy" == *'.gz' ]]; then
 		numbrAssembledContigs=`gunzip -c $assembledContigsLocalCopy | grep '>' | wc -l `
+		sumLengthOfAssembledContigs=`gunzip -c $assembledContigsLocalCopy  | grep -v '>' | awk '{print length($0)}' | awk '{sum+=$1} END {print sum}' `
+		### Might also be useful to have the average length of a contig
 	else 
 		numbrAssembledContigs=`cat $assembledContigsLocalCopy | grep '>' | wc -l `
+		sumLengthOfAssembledContigs=`cat $assembledContigsLocalCopy  | grep -v '>' | awk '{print length($0)}' | awk '{sum+=$1} END {print sum}' `
+		### Might also be useful to have the average length of a contig
 	fi
 	numbrRecoveredGenes=`cat ${sampleId}_NUC_coding_NT.main_seqIds_ONLY.fasta | grep '>' | wc -l `
 	echo "numbrRecoveredGenes: $numbrRecoveredGenes"
@@ -155,18 +159,22 @@ elif [[ $retrieveTargets == 'captus_extract' ]]; then
 	echo "minPcId: $minPcId"
 	maxPcId=`cat ${sampleId}_NUC_coding_NT.main_seqIds_ONLY.fasta | grep '>' | awk '{print $6}' | sed 's/\[ident=//' | sed 's/\]//' | sort -n | tail -n 1 `
 	echo "maxPcId: $maxPcId"
-	###numbrSTOPs=`fastatranslate -F 1 ${sampleId}_NUC_coding_NT.main_seqIds_ONLY.fasta | grep '\*' | wc -l`
-	###echo "numbrSTOPs: $numbrSTOPs"
+	numbrSTOPs=`fastatranslate -F 1 ${sampleId}_NUC_coding_NT.main_seqIds_ONLY.fasta | grep -o '\*' | wc -l`
+	echo "numbrSTOPs: $numbrSTOPs"
+	numbrReportedFrameShifts=`cat ${sampleId}_NUC_coding_NT.main_seqIds_ONLY.fasta | grep '\[frameshifts=' | wc -l `
 	
 	echo "sampleId: $sampleId
 numbrAssembledContigs: $numbrAssembledContigs
+sumLengthOfAssembledContigs: $sumLengthOfAssembledContigs
 numbrRecoveredGenes: $numbrRecoveredGenes
 sumLengthOfGenesWithNs (bp): $sumLengthOfGenesWithNs
 sumLengthOfGenes (bp): $sumLengthOfGenes
 avPcId: $avPcId
 minPcId: $minPcId
 maxPcId: $maxPcId
-numbrSTOPs: numbrSTOPs" > ${sampleId}_stats.txt
+numbrSTOPs: $numbrSTOPs
+numbrReportedFrameShifts: $numbrReportedFrameShifts
+" > ${sampleId}_stats.txt
 
 	if [[ -s ../${sampleId}.fasta ]]; then echo "ERROR: sample fasta file already found in folder, exiting now"; exit; fi
 
