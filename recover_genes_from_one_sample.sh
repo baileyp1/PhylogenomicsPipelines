@@ -141,7 +141,7 @@ elif [[ $retrieveTargets == 'captus_extract' ]]; then
 		echo "numbrAssembledContigs: numbrAssembledContigs"
 	fi
 	numbrRecoveredGenes=`cat ${sampleId}_NUC_coding_NT.main_seqIds_ONLY.fasta | grep '>' | wc -l `
-	echo $numbrRecoveredGenes: $numbrRecoveredGenes"
+	echo "$numbrRecoveredGenes: $numbrRecoveredGenes"
 	sumLengthOfGenesWithNs=`fastalength ${sampleId}_NUC_coding_NT.main_seqIds_ONLY.fasta | awk '{sum+=$1} END {print sum}' `
 	# Also removing strings of N's from the sequence line before counting the number of bases:
 	cat ${sampleId}_NUC_coding_NT.main_seqIds_ONLY.fasta \
@@ -158,8 +158,8 @@ elif [[ $retrieveTargets == 'captus_extract' ]]; then
 	echo "sampleId: $sampleId
 numbrAssembledContigs: $numbrAssembledContigs
 numbrRecoveredGenes: $numbrRecoveredGenes
-sumLengthOfGenesWithNs \(bp\): $sumLengthOfGenesWithNs
-sumLengthOfGenes \(bp\): $sumLengthOfGenes
+sumLengthOfGenesWithNs (bp): $sumLengthOfGenesWithNs
+sumLengthOfGenes (bp): $sumLengthOfGenes
 avPcId: $avPcIdAcrossTopHSP
 minPcId: $minPcIdAcrossTopHSP
 maxPcId: $maxPcIdAcrossTopHSP
