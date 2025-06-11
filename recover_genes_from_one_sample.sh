@@ -135,13 +135,11 @@ elif [[ $retrieveTargets == 'captus_extract' ]]; then
 	# Recovery stats:
 	if [[ "$assembledContigsLocalCopy" == *'.gz' ]]; then
 		numbrAssembledContigs=`gunzip -c $assembledContigsLocalCopy | grep '>' | wc -l `
-		echo "numbrAssembledContigs: numbrAssembledContigs"
 	else 
 		numbrAssembledContigs=`cat $assembledContigsLocalCopy | grep '>' | wc -l `
-		echo "numbrAssembledContigs: numbrAssembledContigs"
 	fi
 	numbrRecoveredGenes=`cat ${sampleId}_NUC_coding_NT.main_seqIds_ONLY.fasta | grep '>' | wc -l `
-	echo "$numbrRecoveredGenes: $numbrRecoveredGenes"
+	echo "numbrRecoveredGenes: $numbrRecoveredGenes"
 	sumLengthOfGenesWithNs=`fastalength ${sampleId}_NUC_coding_NT.main_seqIds_ONLY.fasta | awk '{sum+=$1} END {print sum}' `
 	# Also removing strings of N's from the sequence line before counting the number of bases:
 	cat ${sampleId}_NUC_coding_NT.main_seqIds_ONLY.fasta \
@@ -154,6 +152,7 @@ elif [[ $retrieveTargets == 'captus_extract' ]]; then
 	minPcId=`cat ${sampleId}_NUC_coding_NT.main_seqIds_ONLY.fasta | grep '>' | awk '{print $6}' | sed 's/\[ident=//' | sed 's/\]//' | sort -n | head -n 1 `
 	maxPcId=`cat ${sampleId}_NUC_coding_NT.main_seqIds_ONLY.fasta | grep '>' | awk '{print $6}' | sed 's/\[ident=//' | sed 's/\]//' | sort -n | tail -n 1 `
 	numbrSTOPs=`fastatranslate -F 1 fastatranslate -F 1  NUC_coding_NT.main_seqIds_ONLY.fasta | grep '\*' | wc -l`
+	echo "numbrSTOPs: $numbrSTOPs"
 	
 	echo "sampleId: $sampleId
 numbrAssembledContigs: $numbrAssembledContigs
