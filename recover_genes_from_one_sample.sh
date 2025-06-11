@@ -93,7 +93,7 @@ elif [[ $retrieveTargets == 'captus_extract' ]]; then
 	if [[ "$paftolDataSymlinksDir/$fastaFile" == *'.gz' ]]; then
 		cp --no-preserve=mode $paftolDataSymlinksDir/$fastaFile ${sampleId}_in_seqs.fasta.gz # NB: 'cp -p' will not work if original file is not writeable, then it can't overwritten here if run is repeated!
 		assembledContigsLocalCopy=${sampleId}_in_seqs.fasta.gz
-		#chmod 755 $assembledContigsLocalCopy	# 'cp' alone still preserved the non-write status of the file so will have to alter manually 
+		#chmod 755 $assembledContigsLocalCopy	# 'cp' alone still preserved the non-write status of the file so will have to alter manually; actually --no-preserve=mode works, gives '-rw-r--r--' 
 	else
 		# Assume file is unzipped. Captus requires file ending to reflect whether file is zipped or not i.e. an unzipped file ending e.g. fasta.gz will not work so:
 		cp --no-preserve=mode $paftolDataSymlinksDir/$fastaFile ${sampleId}_in_seqs.fasta
@@ -132,8 +132,12 @@ elif [[ $retrieveTargets == 'captus_extract' ]]; then
 	| sed 's/_in_seqs__/-/' | awk -F '__' '{print $1 "-" $2 " " $3}' \
 	> ${sampleId}_NUC_coding_NT.all_seqIds.fasta
 
-	# Recovery stats:
-	numbrAssembledContigs=`cat $assembledContigsLocalCopy | grep '>' | wc -l `
+	# Recovery stats:		assembledContigsLocalCopy
+	if [[ "$assembledContigsLocalCopy" == *'.gz' ]]; then
+		numbrAssembledContigs=`gunzip -c $assembledContigsLocalCopy | grep '>' | wc -l `
+	else 
+		numbrAssembledContigs=`cat $assembledContigsLocalCopy | grep '>' | wc -l `
+	fi
 	numbrRecoveredGenes=`cat ${sampleId}_NUC_coding_NT.main_seqIds_ONLY.fasta | grep '>' | wc -l `
 	sumLengthOfGenesWithNs=`fastalength ${sampleId}_NUC_coding_NT.main_seqIds_ONLY.fasta | awk '{sum+=$1} END {print sum}' `
 	# Also removing strings of N's from the sequence line before counting the number of bases:
