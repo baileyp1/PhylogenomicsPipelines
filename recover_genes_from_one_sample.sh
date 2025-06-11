@@ -131,12 +131,6 @@ elif [[ $retrieveTargets == 'captus_extract' ]]; then
 	cat outputs/${sampleId}_in_seqs__captus-ext/01_coding_NUC/NUC_coding_NT.fna \
 	| sed 's/_in_seqs__/-/' | awk -F '__' '{print $1 "-" $2 " " $3}' \
 	> ${sampleId}_NUC_coding_NT.all_seqIds.fasta
-	
-	if [[ -s ../${sampleId}.fasta ]]; then echo "ERROR: sample fasta file already found in folder, exiting now"; exit; fi
-
-	# Copy the main ${sampleId}_NUC_coding_NT.main_seqIds_ONLY.fasta (no paralogs) file to the top level folder in line with the organisation of these
-	# data sources: OneKP, annotated and unannotated genomes: 
-	cp -p ${sampleId}_NUC_coding_NT.main_seqIds_ONLY.fasta ../${sampleId}.fasta
 
 	# Recovery stats:
 	numbrAssembledContigs=`cat $assembledContigsLocalCopy | grep '>' | wc -l `
@@ -163,6 +157,13 @@ avPcId: $avPcIdAcrossTopHSP
 minPcId: $minPcIdAcrossTopHSP
 maxPcId: $maxPcIdAcrossTopHSP
 numbrSTOPs: numbrSTOPs" > ${sampleId}_stats.txt
+
+	if [[ -s ../${sampleId}.fasta ]]; then echo "ERROR: sample fasta file already found in folder, exiting now"; exit; fi
+
+	# Copy the main ${sampleId}_NUC_coding_NT.main_seqIds_ONLY.fasta (no paralogs) file to the top level folder in line with the organisation of these
+	# data sources: OneKP, annotated and unannotated genomes (also storing the stats file in this way): 
+	cp -p ${sampleId}_NUC_coding_NT.main_seqIds_ONLY.fasta ../${sampleId}.fasta
+	cp -p ${sampleId}_stats.txt ../${sampleId}_stats.txt
 
 	# Remove non-essential files:
 	if [[ -s $targetsFileLocalCopy ]]; then rm $targetsFileLocalCopy; fi
