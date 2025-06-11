@@ -126,11 +126,15 @@ elif [[ $retrieveTargets == 'captus_extract' ]]; then
 	seqtk subseq outputs/${sampleId}_in_seqs__captus-ext/01_coding_NUC/NUC_coding_NT.fna NUC_coding_NT.paralog_seqIds_ONLY.txt \
 	| sed 's/_in_seqs__/-/' | sed 's/__[0-9][0-9] / /' \
 	> ${sampleId}_NUC_coding_NT.paralog_seqIds_ONLY.fasta
+	### NB fasta header id still needs adjusting for use in alignment nad phylogeny
+	### Would need to have the [hit=??] number added to the sampleId of the fasta header id I think 
 
 	# Main plus paralogs:
 	cat outputs/${sampleId}_in_seqs__captus-ext/01_coding_NUC/NUC_coding_NT.fna \
 	| sed 's/_in_seqs__/-/' | sed 's/__[0-9][0-9] / /' \
 	> ${sampleId}_NUC_coding_NT.all_seqIds.fasta
+	### NB fasta header id still needs adjusting for use in alignment nad phylogeny
+	### Would need to have the [hit=??] number added to the sampleId of the fasta header id I think
 
 	# Recovery stats:
 	if [[ "$assembledContigsLocalCopy" == *'.gz' ]]; then
@@ -164,8 +168,8 @@ elif [[ $retrieveTargets == 'captus_extract' ]]; then
 	numbrReportedFrameShifts=`cat ${sampleId}_NUC_coding_NT.main_seqIds_ONLY.fasta | grep '\[frameshifts=' | wc -l `
 	
 	echo "sampleId: $sampleId
-numbrAssembledContigs: $numbrAssembledContigs
-sumLengthOfAssembledContigs: $sumLengthOfAssembledContigs
+numbrAssembledContigs (bp): $numbrAssembledContigs
+sumLengthOfAssembledContigs (bp): $sumLengthOfAssembledContigs
 numbrRecoveredGenes: $numbrRecoveredGenes
 sumLengthOfGenesWithNs (bp): $sumLengthOfGenesWithNs
 sumLengthOfGenes (bp): $sumLengthOfGenes
@@ -173,8 +177,7 @@ avPcId: $avPcId
 minPcId: $minPcId
 maxPcId: $maxPcId
 numbrSTOPs: $numbrSTOPs
-numbrReportedFrameShifts: $numbrReportedFrameShifts
-" > ${sampleId}_stats.txt
+numbrReportedFrameShifts: $numbrReportedFrameShifts" > ${sampleId}_stats.txt
 
 	if [[ -s ../${sampleId}.fasta ]]; then echo "ERROR: sample fasta file already found in folder, exiting now"; exit; fi
 
