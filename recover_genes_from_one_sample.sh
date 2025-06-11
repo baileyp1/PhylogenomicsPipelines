@@ -132,13 +132,16 @@ elif [[ $retrieveTargets == 'captus_extract' ]]; then
 	| sed 's/_in_seqs__/-/' | awk -F '__' '{print $1 "-" $2 " " $3}' \
 	> ${sampleId}_NUC_coding_NT.all_seqIds.fasta
 
-	# Recovery stats:		assembledContigsLocalCopy
+	# Recovery stats:
 	if [[ "$assembledContigsLocalCopy" == *'.gz' ]]; then
 		numbrAssembledContigs=`gunzip -c $assembledContigsLocalCopy | grep '>' | wc -l `
+		echo "numbrAssembledContigs: numbrAssembledContigs"
 	else 
 		numbrAssembledContigs=`cat $assembledContigsLocalCopy | grep '>' | wc -l `
+		echo "numbrAssembledContigs: numbrAssembledContigs"
 	fi
 	numbrRecoveredGenes=`cat ${sampleId}_NUC_coding_NT.main_seqIds_ONLY.fasta | grep '>' | wc -l `
+	echo $numbrRecoveredGenes: $numbrRecoveredGenes"
 	sumLengthOfGenesWithNs=`fastalength ${sampleId}_NUC_coding_NT.main_seqIds_ONLY.fasta | awk '{sum+=$1} END {print sum}' `
 	# Also removing strings of N's from the sequence line before counting the number of bases:
 	cat ${sampleId}_NUC_coding_NT.main_seqIds_ONLY.fasta \
