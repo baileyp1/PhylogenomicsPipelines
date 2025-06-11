@@ -91,12 +91,14 @@ elif [[ $retrieveTargets == 'captus_extract' ]]; then
 	# Captus uses $sampleId (a predicable name for the Captus folder structure) rather than whatever the raw filenames are:
 	
 	if [[ "$paftolDataSymlinksDir/$fastaFile" == *'.gz' ]]; then
-		cp $paftolDataSymlinksDir/$fastaFile ${sampleId}_in_seqs.fasta.gz # NB: 'cp -p' will not work if original file is not writeable, then it can't overwritten here if run is repeated!
+		cp --no-preserve $paftolDataSymlinksDir/$fastaFile ${sampleId}_in_seqs.fasta.gz # NB: 'cp -p' will not work if original file is not writeable, then it can't overwritten here if run is repeated!
 		assembledContigsLocalCopy=${sampleId}_in_seqs.fasta.gz
+		#chmod 755 $assembledContigsLocalCopy	# 'cp' alone still preserved the non-write status of the file so will have to alter manually 
 	else
 		# Assume file is unzipped. Captus requires file ending to reflect whether file is zipped or not i.e. an unzipped file ending e.g. fasta.gz will not work so:
-		cp $paftolDataSymlinksDir/$fastaFile ${sampleId}_in_seqs.fasta
+		cp --no-preserve $paftolDataSymlinksDir/$fastaFile ${sampleId}_in_seqs.fasta
 		assembledContigsLocalCopy=${sampleId}_in_seqs.fasta
+		#chmod 755 $assembledContigsLocalCopy 
 	fi
 
 	# captus extract --overwrite \
