@@ -158,8 +158,8 @@ elif [[ $retrieveTargets == 'captus_extract' ]]; then
 	echo "sampleId: $sampleId
 numbrAssembledContigs: $numbrAssembledContigs
 numbrRecoveredGenes: $numbrRecoveredGenes
-sumLengthOfGenesWithNs (bp): $sumLengthOfGenesWithNs
-sumLengthOfGenes (bp): $sumLengthOfGenes
+sumLengthOfGenesWithNs \(bp\): $sumLengthOfGenesWithNs
+sumLengthOfGenes \(bp\): $sumLengthOfGenes
 avPcId: $avPcIdAcrossTopHSP
 minPcId: $minPcIdAcrossTopHSP
 maxPcId: $maxPcIdAcrossTopHSP
