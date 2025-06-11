@@ -163,9 +163,9 @@ numbrAssembledContigs: $numbrAssembledContigs
 numbrRecoveredGenes: $numbrRecoveredGenes
 sumLengthOfGenesWithNs (bp): $sumLengthOfGenesWithNs
 sumLengthOfGenes (bp): $sumLengthOfGenes
-avPcId: $avPcIdAcrossTopHSP
-minPcId: $minPcIdAcrossTopHSP
-maxPcId: $maxPcIdAcrossTopHSP
+avPcId: $avPcId
+minPcId: $minPcId
+maxPcId: $maxPcId
 numbrSTOPs: numbrSTOPs" > ${sampleId}_stats.txt
 
 	if [[ -s ../${sampleId}.fasta ]]; then echo "ERROR: sample fasta file already found in folder, exiting now"; exit; fi
