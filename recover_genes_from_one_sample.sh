@@ -88,18 +88,24 @@ elif [[ $retrieveTargets == 'captus_extract' ]]; then
 	cp $targetsFile $targetsFileLocalCopy
 
 	# Also need to copy and rename the raw sample contigs file and replace with $sampleId so that
-	# Captus uses $sampleId (a predicable name for the Captus folder structure) rather whatever the raw filenames are:
-	cp $paftolDataSymlinksDir/$fastaFile ${sampleId}_in_seqs.fasta.gz # NB: cp -p will not work if original file is not writeable, then it can't overwritten here if run is repeated!  
+	# Captus uses $sampleId (a predicable name for the Captus folder structure) rather than whatever the raw filenames are:
+	
+	if [[ "$paftolDataSymlinksDir/$fastaFile" == *'.gz' ]]; then
+		cp $paftolDataSymlinksDir/$fastaFile ${sampleId}_in_seqs.fasta.gz # NB: 'cp -p' will not work if original file is not writeable, then it can't overwritten here if run is repeated!
+		assembledContigsLocalCopy=${sampleId}_in_seqs.fasta.gz
+	else
+		# Assume file is unzipped. Captus requires file ending to reflect whether file is zipped or not i.e. an unzipped file ending e.g. fasta.gz will not work so:
+		cp $paftolDataSymlinksDir/$fastaFile ${sampleId}_in_seqs.fasta
+		assembledContigsLocalCopy=${sampleId}_in_seqs.fasta
+	fi
 
-	##### NBNB 10.6.2025 - need to test for whether gz of not I think!!!!
-
-	captus extract --overwrite \
-	--threads 4 \
-	-a in_fasta \
-	-f ${sampleId}_in_seqs.fasta.gz \
-	--nuc_refs $targetsFileLocalCopy \
-	--nuc_min_identity 55 \
-	--out outputs
+	# captus extract --overwrite \
+	# --threads 4 \
+	# -a in_fasta \
+	# -f $assembledContigsLocalCopy \
+	# --nuc_refs $targetsFileLocalCopy \
+	# --nuc_min_identity 55 \
+	# --out outputs
 	# Removed: --max_paralogs 0 \
 	# Notes:
 	# 1.Within 'outputs' folder, the extracted markers/genes go to a folder called <idSequence>__captus-ext
@@ -131,6 +137,7 @@ elif [[ $retrieveTargets == 'captus_extract' ]]; then
 	cp -p ${sampleId}_NUC_coding_NT.main_seqIds_ONLY.fasta ../${sampleId}.fasta
 
 	# Recovery stats:
+	numbrAssembledContigs=`cat $assembledContigsLocalCopy | grep '>' | wc -l `
 	numbrRecoveredGenes=`cat ${sampleId}_NUC_coding_NT.main_seqIds_ONLY.fasta | grep '>' | wc -l `
 	sumLengthOfGenesWithNs=`fastalength ${sampleId}_NUC_coding_NT.main_seqIds_ONLY.fasta | awk '{sum+=$1} END {print sum}' `
 	# Also removing strings of N's from the sequence line before counting the number of bases:
@@ -146,6 +153,7 @@ elif [[ $retrieveTargets == 'captus_extract' ]]; then
 	numbrSTOPs=`fastatranslate -F 1 fastatranslate -F 1  NUC_coding_NT.main_seqIds_ONLY.fasta | grep '\*' | wc -l`
 	
 	echo "sampleId: $sampleId
+numbrAssembledContigs: $numbrAssembledContigs
 numbrRecoveredGenes: $numbrRecoveredGenes
 sumLengthOfGenesWithNs (bp): $sumLengthOfGenesWithNs
 sumLengthOfGenes (bp): $sumLengthOfGenes
@@ -156,7 +164,7 @@ numbrSTOPs: numbrSTOPs" > ${sampleId}_stats.txt
 
 	# Remove non-essential files:
 	if [[ -s $targetsFileLocalCopy ]]; then rm $targetsFileLocalCopy; fi
-	if [[ -s ${sampleId}_input_sequence.fasta ]]; then rm ${sampleId}_input_sequence.fasta; fi
+	if [[ -s $assembledContigsLocalCopy ]]; then rm $assembledContigsLocalCopy; fi
 	if [[ -s NUC_coding_NT.main_seqIds_ONLY.txt ]]; then rm NUC_coding_NT.main_seqIds_ONLY.txt; fi 
 	if [[ -s NUC_coding_NT.paralog_seqIds_ONLY.txt ]]; then rm NUC_coding_NT.paralog_seqIds_ONLY.txt; fi 
 	exit
