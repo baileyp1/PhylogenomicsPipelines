@@ -149,7 +149,6 @@ elif [[ $retrieveTargets == 'captus_extract' ]]; then
 	numbrRecoveredGenes=`cat ${sampleId}_NUC_coding_NT.main_seqIds_ONLY.fasta | grep '>' | wc -l `
 	echo "numbrRecoveredGenes: $numbrRecoveredGenes"
 	sumLengthOfGenesWithNs=`fastalength ${sampleId}_NUC_coding_NT.main_seqIds_ONLY.fasta | awk '{sum+=$1} END {print sum}' `
-	echo "sumLengthOfGenesWithNs=: $sumLengthOfGenesWithNs"
 	# Also removing strings of N's from the sequence line before counting the number of bases:
 	cat ${sampleId}_NUC_coding_NT.main_seqIds_ONLY.fasta \
 	| awk '{if($1 ~ /^>/) { print $0 } else { {gsub(/[Nn]/,"",$0)} {print $0} } }' \
@@ -158,11 +157,8 @@ elif [[ $retrieveTargets == 'captus_extract' ]]; then
 	sumLengthOfGenes=`fastalength ${sampleId}_NUC_coding_NT.main_seqIds_ONLY.fasta.Ns_removed_temp | awk '{sum+=$1} END {print sum}' `
 	rm ${sampleId}_NUC_coding_NT.main_seqIds_ONLY.fasta.Ns_removed_temp
 	avPcId=`cat ${sampleId}_NUC_coding_NT.main_seqIds_ONLY.fasta | grep '>' | awk '{print $6}' | sed 's/\[ident=//' | sed 's/\]//' | awk '{sum+=$1} END {if(sum > 0) {print sum/NR} else {print "0"}}' `
-	echo "avPcId: $avPcId"
 	minPcId=`cat ${sampleId}_NUC_coding_NT.main_seqIds_ONLY.fasta | grep '>' | awk '{print $6}' | sed 's/\[ident=//' | sed 's/\]//' | sort -n | head -n 1 `
-	echo "minPcId: $minPcId"
 	maxPcId=`cat ${sampleId}_NUC_coding_NT.main_seqIds_ONLY.fasta | grep '>' | awk '{print $6}' | sed 's/\[ident=//' | sed 's/\]//' | sort -n | tail -n 1 `
-	echo "maxPcId: $maxPcId"
 	numbrSTOPs=`fastatranslate -F 1 ${sampleId}_NUC_coding_NT.main_seqIds_ONLY.fasta | grep -o '\*' | wc -l`
 	echo "numbrSTOPs: $numbrSTOPs"
 	numbrReportedFrameShifts=`cat ${sampleId}_NUC_coding_NT.main_seqIds_ONLY.fasta | grep '\[frameshifts=' | wc -l `

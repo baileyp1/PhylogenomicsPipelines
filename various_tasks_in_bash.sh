@@ -314,6 +314,9 @@ retrieve_targets()	{
 #	Additional software required:
 #	BLAST
 #	Exonerate (fastatranslate)
+# 	Python 3.6+
+#		NB - f-strings will produce a 'SyntaxError: invalid syntax' error if not supported by Python version:
+#		f'Must be using Python 3.6 or higher.'
 #	various_tasks_in_python.py retrieve_targets_magic 
 # 		Python modules:
 #		from Bio import SeqIO
@@ -360,10 +363,21 @@ retrieve_targets()	{
 	fi
 
 
-	### NB - FIRST will need to examine the fasta header line to make sure that BLAST can use it:
-	#1. pipe clean - just replace with an underscore
-	#2. check fasta id has less than 50 chars for the main id!!! - see sygenium notes - exit if so with error
-	#3. check all seqs have fasta records in them - what did I mean here
+	# Fasta file checks:
+	# 1. Id on the fasta header must be 50 characters or less for makeblastdb so reduce to 50 as necessary
+	# 2. Clean header of any pipe chars, replace with underscores (sed 's/\|/_/g')
+	# 3. Check all fasta records have a sequence in them - still to do
+	cat $geneSeqsToSearch | sed 's/\|/_/g' | while read line; do
+		echo $line | awk '{ if($1 ~ /^>/ && length($1) > 51) { print substr($0,1,51) }  else { print $0 } }' 
+	done > ${geneSeqsToSearch}_fasta_headers_modified_temp
+
+	# If any fasta header ids are now truncated and no longer unique in the fasta file, throw an error:
+	count=`cat ${geneSeqsToSearch}_fasta_headers_modified_temp | grep '>' | awk '{print $1}' | sort | uniq -c | awk '$1 > 1' | wc -l`
+	if [[ $count -gt 0 ]]; then
+		echo "ERROR: Duplicate fasta record ids in gene CDS/transcriptome file, probably after reducing length of one of more fasta record ids to <=50 characters (required for makeblastdb). Exiting..."
+		exit 
+	fi
+	mv ${geneSeqsToSearch}_fasta_headers_modified_temp $geneSeqsToSearch
 
 
 	echo "Making the BLAST db index of the gene sequences to search..."
@@ -407,7 +421,7 @@ retrieve_targets()	{
 	# database sequence hits multiple genes, the best matching gene will be selected first.
 	# Paftools retrieveTargets wasn't doing this for some reason.
 	# Also need an evalue cut off: 0.05, 0.01 are options; hybpiper assemble uses 0.0001 for blastx hits, probably safer if we are demanding orthologs, not just homologs
-	# Also using a cut off for pcid; hybpiper assemble exonerate cut off for exonerate hits = 55 - so use that for now.
+	# Also using a cut off for pcid; hybpiper assemble exonerate cut off for exonerate hits = 55 - so use that for now; reading the Exonerate manual, it looks like this pcid would correspond to protein.
 	# Will also sort by length as well - would complete the logic of selecting best hit but it is very unlikely to result in any further improvement
 	sort -k13g -k3gr -k4gr ${sampleId}_${blastProgram}.tab | awk '$13 <= 0.0001' | awk '$3 >= 55' > ${sampleId}_${blastProgram}.sort-k13g-k3gr-k4gr.tab
 	
@@ -425,8 +439,16 @@ retrieve_targets()	{
 	$pathToScript/various_tasks_in_python.py retrieve_targets_magic $sampleId ${sampleId}_${blastProgram}.sort-k13g-k3gr-k4gr.tab  $geneSeqsToSearch $blastProgram
 	# Output file  of fasta records: <sampleId>.fasta
 
-	# Check whether the same subject sequence is hitting the same reference target gene (incorrect orthology):
-	numbrMultiGeneHits=`cat ${sampleId}.fasta | grep '>' | awk '{print $3}' | sort |uniq -c | awk '$1 > 1' | wc -l `
+	
+	# If no ${sampleId}_${blastProgram}.fasta file or is empty, skip remaining steps:
+	if [[ ! -s ${sampleId}_${blastProgram}.fasta ]]; then 
+		echo "INFO: no BLAST hits were found for sample ${sampleId}"
+		exit
+	fi
+
+
+	# Check whether the same subject sequence is hitting different reference target gene(s) (incorrect orthology):
+	numbrMultiGeneHits=`cat ${sampleId}_${blastProgram}.fasta | grep '>' | awk '{print $3}' | sort |uniq -c | awk '$1 > 1' | wc -l `
 	#echo numbrMultiGeneHits: $numbrMultiGeneHits
 	echo
 	echo "INFO: BLAST hits filtered out with evalue of > 0.0001 and % id of < 55"
@@ -434,50 +456,56 @@ retrieve_targets()	{
 	echo
 	if [[ $numbrMultiGeneHits -gt 0 ]]; then
 		echo 'WARNING: Hits to the same contig (BLAST subject) found for more than one gene:'
-		echo `cat ${sampleId}.fasta | grep '>' | awk '{print $3}' | sort | uniq -c | awk '$1 > 1' `
+		echo `cat ${sampleId}_${blastProgram}.fasta | grep '>' | awk '{print $3}' | sort | uniq -c | awk '$1 > 1' `
 		# Now use printf to get a list of subj hits to use with grep:
-		grepRegex=`cat ${sampleId}.fasta | grep '>' | awk '{print $3}' | sort |uniq -c | awk '$1 > 1' | awk '{printf $2 " "}' `
+		grepRegex=`cat ${sampleId}_${blastProgram}.fasta | grep '>' | awk '{print $3}' | sort |uniq -c | awk '$1 > 1' | awk '{printf $2 " "}' `
 		echo $grepRegex | sed 's/ /\|/g'
 		# Finally print out the fasta header for each gene affected
-		grep "$grepRegex" ${sampleId}.fasta
+		grep "$grepRegex" ${sampleId}_${blastProgram}.fasta
 	fi
 
 
 	# Basic stats across all genes:
-	numbrRecoveredGenes=`cat ${sampleId}.fasta | grep '>' | wc -l `
-	sumLengthOfGenesWithNs=`fastalength ${sampleId}.fasta | awk '{sum+=$1} END {print sum}' `
+	numbrRecoveredGenes=`cat ${sampleId}_${blastProgram}.fasta | grep '>' | wc -l `
+	sumLengthOfGenesWithNs=`fastalength ${sampleId}_${blastProgram}.fasta | awk '{sum+=$1} END {print sum}' `
 	# Also removing strings of N's from the sequence line before counting the number of bases:
-	cat ${sampleId}.fasta \
+	cat ${sampleId}_${blastProgram}.fasta \
 	| awk '{if($1 ~ /^>/) { print $0 } else { {gsub(/[Nn]/,"",$0)} {print $0} } }' \
 	| grep -v ^$ \
-	> ${sampleId}.fasta.Ns_removed_temp
-	sumLengthOfGenes=`fastalength ${sampleId}.fasta.Ns_removed_temp | awk '{sum+=$1} END {print sum}' `
-	rm ${sampleId}.fasta.Ns_removed_temp
+	> ${sampleId}_${blastProgram}.fasta.Ns_removed_temp
+	sumLengthOfGenes=`fastalength ${sampleId}_${blastProgram}.fasta.Ns_removed_temp | awk '{sum+=$1} END {print sum}' `
+	rm ${sampleId}_${blastProgram}.fasta.Ns_removed_temp
 	if [[ $blastProgram == 'tblastn' || $blastProgram == 'blastx' ]]; then
-		sumLengthOfHSPs=`cat ${sampleId}.fasta | grep '>' | awk '{print $5}' | sed 's/lenHSP=//' | awk '{sum+=$1} END {print sum * 3}' `
+		sumLengthOfHSPs=`cat ${sampleId}_${blastProgram}.fasta | grep '>' | awk '{print $5}' | sed 's/lenTopHSP=//' | awk '{sum+=$1} END {print sum * 3}' `
+		### Or rename to: sumLengthTopHSP
 		### NB - I think lenHSP might also include gaps - check - so is not a perfect comparison to sumLengthOfGenes.
 		### However, there don't appear to be any big gaps, just a few more for seqs with good matches but percent id < 55%
 	else 
-		sumLengthOfHSPs=`cat ${sampleId}.fasta | grep '>' | awk '{print $5}' | sed 's/lenHSP=//' | awk '{sum+=$1} END {print sum}' `
+		sumLengthOfHSPs=`cat ${sampleId}_${blastProgram}.fasta | grep '>' | awk '{print $5}' | sed 's/lenTopHSP=//' | awk '{sum+=$1} END {print sum}' `
 	fi
-	avPcIdAcrossTopHSP=`cat ${sampleId}.fasta | grep '>' | awk '{print $4}' | sed 's/pcid=//' | awk '{sum+=$1} END {if(sum > 0) {print sum/NR} else {print "0"}}' `
-	minPcIdAcrossTopHSP=`cat ${sampleId}.fasta | grep '>' | awk '{print $4}' | sed 's/pcid=//' | sort -n | head -n 1 `
-	maxPcIdAcrossTopHSP=`cat ${sampleId}.fasta | grep '>' | awk '{print $4}' | sed 's/pcid=//' | sort -n | tail -n 1 `
+	avPcIdAcrossTopHSP=`cat ${sampleId}_${blastProgram}.fasta | grep '>' | awk '{print $4}' | sed 's/pcid=//' | awk '{sum+=$1} END {if(sum > 0) {print sum/NR} else {print "0"}}' `
+	minPcIdAcrossTopHSP=`cat ${sampleId}_${blastProgram}.fasta | grep '>' | awk '{print $4}' | sed 's/pcid=//' | sort -n | head -n 1 `
+	maxPcIdAcrossTopHSP=`cat ${sampleId}_${blastProgram}.fasta | grep '>' | awk '{print $4}' | sed 's/pcid=//' | sort -n | tail -n 1 `
 	# Average % coverage across top HSP against the query (reference target) genes:
-	avPcHSPCovrgToQueryLen=`cat ${sampleId}.fasta | grep '>' | awk '{print $5 " " $6}' | sed 's/lenHSP=//' | sed 's/qlen=//' | awk '{print ($1 / $2) * 100}' | awk '{sum+=$1} END {if(sum > 0) {print sum/NR} else {print "0"}}' `
-	medianPoint=`cat ${sampleId}.fasta | grep '>' | awk 'END {printf "%.0f", NR/2}' ` 
-	medianPcHSPCovrgToQueryLen=`cat ${sampleId}.fasta | grep '>' | awk '{print $5 " " $6}' | sed 's/lenHSP=//' | sed 's/qlen=//' | awk '{print ($1 / $2) * 100}' | sort -n | head -n $medianPoint | tail -n 1 `
-	minPcHSPCovrgToQueryLen=`cat ${sampleId}.fasta | grep '>' | awk '{print $5 " " $6}' | sed 's/lenHSP=//' | sed 's/qlen=//' | awk '{print ($1 / $2) * 100}' | sort -n | head -n 1 `
+	avPcHSPCovrgToQueryLen=`cat ${sampleId}_${blastProgram}.fasta | grep '>' | awk '{print $5 " " $6}' | sed 's/lenTopHSP=//' | sed 's/qlen=//' | awk '{print ($1 / $2) * 100}' | awk '{sum+=$1} END {if(sum > 0) {print sum/NR} else {print "0"}}' `
+	medianPoint=`cat ${sampleId}_${blastProgram}.fasta | grep '>' | awk 'END {printf "%.0f", NR/2}' `
+	if [[ $medianPoint -le 2 ]];then
+		# Cannot have a median point so assign the raw values (2/2 = 1, 1/2 = 0) 
+		medianPcHSPCovrgToQueryLen=`cat ${sampleId}_${blastProgram}.fasta | grep '>' | awk '{print $5 " " $6}' | sed 's/lenTopHSP=//' | sed 's/qlen=//' | awk '{print ($1 / $2) * 100}' `
+	else
+		medianPcHSPCovrgToQueryLen=`cat ${sampleId}_${blastProgram}.fasta | grep '>' | awk '{print $5 " " $6}' | sed 's/lenTopHSP=//' | sed 's/qlen=//' | awk '{print ($1 / $2) * 100}' | sort -n | head -n $medianPoint | tail -n 1 `
+	fi
+	minPcHSPCovrgToQueryLen=`cat ${sampleId}_${blastProgram}.fasta | grep '>' | awk '{print $5 " " $6}' | sed 's/lenTopHSP=//' | sed 's/qlen=//' | awk '{print ($1 / $2) * 100}' | sort -n | head -n 1 `
 	# Will be some values > 100% if gaps are present in the HSP:
-	maxPcHSPCovrgToQueryLen=`cat ${sampleId}.fasta | grep '>' | awk '{print $5 " " $6}' | sed 's/lenHSP=//' | sed 's/qlen=//' | awk '{print ($1 / $2) * 100}' | sort -n | tail -n 1 `
+	maxPcHSPCovrgToQueryLen=`cat ${sampleId}_${blastProgram}.fasta | grep '>' | awk '{print $5 " " $6}' | sed 's/lenTopHSP=//' | sed 's/qlen=//' | awk '{print ($1 / $2) * 100}' | sort -n | tail -n 1 `
 	# Average % coverage across the top query against all subject genes:
-	avPcQueryCovrgToSubjectLen=`cat ${sampleId}.fasta | grep '>' | awk '{print $6 " " $7}' | sed 's/qlen=//' | sed 's/slen=//' | awk '{print ($1 / $2) * 100}' | awk '{sum+=$1} END {if(sum > 0) {print sum/NR} else {print "0"}}' `
+	avPcQueryCovrgToSubjectLen=`cat ${sampleId}_${blastProgram}.fasta | grep '>' | awk '{print $6 " " $7}' | sed 's/qlen=//' | sed 's/slen=//' | awk '{print ($1 / $2) * 100}' | awk '{sum+=$1} END {if(sum > 0) {print sum/NR} else {print "0"}}' `
 
 echo "sampleId: $sampleId
 numbrRecoveredGenes: $numbrRecoveredGenes
 sumLengthOfGenesWithNs (bp): $sumLengthOfGenesWithNs
 sumLengthOfGenes (bp): $sumLengthOfGenes
-sumLengthOfHSPs (bp): $sumLengthOfHSPs
+sumLengthOfTopHSPs (bp): $sumLengthOfHSPs
 avPcIdAcrossTopHSP: $avPcIdAcrossTopHSP
 minPcIdAcrossTopHSP (min % allowed, 55%): $minPcIdAcrossTopHSP
 maxPcIdAcrossTopHSP: $maxPcIdAcrossTopHSP
