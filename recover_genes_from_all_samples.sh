@@ -50,10 +50,8 @@ Program description: recovers genes from pair-end or single-end fastq files of m
                      If Slurm is available samples will be run in parallel
 
                      Using option -x, gene orthologs corresponding to a set of reference target genes can be retrieved from a set of gene coding sequences or 
-                     contigs from a transcriptome assembly. A TBLASTN search is performed between both sets, the hits are filtered by evalue (0.0001), then by 
-                     % id (55%), then by HSP length, the first hit for each gene in the BLAST output list is chosen and the output fasta record id of each gene 
-                     coding sequence or transcriptome assembly contig is reformed to include the corresponding reference target gene name in 'HybPiper' format: >sampleId-geneId
-
+                     contigs from a transcriptome assembly for a specific sample. The output fasta record id of each gene found is reformed to include the 
+                     corresponding reference target gene name in 'HybPiper' format: >sampleId-referenceTargetGeneId
 OPTIONS <value>:
   -h   
                  prints usage and description
@@ -82,7 +80,10 @@ OPTIONS <value>:
                  Note: HybPiper versions tested with this recovery pipeline: 1.3, 2.1.6, 2.2.0, 2.3.x
   -x <string>    
                  retrieve gene orthologs corresponding to a set of targets genes from gene coding sequences or a transcriptome assembly in DNA fasta file format. 
-                 Method options are: retrieve_targets (this repository), captus_extract (not added yet) (default=retrieve_targets)   
+                 Method options are: captus_extract, retrieve_targets (no default)
+                 For a retrieve_targets method (this repository), A TBLASTN search is performed between both sets, the hits are filtered by evalue (0.0001), then by 
+                 % id (55%), then by HSP length, the first hit for each gene in the BLAST output list is chosen and the output fasta record id of each gene is printed
+                 in HybPiper' format: >sampleId-referenceTargetGeneId
   -S    
                  calculate statistics for gene recovery from read data mapped to all recovered genes per sample (includes per sample reads on-target, read
                  coverage, read depth). This option can also be used separately after the gene recoveries have run (do not specify option -y!) but the path
