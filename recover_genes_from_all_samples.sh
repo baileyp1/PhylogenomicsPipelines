@@ -64,6 +64,9 @@ OPTIONS <value>:
                  The R2FastqName field should be left blank for single end read data. The files (fastq for option y, fasta for option x) are assumed to be in compressed gzip format (suffix .gz)
   -f <string>    
                  FULL path to all sample fastq files (DNA fasta files if using option -x) N.B. no filenames, just the full path to them, not a relative path and no wild cards! (required option)
+                 
+                 Note: if the data is SRA and the fastq files don't exist, an attempt is made to download them from ENA using the run accession if provided in the csv table file (option -s) as follows:
+                 SampleName,R1FastqName,R2FastqName,ENA_RunAccession (NB - the file names are not used but the R2FastqName field needs some text otherwise single end data is assumed!)
   -t <string>    
                  file name of target genes in DNA fasta format (required option);
                  Note: option -y 'hybpiper' requires target gene protein sequences, option -y 'hybpiper2' can be DNA or protein, option -x requires DNA
