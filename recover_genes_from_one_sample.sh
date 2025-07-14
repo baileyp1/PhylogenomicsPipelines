@@ -205,12 +205,12 @@ cd ${samplePrefix}_$sampleId
 echo sampleId: $sampleId
 echo externalSequenceID: $externalSequenceID
 
-if [[ -s  $paftolDataSymlinksDir/$R1FastqFile ]]; then 
+if [[ -s  $paftolDataSymlinksDir/$R1FastqFile ]]; then
 	#ls $paftolDataSymlinksDir/$R1FastqFile
 	# Assign full path to these variables for the rest of this script
 	R1FastqFile=$paftolDataSymlinksDir/$R1FastqFile
-	# However, if R2FastqFile is NULL, then don't assign so it reamins NULL(important!)
-	if [[ -n "$R2FastqFile" ]]; then  
+	# However, if R2FastqFile is NULL, then don't assign so it remains NULL(important!)
+	if [[ -n "$R2FastqFile" ]]; then
 		R2FastqFile=$paftolDataSymlinksDir/$R2FastqFile
 	fi
 else
@@ -233,6 +233,9 @@ else
 		R2FastqFile=${externalSequenceID}_2.fastq.gz
 	elif [[ -s ${externalSequenceID}.fastq.gz ]]; then
 		R1FastqFile=${externalSequenceID}.fastq.gz
+		### July 2025 - if R2FastqFile field in the sample list is occupied but download retrieves only single end data,
+		### setting R2FastqFile to NULL would enable single end data to be automatically detected, so should add this line:
+		### R2FastqFile=''
 	else
 		echo "ERROR: Neither R2FastqFile found for pair end data nor a single end fastq file at ENA; can't do gene recovery for this sample: $sampleId"
 		exit

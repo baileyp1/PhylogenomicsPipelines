@@ -81,9 +81,11 @@ OPTIONS <value>:
   -x <string>    
                  retrieve gene orthologs corresponding to a set of targets genes from gene coding sequences or a transcriptome assembly in DNA fasta file format. 
                  Method options are: captus_extract, retrieve_targets (no default)
-                 For a retrieve_targets method (this repository), A TBLASTN search is performed between both sets, the hits are filtered by evalue (0.0001), then by 
-                 % id (55%), then by HSP length, the first hit for each gene in the BLAST output list is chosen and the output fasta record id of each gene is printed
-                 in HybPiper' format: >sampleId-referenceTargetGeneId
+                 For the captus_extract method, see https://edgardomortiz.github.io/captus.docs/. For the retrieve_targets method (this repository),
+                 a TBLASTN search is performed between target and query sequence sets, the hits are filtered by evalue (0.0001), then by % id (55%),
+                 then by HSP length, the first hit for each gene in the BLAST output list is chosen and the output fasta record id of each gene is
+                 printed in HybPiper' format: >sampleId-referenceTargetGeneId. For the captus_extract method, see https://edgardomortiz.github.io/captus.docs/.
+                 Note: later method can also extract genes from unannotated genome contigs
   -S    
                  calculate statistics for gene recovery from read data mapped to all recovered genes per sample (includes per sample reads on-target, read
                  coverage, read depth). This option can also be used separately after the gene recoveries have run (do not specify option -y!) but the path

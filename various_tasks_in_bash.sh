@@ -138,6 +138,8 @@ wget_sra_download()	{
 #	   		wget http://ftp.sra.ebi.ac.uk/vol1/fastq/SRR098/SRR098689/SRR098689.fastq.gz - works
 #	   		wget http://ftp.sra.ebi.ac.uk/vol1/fastq/SRR098/009/SRR098689/SRR098689.fastq.gz - doesn t work
 #	4. The downloaded fastq file has the original time stamp from ENA.
+#	5.July 2025 - it turns out that a run accession can have > 2 fastq files, two pair end and one single end. 
+#                 This script only gets the single end data if the pair end data does not exist. 
 #	
 
 #	ENA documentation:
