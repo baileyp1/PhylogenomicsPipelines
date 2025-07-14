@@ -146,7 +146,7 @@ recover_genes_from_all_samples.sh \\
 
 To retrieve gene orthologs corresponding to a set of targets genes from gene coding sequences or a transcriptome assembly:
 recover_genes_from_all_samples.sh \\
--x retrieve_targets \\
+-x captus_extract \\
 -s <table_file.csv> \\
 -t <angiosperms353TargetsFile.fasta> \\
 -f <fasta_files_path> \\
