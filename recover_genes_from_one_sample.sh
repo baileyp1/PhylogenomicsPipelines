@@ -227,7 +227,7 @@ else
 	if [[ -s ${externalSequenceID}_1.fastq.gz ]]; then
 		R1FastqFile=${externalSequenceID}_1.fastq.gz
 	else 
-		echo "WARNING: R1FastqFile not found at ENA." 
+		echo "WARNING: a pair end R1FastqFile not found at ENA." 
 	fi
 	if [[ -s ${externalSequenceID}_2.fastq.gz ]]; then  
 		R2FastqFile=${externalSequenceID}_2.fastq.gz
