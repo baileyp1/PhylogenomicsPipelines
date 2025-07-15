@@ -579,7 +579,6 @@ elif [[ $hybSeqProgram == 'hybpiper'* ]]; then
 		--prefix ${sampleId} \
 		$unpairedFastqFile \
 		> ${sampleId}_hybpiper.log 2>&1
-		### 11.4.2022 - now using the --unpaired ${sampleId}_R1_R2_trimmomatic_unpaired.fastq \
 		# Output: sampleId/geneId/sampleId/sequences/FNA/geneId.FNA; fasta header line: >sampleId
 		# NBNB - From what I can make out, --cov_cutoff does seem to operate with spades, even though it says 
 		#        flag is for velvetg - set to 4 otherwise default=8
@@ -843,8 +842,8 @@ elif [[ $hybSeqProgram == 'hybpiper'* ]]; then
 		if [[ -s ${sampleId}_R2_trimmomatic_unpaired.fastq.gz ]]; then rm ${sampleId}_R2_trimmomatic_unpaired.fastq.gz; fi
 		if [[ -s ${sampleId}_R1_R2_trimmomatic.log ]];then rm ${sampleId}_R1_R2_trimmomatic.log; fi
 		if [[ -s ${sampleId}_R1_trimmomatic.log ]]; then rm ${sampleId}_R1_trimmomatic.log; fi
-		# NB - not deleting this file here in case it is used in the future for the recovery stats: ${sampleId}_R1_R2_trimmomatic_unpaired.fastq
-		#      Could also just get it remade in the stats clause - NB - 30.8.2024 - in stats mode ONLY, isn't Trimmomatic being run again? If so I think this file can be deleted
+		if [[ -s ${sampleId}_R1_R2_trimmomatic_unpaired.fastq ]]; then rm ${sampleId}_R1_R2_trimmomatic_unpaired.fastq; fi
+		#        NB: this file will get remade in the stats section below if stats are run separately afterwards (trimmomatic is being redone)	
 		# If the fastq files were downloaded from ENA near the start of this script:
 		if [[ -s ${externalSequenceID}_1.fastq.gz ]]; then rm ${externalSequenceID}_1.fastq.gz; fi # if pair end data
 		if [[ -s ${externalSequenceID}_2.fastq.gz ]]; then rm ${externalSequenceID}_2.fastq.gz; fi # if pair end data 
@@ -900,7 +899,7 @@ if [[ $stats != 'no' ]]; then
 			if [[ -s ../${sampleId}_R2_trimmomatic_unpaired.fastq.gz ]]; then rm ../${sampleId}_R2_trimmomatic_unpaired.fastq.gz; fi	
 			if [[ -s ../${sampleId}_R1_R2_trimmomatic.log ]];then rm ../${sampleId}_R1_R2_trimmomatic.log; fi
 			if [[ -s ../${sampleId}_R1_trimmomatic.log ]]; then rm ../${sampleId}_R1_trimmomatic.log; fi
-			# NB - ${sampleId}_R1_R2_trimmomatic_unpaired.fastq is only created in hybpiper mode and has already been removed above - OK
+			if [[ -s ${sampleId}_R1_R2_trimmomatic_unpaired.fastq ]]; then rm ${sampleId}_R1_R2_trimmomatic_unpaired.fastq; fi
 			# If the fastq files were downloaded from ENA near the start of this script:
 			if [[ -s ${externalSequenceID}_1.fastq.gz ]]; then rm ${externalSequenceID}_1.fastq.gz; fi # if pair end data
 			if [[ -s ${externalSequenceID}_2.fastq.gz ]]; then rm ${externalSequenceID}_2.fastq.gz; fi # if pair end data 
@@ -1029,45 +1028,38 @@ sumLengthOfGenes: $sumLengthOfGenes" > ${sampleId}_gene_recovery_stats${reexonrt
 
 	if [[ $hybSeqProgram == 'hybpiper'* && -n "$R2FastqFile" ]]; then
 
+		# Also need to map the single end reads file but only if data is pair end:
 
 		# Need to also reproduce the ${sampleId}_R1_R2_trimmomatic_unpaired.fastq file if it doesn't 
 		# already exist which will be the case if the stats are being done in a separate step afterwards
-		# or using option -P:
-		unpairedFastqFile=''
-	###if [[ $hybSeqProgram != *'-start_from-'* || $hybSeqProgram == *'-start_from-map_reads' ]]; then
-	### Not sure if this step can be skipped - see above w.r.t. fastq files for the -r option for which fastq files still need to be presented to HybPiper option -r 
-		if [[ -n "$R2FastqFile" ]]; then
+		# or option -P is being used:
+		if [[ ! -s "${sampleId}_R1_R2_trimmomatic_unpaired.fastq" ]]; then
 			gunzip -fc ${sampleId}_R1_trimmomatic_unpaired.fastq.gz ${sampleId}_R2_trimmomatic_unpaired.fastq.gz \
 			> ${sampleId}_R1_R2_trimmomatic_unpaired.fastq
-			# There may be no single surviving reads, in which case don't use file in HybPiper command:
-			if [[ -s ${sampleId}_R1_R2_trimmomatic_unpaired.fastq ]]; then
-				unpairedFastqFile="--unpaired ${sampleId}_R1_R2_trimmomatic_unpaired.fastq"
-			else 
+
+			# There may be no single surviving reads, in which case don't attempt to combine single end reads:
+			if [[ ! -s ${sampleId}_R1_R2_trimmomatic_unpaired.fastq ]]; then
 				echo "INFO: There are no unpaired reads to use after trimming by Trimmomatic for sample ${sampleId}"
+			else
+				###bwa index $refFileName	### 8.6.2024 - removed indexing here because it's already been done above! 
+				bwa mem -t $cpu $refFileName \
+				../${sampleId}_R1_R2_trimmomatic_unpaired.fastq \
+				> ${sampleId}_bwa_mem_with_dups_unpaired_reads.sam
+
+				samtools view -bS ${sampleId}_bwa_mem_with_dups_unpaired_reads.sam > ${sampleId}_bwa_mem_with_dups_unpaired_reads.bam
+				# Need to sort bam before indexing
+				samtools sort ${sampleId}_bwa_mem_with_dups_unpaired_reads.bam > ${sampleId}_bwa_mem_with_dups_unpaired_reads_sort.bam
+				# Merge sorted bam files:
+				samtools merge -f  ${sampleId}_bwa_mem_with_dups_sort_merged.bam  ${sampleId}_bwa_mem_with_dups_sort.bam  ${sampleId}_bwa_mem_with_dups_unpaired_reads_sort.bam
+				# Resort bam (just in case):
+				samtools sort ${sampleId}_bwa_mem_with_dups_sort_merged.bam > ${sampleId}_bwa_mem_with_dups_unpaired_reads_sort_merged_resort.bam
+				samtools index  ${sampleId}_bwa_mem_with_dups_unpaired_reads_sort_merged_resort.bam
+				bamFileWithDups=${sampleId}_bwa_mem_with_dups_unpaired_reads_sort_merged_resort.bam
+
+				# This file is only created in hybpiper mode:		[July 2025: I think I can remove this file below with all the others]
+				if [[ -s ../${sampleId}_R1_R2_trimmomatic_unpaired.fastq ]]; then rm ../${sampleId}_R1_R2_trimmomatic_unpaired.fastq; fi 
 			fi
 		fi
-	###fi 
-	### Then rm this file in the corectpalce...
-
-
-		# Also need to map the single end reads file but only if data is pair end:
-		###bwa index $refFileName	### 8.6.2024 - removed indexing here because it's already been done above! 
-		bwa mem -t $cpu $refFileName \
-		../${sampleId}_R1_R2_trimmomatic_unpaired.fastq \
-		> ${sampleId}_bwa_mem_with_dups_unpaired_reads.sam
-
-		samtools view -bS ${sampleId}_bwa_mem_with_dups_unpaired_reads.sam > ${sampleId}_bwa_mem_with_dups_unpaired_reads.bam
-		# Need to sort bam before indexing
-		samtools sort ${sampleId}_bwa_mem_with_dups_unpaired_reads.bam > ${sampleId}_bwa_mem_with_dups_unpaired_reads_sort.bam
-		# Merge sorted bam files:
-		samtools merge -f  ${sampleId}_bwa_mem_with_dups_sort_merged.bam  ${sampleId}_bwa_mem_with_dups_sort.bam  ${sampleId}_bwa_mem_with_dups_unpaired_reads_sort.bam
-		# Resort bam (just in case):
-		samtools sort ${sampleId}_bwa_mem_with_dups_sort_merged.bam > ${sampleId}_bwa_mem_with_dups_unpaired_reads_sort_merged_resort.bam
-		samtools index  ${sampleId}_bwa_mem_with_dups_unpaired_reads_sort_merged_resort.bam
-		bamFileWithDups=${sampleId}_bwa_mem_with_dups_unpaired_reads_sort_merged_resort.bam
-
-		# This file is only created in hybpiper mode:
-		if [[ -s ../${sampleId}_R1_R2_trimmomatic_unpaired.fastq ]]; then rm ../${sampleId}_R1_R2_trimmomatic_unpaired.fastq; fi 
 	fi
 
 
