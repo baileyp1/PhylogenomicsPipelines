@@ -899,11 +899,11 @@ if [[ $stats != 'no' ]]; then
 			if [[ -s ../${sampleId}_R2_trimmomatic_unpaired.fastq.gz ]]; then rm ../${sampleId}_R2_trimmomatic_unpaired.fastq.gz; fi	
 			if [[ -s ../${sampleId}_R1_R2_trimmomatic.log ]];then rm ../${sampleId}_R1_R2_trimmomatic.log; fi
 			if [[ -s ../${sampleId}_R1_trimmomatic.log ]]; then rm ../${sampleId}_R1_trimmomatic.log; fi
-			if [[ -s ${sampleId}_R1_R2_trimmomatic_unpaired.fastq ]]; then rm ${sampleId}_R1_R2_trimmomatic_unpaired.fastq; fi
+			if [[ -s ../${sampleId}_R1_R2_trimmomatic_unpaired.fastq ]]; then rm ../${sampleId}_R1_R2_trimmomatic_unpaired.fastq; fi
 			# If the fastq files were downloaded from ENA near the start of this script:
-			if [[ -s ${externalSequenceID}_1.fastq.gz ]]; then rm ${externalSequenceID}_1.fastq.gz; fi # if pair end data
-			if [[ -s ${externalSequenceID}_2.fastq.gz ]]; then rm ${externalSequenceID}_2.fastq.gz; fi # if pair end data 
-			if [[ -s ${externalSequenceID}.fastq.gz ]]; then rm ${externalSequenceID}.fastq.gz; fi     # if single end data
+			if [[ -s ../${externalSequenceID}_1.fastq.gz ]]; then rm ../${externalSequenceID}_1.fastq.gz; fi # if pair end data
+			if [[ -s ../${externalSequenceID}_2.fastq.gz ]]; then rm ../${externalSequenceID}_2.fastq.gz; fi # if pair end data 
+			if [[ -s ../${externalSequenceID}.fastq.gz ]]; then rm ../${externalSequenceID}.fastq.gz; fi     # if single end data
 			exit
 		fi
 	else
@@ -998,9 +998,9 @@ sumLengthOfGenes: $sumLengthOfGenes" > ${sampleId}_gene_recovery_stats${reexonrt
 		if [[ -s ../${sampleId}_R1_trimmomatic.log ]]; then rm ../${sampleId}_R1_trimmomatic.log; fi
 		if [[ -s ../${sampleId}_R1_R2_trimmomatic_unpaired.fastq ]]; then rm ../${sampleId}_R1_R2_trimmomatic_unpaired.fastq; fi
 		# If the fastq files were downloaded from ENA near the start of this script:
-		if [[ -s ${externalSequenceID}_1.fastq.gz ]]; then rm ${externalSequenceID}_1.fastq.gz; fi # if pair end data
-		if [[ -s ${externalSequenceID}_2.fastq.gz ]]; then rm ${externalSequenceID}_2.fastq.gz; fi # if pair end data 
-		if [[ -s ${externalSequenceID}.fastq.gz ]]; then rm ${externalSequenceID}.fastq.gz; fi     # if single end data
+		if [[ -s ../${externalSequenceID}_1.fastq.gz ]]; then rm ../${externalSequenceID}_1.fastq.gz; fi # if pair end data
+		if [[ -s ../${externalSequenceID}_2.fastq.gz ]]; then rm ../${externalSequenceID}_2.fastq.gz; fi # if pair end data 
+		if [[ -s ../${externalSequenceID}.fastq.gz ]]; then rm ../${externalSequenceID}.fastq.gz; fi     # if single end data
 		exit 
 	fi
 
@@ -1302,9 +1302,9 @@ sumLengthOfGenes: $sumLengthOfGenes" > ${sampleId}_gene_recovery_stats${reexonrt
 	# NB - ${sampleId}_R1_R2_trimmomatic_unpaired.fastq is only created in hybpiper mode and has already been removed above after single end mapping - OK
 	#		15.7.2025 - would have been be simpler to have deleted it here though
 	# If the fastq files were downloaded from ENA near the start of this script:
-	if [[ -s ${externalSequenceID}_1.fastq.gz ]]; then rm ${externalSequenceID}_1.fastq.gz; fi # if pair end data
-	if [[ -s ${externalSequenceID}_2.fastq.gz ]]; then rm ${externalSequenceID}_2.fastq.gz; fi # if pair end data 
-	if [[ -s ${externalSequenceID}.fastq.gz ]]; then rm ${externalSequenceID}.fastq.gz; fi     # if single end data
+	if [[ -s ../${externalSequenceID}_1.fastq.gz ]]; then rm ../${externalSequenceID}_1.fastq.gz; fi # if pair end data
+	if [[ -s ../${externalSequenceID}_2.fastq.gz ]]; then rm ../${externalSequenceID}_2.fastq.gz; fi # if pair end data 
+	if [[ -s ../${externalSequenceID}.fastq.gz ]]; then rm ../${externalSequenceID}.fastq.gz; fi     # if single end data
 
 	# Finally, remove the large files created for the stats (they take up TB of disk space if processing 1000's samples)
 	if [[ -s ${sampleId}_bwa_mem_with_dups.sam ]]; then rm ${sampleId}_bwa_mem_with_dups.sam; fi
