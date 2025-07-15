@@ -233,9 +233,9 @@ else
 		R2FastqFile=${externalSequenceID}_2.fastq.gz
 	elif [[ -s ${externalSequenceID}.fastq.gz ]]; then
 		R1FastqFile=${externalSequenceID}.fastq.gz
-		### July 2025 - if R2FastqFile field in the sample list is occupied but download retrieves only single end data,
-		### setting R2FastqFile to NULL would enable single end data to be automatically detected, so should add this line:
-		### R2FastqFile=''
+		# Setting R2FastqFile to NULL here enables single end data to be automatically detected (i.e. will ignore the fact 
+		# that the R2FastqFile field is occupied in the sample list file if it turns out that data is single end):
+		R2FastqFile=''
 	else
 		echo "ERROR: Neither R2FastqFile found for pair end data nor a single end fastq file at ENA; can't do gene recovery for this sample: $sampleId"
 		exit
@@ -1028,6 +1028,28 @@ sumLengthOfGenes: $sumLengthOfGenes" > ${sampleId}_gene_recovery_stats${reexonrt
 	bamFileWithDups=${sampleId}_bwa_mem_with_dups_sort.bam
 
 	if [[ $hybSeqProgram == 'hybpiper'* && -n "$R2FastqFile" ]]; then
+
+
+		# Need to also reproduce the ${sampleId}_R1_R2_trimmomatic_unpaired.fastq file if it doesn't 
+		# already exist which will be the case if the stats are being done in a separate step afterwards
+		# or using option -P:
+		unpairedFastqFile=''
+	###if [[ $hybSeqProgram != *'-start_from-'* || $hybSeqProgram == *'-start_from-map_reads' ]]; then
+	### Not sure if this step can be skipped - see above w.r.t. fastq files for the -r option for which fastq files still need to be presented to HybPiper option -r 
+		if [[ -n "$R2FastqFile" ]]; then
+			gunzip -fc ${sampleId}_R1_trimmomatic_unpaired.fastq.gz ${sampleId}_R2_trimmomatic_unpaired.fastq.gz \
+			> ${sampleId}_R1_R2_trimmomatic_unpaired.fastq
+			# There may be no single surviving reads, in which case don't use file in HybPiper command:
+			if [[ -s ${sampleId}_R1_R2_trimmomatic_unpaired.fastq ]]; then
+				unpairedFastqFile="--unpaired ${sampleId}_R1_R2_trimmomatic_unpaired.fastq"
+			else 
+				echo "INFO: There are no unpaired reads to use after trimming by Trimmomatic for sample ${sampleId}"
+			fi
+		fi
+	###fi 
+	### Then rm this file in the corectpalce...
+
+
 		# Also need to map the single end reads file but only if data is pair end:
 		###bwa index $refFileName	### 8.6.2024 - removed indexing here because it's already been done above! 
 		bwa mem -t $cpu $refFileName \
@@ -1285,7 +1307,8 @@ sumLengthOfGenes: $sumLengthOfGenes" > ${sampleId}_gene_recovery_stats${reexonrt
 	if [[ -s ../${sampleId}_R2_trimmomatic_unpaired.fastq.gz ]]; then rm ../${sampleId}_R2_trimmomatic_unpaired.fastq.gz; fi	
 	if [[ -s ../${sampleId}_R1_R2_trimmomatic.log ]];then rm ../${sampleId}_R1_R2_trimmomatic.log; fi
 	if [[ -s ../${sampleId}_R1_trimmomatic.log ]]; then rm ../${sampleId}_R1_trimmomatic.log; fi
-	# NB - ${sampleId}_R1_R2_trimmomatic_unpaired.fastq is only created in hybpiper mode and has already been removed above - OK
+	# NB - ${sampleId}_R1_R2_trimmomatic_unpaired.fastq is only created in hybpiper mode and has already been removed above after single end mapping - OK
+	#		15.7.2025 - would have been be simpler to have deleted it here though
 	# If the fastq files were downloaded from ENA near the start of this script:
 	if [[ -s ${externalSequenceID}_1.fastq.gz ]]; then rm ${externalSequenceID}_1.fastq.gz; fi # if pair end data
 	if [[ -s ${externalSequenceID}_2.fastq.gz ]]; then rm ${externalSequenceID}_2.fastq.gz; fi # if pair end data 
