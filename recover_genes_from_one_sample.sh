@@ -238,6 +238,7 @@ else
 		R2FastqFile=''
 	else
 		echo "ERROR: Neither R2FastqFile found for pair end data nor a single end fastq file at ENA; can't do gene recovery for this sample: $sampleId"
+		### July 2025 - This logic appears not to work in this case - Oxford nanopore data - SRR12808461_1.fastq.gz - might be able to reconfigure logic
 		exit
 	fi 
 fi
@@ -1033,12 +1034,12 @@ sumLengthOfGenes: $sumLengthOfGenes" > ${sampleId}_gene_recovery_stats${reexonrt
 		# Need to also reproduce the ${sampleId}_R1_R2_trimmomatic_unpaired.fastq file if it doesn't 
 		# already exist which will be the case if the stats are being done in a separate step afterwards
 		# or option -P is being used:
-		if [[ ! -s "${sampleId}_R1_R2_trimmomatic_unpaired.fastq" ]]; then
-			gunzip -fc ${sampleId}_R1_trimmomatic_unpaired.fastq.gz ${sampleId}_R2_trimmomatic_unpaired.fastq.gz \
-			> ${sampleId}_R1_R2_trimmomatic_unpaired.fastq
+		if [[ ! -s "../${sampleId}_R1_R2_trimmomatic_unpaired.fastq" ]]; then
+			gunzip -fc ../${sampleId}_R1_trimmomatic_unpaired.fastq.gz ../${sampleId}_R2_trimmomatic_unpaired.fastq.gz \
+			> ../${sampleId}_R1_R2_trimmomatic_unpaired.fastq
 
 			# There may be no single surviving reads, in which case don't attempt to combine single end reads:
-			if [[ ! -s ${sampleId}_R1_R2_trimmomatic_unpaired.fastq ]]; then
+			if [[ ! -s "../${sampleId}_R1_R2_trimmomatic_unpaired.fastq" ]]; then
 				echo "INFO: There are no unpaired reads to use after trimming by Trimmomatic for sample ${sampleId}"
 			else
 				###bwa index $refFileName	### 8.6.2024 - removed indexing here because it's already been done above! 
