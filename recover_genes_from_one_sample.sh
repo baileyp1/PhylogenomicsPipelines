@@ -1035,6 +1035,7 @@ sumLengthOfGenes: $sumLengthOfGenes" > ${sampleId}_gene_recovery_stats${reexonrt
 		# already exist which will be the case if the stats are being done in a separate step afterwards
 		# or option -P is being used:
 		if [[ ! -s "../${sampleId}_R1_R2_trimmomatic_unpaired.fastq" ]]; then
+			echo "INFO: the _R1_R2_trimmomatic_unpaired.fastq file doesn't exist for the stats step so creating it now."
 			gunzip -fc ../${sampleId}_R1_trimmomatic_unpaired.fastq.gz ../${sampleId}_R2_trimmomatic_unpaired.fastq.gz \
 			> ../${sampleId}_R1_R2_trimmomatic_unpaired.fastq
 
