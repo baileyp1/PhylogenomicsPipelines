@@ -165,11 +165,11 @@ elif [[ $retrieveTargets == 'captus_extract' ]]; then
 	numbrReportedFrameShifts=`cat ${sampleId}_NUC_coding_NT.main_seqIds_ONLY.fasta | grep '\[frameshifts=' | wc -l `
 
 	echo "sampleId: $sampleId
-numbrAssembledContigs (bp): $numbrAssembledContigs
-sumLengthOfAssembledContigs (bp): $sumLengthOfAssembledContigs
+numbrAssembledContigs: $numbrAssembledContigs
+sumLengthOfAssembledContigs: $sumLengthOfAssembledContigs
 numbrRecoveredGenes: $numbrRecoveredGenes
-sumLengthOfGenesWithNs (bp): $sumLengthOfGenesWithNs
-sumLengthOfGenes (bp): $sumLengthOfGenes
+sumLengthOfGenesWithNs: $sumLengthOfGenesWithNs
+sumLengthOfGenes: $sumLengthOfGenes
 avPcId: $avPcId
 minPcId: $minPcId
 maxPcId: $maxPcId
@@ -1301,6 +1301,7 @@ sumLengthOfGenes: $sumLengthOfGenes" > ${sampleId}_gene_recovery_stats${reexonrt
 	if [[ -s ../${sampleId}_R2_trimmomatic_unpaired.fastq.gz ]]; then rm ../${sampleId}_R2_trimmomatic_unpaired.fastq.gz; fi	
 	if [[ -s ../${sampleId}_R1_R2_trimmomatic.log ]];then rm ../${sampleId}_R1_R2_trimmomatic.log; fi
 	if [[ -s ../${sampleId}_R1_trimmomatic.log ]]; then rm ../${sampleId}_R1_trimmomatic.log; fi
+	####if [[ -s ../${sampleId}_R1_trimmomatic.log ]]; then rm ../${sampleId}_R1_trimmomatic.log; fi
 	# NB - ${sampleId}_R1_R2_trimmomatic_unpaired.fastq is only created in hybpiper mode and has already been removed above after single end mapping - OK
 	#		15.7.2025 - would have been be simpler to have deleted it here though
 	# If the fastq files were downloaded from ENA near the start of this script:
