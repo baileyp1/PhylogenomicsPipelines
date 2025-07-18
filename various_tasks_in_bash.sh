@@ -141,7 +141,11 @@ wget_sra_download()	{
 #	5.July 2025 - it turns out that a run accession can have > 2 fastq files, two pair end and one single end. 
 #                 This script only gets the single end data if the pair end data does not exist.
 #	6.July 2025 - On Gruffalo, the initial attempts to fetch the R1 file take ages - e.g. 45 minutes - but it did work 
-#                 then the R2 file was v quick to download! Weird but it worked
+#                 then the R2 file was v quick to download! Weird but it worked. I think the problem might be if the 
+#                 first URLs tried don't exists, it keeps trying rather than giving up if file is not there - not the 
+#				  best behaviour
+#
+#	Bugs: if R2 fastq file download is successful, this is not reported in the logs for folder attempts 2 and 3  
 #
 #	ENA documentation:
 #	https://www.ebi.ac.uk/ena/browser/downloading-data
