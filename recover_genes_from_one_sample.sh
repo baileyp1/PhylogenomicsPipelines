@@ -109,13 +109,13 @@ elif [[ $retrieveTargets == 'captus_extract' ]]; then
 		#chmod 755 $assembledContigsLocalCopy 
 	fi
 
-	# captus extract --overwrite \
-	# --threads 4 \
-	# -a in_fasta \
-	# -f $assembledContigsLocalCopy \
-	# --nuc_refs $targetsFileLocalCopy \
-	# --nuc_min_identity 55 \
-	# --out outputs
+	captus extract --overwrite \
+	--threads 4 \
+	-a in_fasta \
+	-f $assembledContigsLocalCopy \
+	--nuc_refs $targetsFileLocalCopy \
+	--nuc_min_identity 55 \
+	--out outputs
 	# Removed: --max_paralogs 0 \
 	# Notes:
 	# 1.Within 'outputs' folder, the extracted markers/genes go to a folder called <idSequence>__captus-ext
