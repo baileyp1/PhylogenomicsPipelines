@@ -7,10 +7,10 @@
 
 # Copyright © 2025 The Board of Trustees of the Royal Botanic Gardens, Kew
 ##################################
-set -e
-set -u
-set -o pipefail
-shopt -s failglob
+set -e				# Exit immediately if any command fails
+set -u				# Treat unset variables as an error
+set -o pipefail		# Treat unset variables as an error
+shopt -s failglob	# Cause patterns that match no files to fail (not expand to nothing)
 
 line="$1"
 targetsFile=$2
@@ -30,10 +30,12 @@ retrieveTargets=${13}
 echo 'Hyb-Seq program:' $hybSeqProgram
 echo 'Hyb-Seq stats:' $stats
 echo 'refFilePathForStats:' $refFilePathForStats
-echo 'Retrieve targets (option -x):' $retrieveTargets
+#echo 'Retrieve targets (option -x):' $retrieveTargets
 
 
 if [[ $retrieveTargets == 'retrieve_targets' ]]; then
+
+	echo "Using option -x retrieve_targets"
 
 	sampleId=`echo $line | cut -d ',' -f 1 `
 	fastaFile=`echo $line | cut -d ',' -f 2 `
@@ -64,6 +66,8 @@ if [[ $retrieveTargets == 'retrieve_targets' ]]; then
 	exit
 elif [[ $retrieveTargets == 'captus_extract' ]]; then
 
+	echo "Using option -x captus_extract"
+
 	sampleId=`echo $line | cut -d ',' -f 1 `
 	fastaFile=`echo $line | cut -d ',' -f 2 `
 
@@ -89,25 +93,29 @@ elif [[ $retrieveTargets == 'captus_extract' ]]; then
 
 	# Also need to copy and rename the raw sample contigs file and replace with $sampleId so that
 	# Captus uses $sampleId (a predicable name for the Captus folder structure) rather than whatever the raw filenames are:
-	
+	###if [ $os == 'Darwin' ]; then
+
+
 	if [[ "$paftolDataSymlinksDir/$fastaFile" == *'.gz' ]]; then
-		cp --no-preserve=mode $paftolDataSymlinksDir/$fastaFile ${sampleId}_in_seqs.fasta.gz # NB: 'cp -p' will not work if original file is not writeable, then it can't overwritten here if run is repeated!
+		cp $paftolDataSymlinksDir/$fastaFile ${sampleId}_in_seqs.fasta.gz # NB: Was using 'cp --no-preserve=mode' because 'cp -p' will not work if original file is not writeable, then it can't overwritten here if run is repeated!
+		chmod 755 ${sampleId}_in_seqs.fasta.gz 	# Making file writeable in case it's not already - in case run is repeated - better than using 'cp --no-preserve=mode' as this flag doesn't exist on Macbook!
 		assembledContigsLocalCopy=${sampleId}_in_seqs.fasta.gz
 		#chmod 755 $assembledContigsLocalCopy	# 'cp' alone still preserved the non-write status of the file so will have to alter manually; actually --no-preserve=mode works, gives '-rw-r--r--' 
 	else
 		# Assume file is unzipped. Captus requires file ending to reflect whether file is zipped or not i.e. an unzipped file ending e.g. fasta.gz will not work so:
-		cp --no-preserve=mode $paftolDataSymlinksDir/$fastaFile ${sampleId}_in_seqs.fasta
+		cp $paftolDataSymlinksDir/$fastaFile ${sampleId}_in_seqs.fasta
+		chmod 755 ${sampleId}_in_seqs.fasta
 		assembledContigsLocalCopy=${sampleId}_in_seqs.fasta
 		#chmod 755 $assembledContigsLocalCopy 
 	fi
 
-	captus extract --overwrite \
-	--threads 4 \
-	-a in_fasta \
-	-f $assembledContigsLocalCopy \
-	--nuc_refs $targetsFileLocalCopy \
-	--nuc_min_identity 55 \
-	--out outputs
+	# captus extract --overwrite \
+	# --threads 4 \
+	# -a in_fasta \
+	# -f $assembledContigsLocalCopy \
+	# --nuc_refs $targetsFileLocalCopy \
+	# --nuc_min_identity 55 \
+	# --out outputs
 	# Removed: --max_paralogs 0 \
 	# Notes:
 	# 1.Within 'outputs' folder, the extracted markers/genes go to a folder called <idSequence>__captus-ext
@@ -159,10 +167,14 @@ elif [[ $retrieveTargets == 'captus_extract' ]]; then
 	avPcId=`cat ${sampleId}_NUC_coding_NT.main_seqIds_ONLY.fasta | grep '>' | awk '{print $6}' | sed 's/\[ident=//' | sed 's/\]//' | awk '{sum+=$1} END {if(sum > 0) {print sum/NR} else {print "0"}}' `
 	minPcId=`cat ${sampleId}_NUC_coding_NT.main_seqIds_ONLY.fasta | grep '>' | awk '{print $6}' | sed 's/\[ident=//' | sed 's/\]//' | sort -n | head -n 1 `
 	maxPcId=`cat ${sampleId}_NUC_coding_NT.main_seqIds_ONLY.fasta | grep '>' | awk '{print $6}' | sed 's/\[ident=//' | sed 's/\]//' | sort -n | tail -n 1 `
+	set +e 	# If grep gives no output then it seems to fail ($? is 1 after this case), then script exits with 'set -e' on - so turning 'set -e' off so this error is ignored
+	#set +u # Not required to be turned off
 	echo "maxPcId: $maxPcId"
 	numbrSTOPs=`fastatranslate -F 1 ${sampleId}_NUC_coding_NT.main_seqIds_ONLY.fasta | grep -o '\*' | wc -l `
 	echo "numbrSTOPs: $numbrSTOPs"
 	numbrReportedFrameShifts=`cat ${sampleId}_NUC_coding_NT.main_seqIds_ONLY.fasta | grep '\[frameshifts=' | wc -l `
+	echo "numbrReportedFrameShifts: $numbrReportedFrameShifts"
+	echo
 
 	echo "sampleId: $sampleId
 numbrAssembledContigs: $numbrAssembledContigs
