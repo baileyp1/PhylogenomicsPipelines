@@ -109,6 +109,7 @@ elif [[ $retrieveTargets == 'captus_extract' ]]; then
 		#chmod 755 $assembledContigsLocalCopy 
 	fi
 
+### Having put vack command, can pull on Gruffalo!!!!!
 	captus extract --overwrite \
 	--threads 4 \
 	-a in_fasta \
