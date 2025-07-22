@@ -51,7 +51,8 @@ echo
 # Finally input the line of current sample into the worker script.
 ### Confirm I don't need srun here - if I used it maybe I could get the memory used.
 exePrefix="time" # "/usr/bin/time -v "		# this time command gets the RSS memory; July 2025 - command seems to disappear after Linux OS upgrades
-$exePrefix $pathToScripts/make_gene_trees.sh \
+###$exePrefix $pathToScripts/make_gene_trees.sh \
+$pathToScripts/make_gene_trees.sh \
 ${SAMPLELIST[$SLURM_ARRAY_TASK_ID]} \
 $geneFile \
 $fractnAlnCovrg \

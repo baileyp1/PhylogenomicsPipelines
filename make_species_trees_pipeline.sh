@@ -1158,6 +1158,7 @@ if [[ $os == 'Darwin' && $speciesTreesOnly == 'no' ]]; then
 
 elif [[ $os == 'Linux' && $speciesTreesOnly == 'no' ]]; then
     exePrefix='time' # "/usr/bin/time -v" # July 2025 - the/usr/bin/time program seems to disappear after OS upgrades so will just use 'time' for now
+                                          #             Even worse, the 'time' command doesn't work in the slurm scripts so will now remove the $exePrefix from each command!
     slurm=`sbatch -V 2>/dev/null | grep ^slurm | wc -l `  # Also done now above outside conditionals so redundant
     if [ $slurm -eq 1 ]; then
 		# Count the # genes to process and fix that number in the Slurm --array parameter.
