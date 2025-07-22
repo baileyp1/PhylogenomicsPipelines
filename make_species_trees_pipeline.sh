@@ -1157,7 +1157,7 @@ if [[ $os == 'Darwin' && $speciesTreesOnly == 'no' ]]; then
 	fi
 
 elif [[ $os == 'Linux' && $speciesTreesOnly == 'no' ]]; then
-    ###exePrefix="/usr/bin/time -v -o g${gene}_mafft_dna_aln_time_and_mem.log"		# NB - this will not work here - need to pick up gene id in Slurm script instead.
+    exePrefix='time' # "/usr/bin/time -v" # July 2025 - the/usr/bin/time program seems to disappear after OS upgrades so will just use 'time' for now
     slurm=`sbatch -V 2>/dev/null | grep ^slurm | wc -l `  # Also done now above outside conditionals so redundant
     if [ $slurm -eq 1 ]; then
 		# Count the # genes to process and fix that number in the Slurm --array parameter.
@@ -1337,7 +1337,8 @@ elif [[ $os == 'Linux' && $speciesTreesOnly == 'no' ]]; then
 		cat $geneListFile | \
 		while read line ; do
 			geneId=`echo $line | tr -d '\n' `	# Need to remove the line return!
-			exePrefix="/usr/bin/time -v"		# this time command gets the RSS memory, -l flag doesn't work on Cluster, GNULinux
+			exePrefix="time"	# this time command gets the RSS memory, -l flag doesn't work on Cluster, GNULinux
+                        # Was using: "/usr/bin/time -v" # July 2025 - the/usr/bin/time program seems to disappear after Linux OS upgrades so will just use 'time' for now
 			echo ####################
 			echo Processing gene $geneId
 			echo ####################
@@ -1481,10 +1482,7 @@ if [ $os == 'Darwin' ]; then
     $numbrBootstraps \
 	> ${fileNamePrefix}_make_species_trees.log 2>&1
 elif [ $os == 'Linux' ]; then
-    exePrefix="/usr/bin/time -v"
-    ### NB - not sure where to put the $exePrefix!!!!
-    ### One option is to put the "time script" cmd in a wrapper but then I need a log file for this sbatch call and delete it from the script header..
-    ### I think this is the only way without changing the main script itself.
+    exePrefix="time" # "/usr/bin/time -v"
     if [ $slurm -eq 1 ]; then
         if [[ $speciesTreesOnly == 'no' ]]; then
             echo \$jobId: $jobId - should match previous Slurm step.
