@@ -15,7 +15,7 @@ phyloProgramPROT=$5
 fractnMaxColOcc=$6
 cpuGeneTree=$7
 alnParams="$8"
-exePrefix="$9"
+exePrefix="$9"			### July 2025 - removed the use of this variable from each command! Neither '/usr/bin/time' nor 'time' seem to work now (after an OS upgrade)! 
 alnProgram="${10}"
 dnaSelected="${11}"
 proteinSelected="${12}"
@@ -439,7 +439,8 @@ makeGeneTree()	{
 		###srun -J ${gene}_make_tree -n 1 \
 		echo echo phyloProgramDNA: $phyloProgramDNA
 		echo Running fasttree on the alignment...
-		$exePrefix fasttree $fasttreeFlags \
+		###$exePrefix
+		fasttree $fasttreeFlags \
     	$2 \
 		> ${3}/${gene}_${1}_gene_tree_USE_THIS.nwk
 ###	elif [[ "$phyloProgramDNA" == 'raxml-ng' || "$phyloProgramPROT" == 'raxml-ng' ]]; then
@@ -452,7 +453,8 @@ makeGeneTree()	{
 		cpuGeneTree=1		# NB - at the moment keeping cpu to 1 because very small trees can crash if # cpu is higher - can do ||elisation other ways with RAxML though 
 		### 22.10.2020 - was --threads auto{$cpuGeneTree} \; now testing --threads auto{MAX} \ - doesn't work! Says ERROR: Invalid number of threads: %s auto{1}, please provide a positive integer number! but I was!
 		### Also the --workers auto option doesn't exist!!!! \
-		$exePrefix raxml-ng --threads $cpuGeneTree \
+		###$exePrefix
+		raxml-ng --threads $cpuGeneTree \
 		--redo \
 		--all \
 		--msa $2 \
@@ -475,7 +477,8 @@ makeGeneTree()	{
 	elif [[ "$phyloProgramToUse" == 'iqtree2' ]]; then
 		echo
 		echo Running IQ-Tree on the gene alignment with these options: -B 1000 ... 
-		$exePrefix iqtree2 -T AUTO -ntmax $cpuGeneTree \
+		###$exePrefix
+		iqtree2 -T AUTO -ntmax $cpuGeneTree \
 		--seqtype $iqTree2SeqType \
 		-s $2 \
 		--prefix ${3}/${gene}.${1}.aln_iqtree \
@@ -499,7 +502,8 @@ makeGeneTree()	{
 	elif [[ "$phyloProgramToUse" == 'iqtree2-fast-b100' ]]; then
 		echo
 		echo Running IQ-Tree on the gene alignment with these options: -fast, -b 100, -m $iqtree2Model ...
-		$exePrefix iqtree2 -T AUTO -ntmax $cpuGeneTree \
+		###$exePrefix
+		iqtree2 -T AUTO -ntmax $cpuGeneTree \
 		--seqtype $iqTree2SeqType \
 		-s $2 \
 		--prefix ${3}/${gene}.${1}.aln_iqtree \
@@ -516,7 +520,8 @@ makeGeneTree()	{
 	elif [[ "$phyloProgramToUse" == 'iqtree2-alrt' ]]; then
 		echo
 		echo Running IQ-Tree on the gene alignment with these options: -alrt, -m $iqtree2Model ...
-		$exePrefix iqtree2 -T AUTO -ntmax $cpuGeneTree \
+		###$exePrefix
+		iqtree2 -T AUTO -ntmax $cpuGeneTree \
 		--seqtype $iqTree2SeqType \
 		-s $2 \
 		--prefix ${3}/${gene}.${1}.aln_iqtree \
@@ -548,7 +553,8 @@ makeGeneTree()	{
 	elif [[ "$phyloProgramToUse" == 'iqtree2-B1000-nm110' ]]; then
 		echo																    # NB max iteration must be > min -nstep iteration! 
 		echo Running IQ-Tree on the gene alignment with these options: -B 1000, -nstep 100, -nm 110, -m $iqtree2Model ...
-		$exePrefix iqtree2 -T AUTO -ntmax $cpuGeneTree \
+		###$exePrefix
+		iqtree2 -T AUTO -ntmax $cpuGeneTree \
 		--seqtype $iqTree2SeqType \
 		-s $2 \
 		--prefix ${3}/${gene}.${1}.aln_iqtree \
@@ -565,7 +571,8 @@ makeGeneTree()	{
 	elif [[ "$phyloProgramToUse" == 'iqtree2-B1000-nm200' ]]; then
 		echo																    # NB max iteration must be > min -nstep iteration! 
 		echo Running IQ-Tree on the gene alignment with these options: -B 1000, -nstep 100, -nm 200, -m $iqtree2Model ...
-		$exePrefix iqtree2 -T AUTO -ntmax $cpuGeneTree \
+		###$exePrefix
+		iqtree2 -T AUTO -ntmax $cpuGeneTree \
 		--seqtype $iqTree2SeqType \
 		-s $2 \
 		--prefix ${3}/${gene}.${1}.aln_iqtree \
@@ -584,7 +591,8 @@ makeGeneTree()	{
 	elif [[ "$phyloProgramToUse" == 'iqtree2-B1000-nm1000' ]]; then
 		echo																   		# NB max iteration must be > min -nstep iteration! 
 		echo Running IQ-Tree on the DNA gene alignment with these options: -B 1000, -nstep 100, -nm 1000, -m $iqtree2Model ...
-		$exePrefix iqtree2 -T AUTO -ntmax $cpuGeneTree \
+		###$exePrefix
+		iqtree2 -T AUTO -ntmax $cpuGeneTree \
 		--seqtype $iqTree2SeqType \
 		-s $2 \
 		--prefix ${3}/${gene}.${1}.aln_iqtree \
@@ -603,7 +611,8 @@ makeGeneTree()	{
 	elif [[ "$phyloProgramToUse" == 'iqtree2-B1000-nm210-MT' ]]; then
 		echo																   		# NB max iteration must be > min iteration! 
 		echo Running IQ-Tree on the DNA gene alignment with these options: -B 1000, -nstep 100, -nm 210, -mset HKY,TIM2,TVM,GTR
-		$exePrefix iqtree2 -T AUTO -ntmax $cpuGeneTree \
+		###$exePrefix
+		iqtree2 -T AUTO -ntmax $cpuGeneTree \
 		--seqtype $iqTree2SeqType \
 		-s $2 \
 		--prefix ${3}/${gene}.${1}.aln_iqtree \
@@ -620,7 +629,8 @@ makeGeneTree()	{
 	elif [[ "$phyloProgramToUse" == 'iqtree2-B1000-nm210-MT' ]]; then
 		echo																   			# NB max iteration must be > min iteration! 
 		echo Running IQ-Tree on the protein gene alignment with these options: -B 1000, -nstep 100, -nm 210, -mset HKY,TIM2,TVM,GTR ...
-		$exePrefix iqtree2 -T AUTO -ntmax $cpuGeneTree \
+		###$exePrefix
+		iqtree2 -T AUTO -ntmax $cpuGeneTree \
 		--seqtype $iqTree2SeqType \
 		-s $2 \
 		--prefix ${3}/${gene}.${1}.aln_iqtree \
@@ -782,7 +792,8 @@ createGeneAlignmentAndTreeImages()	{
 			colour=clustal
 		fi
 		###$exePrefix java -Djava.awt.headless=true -jar $JALVIEW  $jalviewTreeFlags \  ### Removed $jalviewTreeFlags - not working
-		$exePrefix java -Djava.awt.headless=true -jar $JALVIEW \
+		###$exePrefix
+		java -Djava.awt.headless=true -jar $JALVIEW \
 		-open $alnFileToUse \
 		-colour $colour \
 		-png gene_alignment_tree_images_$1/${geneAlnFileNoSuffix}.png
@@ -906,6 +917,9 @@ get_emma_stats() 	{
 }
 
 
+
+
+
 ############
 # Main code:
 ############
@@ -1002,7 +1016,8 @@ if [[ $dnaSelected == 'yes' ]]; then
     if [[ "$alnProgram" == 'mafft' ]]; then 	# If aligners can be set to auto residue detect, can use a generic subR - or brign in a variable.
     	echo
         echo Creating a DNA alignment with MAFFT...
-		$exePrefix mafft --thread $cpuGeneTree \
+		###$exePrefix
+		mafft --thread $cpuGeneTree \
 		$alnParams \
 		--reorder \
 		--preservecase \
@@ -1034,7 +1049,8 @@ if [[ $dnaSelected == 'yes' ]]; then
    		fi
    		prepareOptionsForUPP "$alnParams" $dnaFastaFileForAln
    		echo "Option values for UPP (from user): $alnParamsPrepared"
-		$exePrefix run_upp.py -x $cpuGeneTree $alnParamsPrepared -s $dnaFastaFileForAln -o ${gene}.dna.upp
+		###$exePrefix
+		run_upp.py -x $cpuGeneTree $alnParamsPrepared -s $dnaFastaFileForAln -o ${gene}.dna.upp
 		# Other options to consider:
 		# UPP(Fast): run_upp.py -s input.fas -B 100. - what's the -B option??!!
 		# -m [dna|rna|amino]
@@ -1059,7 +1075,8 @@ if [[ $dnaSelected == 'yes' ]]; then
     elif [[ "$alnProgram" == 'emma' ]]; then
     	echo
    		echo Creating a DNA alignment with EMMA...
-   		$exePrefix python $EMMA -t $cpuGeneTree \
+   		###$exePrefix
+   		python $EMMA -t $cpuGeneTree \
    		-i $dnaFastaFileForAln -d ${gene}.dna.emma \
    		--molecule dna \
    		--legacy \
@@ -1150,7 +1167,8 @@ if [[ $proteinSelected == 'yes' || $codonSelected == 'yes' ]]; then
  	if [[ "$alnProgram" == 'mafft' ]]; then 	# If aligners can be set to auto residue detect, then could use a generic subR - or bring in a variable.
 		echo
 		echo Creating a protein alignment with MAFFT...
-		$exePrefix mafft --thread $cpuGeneTree \
+		###$exePrefix
+		mafft --thread $cpuGeneTree \
 		$alnParams \
 		--reorder \
 		--preservecase \
@@ -1167,7 +1185,8 @@ if [[ $proteinSelected == 'yes' || $codonSelected == 'yes' ]]; then
    		prepareOptionsForUPP "$alnParams" $dnaFastaFileForAln
    		echo "Option values for UPP (from user): $alnParamsPrepared"
 		#run_upp.py -x $cpuGeneTree -M -1 -m amino -s ${gene}.protein.fasta -o ${gene}.protein.upp
-		$exePrefix run_upp.py -x $cpuGeneTree $alnParamsPrepared -m amino -s ${gene}.protein.fasta -o ${gene}.protein.upp
+		###$exePrefix
+		run_upp.py -x $cpuGeneTree $alnParamsPrepared -m amino -s ${gene}.protein.fasta -o ${gene}.protein.upp
 		if [[ ! -s ${gene}.protein.upp_alignment.fasta ]]; then 
 			echo "ERROR: UPP was not able to align this gene set - skipping alignment of ${gene}.protein.fasta"
 			exit 0
@@ -1177,7 +1196,8 @@ if [[ $proteinSelected == 'yes' || $codonSelected == 'yes' ]]; then
 	elif [[ "$alnProgram" == 'emma' ]]; then
     	echo
    		echo Creating a protein alignment with EMMA...
-   		$exePrefix python $EMMA -t $cpuGeneTree \
+   		###$exePrefix
+   		python $EMMA -t $cpuGeneTree \
    		-i ${gene}.protein.fasta  -d ${gene}.protein.emma \
    		--molecule amino \
    		--legacy \

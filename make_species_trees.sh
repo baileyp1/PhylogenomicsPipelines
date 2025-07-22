@@ -26,7 +26,7 @@ fileNamePrefix=$4
 cpu=$5               ### 28.1.2020 - added this paramter in but not usign it (at the moment - trying to make filenames more generic)
 phyloProgramDNA=$6
 phyloProgramPROT=$7
-exePrefix="$8"
+exePrefix="$8"              ### July 2025 - removed the use of this variable from each command! Neither '/usr/bin/time' nor 'time' seem to work now (after an OS upgrade)! 
 treeTipInfoMapFile=$9       # NB - just testing if this filename was submitted, then will add tree tip info to species tree
 dnaSelected=${10}               # NB - for these <seqType>Selected variables, this script should be able to process all three types together, as required; note the seqType variable is specific to local code and defined from these variables
 proteinSelected=${11}
@@ -201,7 +201,8 @@ makeSpeciesTree() {
         # NB - location of ASTRAL must be presented to the java -jar command as a environment variable
         # containing the absolute path to the jar file.
         # NB - 22.10.2020 - added the -Xmx12000m (12G memory) to try and increase speed of ASTRAL. OK for 353 gene trees and 3500 samples, may need to increase for larger data sets
-        $exePrefix java -Xmx12000m -jar $ASTRAL -t 2 \
+        ###$exePrefix
+        java -Xmx12000m -jar $ASTRAL -t 2 \
         -i $infile \
         -o ${outFilePrefix}/${fileNamePrefix}.${residueType}.species_tree.astral_-t2.nwk
         # Astral commands:
@@ -233,7 +234,8 @@ makeSpeciesTree() {
 
         ### 4.8.2021 - Also if -$cpu == 1 increase to 2 otherwise prgoram crashes
        
-        $exePrefix java -Xmx${speciesTreeSlurmMem}m $ASTRALMPLIB -jar $ASTRALMP -C -T $cpu -t 2 \
+        ###$exePrefix
+        java -Xmx${speciesTreeSlurmMem}m $ASTRALMPLIB -jar $ASTRALMP -C -T $cpu -t 2 \
         -i $infile \
         -o ${outFilePrefix}/${fileNamePrefix}.${residueType}.species_tree.astralmp_-t2.nwk
 
@@ -249,7 +251,8 @@ makeSpeciesTree() {
     elif [[ "$programToUse" == 'fasttree' ]]; then
         echo programToUse: $programToUse
         echo Running fasttree on the concatenated alignment...
-        $exePrefix fasttree $fasttreeFlags \
+        ###$exePrefix
+        fasttree $fasttreeFlags \
         $infile \
         > $outFilePrefix/${fileNamePrefix}.${residueType}.species_tree.fasttree.nwk
     elif [[ "$programToUse" == 'raxmlq' ]]; then
@@ -264,7 +267,8 @@ makeSpeciesTree() {
         if [ -a RAxML_info.${fileNamePrefix}.${residueType}.raxmlHPC-PTHREADS-SSE ]; then rm RAxML_info.${fileNamePrefix}.${residueType}.raxmlHPC-PTHREADS-SSE; fi
         if [ -a ${infile}.reduced ]; then rm ${infile}.reduced; fi
 
-        $exePrefix raxmlHPC-PTHREADS-SSE3 -T $cpu \
+        ###$exePrefix
+        raxmlHPC-PTHREADS-SSE3 -T $cpu \
         -f a \
         -x 12345 \
         -p 12345 \
@@ -297,7 +301,8 @@ makeSpeciesTree() {
         if [ -a RAxML_info.${fileNamePrefix}.${residueType}.raxmlHPC-PTHREADS-SSE ]; then rm RAxML_info.${fileNamePrefix}.${residueType}.raxmlHPC-PTHREADS-SSE; fi
         if [ -a ${infile}.reduced ]; then rm ${infile}.reduced; fi
 
-        $exePrefix raxmlHPC-PTHREADS-SSE3 -T $cpu \
+        ###$exePrefix
+        raxmlHPC-PTHREADS-SSE3 -T $cpu \
         -f a \
         -x 12345 \
         -p 12345 \
