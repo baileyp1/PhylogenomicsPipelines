@@ -93,9 +93,6 @@ elif [[ $retrieveTargets == 'captus_extract' ]]; then
 
 	# Also need to copy and rename the raw sample contigs file and replace with $sampleId so that
 	# Captus uses $sampleId (a predicable name for the Captus folder structure) rather than whatever the raw filenames are:
-	###if [ $os == 'Darwin' ]; then
-
-
 	if [[ "$paftolDataSymlinksDir/$fastaFile" == *'.gz' ]]; then
 		cp $paftolDataSymlinksDir/$fastaFile ${sampleId}_in_seqs.fasta.gz # NB: Was using 'cp --no-preserve=mode' because 'cp -p' will not work if original file is not writeable, then it can't overwritten here if run is repeated!
 		chmod 755 ${sampleId}_in_seqs.fasta.gz 	# Making file writeable in case it's not already - in case run is repeated - better than using 'cp --no-preserve=mode' as this flag doesn't exist on Macbook!
@@ -251,7 +248,7 @@ else
 		R2FastqFile=''
 	else
 		echo "ERROR: Neither R2FastqFile found for pair end data nor a single end fastq file at ENA; can't do gene recovery for this sample: $sampleId"
-		### July 2025 - This logic appears not to work in this case - Oxford nanopore data - SRR12808461_1.fastq.gz - might be able to reconfigure logic
+		### July 2025 - This logic appears not to work in this case - Oxford nanopore data - SRR12808461_1.fastq.gz - might be able to reconfigure logic - or somehow rename the fastq's for this datatype to fit.
 		exit
 	fi 
 fi
