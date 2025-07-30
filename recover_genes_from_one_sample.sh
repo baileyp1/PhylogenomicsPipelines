@@ -165,7 +165,7 @@ elif [[ $retrieveTargets == 'captus_extract' ]]; then
 	avPcId=`cat ${sampleId}_NUC_coding_NT.main_seqIds_ONLY.fasta | grep '>' | awk '{print $6}' | sed 's/\[ident=//' | sed 's/\]//' | awk '{sum+=$1} END {if(sum > 0) {print sum/NR} else {print "0"}}' `
 	minPcId=`cat ${sampleId}_NUC_coding_NT.main_seqIds_ONLY.fasta | grep '>' | awk '{print $6}' | sed 's/\[ident=//' | sed 's/\]//' | sort -n | head -n 1 `
 	maxPcId=`cat ${sampleId}_NUC_coding_NT.main_seqIds_ONLY.fasta | grep '>' | awk '{print $6}' | sed 's/\[ident=//' | sed 's/\]//' | sort -n | tail -n 1 `
-	set +e 	# If grep gives no output then it seems to fail ($? is 1 after this case), then script exits with 'set -e' on - so turning 'set -e' off so this error is ignored
+	set +e 	# If grep gives no output then it seems to fail ($? is 1 after this case), then script exits when 'set -e' is on - so turning 'set -e' off so this error is ignored - and it works!
 	#set +u # Not required to be turned off
 	echo "maxPcId: $maxPcId"
 	numbrSTOPs=`fastatranslate -F 1 ${sampleId}_NUC_coding_NT.main_seqIds_ONLY.fasta | grep -o '\*' | wc -l `
