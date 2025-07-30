@@ -8,7 +8,7 @@
 # Copyright © 2025 The Board of Trustees of the Royal Botanic Gardens, Kew
 ##################################
 set -e				# Exit immediately if any command fails
-set -u				# Treat unset variables as an error
+set -u				# Treat unset variables as an error; NB - I don't think this definition is quite true e.g. I have defined disableStitching=''. If it remains NULL and then used, the script doesn't crash. This useful - see lines 110 - 123. The variable name must be defined though before use
 set -o pipefail		# Treat unset variables as an error
 shopt -s failglob	# Cause patterns that match no files to fail (not expand to nothing)
 
@@ -60,13 +60,13 @@ if [[ $retrieveTargets == 'retrieve_targets' ]]; then
 	$targetsFile \
 	$paftolDataSymlinksDir/$fastaFile \
 	$sampleId \
-	blastn \
+	tblastn \
 	nucl \
 	$cpu
 	exit
-elif [[ $retrieveTargets == 'captus_extract' ]]; then
+elif [[ $retrieveTargets == 'captus_extract'* ]]; then
 
-	echo "Using option -x captus_extract"
+	echo "Using option -x $retrieveTargets"
 
 	sampleId=`echo $line | cut -d ',' -f 1 `
 	fastaFile=`echo $line | cut -d ',' -f 2 `
@@ -107,7 +107,14 @@ elif [[ $retrieveTargets == 'captus_extract' ]]; then
 	fi
 
 
-	captus extract --overwrite \
+	disableStitching=''		# It may be usful to set this Captus option for annotated genome, CDS sequences and contigs that correspond to complete chromosomes
+	if [[ $retrieveTargets == 'captus_extract-disable_stitching' ]];then
+		disableStitching='--disable_stitching'
+		echo "Captus $disableStitching is ON"
+	fi
+
+
+	captus extract --overwrite  $disableStitching \
 	--threads 4 \
 	-a in_fasta \
 	-f $assembledContigsLocalCopy \
@@ -184,14 +191,14 @@ avPcId: $avPcId
 minPcId: $minPcId
 maxPcId: $maxPcId
 numbrSTOPs: $numbrSTOPs
-numbrReportedFrameShifts: $numbrReportedFrameShifts" > ${sampleId}_stats.txt
+numbrReportedFrameShifts: $numbrReportedFrameShifts" > ${sampleId}_gene_recovery_stats.txt
 
 	if [[ -s ../${sampleId}.fasta ]]; then echo "ERROR: sample fasta file already found in folder, exiting now"; exit; fi
 
 	# Copy the main ${sampleId}_NUC_coding_NT.main_seqIds_ONLY.fasta (no paralogs) file to the top level folder in line with the organisation of these
 	# data sources: OneKP, annotated and unannotated genomes (also storing the stats file in this way): 
 	cp -p ${sampleId}_NUC_coding_NT.main_seqIds_ONLY.fasta ../${sampleId}.fasta
-	cp -p ${sampleId}_stats.txt ../${sampleId}_stats.txt
+	cp -p ${sampleId}_gene_recovery_stats.txt ../${sampleId}_gene_recovery_stats.txt
 
 	# Remove non-essential files:
 	if [[ -s $targetsFileLocalCopy ]]; then rm $targetsFileLocalCopy; fi

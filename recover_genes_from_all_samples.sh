@@ -58,16 +58,19 @@ OPTIONS <value>:
   -v             
                  program version
   -s <csv file>  
-                 add sample name and fastq/fasta file name(s) via a csv table file which must have a header line with this format: SampleName,R1FastqName,R2FastqName (required option)
-                 The R2FastqName field should be left blank for single end read data. The files (fastq for option y, fasta for option x) are assumed to be in compressed gzip format (suffix .gz)
+                 add sample name and fastq/fasta file name(s) via a csv table file which must have a header line with the following format (required option):
+                 SampleName,R1FastqName,R2FastqName (required option)
+                 The R2FastqName field should be left blank for single end read data. The files (fastq for option y, fasta for option x) are assumed to be 
+                 in compressed gzip format (suffix .gz)
   -f <string>    
-                 FULL path to all sample fastq files (DNA fasta files if using option -x) N.B. no filenames, just the full path to them, not a relative path and no wild cards! (required option)
-                 
-                 Note: if the data is SRA and the fastq files don't exist, an attempt is made to download them from ENA using the run accession if provided in the csv table file (option -s) as follows:
-                 SampleName,R1FastqName,R2FastqName,ENA_RunAccession (NB - the file names are not used but the R2FastqName field needs some text otherwise single end data is assumed!)
+                 FULL path to all sample fastq files (DNA fasta files if using option -x) N.B. no filenames, just the full path to them, not a relative path, no wild cards! (required option)
+                 Note: if the data is SRA and the fastq files don't exist, an attempt is made to download them from ENA using the run accession if provided in 
+                 the csv table file (option -s) as follows:
+                 SampleName,R1FastqName,R2FastqName,ENA_RunAccession
   -t <string>    
                  file name of target genes in DNA fasta format (required option);
-                 Note: option -y 'hybpiper' requires target gene protein sequences, option -y 'hybpiper2' can be DNA or protein, option -x requires DNA
+                 Note: option -y 'hybpiper' requires target gene protein sequences, option -y 'hybpiper2' and option -x captus_extract methods can be DNA or protein,
+                 option -x retrieve_targets must be DNA
   -a <string>    
                  file name of adaptors in fasta format (required option for option -y)
   -y <string>    
@@ -80,12 +83,12 @@ OPTIONS <value>:
                  Note: HybPiper versions tested with this recovery pipeline: 1.3, 2.1.6, 2.2.0, 2.3.x
   -x <string>    
                  retrieve gene orthologs corresponding to a set of targets genes from gene coding sequences or a transcriptome assembly in DNA fasta file format. 
-                 Method options are: captus_extract, retrieve_targets (no default)
-                 For the captus_extract method, see https://edgardomortiz.github.io/captus.docs/. For the retrieve_targets method (this repository),
-                 a TBLASTN search is performed between target and query sequence sets, the hits are filtered by evalue (0.0001), then by % id (55%),
-                 then by HSP length, the first hit for each gene in the BLAST output list is chosen and the output fasta record id of each gene is
-                 printed in HybPiper' format: >sampleId-referenceTargetGeneId. For the captus_extract method, see https://edgardomortiz.github.io/captus.docs/.
-                 Note: later method can also extract genes from unannotated genome contigs
+                 Method options are: captus_extract, captus_extract-disable_stitching, retrieve_targets (no default)
+                 For the captus_extract methods, see https://edgardomortiz.github.io/captus.docs/. Note: this method can also extract genes from
+                 unannotated genome contigs
+                 For the retrieve_targets method (this repository), a TBLASTN search is performed between target and query sequence sets, the hits 
+                 are filtered by evalue (0.0001), then by % id (55%), then by HSP length, the first hit for each gene in the BLAST output list is 
+                 chosen and the output fasta record id of each gene is printed in HybPiper' format: >sampleId-referenceTargetGeneId
   -S    
                  calculate statistics for gene recovery from read data mapped to all recovered genes per sample (includes per sample reads on-target, read
                  coverage, read depth). This option can also be used separately after the gene recoveries have run (do not specify option -y!) but the path
