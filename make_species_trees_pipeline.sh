@@ -1488,9 +1488,9 @@ elif [ $os == 'Linux' ]; then
         if [[ $speciesTreesOnly == 'no' ]]; then
             echo \$jobId: $jobId - should match previous Slurm step.
             # NB - previous Slurm jobs have to have an exit code of zero to satisfy Slurm --dependancy afterok:$jobId parameter,
-		    # otherwise would need to use --dependancy afterany:$jobId if exit code could be > 0.
-		    #	  12.1.2021 - i still think afterok is Ok here
-            slurmDependancy="--dependency=afterok:$jobId"
+		        # otherwise would need to use --dependancy afterany:$jobId if exit code could be > 0.
+		        #	12.1.2021 - i still think afterok is Ok here
+            slurmDependancy="--dependency=afterany:$jobId" # 31.7.2025 - changed from afterok to afterany - there's 1 gene that never gives sequences from target capture data!
         else 
             slurmDependancy=""
         fi
