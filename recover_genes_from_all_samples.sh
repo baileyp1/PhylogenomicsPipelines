@@ -59,7 +59,7 @@ OPTIONS <value>:
                  program version
   -s <csv file>  
                  add sample name and fastq/fasta file name(s) via a csv table file which must have a header line with the following format (required option):
-                 SampleName,R1FastqName,R2FastqName (required option)
+                 SampleName,R1FastqName,R2FastqName
                  The R2FastqName field should be left blank for single end read data. The files (fastq for option y, fasta for option x) are assumed to be 
                  in compressed gzip format (suffix .gz)
   -f <string>    
