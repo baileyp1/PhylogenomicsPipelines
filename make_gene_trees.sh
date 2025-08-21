@@ -1257,7 +1257,7 @@ if [[ $proteinSelected == 'yes' || $codonSelected == 'yes' ]]; then
     		### Command if using macse
     		###java -jar $FASTSP -r $dnaAlnForMacse -e $codonAlnToUse > ${gene}.codon.aln.fastsp_quality.log 2>&1
     		###		Need to confirm reference file is shorter than estimated aln before adding N's 
-    		### else command if not using macse and there is a DNA alignment to compare i.e. if option -D = 'dna protein'
+    		### else command if not using macse and there is a DNA alignment to compare i.e. if option -D = 'dna codon'
     	if [[ -s $dnaAlnToUse ]]; then
     		java -jar $FASTSP -r $dnaAlnToUse -e $codonAlnToUse > codonAln/${gene}.codon.aln.fastsp.log 2>&1
     		# Note: FASTSP doesn't care what characters are in the alignment, site pairs containing any character other than a '-' counts as homology
@@ -1533,6 +1533,7 @@ if [[ -s $dnaAlnForTree || -s $proteinAlnForTree ]]; then
 			else
 				echo "WARNING: Not able to build a tree for this gene: $gene (less than four sequences)"
 				exit 0	# zero allows Slurm to continue with the dependancies; NB - any seq. filtering done on protein, DNA or codon should be identical so can exit on this clause and the two below
+				### 21.8.2025 - might be good to only exit if codon and protein alns are not set to run
 			fi
 		fi
 		if [[ $codonSelected == 'yes' ]]; then
