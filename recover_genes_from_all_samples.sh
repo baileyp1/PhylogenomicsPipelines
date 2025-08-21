@@ -69,7 +69,7 @@ OPTIONS <value>:
                  SampleName,R1FastqName,R2FastqName,ENA_RunAccession
   -t <string>    
                  file name of target genes in DNA fasta format (required option);
-                 Note: option -y 'hybpiper' requires target gene protein sequences, option -y 'hybpiper2' and option -x captus_extract methods can be DNA or protein,
+                 Note: option -y 'hybpiper' and 'hybpiper2-diamond' require target gene protein sequences, option -y 'hybpiper2' and option -x captus_extract methods can be DNA or protein,
                  option -x retrieve_targets must be DNA
   -a <string>    
                  file name of adaptors in fasta format (required option for option -y)
