@@ -1009,89 +1009,89 @@ if [[ $dnaSelected == 'yes' ]]; then
 	# allowed even though a fresh directory is advised if a re-run is required) 
 	if [[ -s ${gene}_dna_gene_tree_USE_THIS.nwk && $checkpointing == 'yes' ]]; then 
 		echo "INFO: checkpointing is ON so this gene tree is being skipped - already done: ${gene}_dna_gene_tree_USE_THIS.nwk"
-		exit 0
-	fi
-
-
-    if [[ "$alnProgram" == 'mafft' ]]; then 	# If aligners can be set to auto residue detect, can use a generic subR - or brign in a variable.
-    	echo
-        echo Creating a DNA alignment with MAFFT...
-		###$exePrefix
-		mafft --thread $cpuGeneTree \
-		$alnParams \
-		--reorder \
-		--preservecase \
-		$dnaFastaFileForAln \
-		| sed 's/^>_R_/>/' \
-		> ${gene}.dna.aln.fasta
-		# Possible run modes:
-		# 1. Progressive method (fast - up to 5k seqs) --retree 1                           			FFT-NS-1/NW-NS-1
-		# 2. Progressive method (fast - up to 5k seqs) --retree 2 (better than retree 1)    			FFT-NS-2/NW-NS-2
-		# 3. Iterative refinement method (slower, more accurate) --maxiterate 1000 - use this if poss   Builds on FFT-NS-2 --> FFT-NS-i - refinement repeated until no more improvement in the WSP score is made or the number of cycles reaches 1,000.         
-		# 4. L-INS-i, E-INS-i, G-INS-i — Iterative refinement methods using WSP and consistency scores - not sure if I need this level (slowest, most accurate)
-		# NB - if using Slurm srun with mafft AND fasttree with -c set to > 1, you need to pin the task down with -n flag to 1 task, 
-		# otherwise it spawns > 1 runs of the same task.
-		### 25.7.2020 - look at docs to see best/max number of thread worthwhile to use - hard code so it only uses max # thread (== to cpu?)
-		# NB - the sed line removes the reverse complement indicator (sequences are marked with "_R_" at the head of sequence title) if MAFFT --adjustdirection is used.
-        dnaAlnToUse=${gene}.dna.aln.fasta
-    elif [[ "$alnProgram" == 'upp' ]]; then
-    	echo
-   		echo Creating a DNA alignment with UPP...
-   		# Before running check whether pasta has already been run and delete previous files (they can't be overwritten!):
-###REMOVE COMMENT:
-   		### NB - had an issue with removing all files when only testing one of them, in the end my own error I think.
-   		### If it happens again (UPP will complain about overwriting files) can use this conditional instead to check all the files in the set at once:
-   		### if ls *.dna.upp* 2>&1 >/dev/null; then echo exists; ls -l *.dna.upp* ; fi
-   		if [[ -f ${gene}.dna.upp_pasta.fasta ]]; then
-   			rm ${gene}.dna.upp_pasta.fasta  ${gene}.dna.upp_pasta.fasttree  ${gene}.dna.upp_alignment.fasta
-   			# Don't think this file always exists (for very small datasets):
-   			if [[ -f ${gene}.dna.upp_insertion_columns.txt ]]; then rm ${gene}.dna.upp_insertion_columns.txt; fi
-   		fi
-   		prepareOptionsForUPP "$alnParams" $dnaFastaFileForAln
-   		echo "Option values for UPP (from user): $alnParamsPrepared"
-		###$exePrefix
-		run_upp.py -x $cpuGeneTree $alnParamsPrepared -s $dnaFastaFileForAln -o ${gene}.dna.upp
-		# Other options to consider:
-		# UPP(Fast): run_upp.py -s input.fas -B 100. - what's the -B option??!!
-		# -m [dna|rna|amino]
-		# -x <cpus> - runs a ||elised version of UPP
-		# -M <median_full_length> - specify the median full length of the gene for selecting a set of backbone seqs that are within 25% of that value
-		#						    would have to bring in an external file of size - also useful for filterSeqs option 2 - actually '-M -1' will use the median full length of the seqs  
-		# Ouput files:
-		# _pasta.fasta 	- backbone aln (?)
-		# _pasta.Fasttree - backbone tree (?)
-		# _alignment.fasta 	- main aln but also contains regions outside the HMM columns which remain unaligned (so do not use!!); I think all bases from *_dna.fasta are present.
-		# _alignment_masked.fasta - masked aln where non-homologous sites in the query set are removed (This is the file to use!!)
-
-		# NB - UPP might not be able to align small gene sets (e.g. from the test data set) - will report this and skip this gene.
-		#      UPP doesn’t seem to align two seqs but it does align three seqs!
-    	#	   With the -M -1 flag it couldn’t align 5 genes but sucess depends on how complete the sequences are.
-		if [[ ! -s ${gene}.dna.upp_alignment.fasta ]]; then 
-			echo "WARNING: UPP was not able to align this gene set - skipping alignment of $dnaFastaFileForAln"
-			exit 0	# zero allows Slurm to continue with the dependancies
+		if [[ $proteinSelected == 'no' || $codonSelected == 'no' ]]; then
+			# Only exit if option -D is set to run with DNA alns only - required for checkpointing when muliple options -D are set
+			exit 0
 		fi
-		mv ${gene}.dna.upp_alignment_masked.fasta ${gene}.dna.aln.fasta 
-       	dnaAlnToUse=${gene}.dna.aln.fasta
-    elif [[ "$alnProgram" == 'emma' ]]; then
-    	echo
-   		echo Creating a DNA alignment with EMMA...
-   		###$exePrefix
-   		python $EMMA -t $cpuGeneTree \
-   		-i $dnaFastaFileForAln -d ${gene}.dna.emma \
-   		--molecule dna \
-   		--legacy \
-   		--use-weight 1 --lower 10 --upper 25 \
-   		--keep-decomposition \
-   		-o ${gene}.dna.aln.fasta
-   		# NB - a directory called '${gene}_emma' is created for the EMMA run and the aligned is used from that location
-   		dnaAlnToUse=${geneId}.dna.emma/${gene}.dna.aln.fasta
+	else	 ### one change from fi --> else to put DNA aln code into an outer clause
+    	if [[ "$alnProgram" == 'mafft' ]]; then 	# If aligners can be set to auto residue detect, can use a generic subR - or brign in a variable.
+    		echo
+        	echo Creating a DNA alignment with MAFFT...
+			###$exePrefix
+			mafft --thread $cpuGeneTree \
+			$alnParams \
+			--reorder \
+			--preservecase \
+			$dnaFastaFileForAln \
+			| sed 's/^>_R_/>/' \
+			> ${gene}.dna.aln.fasta
+			# Possible run modes:
+			# 1. Progressive method (fast - up to 5k seqs) --retree 1                           			FFT-NS-1/NW-NS-1
+			# 2. Progressive method (fast - up to 5k seqs) --retree 2 (better than retree 1)    			FFT-NS-2/NW-NS-2
+			# 3. Iterative refinement method (slower, more accurate) --maxiterate 1000 - use this if poss   Builds on FFT-NS-2 --> FFT-NS-i - refinement repeated until no more improvement in the WSP score is made or the number of cycles reaches 1,000.         
+			# 4. L-INS-i, E-INS-i, G-INS-i — Iterative refinement methods using WSP and consistency scores - not sure if I need this level (slowest, most accurate)
+			# NB - if using Slurm srun with mafft AND fasttree with -c set to > 1, you need to pin the task down with -n flag to 1 task, 
+			# otherwise it spawns > 1 runs of the same task.
+			### 25.7.2020 - look at docs to see best/max number of thread worthwhile to use - hard code so it only uses max # thread (== to cpu?)
+			# NB - the sed line removes the reverse complement indicator (sequences are marked with "_R_" at the head of sequence title) if MAFFT --adjustdirection is used.
+	        dnaAlnToUse=${gene}.dna.aln.fasta
+	    elif [[ "$alnProgram" == 'upp' ]]; then
+	    	echo
+	   		echo Creating a DNA alignment with UPP...
+	   		# Before running check whether pasta has already been run and delete previous files (they can't be overwritten!):
+	   		if [[ -f ${gene}.dna.upp_pasta.fasta ]]; then
+	   			rm ${gene}.dna.upp_pasta.fasta  ${gene}.dna.upp_pasta.fasttree  ${gene}.dna.upp_alignment.fasta
+	   			# Don't think this file always exists (for very small datasets):
+	   			if [[ -f ${gene}.dna.upp_insertion_columns.txt ]]; then rm ${gene}.dna.upp_insertion_columns.txt; fi
+	   		fi
+	   		prepareOptionsForUPP "$alnParams" $dnaFastaFileForAln
+	   		echo "Option values for UPP (from user): $alnParamsPrepared"
+			###$exePrefix
+			run_upp.py -x $cpuGeneTree $alnParamsPrepared -s $dnaFastaFileForAln -o ${gene}.dna.upp
+			# Other options to consider:
+			# UPP(Fast): run_upp.py -s input.fas -B 100. - what's the -B option??!!
+			# -m [dna|rna|amino]
+			# -x <cpus> - runs a ||elised version of UPP
+			# -M <median_full_length> - specify the median full length of the gene for selecting a set of backbone seqs that are within 25% of that value
+			#						    would have to bring in an external file of size - also useful for filterSeqs option 2 - actually '-M -1' will use the median full length of the seqs  
+			# Ouput files:
+			# _pasta.fasta 	- backbone aln (?)
+			# _pasta.Fasttree - backbone tree (?)
+			# _alignment.fasta 	- main aln but also contains regions outside the HMM columns which remain unaligned (so do not use!!); I think all bases from *_dna.fasta are present.
+			# _alignment_masked.fasta - masked aln where non-homologous sites in the query set are removed (This is the file to use!!)
 
-		get_emma_stats dna $dnaFastaFileForAln $dnaAlnToUse
-		# Input variables: residue_type  unaligned seqs  aligned seqs
-   	else
-   		echo "No sequence alignment program was selected. Just organised sequences on a per gene basis for gene ${gene}, now exiting."
-   		exit 0
-   	fi
+			# NB - UPP might not be able to align small gene sets (e.g. from the test data set) - will report this and skip this gene.
+			#      UPP doesn’t seem to align two seqs but it does align three seqs!
+	    	#	   With the -M -1 flag it couldn’t align 5 genes but sucess depends on how complete the sequences are.
+			if [[ ! -s ${gene}.dna.upp_alignment.fasta ]]; then 
+				echo "WARNING: UPP was not able to align this gene set - skipping alignment of $dnaFastaFileForAln"
+				exit 0	# zero allows Slurm to continue with the dependancies
+			fi
+			mv ${gene}.dna.upp_alignment_masked.fasta ${gene}.dna.aln.fasta 
+	       	dnaAlnToUse=${gene}.dna.aln.fasta
+	    elif [[ "$alnProgram" == 'emma' ]]; then
+	    	echo
+	   		echo Creating a DNA alignment with EMMA...
+	   		# Before running check whether EMMA has already been run and delete the EMMA folder (the contents can't be overwritten!):
+	   		if [[ -d ${gene}.dna.emma ]]; then rm -fR ${gene}.dna.emma; fi
+	   		###$exePrefix
+	   		python $EMMA -t $cpuGeneTree \
+	   		-i $dnaFastaFileForAln -d ${gene}.dna.emma \
+	   		--molecule dna \
+	   		--legacy \
+	   		--use-weight 1 --lower 10 --upper 25 \
+	   		--keep-decomposition \
+	   		-o ${gene}.dna.aln.fasta
+	   		# NB - a directory called '${gene}.dna.emma' is created for the EMMA run and the aligned is used from that location
+	   		dnaAlnToUse=${geneId}.dna.emma/${gene}.dna.aln.fasta
+
+			get_emma_stats dna $dnaFastaFileForAln $dnaAlnToUse
+			# Input variables: residue_type  unaligned seqs  aligned seqs
+	   	else
+	   		echo "No sequence alignment program was selected. Just organised sequences on a per gene basis for gene ${gene}, now exiting."
+	   		exit 0
+	   	fi
+	fi
 fi
 
 if [[ $proteinSelected == 'yes' || $codonSelected == 'yes' ]]; then
@@ -1099,184 +1099,189 @@ if [[ $proteinSelected == 'yes' || $codonSelected == 'yes' ]]; then
 	# Adding a checkpoint here (see above clause for explanations):
 	if [[ -s ${gene}_protein_gene_tree_USE_THIS.nwk && $codonSelected == 'no'  && $checkpointing == 'yes' ]]; then 
 		echo "INFO: checkpointing is ON so this gene tree is being skipped - already done: ${gene}_protein_gene_tree_USE_THIS.nwk"
-		exit 0
-	fi
+		if [[ $codonSelected == 'no' ]]; then
+			# Only exit if option -D is not set to perform codon analysis - required for checkpointing when muliple options -D are set
+			exit 0
+		fi
+	else	 ### one change from fi --> else to put protein aln code into an outer clause
 	### NB - 23.6.2021- still need to check that this checkpoint works (and with all permutations of options)
 
-
-	# Remove frameshifts wih MACSE here if that option is on:
-	removeFrameshifts=no	# Temporry variable until option goes into getopts
-	if [[ $removeFrameshifts == 'yes' ]]; then 	# && iteration == 1 ]];
-		echo "Will run MACSE to cure frameshifts..."
-		correct_frameshifts_with_macse $dnaFastaFileForAln
-	fi
-	### 1.7.2024 - else if iteration 2, prepare from the filtered list the seq froim the FS-corrected ${gene}.dna.macse_frameshifts_rmed_unaln.fasta file 
-	
-
-	###if [[ $geneFile != 'use_genewise_files' && proteinSelected != 'proteininput' THISc WILL NOT WORK ]]; then	# i.e. do not translate if input sequence residues are amino acid.
-	###if [[ $geneFile != 'use_genewise_files' && $usrInProt != 'yes' ]]; then 
- 		# NB - The protein fasta headers will contain  \[translate(1)\] - fastatranslate (v2.4.x) adds this string to the header.
-		# It makes raxml-ng crash so remove it here:
-		fastatranslate -F 1  $dnaFastaFileForAln \
-		| sed 's/ \[translate(1)\]//' \
-		> ${gene}.protein.fasta
-		# NB - fastatranslate produces '*' for stop codons
-
-
-		# Other possible programs for translation can go here e.g. MACSE -prog translateNT2AA
-
-		# Translate the resulting DNA sequences with corrected frameshifts into amino acid sequences.
-		#$exePrefix java -jar  $MACSE -prog translateNT2AA \
-		#-seq $dnaFastaFileForAln \
-		#-ignore_gaps ON \
-		#-keep_final_stop_ON \
-		#> ${gene}.protein.fasta
-		### Still to test command
-		### NBNB - Might have to use -out_AA!!!!
-		### NB - 11.4.2024:
-		### Check seqs are always in frame 1 and the two extra options work
-		### Other options are:
-		### -maxSTOP_inSeq 0 	= to remove seqs > 1 stops in them
-		### -trim_pending_ON	- removes first and/or last codon if incomplete
-		### -guessOneReadingFrame - not sure if i need this option - docs don't comment on this option
-		### NBNB - don't understand these options for this program:
-		### -out_AA: output FASTA file containing aligned amino acid sequences
-  		### -out_NT: output FASTA file containing aligned nucleotide sequences - maybe the program can do aln as well?
-
-	###fi # End of 'if $usrInProt != 'yes'
-
-
-	# Detect STOP codons and create STOPS stats, then switch to use file containing 0 or 1 STOP codons:
-	$pathToScripts/various_tasks_in_python.py detect_stops ${gene}.protein.fasta  ${gene}.protein
-	### 15.7.2024 - not now planning on using ${gene}.protein.0or1_STOP.fasta - HybPiper2 does it's best to deal with frameshifts
-	### If ever I remove seqs with stops, count seqs before and after this step
-	###cp ${gene}.protein.0or1_STOP.fasta ${gene}.protein.fasta
-	# The detect_stops method removes '*' chars because UPP and EMMA can't accept '*' chars BUT also 
-	# need to remove them here now as no longer using the output from detect_stops method:
-	cat ${gene}.protein.fasta \
-	| awk '{if($1 ~ /^>/) { print $0 } else { {gsub(/\*/,"X",$0)} {print $0} } }' \
-	| grep -v ^$ \
-	> ${gene}.protein.stops_to_X.fasta
-	cp ${gene}.protein.stops_to_X.fasta ${gene}.protein.fasta
-
-	if [[ ! -s ${gene}.protein.0or1_STOP.fasta ]]; then 
-	 	echo "WARNING: after checking for sequences with many STOP codons, this gene set is now empty - skipping alignment of $dnaFastaFileForAln"
-	 	exit 0	# zero allows Slurm to continue with the dependancies
-	fi
-
- 	if [[ "$alnProgram" == 'mafft' ]]; then 	# If aligners can be set to auto residue detect, then could use a generic subR - or bring in a variable.
-		echo
-		echo Creating a protein alignment with MAFFT...
-		###$exePrefix
-		mafft --thread $cpuGeneTree \
-		$alnParams \
-		--reorder \
-		--preservecase \
-		${gene}.protein.fasta \
-		> ${gene}.protein.aln.fasta
-		proteinAlnToUse=${gene}.protein.aln.fasta
-	elif [[ "$alnProgram" == 'upp' ]]; then
-		echo
-   		echo Creating a protein alignment with UPP...
-   		if [[ -f ${gene}.protein.upp_pasta.fasta ]]; then
-   			rm ${gene}.protein.upp_pasta.fasta ${gene}.protein.upp_pasta.fasttree ${gene}.protein.upp_alignment.fasta
-   			if [[ -f ${gene}.protein.upp_insertion_columns.txt ]]; then rm ${gene}.protein.upp_insertion_columns.txt; fi
-   		fi
-   		prepareOptionsForUPP "$alnParams" $dnaFastaFileForAln
-   		echo "Option values for UPP (from user): $alnParamsPrepared"
-		#run_upp.py -x $cpuGeneTree -M -1 -m amino -s ${gene}.protein.fasta -o ${gene}.protein.upp
-		###$exePrefix
-		run_upp.py -x $cpuGeneTree $alnParamsPrepared -m amino -s ${gene}.protein.fasta -o ${gene}.protein.upp
-		if [[ ! -s ${gene}.protein.upp_alignment.fasta ]]; then 
-			echo "ERROR: UPP was not able to align this gene set - skipping alignment of ${gene}.protein.fasta"
-			exit 0
+		# Remove frameshifts wih MACSE here if that option is on:
+		removeFrameshifts=no	# Temporry variable until option goes into getopts
+		if [[ $removeFrameshifts == 'yes' ]]; then 	# && iteration == 1 ]];
+			echo "Will run MACSE to cure frameshifts..."
+			correct_frameshifts_with_macse $dnaFastaFileForAln
 		fi
-		mv ${gene}.protein.upp_alignment_masked.fasta ${gene}.protein.aln.fasta
-		proteinAlnToUse=${gene}.protein.aln.fasta
-	elif [[ "$alnProgram" == 'emma' ]]; then
-    	echo
-   		echo Creating a protein alignment with EMMA...
-   		###$exePrefix
-   		python $EMMA -t $cpuGeneTree \
-   		-i ${gene}.protein.fasta  -d ${gene}.protein.emma \
-   		--molecule amino \
-   		--legacy \
-   		--use-weight 1 --lower 10 --upper 25 \
-   		--keep-decomposition \
-   		-o ${gene}.protein.aln.fasta
-   		proteinAlnToUse=${gene}.protein.emma/${gene}.protein.aln.fasta
+		### 1.7.2024 - else if iteration 2, prepare from the filtered list the seq froim the FS-corrected ${gene}.dna.macse_frameshifts_rmed_unaln.fasta file 
+		
 
-		get_emma_stats protein ${gene}.protein.fasta $proteinAlnToUse
-		# Input variables: residue_type  unaligned seqs  aligned seqs
-   	else
-   		echo "No sequence alignment program was selected. Just organised sequences on a per gene basis for gene ${gene}, now exiting."
-   		exit 0
-   	fi
+		###if [[ $geneFile != 'use_genewise_files' && proteinSelected != 'proteininput' THISc WILL NOT WORK ]]; then	# i.e. do not translate if input sequence residues are amino acid.
+		###if [[ $geneFile != 'use_genewise_files' && $usrInProt != 'yes' ]]; then 
+	 		# NB - The protein fasta headers will contain  \[translate(1)\] - fastatranslate (v2.4.x) adds this string to the header.
+			# It makes raxml-ng crash so remove it here:
+			fastatranslate -F 1  $dnaFastaFileForAln \
+			| sed 's/ \[translate(1)\]//' \
+			> ${gene}.protein.fasta
+			# NB - fastatranslate produces '*' for stop codons
 
-	if [[ $codonSelected == 'yes' ]]; then
 
-		# Adding a checkpoint here (see above clause for explanations):
-		if [[ -s codonAln/${gene}_codon_gene_tree_USE_THIS.nwk && $checkpointing == 'yes' ]]; then 
-			echo "INFO: checkpointing is ON so this gene tree is being skipped - already done: ${gene}_codon_gene_tree_USE_THIS.nwk"
-			exit 0
+			# Other possible programs for translation can go here e.g. MACSE -prog translateNT2AA
+
+			# Translate the resulting DNA sequences with corrected frameshifts into amino acid sequences.
+			#$exePrefix java -jar  $MACSE -prog translateNT2AA \
+			#-seq $dnaFastaFileForAln \
+			#-ignore_gaps ON \
+			#-keep_final_stop_ON \
+			#> ${gene}.protein.fasta
+			### Still to test command
+			### NBNB - Might have to use -out_AA!!!!
+			### NB - 11.4.2024:
+			### Check seqs are always in frame 1 and the two extra options work
+			### Other options are:
+			### -maxSTOP_inSeq 0 	= to remove seqs > 1 stops in them
+			### -trim_pending_ON	- removes first and/or last codon if incomplete
+			### -guessOneReadingFrame - not sure if i need this option - docs don't comment on this option
+			### NBNB - don't understand these options for this program:
+			### -out_AA: output FASTA file containing aligned amino acid sequences
+	  		### -out_NT: output FASTA file containing aligned nucleotide sequences - maybe the program can do aln as well?
+
+		###fi # End of 'if $usrInProt != 'yes'
+
+
+		# Detect STOP codons and create STOPS stats, then switch to use file containing 0 or 1 STOP codons:
+		$pathToScripts/various_tasks_in_python.py detect_stops ${gene}.protein.fasta  ${gene}.protein
+		### 15.7.2024 - not now planning on using ${gene}.protein.0or1_STOP.fasta - HybPiper2 does it's best to deal with frameshifts
+		### If ever I remove seqs with stops, count seqs before and after this step
+		###cp ${gene}.protein.0or1_STOP.fasta ${gene}.protein.fasta
+		# The detect_stops method removes '*' chars because UPP and EMMA can't accept '*' chars BUT also 
+		# need to remove them here now as no longer using the output from detect_stops method:
+		cat ${gene}.protein.fasta \
+		| awk '{if($1 ~ /^>/) { print $0 } else { {gsub(/\*/,"X",$0)} {print $0} } }' \
+		| grep -v ^$ \
+		> ${gene}.protein.stops_to_X.fasta
+		cp ${gene}.protein.stops_to_X.fasta ${gene}.protein.fasta
+
+		if [[ ! -s ${gene}.protein.0or1_STOP.fasta ]]; then 
+		 	echo "WARNING: after checking for sequences with many STOP codons, this gene set is now empty - skipping alignment of $dnaFastaFileForAln"
+		 	exit 0	# zero allows Slurm to continue with the dependancies
 		fi
 
-		echo
-		echo Creating a DNA alignment guided by the protein alignment...
-		if [[ ! -d codonAln ]]; then mkdir codonAln; fi
-		### Not tested yet - need to check protein fasta header is identical to dna header.
-		### 15.7.2022 - I now suspect that UPP will not work properly as it removes some amin acids from the final alignments
-    	pal2nal.pl \
-    	-output fasta \
-    	$proteinAlnToUse \
-    	$dnaFastaFileForAln \
-    	> codonAln/${gene}.codon.aln.fasta
-    	### From previous notes:
-    	### 11.8.2018 - noticed that where there are small repeats for which one is an insertion, 
-    	### mafft or pal2nal can misplace repeat seqs that are not actually themselves repeated in the seq in question - see sg312 as an example.
+	 	if [[ "$alnProgram" == 'mafft' ]]; then 	# If aligners can be set to auto residue detect, then could use a generic subR - or bring in a variable.
+			echo
+			echo Creating a protein alignment with MAFFT...
+			###$exePrefix
+			mafft --thread $cpuGeneTree \
+			$alnParams \
+			--reorder \
+			--preservecase \
+			${gene}.protein.fasta \
+			> ${gene}.protein.aln.fasta
+			proteinAlnToUse=${gene}.protein.aln.fasta
+		elif [[ "$alnProgram" == 'upp' ]]; then
+			echo
+	   		echo Creating a protein alignment with UPP...
+	   		if [[ -f ${gene}.protein.upp_pasta.fasta ]]; then
+	   			rm ${gene}.protein.upp_pasta.fasta ${gene}.protein.upp_pasta.fasttree ${gene}.protein.upp_alignment.fasta
+	   			if [[ -f ${gene}.protein.upp_insertion_columns.txt ]]; then rm ${gene}.protein.upp_insertion_columns.txt; fi
+	   		fi
+	   		prepareOptionsForUPP "$alnParams" $dnaFastaFileForAln
+	   		echo "Option values for UPP (from user): $alnParamsPrepared"
+			#run_upp.py -x $cpuGeneTree -M -1 -m amino -s ${gene}.protein.fasta -o ${gene}.protein.upp
+			###$exePrefix
+			run_upp.py -x $cpuGeneTree $alnParamsPrepared -m amino -s ${gene}.protein.fasta -o ${gene}.protein.upp
+			if [[ ! -s ${gene}.protein.upp_alignment.fasta ]]; then 
+				echo "ERROR: UPP was not able to align this gene set - skipping alignment of ${gene}.protein.fasta"
+				exit 0
+			fi
+			mv ${gene}.protein.upp_alignment_masked.fasta ${gene}.protein.aln.fasta
+			proteinAlnToUse=${gene}.protein.aln.fasta
+		elif [[ "$alnProgram" == 'emma' ]]; then
+	    	echo
+	   		echo Creating a protein alignment with EMMA...
+	   		# Before running check whether EMMA has already been run and delete the EMMA folder (the contents can't be overwritten!):
+	   		if [[ -d ${gene}.protein.emma ]]; then rm -fR ${gene}.protein.emma; fi
+	   		###$exePrefix
+	   		python $EMMA -t $cpuGeneTree \
+	   		-i ${gene}.protein.fasta  -d ${gene}.protein.emma \
+	   		--molecule amino \
+	   		--legacy \
+	   		--use-weight 1 --lower 10 --upper 25 \
+	   		--keep-decomposition \
+	   		-o ${gene}.protein.aln.fasta
+	   		proteinAlnToUse=${gene}.protein.emma/${gene}.protein.aln.fasta
+
+			get_emma_stats protein ${gene}.protein.fasta $proteinAlnToUse
+			# Input variables: residue_type  unaligned seqs  aligned seqs
+	   	else
+	   		echo "No sequence alignment program was selected. Just organised sequences on a per gene basis for gene ${gene}, now exiting."
+	   		exit 0
+	   	fi
+
+		if [[ $codonSelected == 'yes' ]]; then
+
+			# Adding a checkpoint here (see above clause for explanations):
+			if [[ -s codonAln/${gene}_codon_gene_tree_USE_THIS.nwk && $checkpointing == 'yes' ]]; then 
+				echo "INFO: checkpointing is ON so this gene tree is being skipped - already done: ${gene}_codon_gene_tree_USE_THIS.nwk"
+				exit 0
+			fi
+
+			echo
+			echo Creating a DNA alignment guided by the protein alignment...
+			if [[ ! -d codonAln ]]; then mkdir codonAln; fi
+			### Not tested yet - need to check protein fasta header is identical to dna header.
+			### 15.7.2022 - I now suspect that UPP will not work properly as it removes some amin acids from the final alignments
+	    	pal2nal.pl \
+	    	-output fasta \
+	    	$proteinAlnToUse \
+	    	$dnaFastaFileForAln \
+	    	> codonAln/${gene}.codon.aln.fasta
+	    	### From previous notes:
+	    	### 11.8.2018 - noticed that where there are small repeats for which one is an insertion, 
+	    	### mafft or pal2nal can misplace repeat seqs that are not actually themselves repeated in the seq in question - see sg312 as an example.
 
 
-    	# Other back translation options can go here e.g. MACSE -prog reportGapsAA2NT
+	    	# Other back translation options can go here e.g. MACSE -prog reportGapsAA2NT
 
-		#$exePrefix java -jar  $MACSE -prog reportGapsAA2NT \
-		#-align_AA $proteinAlnToUse \
-		#-seq $dnaFastaFileForAln \
-		#-out_NT codonAln/${gene}.codon.aln.fasta 
-		### Still to test command.
+			#$exePrefix java -jar  $MACSE -prog reportGapsAA2NT \
+			#-align_AA $proteinAlnToUse \
+			#-seq $dnaFastaFileForAln \
+			#-out_NT codonAln/${gene}.codon.aln.fasta 
+			### Still to test command.
 
-    	# This file is almost ready for phylogeny and PAML dN/dS analysis.
-    	codonAlnToUse=codonAln/${gene}.codon.aln.fasta
+	    	# This file is almost ready for phylogeny and PAML dN/dS analysis.
+	    	codonAlnToUse=codonAln/${gene}.codon.aln.fasta
 
 
-    	# If MACSE used, compare the original dna alignment with the codon alignment with frameshifts cured: 
-    	###if [[ -x $FASTSP && MACSE option is ON ]]; then
-    		### make into a subroutine - supplying the -r flag file to use
-    		#### Need to calculate length of both alns first and probably lengthen this file: *_emma_dna_for_macse/*.dna.aln.fasta
-    		### Need to add N's to ends, not dashes so the MaxLenNoGap is the same for both alns - BUT these will count as pairwise homology counts 
-    		### but could calculate their contribution and removed from overall counts 
-    		### Command if using macse
-    		###java -jar $FASTSP -r $dnaAlnForMacse -e $codonAlnToUse > ${gene}.codon.aln.fastsp_quality.log 2>&1
-    		###		Need to confirm reference file is shorter than estimated aln before adding N's 
-    		### else command if not using macse and there is a DNA alignment to compare i.e. if option -D = 'dna codon'
-    	if [[ -s $dnaAlnToUse ]]; then
-    		java -jar $FASTSP -r $dnaAlnToUse -e $codonAlnToUse > codonAln/${gene}.codon.aln.fastsp.log 2>&1
-    		# Note: FASTSP doesn't care what characters are in the alignment, site pairs containing any character other than a '-' counts as homology
+	    	# If MACSE used, compare the original dna alignment with the codon alignment with frameshifts cured: 
+	    	###if [[ -x $FASTSP && MACSE option is ON ]]; then
+	    		### make into a subroutine - supplying the -r flag file to use
+	    		#### Need to calculate length of both alns first and probably lengthen this file: *_emma_dna_for_macse/*.dna.aln.fasta
+	    		### Need to add N's to ends, not dashes so the MaxLenNoGap is the same for both alns - BUT these will count as pairwise homology counts 
+	    		### but could calculate their contribution and removed from overall counts 
+	    		### Command if using macse
+	    		###java -jar $FASTSP -r $dnaAlnForMacse -e $codonAlnToUse > ${gene}.codon.aln.fastsp_quality.log 2>&1
+	    		###		Need to confirm reference file is shorter than estimated aln before adding N's 
+	    		### else command if not using macse and there is a DNA alignment to compare i.e. if option -D = 'dna codon'
+	    	if [[ -s $dnaAlnToUse ]]; then
+	    		java -jar $FASTSP -r $dnaAlnToUse -e $codonAlnToUse > codonAln/${gene}.codon.aln.fastsp.log 2>&1
+	    		# Note: FASTSP doesn't care what characters are in the alignment, site pairs containing any character other than a '-' counts as homology
 
-    		# Get stats ${gene}.codon.aln.fastsp.log:
-    		alnLenRef=`cat  codonAln/${gene}.codon.aln.fastsp.log | grep LenRef= | awk '{print $6}' | sed 's/,//'  `
-    		alnLenEst=`cat  codonAln/${gene}.codon.aln.fastsp.log | grep LenEst= | awk '{print $8}' | sed 's/,//'  `
-    		alnCompression=`cat  codonAln/${gene}.codon.aln.fastsp.log | grep '^Compression (naive)' | awk '{print $3}' | sed 's/,//'  ` # == LenEst / LenRef
-    		alnLenDifference=$(($alnLenEst - $alnLenRef))	# Need to check this bash maths syntax is universal!
-    		# Will need these values once I know how to interpret them (need completing)
-    		###refAlnHomologies= '^Number of homologies in the reference alignment:'
-    		###estAlnHomologies=	'^Number of homologies in the estimated alignment:'	
-			###numbrSharedHomologies=	'^Number of shared homologies:'
-			
-			echo "alnLenRef: $alnLenRef
+	    		# Get stats ${gene}.codon.aln.fastsp.log:
+	    		alnLenRef=`cat  codonAln/${gene}.codon.aln.fastsp.log | grep LenRef= | awk '{print $6}' | sed 's/,//'  `
+	    		alnLenEst=`cat  codonAln/${gene}.codon.aln.fastsp.log | grep LenEst= | awk '{print $8}' | sed 's/,//'  `
+	    		alnCompression=`cat  codonAln/${gene}.codon.aln.fastsp.log | grep '^Compression (naive)' | awk '{print $3}' | sed 's/,//'  ` # == LenEst / LenRef
+	    		alnLenDifference=$(($alnLenEst - $alnLenRef))	# Need to check this bash maths syntax is universal!
+	    		# Will need these values once I know how to interpret them (need completing)
+	    		###refAlnHomologies= '^Number of homologies in the reference alignment:'
+	    		###estAlnHomologies=	'^Number of homologies in the estimated alignment:'	
+				###numbrSharedHomologies=	'^Number of shared homologies:'
+				
+				echo "alnLenRef: $alnLenRef
 alnLenEst: $alnLenEst
 alnCompression: $alnCompression
 alnLenDifference (alnLenEst minus alnLenRef; bp): $alnLenDifference" > codonAln/${gene}.codon.aln.fastsp.stats.log
-    	fi
+	    	fi
+		fi
 	fi
 fi
 
