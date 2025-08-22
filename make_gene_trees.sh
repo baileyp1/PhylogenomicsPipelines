@@ -1009,8 +1009,10 @@ if [[ $dnaSelected == 'yes' ]]; then
 	# allowed even though a fresh directory is advised if a re-run is required) 
 	if [[ -s ${gene}_dna_gene_tree_USE_THIS.nwk && $checkpointing == 'yes' ]]; then 
 		echo "INFO: checkpointing is ON so this gene tree is being skipped - already done: ${gene}_dna_gene_tree_USE_THIS.nwk"
-		if [[ $proteinSelected == 'no' || $codonSelected == 'no' ]]; then
+
+		if [[ $proteinSelected == 'no' && $codonSelected == 'no'} ]]; then
 			# Only exit if option -D is set to run with DNA alns only - required for checkpointing when muliple options -D are set
+			echo "INFO: moving to next tree."
 			exit 0
 		fi
 	else	 ### one change from fi --> else to put DNA aln code into an outer clause
@@ -1097,14 +1099,22 @@ fi
 if [[ $proteinSelected == 'yes' || $codonSelected == 'yes' ]]; then
 
 	# Adding a checkpoint here (see above clause for explanations):
-	if [[ -s ${gene}_protein_gene_tree_USE_THIS.nwk && $codonSelected == 'no'  && $checkpointing == 'yes' ]]; then 
+	####if [[ -s ${gene}_protein_gene_tree_USE_THIS.nwk && $codonSelected == 'no'  && $checkpointing == 'yes' ]]; then 
+	### 22.8.2025 - changed to:
+	if [[ -s ${gene}_protein_gene_tree_USE_THIS.nwk && $checkpointing == 'yes' ]]; then 
 		echo "INFO: checkpointing is ON so this gene tree is being skipped - already done: ${gene}_protein_gene_tree_USE_THIS.nwk"
 		if [[ $codonSelected == 'no' ]]; then
 			# Only exit if option -D is not set to perform codon analysis - required for checkpointing when muliple options -D are set
 			exit 0
 		fi
+	fi
+	if [[ -s codonAln/${gene}_codon_gene_tree_USE_THIS.nwk && $checkpointing == 'yes' ]]; then 
+		echo "INFO: checkpointing is ON so this gene tree is being skipped - already done: ${gene}_codon_gene_tree_USE_THIS.nwk"
+		exit 0
 	else	 ### one change from fi --> else to put protein aln code into an outer clause
-	### NB - 23.6.2021- still need to check that this checkpoint works (and with all permutations of options)
+	### NB - 23.6.2021 - still need to check that this checkpoint works (and with all permutations of options)
+	### 	 22.8.2025 - the logic is better now - the only situation that won't work: if protein tree is not done but codon tree is done
+	###					 this could be the case as protein trees are made last - see from line 1536
 
 		# Remove frameshifts wih MACSE here if that option is on:
 		removeFrameshifts=no	# Temporry variable until option goes into getopts
