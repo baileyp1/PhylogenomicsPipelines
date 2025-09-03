@@ -269,9 +269,9 @@ fastq_integrity_test()	{
 	# Example wget output after download: 2024-11-13 12:33:24 URL:http://ftp.sra.ebi.ac.uk/vol1/fastq/DRR098/DRR098846/DRR098846_1.fastq.gz [12964810382/12964810382] -> "DRR098846_1.fastq.gz" [1]
 	# Identifying line with square brackets to get the number of bytes downloaded and bytes to download then storing the latter value.
 	# NB - might not be using the perfect line identifier.
-	bytesDownloadable=0
+	bytesDownloadable=0  ### not useful here - they will always have contents or be null - convert to test whether they have a value
 	bytesDownloadable=`tail -n 1 $2 |  grep  '[][] ->' | awk '{print $4}' | sed 's/[][]//g' | awk -F '/' '{print $2}' `
-	fastqFileSize=0
+	fastqFileSize=0  	### as for bytesDownloadable, don't need - still doesn't solve the bug of never entering the else clause!
 	fastqFileSize=`ls -l $1 | awk '{print $5}' `
 	if [[ $bytesDownloadable -gt 0 && $fastqFileSize -gt 0 && $bytesDownloadable -eq $fastqFileSize ]]; then
 		echo "INFO: Download successful: $fastqFileSize of $bytesDownloadable bytes downloaded for $1"
@@ -420,7 +420,8 @@ retrieve_targets()	{
 
 
 	# Next sort by evalue across all query hits, then by % id, then by length
-	# 'sort -k11g -k3gr [-k4gr - actually still to test]' does this which is pretty cool if you ask me - no need use use Python Pandas here
+	# 'sort -k11g -k3gr -k4gr' - does this which is pretty cool if you ask me - no need use use Python Pandas here
+	# NB - note the 'g' option - handles floating point numbers! 
 	# NB - a sequence can have evalue of 0.0 but pc id can still vary a lot so hits need to be sorted by % as well
 	#	   so that the best subject sequence is chosen. It's less important for other evalues as they tend to be unique.  
 	#
