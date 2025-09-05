@@ -255,6 +255,9 @@ else
 		R2FastqFile=''
 	else
 		echo "ERROR: Neither R2FastqFile found for pair end data nor a single end fastq file at ENA; can't do gene recovery for this sample: $sampleId"
+		echo "INFO: Note if file download continues not to work, there may be two external causes:
+1. issue with access to or a slow internet
+2. ENA may at some point change the paths to the data files so this possibility should be checked too"
 		### July 2025 - This logic appears not to work in this case - Oxford nanopore data - SRR12808461_1.fastq.gz - might be able to reconfigure logic - or somehow rename the fastq's for this datatype to fit.
 		exit
 	fi 
@@ -784,9 +787,13 @@ elif [[ $hybSeqProgram == 'hybpiper'* ]]; then
 		--prefix ${sampleId} \
 		$unpairedFastqFile \
 		> ${sampleId}_hybpiper_assemble${reexonrtOptionLog}.log 2>&1
-		# NB - if a DNA targets file is supplied without specifying the --bwa option, the targets will be translated and the blastx  option will proceed.
+		# Notes on options:
+		# NB - if a DNA targets file is supplied without specifying the --bwa option, the targets will be translated and the blastx option will proceed.
 		#      Also found that when using --targetfile_aa flag with a DNA targets file (no --bwa flag), the targets gets translated
 		# --force_overwrite		a new option from version 2.2.0 onwards
+		# --exonerate_skip_hits_with_frameshifts	- we don't want frameshifts BUT read this: https://github.com/mossmatters/HybPiper/wiki/Troubleshooting,-common-issues,-and-recommendations
+		#											  This flag is for something slightly different so not using! There should already be no frameshifts in HybPiper data.
+
 
 		if [[ -s ${sampleId}/genes_with_seqs.txt ]]; then
 
@@ -987,6 +994,17 @@ if [[ $stats != 'no' ]]; then
 numbrRecoveredGenes: $numbrRecoveredGenes
 sumLengthOfGenesWithNs: $sumLengthOfGenesWithNs
 sumLengthOfGenes: $sumLengthOfGenes" > ${sampleId}_gene_recovery_stats${reexonrtOptionLog}.txt  # Also wipes out file contents from any previous run
+
+	### 4.8.2025 - count the read length uisng the _R1_R2_trimmomatic.log
+	# Get the read length of the data from the _R1_R2_trimmomatic.log file:
+	# File format (5 columns): <read name>[/<read[12]]>      <surviving sequence length> < the amount trimmed from the start> <the location of the last surviving base in the original read> <the amount trimmed from the end>
+	#          e.g. ERR364342.1 lW_oQUZhINW742/1 73 0 73 0
+	#				ERR364342.1 lW_oQUZhINW742/2 73 0 73 0
+	# I think the best I can do is calculate the average read length after trimming (3rd colum).
+	# NB - file includes all reads, even if there are no surviving bases (then $3 == 0) 
+	####meanTrimmedReadLen=`cat ${sampleId}_R1_R2_trimmomatic.log  | awk '{sum+=$3} END {print sum/NR}' `
+
+
 
 	# Count number of all ambiguity codes:
 	###numbrAmbiguityCodesInGenes=`cat $refFileName | grep -v '>' | grep -o '[RYMKSWHBDN]' | wc -l `
