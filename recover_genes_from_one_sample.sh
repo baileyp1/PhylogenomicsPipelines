@@ -299,7 +299,7 @@ if [[ $usePaftolDb == 'no' ]]; then
 			MINLEN:40 > ${sampleId}_trimmomatic.log 2>&1
 		else
 			###$exePrefix java -jar $TRIMMOMATIC PE \
-			java -jar $TRIMMOMATIC PE \
+			java -jar $TRIMMOMATIC PE -phred33 \
 			-threads $cpu \
 			-trimlog ${sampleId}_R1_R2_trimmomatic.log \
 			$R1FastqFile \
