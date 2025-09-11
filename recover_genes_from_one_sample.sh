@@ -1002,7 +1002,7 @@ sumLengthOfGenes: $sumLengthOfGenes" > ${sampleId}_gene_recovery_stats${reexonrt
 	# I think the best I can do is calculate the average for the <surviving sequence length> field.
 	# It is possible that the read name has spaces in it (as in the above example) but the last 4 columns are fixed.
 	# Therefore best to get the <surviving sequence length> field from the end of the line:
-	meanTrimmedReadLen=`cat ${sampleId}_R1_R2_trimmomatic.log | awk '{sum+=$(NF - 3)} END {printf "%.0f\n" , sum/NR}'  `
+	meanTrimmedReadLen=`cat ../${sampleId}_R1_R2_trimmomatic.log | awk '{sum+=$(NF - 3)} END {printf "%.0f\n" , sum/NR}'  `
 	# NB - file includes all reads, even if there are no surviving bases (then  <surviving sequence length> == 0),
 	#      so meanTrimmedReadLen may be an underestimate the original read length
 	# NB - Should really be printed to file around the read stats but being printed at the end for the moment to avoid table generation using old data
