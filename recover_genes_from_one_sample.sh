@@ -995,15 +995,17 @@ numbrRecoveredGenes: $numbrRecoveredGenes
 sumLengthOfGenesWithNs: $sumLengthOfGenesWithNs
 sumLengthOfGenes: $sumLengthOfGenes" > ${sampleId}_gene_recovery_stats${reexonrtOptionLog}.txt  # Also wipes out file contents from any previous run
 
-	### 4.8.2025 - count the read length uisng the _R1_R2_trimmomatic.log
-	# Get the read length of the data from the _R1_R2_trimmomatic.log file:
+	# Get an approximate value for the read length uisng the _R1_R2_trimmomatic.log file:
 	# File format (5 columns): <read name>[/<read[12]]>      <surviving sequence length> < the amount trimmed from the start> <the location of the last surviving base in the original read> <the amount trimmed from the end>
 	#          e.g. ERR364342.1 lW_oQUZhINW742/1 73 0 73 0
 	#				ERR364342.1 lW_oQUZhINW742/2 73 0 73 0
-	# I think the best I can do is calculate the average read length after trimming (3rd colum).
-	# NB - file includes all reads, even if there are no surviving bases (then $3 == 0) 
-	####meanTrimmedReadLen=`cat ${sampleId}_R1_R2_trimmomatic.log  | awk '{sum+=$3} END {print sum/NR}' `
-
+	# I think the best I can do is calculate the average for the <surviving sequence length> field.
+	# It is possible that the read name has spaces in it (as in the above example) but the last 4 columns are fixed.
+	# Therefore best to get the <surviving sequence length> field from the end of the line:
+	meanTrimmedReadLen=`cat ${sampleId}_R1_R2_trimmomatic.log | awk '{sum+=$(NF - 3)} END {printf "%.0f\n" , sum/NR}'  `
+	# NB - file includes all reads, even if there are no surviving bases (then  <surviving sequence length> == 0),
+	#      so meanTrimmedReadLen may be an underestimate the original read length
+	# NB - Should really be printed to file around the read stats but being printed at the end for the moment to avoid table generation using old data
 
 
 	# Count number of all ambiguity codes:
@@ -1321,6 +1323,8 @@ sumLengthOfGenes: $sumLengthOfGenes" > ${sampleId}_gene_recovery_stats${reexonrt
 	# With duplicates:
 	numbrBasesInAllGenes_ReadDepthWithDups_min4x=`cat ${sampleId}_bwa_mem_with_dups_sort_st_depth.txt | awk '$3 >= 4' | wc -l `
 	echo "NumbrBasesInAllGenes_ReadDepthWithDups_min4x_(samtools_depth): $numbrBasesInAllGenes_ReadDepthWithDups_min4x" >> ${sampleId}_gene_recovery_stats.txt
+
+	echo "meanTrimmedReadLen: $meanTrimmedReadLen" >> ${sampleId}_gene_recovery_stats.txt # Should be printed further up around the read stats but printed here to avoid table generation using existing data
 
 
 	#########################################
