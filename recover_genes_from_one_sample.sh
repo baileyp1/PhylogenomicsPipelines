@@ -99,11 +99,9 @@ elif [[ $retrieveTargets == 'captus_extract'* ]]; then
 		assembledContigsLocalCopy=${sampleId}_in_seqs.fasta.gz
 		#chmod 755 $assembledContigsLocalCopy	# 'cp' alone still preserved the non-write status of the file so will have to alter manually; actually --no-preserve=mode works, gives '-rw-r--r--' 
 	elif [[ "$paftolDataSymlinksDir/$fastaFile" == *'.bz2' ]]; then 	# e.g. assembled OneKP data is in bunzip2 format 
-		cp $paftolDataSymlinksDir/$fastaFile ${sampleId}_in_seqs.fasta.bz2
-		chmod 755 ${sampleId}_in_seqs.fasta.bz2
-		bunzip2 -c ${sampleId}_in_seqs.fasta.bz2 > ${sampleId}_in_seqs.fasta
+		bunzip2 -c $paftolDataSymlinksDir/$fastaFile > ${sampleId}_in_seqs.fasta
+		chmod 755 ${sampleId}_in_seqs.fasta
 		assembledContigsLocalCopy=${sampleId}_in_seqs.fasta
-		#chmod 755 $assembledContigsLocalCopy	# 'cp' alone still preserved the non-write status of the file so will have to alter manually; actually --no-preserve=mode works, gives '-rw-r--r--' 
 	else
 		# Assume file is unzipped. Captus requires file ending to reflect whether file is zipped or not i.e. an unzipped file ending e.g. fasta.gz will not work so:
 		cp $paftolDataSymlinksDir/$fastaFile ${sampleId}_in_seqs.fasta
