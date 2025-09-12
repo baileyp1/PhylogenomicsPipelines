@@ -25,7 +25,7 @@ source ~/.bash_profile
 then on the command line type the name of the programs shown above to see brief instructions on their use. At least for the phylogenetic analysis script, it is best to work in a new empty directory. The main reason (amongst a few others) is that the  script uses wild cards in several places to pick up a set of files and may pick up extra files that also match, however most file name sets are now checked for and deleted at the start of the analysis (except in the case of option -b).
  
 ##  Additional software required
-The following programs need to be installed if not already available from the command line by typing the native program name. Some but not all of them are easily available from software installers (e.g. bioconda, brew, apt, yum). If the Java programs are being used (i.e. Trimmomatic, ASTRAL[-MP], Jalview, Picard) it is necessary to set global variables with exactly these names: TRIMMOMATIC, ASTRAL, ASTRALMP, JALVIEW, PICARD. Add them to your .bash_profile or (equivalent file) as follows - e.g.
+The following programs need to be installed if not already available from the command line by typing the native program name. Some but not all of them are easily available from software installers (e.g. bioconda, brew, apt, yum) and some are optional. If the Java programs are being used (i.e. Trimmomatic, ASTRAL[-MP], Jalview, Picard) it is necessary to set global variables with exactly these names: TRIMMOMATIC, ASTRAL, ASTRALMP, JALVIEW, PICARD. Add them to your .bash_profile or (equivalent file) as follows - e.g.
 ```bash
 export TRIMMOMATIC=<path_to_executable>/Trimmomatic-<VERSION>/trimmomatic-<VERSION>.jar
 export ASTRAL=<path_to_executable>/astral/Astral/astral.<VERSION>.jar
@@ -36,6 +36,7 @@ export ASTRALMPLIB=-Djava.library.path=<path_to_executable>/ASTRAL-MP/Astral/lib
 ```
 
 For gene recovery (if known, specific version requirements are shown in brackets; in bold if used in tests):
+* bunzip2 
 * [Trimmomatic](http://www.usadellab.org/cms/?page=trimmomatic)
 * [Paftools](https://github.com/RBGKew/pypaftol), [HybPiper](https://github.com/mossmatters/HybPiper) (version 1.3.1 plus patch for issue [41](https://github.com/mossmatters/HybPiper/issues/41)) or [HybPiper2](https://github.com/mossmatters/HybPiper) (for versions tested, see the command line help))
 * If using HybPiper 1.3, Perl
