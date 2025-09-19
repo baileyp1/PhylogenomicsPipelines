@@ -181,7 +181,7 @@ elif [[ $retrieveTargets == 'captus_extract'* ]]; then
 	echo "maxPcId: $maxPcId"
 	numbrSTOPs=`fastatranslate -F 1 ${sampleId}_NUC_coding_NT.main_seqIds_ONLY.fasta | grep -o '\*' | wc -l `
 	echo "numbrSTOPs: $numbrSTOPs"
-	numbrReportedFrameShifts=`cat ${sampleId}_NUC_coding_NT.main_seqIds_ONLY.fasta | grep '\[frameshifts=' | wc -l `
+	numbrReportedFrameShifts=`cat ${sampleId}_NUC_coding_NT.main_seqIds_ONLY.fasta | grep '\[frameshifts=' | wc -l ` # Field format e.g. [frameshifts=354,363] - an N is inserted at these positions so frameshifts are corrected; so they should not be removed for protein/codon level analyses! 
 	echo "numbrReportedFrameShifts: $numbrReportedFrameShifts"
 	echo
 
@@ -208,7 +208,12 @@ numbrReportedFrameShifts: $numbrReportedFrameShifts" > ${sampleId}_gene_recovery
 	if [[ -s $targetsFileLocalCopy ]]; then rm $targetsFileLocalCopy; fi
 	if [[ -s $assembledContigsLocalCopy ]]; then rm $assembledContigsLocalCopy; fi
 	if [[ -s NUC_coding_NT.main_seqIds_ONLY.txt ]]; then rm NUC_coding_NT.main_seqIds_ONLY.txt; fi 
-	if [[ -s NUC_coding_NT.paralog_seqIds_ONLY.txt ]]; then rm NUC_coding_NT.paralog_seqIds_ONLY.txt; fi 
+	if [[ -s NUC_coding_NT.paralog_seqIds_ONLY.txt ]]; then rm NUC_coding_NT.paralog_seqIds_ONLY.txt; fi
+	### Also remove Captus modified version of $targetsFileLocalCopy e.g.
+	### First need to find the name of the suffix then remove it
+	### Get it by removing the last field of period with awk $NF
+	### $targetsFileLocalCopyModified=`basename -s <suffix> $targetsFileLocalCopy ` 
+	### targetsFileLocalCopyModified="${targetsFileLocalCopyModified}_fixed.faa"
 	exit
 elif [[ $hybSeqProgram == 'no' && $stats == 'no' ]];then
 	echo "ERROR: options -y, -s or -x are not set (correctly) - exiting now"
