@@ -192,7 +192,7 @@ and instead using a sample names list file, one line per sample, with the follow
 This command creates a file path for each sample name in the list. 'cat' prints the list and awk creates the path to each file. The two back ticks fire off the command resulting in a space-separated file list which in turn is accepted by the main program.<br>
 Note: for this command to work the sample identifiers must match at least part of the filename and the awk string might need to be adapted further.
 
-Finally, check that the file paths actually exist by listing them like so:
+Finally before using the code, check that the file paths actually exist by listing them like so:
 ```
 cat <sample_list_file> | awk '{print "<your_path_to_fasta_files>/" $1 ".fasta"}' | xargs ls -l
 ```
