@@ -45,8 +45,8 @@ cat << EOF
 
 Copyright © 2025 The Board of Trustees of the Royal Botanic Gardens, Kew
 
-Program description: recovers genes from pair-end or single-end fastq files of multiple samples. Paftools or HybPiper can be used to align the reads to a set of
-                     reference target genes, assemble the reads for each target gene and join the available exons together to produce the gene.
+Program description: recovers genes from pair-end or single-end fastq files corresponding to one or more samples. Paftools or HybPiper can be used to align the 
+                     reads to a set of reference target genes, assemble the reads for each target gene and join the available exons together to produce the gene.
                      If Slurm is available samples will be run in parallel
 
                      Using option -x, gene orthologs corresponding to a set of reference target genes can be retrieved from a set of gene coding sequences or 
@@ -60,23 +60,23 @@ OPTIONS <value>:
   -s <csv file>  
                  add sample name and fastq/fasta file name(s) via a csv table file which must have a header line with the following format (required option):
                  SampleName,R1FastqName,R2FastqName
-                 The R2FastqName field should be left blank for single end read data. The files (fastq for option y, fasta for option x) are assumed to be 
-                 in compressed gzip format (suffix .gz)
+                 The R2FastqName field should be left blank for single end read data. The fastq files for option y are assumed to be in compressed gzip format (suffix .gz)
+                 and the fasta files for option x can also be in bunzip2 format
   -f <string>    
-                 FULL path to all sample fastq files (DNA fasta files if using option -x) N.B. no filenames, just the full path to them, not a relative path, no wild cards! (required option)
+                 FULL path to the fastq files or DNA fasta files if using option -x. Note: no filenames, just the full path to them, not a relative path, no wild cards (required option)
                  Note: if the data is SRA and the fastq files don't exist, an attempt is made to download them from ENA using the run accession if provided in 
                  the csv table file (option -s) as follows:
                  SampleName,R1FastqName,R2FastqName,ENA_RunAccession
   -t <string>    
                  file name of target genes in DNA fasta format (required option);
-                 Note: option -y 'hybpiper' and 'hybpiper2-diamond' require target gene protein sequences, option -y 'hybpiper2' and option -x captus_extract methods can be DNA or protein,
-                 option -x retrieve_targets must be DNA
+                 Note: option -y 'hybpiper' and 'hybpiper2-diamond' require target gene protein sequences, option -y 'hybpiper2' and option -x captus_extract methods
+                 can be DNA or protein, option -x retrieve_targets must be DNA
   -a <string>    
                  file name of adaptors in fasta format (required option for option -y)
   -y <string>    
                  Hyb-Seq program; options are: paftools, hybpiper, hybpiper-bwa, hybpiper2, hybpiper2-bwa,
                  hybpiper2-diamond-[mid-sensitive|sensitive|more-sensitive|very-sensitive|ultra-sensitive]. For hybpiper2-diamond, choose one of the 
-                 sensitivity options shown in square brackets.
+                 sensitivity options shown in square brackets (advised=mid-sensitive).
                  To start HybPiper2 (only) after the first main step, run in the same original folder but add the following text at the end of the option value:
                  -start_from-[distribute_reads|assemble_reads|[exonerate(for HybPiper < v2.3.0)|extract(for HybPiper >= v2.3.0)]_contigs] 
                  e.g. hybpiper2-diamond-mid-sensitive-start_from-exonerate_contigs
