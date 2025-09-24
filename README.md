@@ -38,9 +38,10 @@ export ASTRALMPLIB=-Djava.library.path=<path_to_executable>/ASTRAL-MP/Astral/lib
 For gene recovery (if known, specific version requirements are shown in brackets; in bold if used in tests):
 * bunzip2 (if raw data is compressed in this format) 
 * [Trimmomatic](http://www.usadellab.org/cms/?page=trimmomatic)
-* [Paftools](https://github.com/RBGKew/pypaftol), [HybPiper](https://github.com/mossmatters/HybPiper) (version 1.3.1 plus patch for issue [41](https://github.com/mossmatters/HybPiper/issues/41)) or [HybPiper2](https://github.com/mossmatters/HybPiper) (for versions tested, see the command line help))
+* [Paftools](https://github.com/RBGKew/pypaftol), [HybPiper](https://github.com/mossmatters/HybPiper) (version 1.3.1 plus patch for issue [41](https://github.com/mossmatters/HybPiper/issues/41)), [HybPiper2](https://github.com/mossmatters/HybPiper) or [Captus](https://github.com/edgardomortiz/Captus) - for versions tested, see the command line help
 * If using HybPiper 1.3, Perl
 * If using HybPiper 1.3, [seqtk](https://github.com/lh3/seqtk) (version 1.3)
+* [Exonerate](https://www.ebi.ac.uk/about/vertebrate-genomics/software/exonerate) (version 2.4) if using [Captus](https://github.com/edgardomortiz/Captus)
 * If using option -S:
   * [Exonerate](https://www.ebi.ac.uk/about/vertebrate-genomics/software/exonerate) (version 2.4)
   * [BWA](http://bio-bwa.sourceforge.net)
