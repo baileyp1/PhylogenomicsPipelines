@@ -1,6 +1,6 @@
 # PhylogenomicsPipelines
 
-This repository contains two pipelines to perform phylogenomic analysis. One pipeline recovers genes from sample Illumina read data or from transcriptome assemblies or from (un)annotated genomes. The second pipeline performs phylogenetic analysis on the recovered genes to obtain a species tree. The pipelines run on Linux (and with the [Slurm](https://slurm.schedmd.com/) job manager, if installed) and MacOS.
+This repository contains two pipelines to perform phylogenomic analysis. One pipeline recovers genes from sample Illumina read data or from transcriptome assemblies or from (un)annotated genomes using a set of reference genes. The second pipeline performs phylogenetic analysis on the recovered genes to obtain a species tree. The pipelines run on Linux (and with the [Slurm](https://slurm.schedmd.com/) job manager, if installed) and MacOS.
 
 This software has been used in the following work to construct and analyse the [Kew Tree of Life](https://treeoflife.kew.org/) ([PAFTOL](https://www.kew.org/science/our-science/projects/plant-and-fungal-trees-of-life) project) up to and including Release 3.0:
 
