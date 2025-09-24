@@ -60,8 +60,8 @@ OPTIONS <value>:
   -s <csv file>  
                  add sample name and fastq/fasta file name(s) via a csv table file which must have a header line with the following format (required option):
                  SampleName,R1FastqName,R2FastqName
-                 The R2FastqName field should be left blank for single end read data. The fastq files for option y are assumed to be in compressed gzip format (suffix .gz)
-                 and the fasta files for option x can also be in bunzip2 format
+                 The R2FastqName field should be left blank for single end read data. The input files are assumed to be in compressed gzip format (suffix .gz)
+                 but the fasta files for option x can also be in bunzip2 format
   -f <string>    
                  FULL path to the fastq files or DNA fasta files if using option -x. Note: no filenames, just the full path to them, not a relative path, no wild cards (required option)
                  Note: if the data is SRA and the fastq files don't exist, an attempt is made to download them from ENA using the run accession if provided in 
