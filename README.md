@@ -56,7 +56,7 @@ For phylogenetic analysis (if known, specific version requirements are shown in 
 * [Jalview](https://www.jalview.org),  to view gene alignments (optional)
 * [PAL2NAL](http://www.bork.embl.de/pal2nal/) if option '-D codon' is used
 * [FastTree](http://www.microbesonline.org/fasttree/), [RAxML-NG](https://github.com/amkozlov/raxml-ng) or [IQ-TREE version 2](http://www.iqtree.org)
-* [RAxML](https://github.com/stamatak/standard-RAxML) (used for building a species tree using a concatenated alignment)
+* [RAxML](https://github.com/stamatak/standard-RAxML) (if building a species tree using a concatenated alignment)
 * [Newick Utilities](http://cegg.unige.ch/newick_utils)
 * [ASTRAL](https://github.com/smirarab/ASTRAL). For [ASTRAL-MP](https://github.com/smirarab/ASTRAL/tree/MP), clone and switch to the ASTRAL-MP branch.
 * [AMAS.py](https://github.com/marekborowiec/AMAS) (ensure the version has the 'trim' option) and/or [trimAl](http://trimal.cgenomics.org/) (for trimming if those options are used)
@@ -192,7 +192,7 @@ and instead using a sample names list file, one line per sample, with the follow
 This command creates a file path for each sample name in the list. 'cat' prints the list and awk creates the path to each file. The two back ticks fire off the command resulting in a space-separated file list which in turn is accepted by the main program.<br>
 Note: for this command to work the sample identifiers must match at least part of the filename and the awk string might need to be adapted further.
 
-To check that the file paths actually exist, try to list them like so:
+Finally, check that the file paths actually exist by listing them like so:
 ```
 cat <sample_list_file> | awk '{print "<your_path_to_fasta_files>/" $1 ".fasta"}' | xargs ls -l
 ```
