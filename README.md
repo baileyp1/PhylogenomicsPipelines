@@ -36,7 +36,7 @@ export ASTRALMPLIB=-Djava.library.path=<path_to_executable>/ASTRAL-MP/Astral/lib
 ```
 
 For gene recovery (if known, specific version requirements are shown in brackets; in bold if used in tests):
-* bunzip2 
+* bunzip2 (if raw data is compressed in this format) 
 * [Trimmomatic](http://www.usadellab.org/cms/?page=trimmomatic)
 * [Paftools](https://github.com/RBGKew/pypaftol), [HybPiper](https://github.com/mossmatters/HybPiper) (version 1.3.1 plus patch for issue [41](https://github.com/mossmatters/HybPiper/issues/41)) or [HybPiper2](https://github.com/mossmatters/HybPiper) (for versions tested, see the command line help))
 * If using HybPiper 1.3, Perl
@@ -203,10 +203,10 @@ Values available:<br>
 default IQTREE2 run with model testing (slow for big alignments) and Ufboot bootstrapping<br>
 * iqtree2-B1000-nm1000<br>
   single model of evolution (GTR for DNA, JTT for protein) and Ufboot bootstrapping with 1000 tree iterations<br>
-* iqtree2-B1000-nm110<br>
+* iqtree2-B1000-nm110 (originally set up for testing run time only, not recommended for final analysis)<br>
   same as for 'iqtree2-B1000-nm1000’ except number of iterations is set to 110. Approximately 10x faster but less thorough tree search
-* iqtree2-B1000-nm200 (originally set up for testing run time)    
-  same as for 'iqtree2-B1000-nm1000’ except number of iterations is set to 200. Approximately 5x faster but less thorough tree search (originally set up for testing run time)
+* iqtree2-B1000-nm200 (originally set up for testing run time only, not recommended for final analysis)    
+  same as for 'iqtree2-B1000-nm1000’ except number of iterations is set to 200. Approximately 5x faster but less thorough tree search
 
 **Option -s** name of phylogeny program(s) to use for the species tree(s)
 * When 'astral' is used, memory is fixed to 12GB and is sufficient to build a species tree with approximately 3,200 samples. For larger data sets it would be better to use ASTRAL-MP for faster analysis but it will need  more memory. Memory for ASTRAL-MP should be set via option -U.
@@ -218,10 +218,24 @@ scontrol update arraytaskthrottle=50 job=<slurm_job_id>
 ```
 * If any type of sequence filtering is on (options -F, -I, -T), then upon gene re-alignment, the throttle is set to 50 by default.
 
-* If option -X is used, an additional slurm array is set up for gene trees that need significantly higher memory and/or cpu for the alignment or tree steps relative to other genes in the data set. There are some! The throttle will also need to be increased for this array too. It is not necessary to remove these genes from the main list.
+* If option -X is used, an additional slurm array is set up for gene trees that need significantly higher memory and/or cpu for the alignment or tree steps relative to other genes in the data set. There are some! The throttle will also need to be increased for this array too. It is not necessary to remove these genes from the main list input via option -G.
 
 ---
-<span style="font-size:small;">Copyright © 2023 The Board of Trustees of the Royal Botanic Gardens, Kew</span>
+
+<!--
+## Pipeline synopses
+The aim of this section is to describe how the pipelines work in more detail:
+* recover_genes_from_all_samples.sh
+* make_species_trees_pipeline.sh
+Various external programs are avaialable, the aim so far in this readme and in the cmdline help has been to provide instructions on how to get the pipeleins to run initially in the simplest way possible then to extend the analysis and use of futher options and analyses. Although the pipeline relies on eternal programs to function, some of the  alignement and phylogeny  progams are very very easy to install so running a basic analysis should be easy!
+
+Not all options from these programs are exposed, only ones that were useful for the Kew Tree of Life project but the way the programs work and any options used should be applicable to many studies 
+
+### recover_genes_from_all_samples.sh
+### make_species_trees_pipeline.sh
+-->
+
+<span style="font-size:small;">Copyright © 2025 The Board of Trustees of the Royal Botanic Gardens, Kew</span>
 
 
 
