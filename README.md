@@ -36,7 +36,7 @@ export ASTRALMPLIB=-Djava.library.path=<path_to_executable>/ASTRAL-MP/Astral/lib
 ```
 
 For gene recovery (if known, specific version requirements are shown in brackets; in bold if used in tests):
-* bunzip2 (if raw data is compressed in this format) 
+* bunzip2 command line tool (only if raw data is compressed in this format)
 * [Trimmomatic](http://www.usadellab.org/cms/?page=trimmomatic)
 * [Paftools](https://github.com/RBGKew/pypaftol), [HybPiper](https://github.com/mossmatters/HybPiper) (version 1.3.1 plus patch for issue [41](https://github.com/mossmatters/HybPiper/issues/41)), [HybPiper2](https://github.com/mossmatters/HybPiper) or [Captus](https://github.com/edgardomortiz/Captus) - for versions tested, see the command line help
 * If using HybPiper 1.3, Perl
@@ -47,6 +47,7 @@ For gene recovery (if known, specific version requirements are shown in brackets
   * [BWA](http://bio-bwa.sourceforge.net)
   * [Samtools](http://www.htslib.org) (version 0.7.17 or must contain 'coverage' and 'depth' programs)
   * [Picard](https://broadinstitute.github.io/picard)
+* wget command line tool, if wanting to download fastq files from the European Nucleotide Archive
 
 For phylogenetic analysis (if known, specific version requirements are shown in brackets; in bold if used in tests):
 * Python
