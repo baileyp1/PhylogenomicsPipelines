@@ -131,6 +131,7 @@ elif [[ $retrieveTargets == 'captus_extract'* ]]; then
 	#	The output file required is: outputs/${sampleId}__captus-ext/01_coding_NUC/NUC_coding_NT.fna
 
 
+	set +e # if .txt files below after grep are empty then grep fails with an error if "set -e" is on and whole pipeline stops, even to next file - should really assess whether file is empty first and allow set cmd to pick up other errors which will stop pipeline
 	# Now extract just the best hit, reform the fasta file with seqtk subseq and Remove the '_in_seqs' text from the original file name.
 	# NB - hopefully '_in_seqs__' will never appear a sequence!
 	grep '>' outputs/${sampleId}_in_seqs__captus-ext/01_coding_NUC/NUC_coding_NT.fna | grep '\[hit=00\]' | awk '{print $1}' | sed 's/^>//' > NUC_coding_NT.main_seqIds_ONLY.txt
@@ -176,12 +177,12 @@ elif [[ $retrieveTargets == 'captus_extract'* ]]; then
 	avPcId=`cat ${sampleId}_NUC_coding_NT.main_seqIds_ONLY.fasta | grep '>' | awk '{print $6}' | sed 's/\[ident=//' | sed 's/\]//' | awk '{sum+=$1} END {if(sum > 0) {print sum/NR} else {print "0"}}' `
 	minPcId=`cat ${sampleId}_NUC_coding_NT.main_seqIds_ONLY.fasta | grep '>' | awk '{print $6}' | sed 's/\[ident=//' | sed 's/\]//' | sort -n | head -n 1 `
 	maxPcId=`cat ${sampleId}_NUC_coding_NT.main_seqIds_ONLY.fasta | grep '>' | awk '{print $6}' | sed 's/\[ident=//' | sed 's/\]//' | sort -n | tail -n 1 `
-	set +e 	# If grep gives no output then it seems to fail ($? is 1 after this case), then script exits when 'set -e' is on - so turning 'set -e' off so this error is ignored - and it works!
+	###set +e 	# If grep gives no output then it seems to fail ($? is 1 after this case), then script exits when 'set -e' is on - so turning 'set -e' off so this error is ignored - and it works!
 	#set +u # Not required to be turned off
 	echo "maxPcId: $maxPcId"
-	numbrSTOPs=`fastatranslate -F 1 ${sampleId}_NUC_coding_NT.main_seqIds_ONLY.fasta | grep -o '\*' | wc -l `
+	numbrSTOPs=`fastatranslate -F 1 ${sampleId}_NUC_coding_NT.main_seqIds_ONLY.fasta | grep -o '\*' | wc -l ` 
 	echo "numbrSTOPs: $numbrSTOPs"
-	numbrReportedFrameShifts=`cat ${sampleId}_NUC_coding_NT.main_seqIds_ONLY.fasta | grep '\[frameshifts=' | wc -l ` # Field format e.g. [frameshifts=354,363] - an N is inserted at these positions so frameshifts are corrected; so they should not be removed for protein/codon level analyses! 
+	numbrReportedFrameShifts=`cat ${sampleId}_NUC_coding_NT.main_seqIds_ONLY.fasta | grep '\[frameshifts=' | wc -l ` # Field format e.g. [frameshifts=354,363] - an N is inserted at these positions so frameshifts are corrected; so these N's should not be removed for protein/codon level analyses! 
 	echo "numbrReportedFrameShifts: $numbrReportedFrameShifts"
 	echo
 
