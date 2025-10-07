@@ -18,7 +18,7 @@
 # 2. Add extra sys.argv[] variables to an 'option*' variable', as required
 # 3. Write the method at the bottom of the methods section.
 #	 Import any modules within each method rather than outside
-# 4. Copy the method description within the docstring of method itself and elaborate
+# 4. Copy the method description from step 1 within the docstring of method itself and elaborate
 #	 Make a note of the Python version required e.g. python 2, 3 etc
 # 4. Add a clause in the main code section for the method - see bottom of this file
 #
@@ -29,8 +29,11 @@
 # orderAlnByTreeOrder()
 #	Orders a sequence alignment by the order in a Newick tree file
 #
-#retrieve_targets_magic():
+# retrieve_targets_magic()
 #	An internal function for retrieve_targets() in various_tasks_in_bash.sh
+#
+# fasta_to_phylip()
+#	converts a multiple sequence alignment (MSA) from fasta to phylip format
 #
 # *** Next method here ***
 #
@@ -51,6 +54,7 @@ if len(sys.argv) == 1:
 	print('1. detect_stops')
 	print('2. orderAlnByTreeOrder')
 	print('3. retrieve_targets_magic')
+	print('4. fasta_to_phylip')
 	exit()
 if len(sys.argv) >= 2:
 	method = sys.argv[1]	# method name
@@ -75,8 +79,9 @@ if len(sys.argv) > 5:
 # Methods section:
 def detect_stops(infile, outfilePrefix):
 	'''
-	Detects STOP codons in a protein aligment, removes sequences with > 1 STOP codon and create stats
+	Detects STOP codons in a protein aligment, removes sequences with > 1 STOP codon into separate file(s) and create stats
 	Assumes that a STOP codon is denoted by a '*' char.
+	Original file remains unchanged
 
 	Usage: various_tasks_in_python.py detect_stops <protein_aln_infile>  <outfile_prefix>
 	Usage example: /Users/pba10kg/Documents/ProgramFiles/PhylogenomicsPipelines/various_tasks_in_python.py  detect_stops  4848.protein.fasta  4848.protein
@@ -403,6 +408,22 @@ pcid={rowArray2[2]} lenTopHSP={rowArray2[3]} qlen={rowArray2[8]} slen={str(slen2
 	fh3.close()
 
 
+def fasta_to_phylip(infile, outfile):
+	'''
+	For converting a multiple sequence alignment (MSA) from fasta to phylip format.
+	Also take a look at the SeqIO.convert() function
+
+	https://biopython.org/wiki/SeqIO
+	https://biopython.org/docs/latest/Tutorial/chapter_seqio.html
+	'''
+	from Bio import SeqIO
+
+	records = SeqIO.parse(infile, "fasta")
+	count = SeqIO.write(records, outfile, "phylip")
+	print("Converted %i records to phylip format" % count)
+
+
+
 # Main code:
 if method == 'detect_stops':
 	detect_stops(option1, option2)
@@ -413,11 +434,16 @@ elif method == 'orderAlnByTreeOrder':
 elif method == 'retrieve_targets_magic':
 	retrieve_targets_magic(option1, option2, option3, option4)
 
+elif method == 'fasta_to_phylip':
+	fasta_to_phylip(option1, option2)
+
 else:
 	print('ERROR: you need to specify an existing Python method to use!')
 	print('List of popular functions available:')
 	print('1. detect_stops')
 	print('2. orderAlnByTreeOrder')
 	print('3. retrieve_targets_magic')
+	print('4. fasta_to_phylip')
+
 
 
